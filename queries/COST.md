@@ -63,3 +63,80 @@ self-hosted run.
 
 If your query touches a daemon, socket or external service, measure it stopped and
 mid-startup before you trust either table above.
+
+# Measured payload
+
+Enumeration (D20) trades payload for not being wrong about the catalog. The Extension
+Attribute cap is roughly 30KB, so the trade only holds if the payload fits, and these are
+the numbers it was accepted on. Framing is `arthur1.<base64(gzip(json))>`.
+
+`tools/measure_payload.py` prints this per scenario on every Scenarios run. It fails over
+the cap and warns above 80%.
+
+## Clean runner, macOS 15.7.7 arm64
+
+Scenario `00-baseline` on the hosted runner: no AI agents, no browser profiles.
+
+| rows | raw | framed EA | % of cap |
+|---|---|---|---|
+| 582 | — | 12.2 KB | 41% |
+
+`app=402, brew=121, daemon=23, file=22, port=12, npm=2`
+
+**A clean machine is no longer a small payload**, which is the part of this trade worth
+understanding. 402 apps and 121 Homebrew packages are macOS and the runner image, not
+findings. Enumeration means every Mac reports its inventory whether or not it has an agent
+on it.
+
+## Loaded developer Mac
+
+macOS 26, Apple Silicon, 392 apps, 136 Homebrew packages, 53 browser extensions.
+
+| | rows | raw | framed EA | % of cap |
+|---|---|---|---|---|
+| filtered (before D20) | 76 | 9 KB | 2.6 KB | 9% |
+| enumerated | 748 | 113.5 KB | 17.4 KB | 58% |
+
+## Every scenario, same run
+
+| scenario | rows | framed EA | % of cap |
+|---|---|---|---|
+| 00-baseline | 582 | 12.2 KB | 41% |
+| 20-cli-agents | 585 | 12.3 KB | 41% |
+| 50-autonomous | 584 | 12.3 KB | 41% |
+| 55-openclaw-npm | 584 | 12.3 KB | 41% |
+| 60-persistence | 586 | 12.3 KB | 41% |
+| 25-python-agents | 589 | 12.3 KB | 41% |
+| 30-local-models | 591 | 12.5 KB | 42% |
+| 10-desktop-apps | 592 | 12.7 KB | 42% |
+| 40-browser | 590 | 12.8 KB | 43% |
+
+Installing agents barely moves the number. The payload is dominated by inventory the
+machine already had, so the marginal cost of a finding is close to nothing and the total
+is set by how loaded the Mac is.
+
+## Where the cap actually binds
+
+Framed cost is roughly 23 bytes per row after compression, so 30KB is about **1300 rows**.
+The loaded Mac sits at 748. The two variables that move it are applications and browser
+extensions: the runner has 3 extensions and the reference Mac has 53, and a Mac with
+several hundred of both is the one to watch.
+
+`browser.sql` already carries the mitigation that matters here. Shipping `manifest_json`
+to recover `<all_urls>` measured 86.57 KB against a 30KB budget; computing the flag in SQL
+costs 30 bytes for the same signal.
+
+## Fleet cost, which is the real tradeoff
+
+EA values ride in every inventory submission and every `section=EXTENSION_ATTRIBUTES`
+response. At 10,000 Macs per full sync:
+
+| | per sync |
+|---|---|
+| filtered | 27 MB |
+| enumerated | 179 MB |
+
+That is the number to reject this design on, not the per-device cap. If it is
+unacceptable, the fallback is deliberately coarse matching -- vendor prefixes and name
+patterns rather than exact identifiers -- which keeps most of the benefit at a fraction of
+the size, and which is still not a catalog on the device.
