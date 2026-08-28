@@ -83,9 +83,19 @@ if bad: sys.exit(1)
 print(f"ok: {len(KINDS)} kinds, every one exercised by at least one scenario")
 PY
 
-for f in "$HERE"/scenarios/*/setup.sh "$HERE"/lib/guest.sh; do
-  zsh -n "$f" || { echo "FAIL: zsh syntax in $f"; fail=1; }
-done
+# The scenario scripts are zsh because that is macOS's default shell and they only
+# ever run there. The linter itself runs anywhere, so require zsh explicitly rather
+# than letting every check dissolve into "command not found" and still look like a
+# syntax error in the scripts.
+if ! command -v zsh >/dev/null; then
+  echo "FAIL: zsh not found. It is needed to syntax-check the scenario scripts."
+  echo "      macOS ships it; on Debian/Ubuntu: sudo apt-get install -y zsh"
+  fail=1
+else
+  for f in "$HERE"/scenarios/*/setup.sh "$HERE"/lib/guest.sh; do
+    zsh -n "$f" || { echo "FAIL: zsh syntax in $f"; fail=1; }
+  done
+fi
 for f in "$HERE"/run.sh "$HERE"/lib/vm.sh "$HERE"/lib/assert.sh ; do
   bash -n "$f" || { echo "FAIL: bash syntax in $f"; fail=1; }
 done
