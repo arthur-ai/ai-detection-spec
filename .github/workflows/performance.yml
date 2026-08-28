@@ -1,0 +1,51 @@
+name: Performance
+
+# Times every query against its declared cost band. Runs on macOS because that is
+# the only place the queries mean anything, and on every pull request because a
+# stall is not something review catches.
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  budgets:
+    name: Cost bands
+    # Pinned: image reissues change the baseline, and that drift should be caught
+    # rather than silently absorbed.
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install osquery
+        run: |
+          curl -fsSL -o /tmp/osquery.pkg https://pkg.osquery.io/darwin/osquery-5.23.1.pkg
+          sudo installer -pkg /tmp/osquery.pkg -target /
+
+      # The runner ships Xcode, Homebrew, four browsers, Node and Python, so it is a
+      # loaded machine rather than an empty one. An empty baseline is not a valid
+      # baseline: it is the state that hid the docker stall.
+      - name: Record the baseline machine
+        run: |
+          echo "runner: $(sw_vers -productVersion) $(uname -m)"
+          echo "apps:   $(ls -d /Applications/*.app 2>/dev/null | wc -l | tr -d ' ')"
+          echo "brew:   $(brew list --formula 2>/dev/null | wc -l | tr -d ' ') formulae"
+
+      - name: Enforce cost bands
+        run: sudo -n python3 tools/measure.py --check
+
+      # A daemon that is installed but not answering is the worst case for any query
+      # that touches one, and it is invisible on a machine where the daemon is simply
+      # absent. The hosted runner has no Docker, so this asserts the absent case only;
+      # the stopped and mid-startup cases need a local or self-hosted run.
+      - name: Confirm no query blocks on an absent dependency
+        run: |
+          test ! -S /var/run/docker.sock || echo "note: a docker socket exists on this runner"
+          sudo -n python3 tools/measure.py --json > /tmp/perf.json
+          python3 tools/check_output.py /tmp/perf.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance
+          path: /tmp/perf.json
