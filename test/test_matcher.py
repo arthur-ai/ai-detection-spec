@@ -43,6 +43,21 @@ check("finds Ollama as formula, cask and listening port",
       len(found.get("ollama", {}).get("evidence", [])) == 3,
       "port 11434 counts because the process holding it is ollama")
 check("a wildcard npm scope matches (@modelcontextprotocol/sdk)", "mcp-sdk" in found)
+
+# --- PyPI agents installed through pipx or uv -----------------------------------
+# The endpoint cannot query python_packages (15.6s, no WHERE push-down), so it globs
+# the tool directories instead and those rows arrive as kind 'file'. Before D20 nothing
+# checked what the classifier did with them, and the answer was nothing: aider installs
+# as 'aider-chat' under uv while its state_dir is ~/.aider, so evidence and signature
+# never met. 25-python-agents asserted row counts, which were correct the whole time.
+check("a uv tool directory resolves by package name (aider-chat -> aider)",
+      "aider" in found,
+      "the tool dir names the package, which is the only identifier in the path")
+check("a pipx venv directory resolves the same way (litellm)", "litellm" in found)
+check("a non-AI tool in the same directory is NOT claimed",
+      not any("ruff" in json.dumps(f) for f in r["findings"]),
+      "ruff installs through uv like anything else; matching the location must not "
+      "mean matching everything in it")
 check("carries the display name", found.get("openclaw", {}).get("name") == "OpenClaw")
 check("carries the classification",
       found.get("openclaw", {}).get("classification") == "Personal agent")

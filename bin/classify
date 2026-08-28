@@ -78,6 +78,21 @@ KIND_ROUTES = {
     "file": ["state_dirs", "binaries", "model_stores"],
 }
 
+# pipx and uv give each installed tool a directory named for the PACKAGE, so the tool
+# name is recoverable from the path and can be matched against the pypi route.
+#
+# Without this, PyPI-installed agents are enumerated and then silently dropped. The
+# endpoint cannot query python_packages -- 15.6s with no WHERE push-down -- so it globs
+# these directories instead, and those rows arrive as kind 'file' whose only routes are
+# state_dirs, binaries and model_stores. aider installs as 'aider-chat' under uv, its
+# state_dir is ~/.aider, and the two never meet: the evidence says aider and the
+# classifier says nothing.
+#
+# Caught by 25-python-agents asserting on the classifier rather than on row counts. The
+# count-based version passed throughout, because the row was present the whole time.
+TOOL_DIR = re.compile(
+    r"^/Users/[^/]+/\.local/(?:pipx/venvs|share/uv/tools)/([^/]+)/?$")
+
 
 def classify(rows, catalog):
     exact, prefix, glob = build_index(catalog)
@@ -86,7 +101,23 @@ def classify(rows, catalog):
     for row in rows:
         kind, ident, loc = row.get("kind"), row.get("id", ""), row.get("loc", "")
         hit = None
-        for route in KIND_ROUTES.get(kind, []):
+
+        # A pipx/uv tool directory names its package. Try that before the path globs,
+        # which describe state directories rather than install locations.
+        tool = TOOL_DIR.match(ident) or TOOL_DIR.match(loc)
+        if kind == "file" and tool:
+            name = tool.group(1)
+            for route in ("pypi", "npm"):
+                if (route, name) in exact:
+                    hit = exact[(route, name)]
+                    break
+            if hit is None:
+                for pre, proute, meta in prefix:
+                    if proute in ("pypi", "npm") and name.startswith(pre):
+                        hit = meta
+                        break
+
+        for route in [] if hit else KIND_ROUTES.get(kind, []):
             if (route, ident) in exact:
                 candidate = exact[(route, ident)]
                 # A port number alone is not a signature. 8080 is held by half the

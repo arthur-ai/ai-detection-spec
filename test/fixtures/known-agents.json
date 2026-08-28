@@ -1,16 +1,138 @@
 [
-  {"kind":"app","id":"ai.openclaw.mac","ver":"2026.7.1","loc":"/Applications/OpenClaw.app","extra":"","perms":""},
-  {"kind":"app","id":"bot.molt.mac","ver":"2025.1.1","loc":"/Applications/Moltbot.app","extra":"","perms":""},
-  {"kind":"npm","id":"@openai/codex","ver":"0.150.1","loc":"/opt/homebrew/lib/node_modules/@openai/codex","extra":"","perms":""},
-  {"kind":"npm","id":"@modelcontextprotocol/sdk","ver":"1.0.0","loc":"/opt/homebrew/lib/node_modules","extra":"","perms":""},
-  {"kind":"brew","id":"ollama","ver":"0.33.0","loc":"/opt/homebrew/Cellar/ollama","extra":"formula","perms":""},
-  {"kind":"brew","id":"ollama-app","ver":"0.33.0","loc":"/opt/homebrew/Caskroom/ollama-app","extra":"cask","perms":""},
-  {"kind":"port","id":"11434","ver":"","loc":"/Applications/Ollama.app/Contents/Resources/ollama","extra":"ollama","perms":""},
-  {"kind":"daemon","id":"ai.openclaw.gateway","ver":"","loc":"/Users/dana/Library/LaunchAgents/ai.openclaw.gateway.plist","extra":"","perms":""},
-  {"kind":"file","id":"/Users/dana/.openclaw/","ver":"","loc":"/Users/dana/.openclaw/","extra":"","perms":""},
-  {"kind":"file","id":"/Users/dana/.local/bin/claude","ver":"","loc":"/Users/dana/.local/bin/claude","extra":"","perms":""},
-  {"kind":"nmh","id":"com.anthropic.claude_browser_extension.json","ver":"","loc":"/Users/dana/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.anthropic.claude_browser_extension.json","extra":"","perms":""},
-  {"kind":"npm","id":"libxdmcp","ver":"1.0","loc":"/opt/homebrew/lib/node_modules/libxdmcp","extra":"","perms":""},
-  {"kind":"brew","id":"cmake","ver":"3.30","loc":"/opt/homebrew/Cellar/cmake","extra":"formula","perms":""},
-  {"kind":"app","id":"com.apple.Safari","ver":"26.5","loc":"/Applications/Safari.app","extra":"","perms":""}
+  {
+    "kind": "app",
+    "id": "ai.openclaw.mac",
+    "ver": "2026.7.1",
+    "loc": "/Applications/OpenClaw.app",
+    "extra": "",
+    "perms": ""
+  },
+  {
+    "kind": "app",
+    "id": "bot.molt.mac",
+    "ver": "2025.1.1",
+    "loc": "/Applications/Moltbot.app",
+    "extra": "",
+    "perms": ""
+  },
+  {
+    "kind": "npm",
+    "id": "@openai/codex",
+    "ver": "0.150.1",
+    "loc": "/opt/homebrew/lib/node_modules/@openai/codex",
+    "extra": "",
+    "perms": ""
+  },
+  {
+    "kind": "npm",
+    "id": "@modelcontextprotocol/sdk",
+    "ver": "1.0.0",
+    "loc": "/opt/homebrew/lib/node_modules",
+    "extra": "",
+    "perms": ""
+  },
+  {
+    "kind": "brew",
+    "id": "ollama",
+    "ver": "0.33.0",
+    "loc": "/opt/homebrew/Cellar/ollama",
+    "extra": "formula",
+    "perms": ""
+  },
+  {
+    "kind": "brew",
+    "id": "ollama-app",
+    "ver": "0.33.0",
+    "loc": "/opt/homebrew/Caskroom/ollama-app",
+    "extra": "cask",
+    "perms": ""
+  },
+  {
+    "kind": "port",
+    "id": "11434",
+    "ver": "",
+    "loc": "/Applications/Ollama.app/Contents/Resources/ollama",
+    "extra": "ollama",
+    "perms": ""
+  },
+  {
+    "kind": "daemon",
+    "id": "ai.openclaw.gateway",
+    "ver": "",
+    "loc": "/Users/dana/Library/LaunchAgents/ai.openclaw.gateway.plist",
+    "extra": "",
+    "perms": ""
+  },
+  {
+    "kind": "file",
+    "id": "/Users/dana/.openclaw/",
+    "ver": "",
+    "loc": "/Users/dana/.openclaw/",
+    "extra": "",
+    "perms": ""
+  },
+  {
+    "kind": "file",
+    "id": "/Users/dana/.local/bin/claude",
+    "ver": "",
+    "loc": "/Users/dana/.local/bin/claude",
+    "extra": "",
+    "perms": ""
+  },
+  {
+    "kind": "nmh",
+    "id": "com.anthropic.claude_browser_extension.json",
+    "ver": "",
+    "loc": "/Users/dana/Library/Application Support/Google/Chrome/NativeMessagingHosts/com.anthropic.claude_browser_extension.json",
+    "extra": "",
+    "perms": ""
+  },
+  {
+    "kind": "npm",
+    "id": "libxdmcp",
+    "ver": "1.0",
+    "loc": "/opt/homebrew/lib/node_modules/libxdmcp",
+    "extra": "",
+    "perms": ""
+  },
+  {
+    "kind": "brew",
+    "id": "cmake",
+    "ver": "3.30",
+    "loc": "/opt/homebrew/Cellar/cmake",
+    "extra": "formula",
+    "perms": ""
+  },
+  {
+    "kind": "app",
+    "id": "com.apple.Safari",
+    "ver": "26.5",
+    "loc": "/Applications/Safari.app",
+    "extra": "",
+    "perms": ""
+  },
+  {
+    "kind": "file",
+    "id": "/Users/alice/.local/share/uv/tools/aider-chat/",
+    "ver": "",
+    "loc": "/Users/alice/.local/share/uv/tools/aider-chat/",
+    "extra": "",
+    "perms": ""
+  },
+  {
+    "kind": "file",
+    "id": "/Users/alice/.local/pipx/venvs/litellm/",
+    "ver": "",
+    "loc": "/Users/alice/.local/pipx/venvs/litellm/",
+    "extra": "",
+    "perms": ""
+  },
+  {
+    "kind": "file",
+    "id": "/Users/alice/.local/share/uv/tools/ruff/",
+    "ver": "",
+    "loc": "/Users/alice/.local/share/uv/tools/ruff/",
+    "extra": "",
+    "perms": ""
+  }
 ]
