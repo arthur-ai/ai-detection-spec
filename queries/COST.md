@@ -117,14 +117,44 @@ is set by how loaded the Mac is.
 
 ## Where the cap actually binds
 
-Framed cost is roughly 23 bytes per row after compression, so 30KB is about **1300 rows**.
-The loaded Mac sits at 748. The two variables that move it are applications and browser
-extensions: the runner has 3 extensions and the reference Mac has 53, and a Mac with
-several hundred of both is the one to watch.
+**Catalog growth is free.** The query holds no identifiers, so adding agents costs zero
+bytes. Verified rather than assumed: growing `catalog/agents.yaml` from 21 agents to 221
+left `dist/discovery.sql` byte-identical and the framed payload unchanged at 17868 bytes.
+Whatever limits this design, it is not how many agents we can name.
 
-`browser.sql` already carries the mitigation that matters here. Shipping `manifest_json`
-to recover `<all_urls>` measured 86.57 KB against a 30KB budget; computing the flag in SQL
-costs 30 bytes for the same signal.
+**Inventory growth is not free**, and that is the real constraint. Measured by extending
+the reference Mac with structurally similar application rows:
+
+| total rows | framed EA | % of cap | marginal |
+|---|---|---|---|
+| 748 | 17.4 KB | 58% | — |
+| 998 | 25.4 KB | 85% | 32.6 B/row |
+| 1248 | 33.4 KB | 111% | 32.6 B/row |
+
+So the cap binds at roughly **1150 rows**, about 400 more than the reference Mac carries.
+Two real inventories concatenated — this Mac plus the hosted runner, 1338 rows — land at
+exactly **100%** of the cap. Headroom is real but it is not generous, and it is consumed
+by how loaded a machine is rather than by anything about AI.
+
+An earlier revision of this file put the marginal cost at 23 B/row and the ceiling near
+1300 rows. That came from measuring random subsets, which breaks up the runs of similar
+paths gzip exploits and understates the true marginal cost. Prefer the numbers above.
+
+### The lever, and why it is not simply pulled
+
+Applications dominate: **300 of 392 rows on the reference Mac are `/System/`**, stock
+macOS rather than anything installed. Dropping them takes 58% to 34% of the cap, and 43%
+to 19% on the runner. It is the single largest saving available and it is not a catalog
+match, so it looks free.
+
+It is not free. `/System/` carries `com.apple.GenerativePlaygroundApp`, `com.apple.Siri`,
+`com.apple.siri.launcher` and Shortcuts, which are exactly the first-party AI surface an
+AI-governance product should see. `browser.sql` already refused a blanket `com.apple.%`
+exclusion on this reasoning and excluded a single manifest by name instead, so a blanket
+exclusion here would contradict a decision this repo has already made deliberately.
+
+If the payload needs to come down, exclude `/System/` by an argued rule that keeps the
+Apple Intelligence surface, and record which bundles it keeps. Do not reach for the prefix.
 
 ## Fleet cost, which is the real tradeoff
 
