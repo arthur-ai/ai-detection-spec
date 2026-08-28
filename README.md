@@ -20,7 +20,7 @@ This is that knowledge, as queries you can run and a catalog you can read.
 
 ```console
 $ brew install --cask osquery          # or https://osquery.io/downloads
-$ sudo osqueryi --json < queries/discovery.sql
+$ sudo osqueryi --json < dist/discovery.sql
 ```
 
 Sample output from a developer Mac:
@@ -51,7 +51,7 @@ They **never**:
 - execute a discovered binary to ask it anything
 
 The strength of shipping queries rather than an agent is that you do not have to take that on
-trust. It is SQL. Read `queries/discovery.sql` in ten minutes and verify it yourself.
+trust. It is SQL. Read `dist/discovery.sql` in ten minutes and verify it yourself.
 
 This tool also **does nothing to the machine**. No blocking, no remediation, no network calls of
 its own. It reports; you decide.

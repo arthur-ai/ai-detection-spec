@@ -37,7 +37,7 @@ jobs:
         run: test/scenarios/${{ matrix.scenario }}/setup.sh
       - name: Query and assert
         run: |
-          sudo -n /usr/local/bin/osqueryi --json < queries/discovery.sql > /tmp/out.json
+          sudo -n /usr/local/bin/osqueryi --json < dist/discovery.sql > /tmp/out.json
           test/assert.sh /tmp/out.json test/scenarios/${{ matrix.scenario }}/expected.json
       - name: Keep the output
         if: always()

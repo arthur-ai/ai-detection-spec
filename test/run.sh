@@ -84,7 +84,7 @@ run_scenario() {
   # -- so the suite reported ~600B while the real artifact would have produced 34KB on a
   # developer Mac and blown the EA cap. Neither number was wrong on its own. Exercise the
   # artifact and there is nothing left to drift.
-  vm_put "$vm" "$HERE/../queries/discovery.sql" /tmp/discovery.sql
+  vm_put "$vm" "$HERE/../dist/discovery.sql" /tmp/discovery.sql
 
   local start; start=$(date +%s)
   vm_ssh "$vm" "sudo -n /usr/local/bin/osqueryi --json < /tmp/discovery.sql" > "$ART/$s.json" \

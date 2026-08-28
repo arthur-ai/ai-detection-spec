@@ -40,7 +40,7 @@ jobs:
           # so `sudo osqueryi` is "command not found" for root.
           OSQI=/usr/local/bin/osqueryi
           start=$(date +%s)
-          sudo -n "$OSQI" --json < queries/discovery.sql > /tmp/out.json
+          sudo -n "$OSQI" --json < dist/discovery.sql > /tmp/out.json
           elapsed=$(( $(date +%s) - start ))
           rows=$(python3 -c "import json;print(len(json.load(open('/tmp/out.json'))))")
           echo "$rows rows in ${elapsed}s"
