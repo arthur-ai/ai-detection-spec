@@ -6,6 +6,16 @@ and what we are looking for is a query that *blocks*, not a microbenchmark.
 Bands: `fast` under 1s, `slow` 1 to 5s, `expensive` over 5s and excluded from
 `dist/discovery.sql`. `tools/measure.py --check` enforces them on every pull request.
 
+The gate fires at **2x the declared band**, not at the band itself. A band is a declaration
+a reader can trust; the gate catches a query that *blocks*, which is an order-of-magnitude
+event. Enforced at the same number, the boundary case flaps: `apps.sql` measured 0.81s and
+1.14s on consecutive runs of the same commit on the same runner. A gate that fails at random
+teaches people to re-run it, and then a real stall gets re-run too. 2x absorbs runner
+variance and is still five times below the 10.2s stall this exists to catch.
+
+The composed `dist/discovery.sql` has no tolerance: 10s is the Extension Attribute's actual
+limit, not a target.
+
 An Extension Attribute gets roughly ten seconds and 30KB. Overrun either and the machine
 reports nothing, which is indistinguishable from a machine with nothing on it. That is why
 this is a build gate and not a review note.

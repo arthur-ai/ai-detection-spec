@@ -25,6 +25,18 @@ import time
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 BANDS = {"fast": 1.0, "slow": 5.0, "expensive": float("inf")}
+
+# The gate fires at band * TOLERANCE, not at the band itself.
+#
+# A band is a declaration of intent that a reader can trust; the gate exists to catch a
+# query that *blocks*, which is an order-of-magnitude event. Enforcing the two at the same
+# number conflates them, and the boundary case flaps: apps.sql measured 0.81s and 1.14s on
+# consecutive runs of the same commit on the same runner image. A gate that fails randomly
+# trains people to re-run it, and then a real stall gets re-run too.
+#
+# 2.0 is wide enough to absorb hosted-runner variance and still an order of magnitude below
+# the 10.24s docker_images stall this exists to catch.
+TOLERANCE = 2.0
 RUNS = 3
 OSQI_CANDIDATES = ["/usr/local/bin/osqueryi",
                    "/opt/osquery/lib/osquery.app/Contents/MacOS/osqueryi", "osqueryi"]
@@ -73,11 +85,14 @@ def main():
         band = (re.search(r"^--\s*cost:\s*(\w+)", text, re.M) or [None, "fast"])[1]
         seconds, rows = measure(binary, body(text))
         budget = BANDS[band]
-        over = seconds > budget
-        results.append({"query": path.name, "band": band,
-                        "seconds": round(seconds, 2), "rows": rows, "over_budget": over})
+        ceiling = budget * TOLERANCE
+        over = seconds > ceiling
+        results.append({"query": path.name, "band": band, "seconds": round(seconds, 2),
+                        "rows": rows, "over_budget": over,
+                        "over_declared": seconds > budget})
         if over:
-            failures.append(f"{path.name}: {seconds:.2f}s exceeds the '{band}' band ({budget}s)")
+            failures.append(f"{path.name}: {seconds:.2f}s exceeds the '{band}' band "
+                            f"({budget}s) even allowing {TOLERANCE}x for runner variance")
 
     total, total_rows = measure(binary, body((ROOT / "dist" / "discovery.sql").read_text()))
     results.append({"query": "dist/discovery.sql", "band": "composed",
@@ -91,7 +106,8 @@ def main():
     else:
         print(f"  {'query':22} {'band':10} {'seconds':>8} {'rows':>6}")
         for r in results:
-            flag = "  OVER" if r["over_budget"] else ""
+            flag = "  OVER" if r["over_budget"] else (
+                "  over declared band, within tolerance" if r.get("over_declared") else "")
             print(f"  {r['query']:22} {r['band']:10} {r['seconds']:8.2f} {r['rows']:6}{flag}")
 
     if args.check and failures:
