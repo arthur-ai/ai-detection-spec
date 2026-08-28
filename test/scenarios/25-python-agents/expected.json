@@ -1,0 +1,20 @@
+{
+  "description": "PyPI-published agents installed with uv - the ecosystem the query used to miss entirely.",
+  "demo_beat": "coverage - Python-packaged agents",
+  "counts": {
+    "file": ">=2",
+    "app": 0,
+    "npm": 0,
+    "brew": 0,
+    "daemon": 0,
+    "port": 0,
+    "ext": 0,
+    "nmh": 0,
+    "model": 0
+  },
+  "must_contain": [
+    "aider",
+    "uv/tools"
+  ],
+  "why": "npm and brew are pinned to 0 on purpose: a uv or pipx install produces no npm global and no Homebrew row, so before this branch existed a machine full of Python agents was indistinguishable from a clean one. If npm or brew ever goes non-zero here the scenario has stopped testing the thing it was built for. The branch globs install LOCATIONS rather than querying python_packages, which costs 15.6s and does not honour WHERE push-down."
+}

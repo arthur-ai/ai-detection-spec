@@ -1,0 +1,20 @@
+{
+  "description": "Inert OpenClaw gateway LaunchAgent and a live listener on the gateway port.",
+  "demo_beat": "step 4 support - the unattended daemon and its listener",
+  "counts": {
+    "daemon": ">=1",
+    "port": ">=1",
+    "app": 0,
+    "npm": 0,
+    "brew": 0,
+    "ext": 0,
+    "file": 0,
+    "nmh": 0,
+    "model": 0
+  },
+  "must_contain": [
+    "ai.openclaw.gateway",
+    "18789"
+  ],
+  "why": "This scenario exists because daemon and port are unreachable through a GUI app over SSH, and 50-autonomous cannot run below Sequoia. The daemon assertion doubles as proof that osquery's launchd table reads plists off disk rather than querying a running launchd - the design flagged that as an assumption to confirm, and this confirms it. Both fixtures are inert: the plist points at /usr/bin/true and is never loaded."
+}

@@ -1,0 +1,1 @@
+{ "min_macos": 15, "why": "The openclaw cask refuses to install below Sequoia. A Tart guest cannot be newer than the host, so this scenario is unrunnable on a Sonoma host and is skipped rather than failed." }

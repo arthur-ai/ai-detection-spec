@@ -1,0 +1,22 @@
+{
+  "description": "The desktop AI apps that make up the bulk of the demo table.",
+  "demo_beat": "step 1 - the fleet-wide list",
+  "counts": {
+    "app": ">=4",
+    "npm": 0,
+    "brew": 0,
+    "daemon": 0,
+    "port": 0,
+    "ext": 0,
+    "file": 0,
+    "nmh": 0,
+    "model": 0
+  },
+  "must_contain": [
+    "com.anthropic.claudefordesktop",
+    "com.todesktop.230313mzl4w4u92",
+    "com.openai.codex",
+    "ai.perplexity.comet"
+  ],
+  "why": "com.openai.codex is ChatGPT desktop, NOT com.openai.chat. com.todesktop.230313mzl4w4u92 is Cursor - an opaque ToDesktop id that cannot be guessed. Both are regression canaries for the catalog."
+}

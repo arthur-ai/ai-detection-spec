@@ -1,0 +1,20 @@
+{
+  "description": "CLI coding agents - a native installer and an npm global.",
+  "demo_beat": "step 1 - Claude Code and Codex CLI rows",
+  "counts": {
+    "file": ">=1",
+    "npm": ">=1",
+    "app": 0,
+    "brew": 0,
+    "daemon": 0,
+    "port": 0,
+    "ext": 0,
+    "nmh": 0,
+    "model": 0
+  },
+  "must_contain": [
+    "/.local/bin/claude",
+    "@openai/codex"
+  ],
+  "why": "npm must stay at 1, not 800+. If it balloons, the nested-node_modules predicate has regressed and every transitive dependency is being reported."
+}

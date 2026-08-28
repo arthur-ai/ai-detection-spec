@@ -1,0 +1,30 @@
+{
+  "description": "Every agent type the demo showcases, on one machine.",
+  "demo_beat": "the whole script, steps 1-4",
+  "counts": {
+    "app": ">=6",
+    "npm": ">=1",
+    "brew": ">=2",
+    "daemon": ">=1",
+    "port": ">=1",
+    "ext": ">=1",
+    "file": ">=1",
+    "nmh": ">=1",
+    "model": ">=2"
+  },
+  "must_contain": [
+    "com.anthropic.claudefordesktop",
+    "com.todesktop.230313mzl4w4u92",
+    "com.openai.codex",
+    "ai.perplexity.comet",
+    "com.electron.ollama",
+    "@openai/codex",
+    "/.local/bin/claude",
+    "11434",
+    "ai.openclaw.gateway",
+    "18789",
+    "nativeMessaging",
+    "ai.openclaw.mac"
+  ],
+  "why": "Every kind non-zero. This is the scenario that proves the demo is possible at all, and its output is the template for the synthetic fleet in UP-4898. brew is >=2 because homebrew_packages covers casks as well as formulae. Requires a Sequoia+ host for the openclaw cask, same as 50-autonomous."
+}

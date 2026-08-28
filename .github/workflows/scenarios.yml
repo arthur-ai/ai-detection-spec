@@ -1,0 +1,47 @@
+name: Scenarios
+
+# Installs real software on a throwaway runner and asserts what the query finds.
+# Not run per pull request: macOS runner minutes are expensive and these take
+# several minutes each. A maintainer can trigger a run on a contribution.
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  scenario:
+    name: ${{ matrix.scenario }}
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario:
+          - 00-baseline
+          - 10-desktop-apps
+          - 20-cli-agents
+          - 25-python-agents
+          - 30-local-models
+          - 40-browser
+          - 50-autonomous
+          - 55-openclaw-npm
+          - 60-persistence
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install osquery
+        run: |
+          curl -fsSL -o /tmp/osquery.pkg https://pkg.osquery.io/darwin/osquery-5.23.1.pkg
+          sudo installer -pkg /tmp/osquery.pkg -target /
+      - name: Provision
+        run: test/scenarios/${{ matrix.scenario }}/setup.sh
+      - name: Query and assert
+        run: |
+          sudo -n /usr/local/bin/osqueryi --json < queries/discovery.sql > /tmp/out.json
+          test/assert.sh /tmp/out.json test/scenarios/${{ matrix.scenario }}/expected.json
+      - name: Keep the output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.scenario }}
+          path: /tmp/out.json

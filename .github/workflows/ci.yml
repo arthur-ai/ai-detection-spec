@@ -1,0 +1,47 @@
+name: CI
+
+# Fast checks only. These run on every pull request and finish in about a minute.
+# The scenario matrix is expensive (macOS runner minutes) and runs separately.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Static checks
+        run: test/lint.sh
+
+  query-runs:
+    name: Query executes
+    # Pinned deliberately: GitHub reissues these images, and a new image adding
+    # software is drift the baseline should catch rather than silently absorb.
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install osquery
+        run: |
+          curl -fsSL -o /tmp/osquery.pkg \
+            "https://pkg.osquery.io/darwin/osquery-${OSQUERY_VERSION}.pkg"
+          sudo installer -pkg /tmp/osquery.pkg -target /
+        env:
+          OSQUERY_VERSION: 5.23.1
+      - name: Run the query and time it
+        run: |
+          # Absolute path on purpose: sudo's secure_path excludes /usr/local/bin,
+          # so `sudo osqueryi` is "command not found" for root.
+          OSQI=/usr/local/bin/osqueryi
+          start=$(date +%s)
+          sudo -n "$OSQI" --json < queries/discovery.sql > /tmp/out.json
+          elapsed=$(( $(date +%s) - start ))
+          rows=$(python3 -c "import json;print(len(json.load(open('/tmp/out.json'))))")
+          echo "$rows rows in ${elapsed}s"
+          # An Extension Attribute gets ~10s. Overrun it and the machine reports
+          # nothing, which is indistinguishable from a machine with nothing on it.
+          if [ "$elapsed" -gt 10 ]; then
+            echo "::error::query took ${elapsed}s, over the 10s budget"; exit 1
+          fi

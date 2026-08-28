@@ -1,0 +1,20 @@
+{
+  "description": "Ollama with two models, one deliberately outside the 'library' namespace.",
+  "demo_beat": "step 2 - expand Ollama, show the models",
+  "counts": {
+    "app": ">=1",
+    "brew": ">=1",
+    "port": ">=1",
+    "model": ">=2",
+    "daemon": 0,
+    "npm": 0,
+    "ext": 0,
+    "file": 0,
+    "nmh": 0
+  },
+  "must_contain": [
+    "com.electron.ollama",
+    "11434"
+  ],
+  "why": "model >= 2 is the whole point. Hardcoding registry.ollama.ai/library returns 1 and looks perfectly healthy - the hf.co model is the only way to catch it. brew is >=1 and covers both a Cellar and a Caskroom row. daemon is 0 by design: Ollama's LaunchAgent is a first-GUI-launch side effect and SSH has no Aqua session, so 50-autonomous carries the daemon branch instead."
+}
