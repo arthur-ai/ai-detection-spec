@@ -45,6 +45,31 @@ another.
 **Keep old identifiers as aliases.** When a vendor changes a bundle id, machines that installed
 the old version still carry it. Add the new one; do not delete the old.
 
+## The catalog
+
+Signatures live in `catalog/agents.yaml`, one entry per tool carrying **every route it
+ships through**:
+
+```yaml
+- id: openclaw
+  name: OpenClaw
+  classification: Personal agent
+  bundle_ids: [ai.openclaw.mac, bot.molt.mac]   # current, and a retained alias
+  homebrew: [openclaw]
+  npm: [openclaw, clawdbot, moltbot]
+  state_dirs: ["~/.openclaw"]
+  launchd_prefixes: [ai.openclaw.]
+  ports: [18789]
+```
+
+`tools/validate_catalog.py` checks it and runs in CI. It is strict about the mistakes that
+fail *silently*: a duplicate id produces double findings, an unknown classification renders
+as a blank pill, an entry with no route can never match anything, and the same identifier
+claimed by two agents means one is wrong and both will fire.
+
+`classification` describes **deployment shape**, not risk. See the vocabulary at the top of
+the file.
+
 ## Query frontmatter
 
 ```sql

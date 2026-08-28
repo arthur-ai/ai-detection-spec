@@ -17,6 +17,8 @@ jobs:
       # bash but not zsh, and the linter needs it to syntax-check them.
       - name: Install zsh
         run: sudo apt-get update -qq && sudo apt-get install -y -qq zsh
+      - name: Install pyyaml
+        run: pip install --quiet pyyaml
       - name: Static checks
         run: test/lint.sh
 

@@ -103,6 +103,7 @@ fi
 for f in "$HERE"/run.sh "$HERE"/lib/vm.sh "$HERE"/lib/assert.sh ; do
   bash -n "$f" || { echo "FAIL: bash syntax in $f"; fail=1; }
 done
+python3 "$HERE/../tools/validate_catalog.py" || fail=1
 python3 "$HERE/../tools/build.py" --check || fail=1
 
 [ "$fail" -eq 0 ] && echo "lint: PASS" || echo "lint: FAIL"
