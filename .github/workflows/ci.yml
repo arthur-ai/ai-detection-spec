@@ -54,3 +54,8 @@ jobs:
           if [ "$elapsed" -gt 10 ]; then
             echo "::error::query took ${elapsed}s, over the 10s budget"; exit 1
           fi
+
+      # The pack is a separate artifact built by a different code path, and nothing ran
+      # it until it shipped with four of five queries silently returning zero rows.
+      - name: Run every query in the pack
+        run: sudo -n python3 tools/check_pack.py
