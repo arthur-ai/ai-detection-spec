@@ -5,14 +5,17 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 fail=0
 
-python3 - "$HERE/../queries/discovery.sql" <<'PY' || fail=1
+for q in "$HERE"/../queries/*.sql; do
+python3 - "$q" <<'PY' || fail=1
 import re, sys
 raw = open(sys.argv[1]).read()
 sql = "\n".join(l for l in raw.splitlines() if not l.strip().startswith("--"))
 
-stmts = [s for s in sql.split(";") if s.strip()]
-if len(stmts) != 1:
-    print(f"FAIL: expected exactly 1 statement, found {len(stmts)}"); sys.exit(1)
+if ";" in sql:
+    print(f"FAIL: {sys.argv[1].split('/')[-1]}: a query fragment must not contain a semicolon. "
+          "The build joins files with UNION ALL; a stray semicolon ends the composed "
+          "query early and silently turns the rest into a second statement."); sys.exit(1)
+stmts = [sql]
 
 # A UNION ALL arm with the wrong column count is the failure mode this guards. osqueryi
 # does reject it, but only after a VM boot and an osquery install — about twenty minutes
@@ -35,8 +38,8 @@ for part in re.split(r"\bUNION ALL\b", stmts[0]):
 
 bad = [(k, v) for k, v in widths if v != 6]
 if bad:
-    print(f"FAIL: branches with wrong column count (want 6): {bad}"); sys.exit(1)
-print(f"ok: {len(widths)} branches, 6 columns each, 1 statement")
+    print(f"FAIL: {sys.argv[1].split('/')[-1]}: wrong column count (want 6): {bad}"); sys.exit(1)
+print(f"ok: {sys.argv[1].split('/')[-1]}: {len(widths)} branches, 6 columns each")
 
 # Two UNION ALLs with nothing between them. Removing a branch and leaving its keyword
 # behind is a syntax error osqueryi only reports at runtime -- and the failing query then
@@ -51,6 +54,7 @@ for i, l in enumerate(raw.splitlines(), 1):
     if l.strip().startswith("--") and ";" in l:
         print(f"FAIL: semicolon in comment at line {i}"); sys.exit(1)
 PY
+done
 
 python3 - "$HERE" <<'PY' || fail=1
 import glob, json, os, sys
@@ -99,5 +103,7 @@ fi
 for f in "$HERE"/run.sh "$HERE"/lib/vm.sh "$HERE"/lib/assert.sh ; do
   bash -n "$f" || { echo "FAIL: bash syntax in $f"; fail=1; }
 done
+python3 "$HERE/../tools/build.py" --check || fail=1
+
 [ "$fail" -eq 0 ] && echo "lint: PASS" || echo "lint: FAIL"
 exit "$fail"
