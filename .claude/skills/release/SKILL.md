@@ -36,7 +36,15 @@ $ python3 tools/build.py --check      # dist/ matches queries/ — catches a sta
 $ python3 tools/validate_catalog.py
 $ python3 tools/check_no_catalog.py   # no agent identifiers leaked back into the SQL
 $ python3 tools/measure.py --check    # cost bands; needs osquery locally
+$ sudo python3 tools/check_pack.py    # every pack query actually returns rows
+$ sudo test/docker_states.sh          # containers.sql against every Docker state, ~15s
 ```
+
+The last two exist because **two artifacts ship, and they are not the same query**.
+`dist/discovery.sql` is the composed `fast` and `slow` queries; `dist/ai-discovery.conf` is the
+pack, and it additionally carries `containers.sql`, which is `expensive` and excluded from the
+composed file. A release that only checks `discovery.sql` has verified half of what it attaches —
+and the pack once shipped with four of five queries silently returning zero rows.
 
 Confirm the last Scenarios run on `main` was green — it runs on dispatch and schedule, not per
 PR, so a red matrix can sit undetected:
@@ -63,7 +71,13 @@ Write in the repo's register: state the change, then its consequence for someone
 a fleet. Cover, when each applies:
 
 - **What consumers deploy** — `dist/discovery.sql` and `dist/ai-discovery.conf`, and whether the
-  six-column contract or the row kinds moved.
+  six-column contract or the row kinds moved. Say which artifact a new query landed in: an
+  `expensive` one is pack-only and does not reach anyone running the composed file.
+- **Anything the deployer must do**, where the repo cannot do it for them. `containers.sql` is
+  the standing case: it is safe on a schedule, and adding it to an Extension Attribute requires
+  a round-trip health check that demands HTTP 200, because Docker Desktop mid-startup makes
+  `docker_images` run unbounded. A release that ships it without saying so is a stall waiting to
+  happen.
 - **Detection changes** — new agents in the catalog, corrected identifiers, which install routes
   are covered. Say plainly whether a Mac must rescan, or whether reclassifying retained evidence
   repairs history.
