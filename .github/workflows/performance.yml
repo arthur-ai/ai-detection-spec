@@ -36,18 +36,13 @@ jobs:
 
       # A daemon that is installed but not answering is the worst case for any query
       # that touches one, and it is invisible on a machine where the daemon is simply
-      # absent. The hosted runner has no Docker, so this asserts the absent case; the
-      # stopped and mid-startup cases need a local or self-hosted run.
+      # absent. The hosted runner has no Docker, so this asserts the absent case only;
+      # the stopped and mid-startup cases need a local or self-hosted run.
       - name: Confirm no query blocks on an absent dependency
         run: |
           test ! -S /var/run/docker.sock || echo "note: a docker socket exists on this runner"
           sudo -n python3 tools/measure.py --json > /tmp/perf.json
-          python3 -c "
-import json
-for r in json.load(open('/tmp/perf.json')):
-    if r['rows'] == -1:
-        raise SystemExit(f\"{r['query']} produced no valid JSON\")
-print('all queries returned parseable output')"
+          python3 tools/check_output.py /tmp/perf.json
 
       - uses: actions/upload-artifact@v4
         if: always()
