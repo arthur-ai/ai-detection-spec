@@ -1,0 +1,56 @@
+-- name: containers
+-- description: Container images on the host, which hide agents every other branch misses
+-- tables: docker_images
+-- min-osquery: 5.10.0
+-- cost: expensive
+-- platform: darwin
+--
+-- Emits the six-column contract: kind, id, ver, loc, extra, perms.
+-- Branches within this file are joined with UNION ALL, and the build joins files
+-- the same way. See CONTRIBUTING.md before changing the column list.
+
+-- An agent in a container is invisible to every other query here: no .app bundle, no
+-- Homebrew entry, no npm global, no dotdir on the host. This is the only branch that
+-- sees it.
+--
+-- MARKED expensive, SO IT IS NOT IN dist/discovery.sql. It ships in the pack, and the
+-- Extension Attribute path adds it at runtime only after a round-trip health check.
+-- The reason is that this table's cost is not bounded by anything we control:
+--
+--   Docker state                          osquery cost
+--   no socket file                        0.49s   fails fast
+--   stale socket, nothing listening       0.36s   connection refused
+--   socket accepts, daemon never replies  >45s    STILL RUNNING when the test gave up
+--   daemon answers 500                    0.45s   zero rows
+--   daemon healthy                        0.44s   rows
+--
+-- The third row is the one that matters and it is worse than previously recorded. The
+-- figure in the ticket was 10.4s, measured against real Docker Desktop -- but that
+-- ceiling is Docker's own socket layer giving up, not osquery's. The table has NO
+-- timeout of its own, so against a daemon that simply holds the connection, this query
+-- does not finish. A ten-second Extension Attribute budget is not the constraint here.
+-- Unbounded is.
+--
+-- That state is not exotic. It is Docker Desktop mid-startup, and Docker Desktop
+-- installed-but-not-running, which is the ordinary condition of a developer Mac that
+-- has not opened Docker today.
+--
+-- THE GUARD MUST BE A FULL ROUND TRIP, AND MUST CHECK THE STATUS CODE.
+-- Measured, per state, on whether each guard lets this branch run:
+--
+--                     absent  refuse  hang   error   healthy
+--   connect() only    skip    skip    RUN    RUN     RUN      <- stalls forever
+--   curl -s           skip    skip    skip   RUN     RUN      <- silent zero rows
+--   HTTP 200 required skip    skip    skip   skip    RUN      <- correct
+--
+-- connect() is wrong because osquery blocks on the READ, not the connect: the probe
+-- succeeds in 0.000s against a daemon that never answers. `curl -s` is wrong because it
+-- exits 0 on an HTTP 500, and a 500 daemon yields zero rows -- which is indistinguishable
+-- from a machine with no containers, and is the silent failure this project keeps
+-- meeting. Only requiring a 200 separates "nothing there" from "we could not look".
+--
+-- Whoever simplifies this back to `test -S /var/run/docker.sock` will reintroduce an
+-- unbounded stall on the most common state, and nothing will error.
+SELECT 'image' AS kind, tags AS id, '' AS ver, id AS loc,
+       CAST(size_bytes AS TEXT) AS extra, '' AS perms
+  FROM docker_images

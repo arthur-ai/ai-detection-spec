@@ -36,7 +36,18 @@ for name, spec in sorted(pack["queries"].items()):
               f"comments out the rest of the one-line query")
         failed = True
         continue
-    proc = subprocess.run([OSQI, "--json", sql], capture_output=True, text=True)
+    # A timeout, because the pack now carries the container query and docker_images has
+    # no timeout of its own. Against a daemon that accepts and never answers it runs
+    # indefinitely -- this check would hang the build rather than fail it. Point it at a
+    # socket path that cannot exist so the pack test never depends on local Docker state.
+    try:
+        proc = subprocess.run([OSQI, "--docker_socket", "/nonexistent/docker.sock",
+                               "--json", sql],
+                              capture_output=True, text=True, timeout=30)
+    except subprocess.TimeoutExpired:
+        print(f"FAIL: {name} did not finish in 30s")
+        failed = True
+        continue
     try:
         rows = len(json.loads(proc.stdout))
     except (json.JSONDecodeError, ValueError):
