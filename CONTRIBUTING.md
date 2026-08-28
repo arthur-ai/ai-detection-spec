@@ -126,6 +126,22 @@ Assertions are on **counts and specific identifiers**, never "did it parse". Eve
 in this project so far produced plausible-looking output with the wrong number of rows, and not
 one of them errored.
 
+## Versioning
+
+Releases are [semantic](https://semver.org), with repository-specific meaning:
+
+- **major** — the six-column contract or the catalog schema changes. Consumers must change code.
+- **minor** — a new query, or new signatures. Additive and safe to take.
+- **patch** — a corrected identifier, a fixed glob, documentation.
+
+Releases are cut whenever signatures change, at most weekly. What changed in each one is on the
+[Releases page](https://github.com/arthur-ai/osquery-ai-discovery/releases) rather than in a file
+in the tree; there is no `CHANGELOG.md`. Publishing a release triggers
+[`release.yml`](.github/workflows/release.yml), which rebuilds `dist/discovery.sql` and
+`dist/ai-discovery.conf` from the tagged `queries/` and attaches them — so a deployment can pin
+a tag instead of tracking `main`, and what it downloads is derived from the tag rather than
+uploaded by hand.
+
 ## Reporting a detection gap
 
 If you know of an agent this misses, open an issue with the tool, how you installed it, and what
