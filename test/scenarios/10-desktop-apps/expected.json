@@ -4,7 +4,7 @@
   "counts": {
     "app": ">=4",
     "npm": 0,
-    "brew": 0,
+    "brew": ">=3",
     "daemon": 0,
     "port": 0,
     "ext": 0,
@@ -18,5 +18,5 @@
     "com.openai.codex",
     "ai.perplexity.comet"
   ],
-  "why": "com.openai.codex is ChatGPT desktop, NOT com.openai.chat. com.todesktop.230313mzl4w4u92 is Cursor - an opaque ToDesktop id that cannot be guessed. Both are regression canaries for the catalog."
+  "why": "com.openai.codex is ChatGPT desktop, NOT com.openai.chat. com.todesktop.230313mzl4w4u92 is Cursor - an opaque ToDesktop id that cannot be guessed. Both are regression canaries for the catalog. brew is >=3, not 0: homebrew_packages covers CASKS as well as formulae, and of the five installed here the brew branch matches claude, cursor and lm-studio. An earlier pin of 0 predated that discovery and was never corrected."
 }
