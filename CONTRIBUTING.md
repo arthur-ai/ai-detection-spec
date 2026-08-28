@@ -98,10 +98,23 @@ Two ways this hides:
 If your query touches a daemon, socket or external service, test it **stopped and mid-startup**,
 not just healthy.
 
+`tools/measure.py --check` times every query against its declared band and fails the build on an
+overrun, naming the query and its measured cost. It runs on every pull request. Measured numbers
+for each query, and the machine they were taken on, are in [queries/COST.md](queries/COST.md).
+
+```console
+$ tools/measure.py             # time every query, print a table
+$ tools/measure.py --check     # fail if any query exceeds its declared band
+```
+
+Raise a query's declared band rather than tuning the budget, and say in the PR why the cost is
+inherent. A `slow` query is fine; an undeclared one is not.
+
 ## Running the tests
 
 ```console
 $ test/lint.sh                 # static checks, about a second, no VM
+$ tools/measure.py --check     # cost bands, needs osquery and a few seconds
 $ test/run.sh 00-baseline      # one scenario in a disposable macOS VM
 ```
 
