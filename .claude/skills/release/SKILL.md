@@ -26,7 +26,8 @@ YAML breaks. Check for both.
 
 ## 2. Verify before you tag
 
-A release attaches `dist/`, so a stale `dist/` ships a query nobody reviewed.
+`release.yml` re-runs the static gates on publish and will refuse a stale `dist/`, but finding
+that out from a failed workflow means a published release with no artifacts on it. Check first.
 
 ```console
 $ git switch main && git pull
@@ -84,11 +85,23 @@ $ gh release create v<X.Y.Z> \
     --draft \
     --target main \
     --title "v<X.Y.Z> — <the one-line reason this release exists>" \
-    --notes-file <notes.md> \
-    dist/discovery.sql dist/ai-discovery.conf
+    --notes-file <notes.md>
 ```
 
 Then hand the user the draft URL and let them publish. Publishing creates the tag on `main`.
+
+**Do not upload `dist/` by hand.** `.github/workflows/release.yml` fires on publish: it checks
+the tag is an ancestor of `main`, re-runs the static gates against the tagged commit, rebuilds
+`dist/` from `queries/` at that tag and attaches the rebuild. That makes the attached file
+derived from the tagged queries by construction rather than by someone having remembered to run
+`build.py`. Uploading from a working copy defeats it.
+
+After the user publishes, confirm the workflow went green and the assets are attached:
+
+```console
+$ gh run list --workflow=release.yml --limit=1
+$ gh release view v<X.Y.Z> --json assets --jq '[.assets[].name]'
+```
 
 ## Don'ts
 

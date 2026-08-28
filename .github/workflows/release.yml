@@ -1,0 +1,72 @@
+name: Release
+
+# Fires when a draft release is published. The version and the notes are a human's
+# judgement and happen before this point; this workflow's only job is to guarantee that
+# what hangs off the release page was built from the tagged commit, rather than uploaded
+# from whatever happened to be in somebody's working copy.
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write # replacing the release's assets needs write
+
+jobs:
+  artifacts:
+    name: Build and attach dist/
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          fetch-depth: 0 # the ancestry check below needs main's history
+
+      # A tag on a side branch would ship a query that never went through review or the
+      # macOS gates, and nothing on the release page would hint at it. Publishing is one
+      # click from a draft, so the wrong target is a plausible mistake rather than a
+      # theoretical one.
+      - name: Confirm the tag is on main
+        run: |
+          git fetch --no-tags origin main
+          sha=$(git rev-parse HEAD)
+          if ! git merge-base --is-ancestor "$sha" origin/main; then
+            echo "::error::${{ github.event.release.tag_name }} ($sha) is not an ancestor of main"
+            exit 1
+          fi
+          echo "$sha is on main"
+
+      # Same two the lint job installs: the scenario scripts are zsh, and the catalog
+      # validator and workflow parser need pyyaml.
+      - name: Install zsh
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq zsh
+      - name: Install pyyaml
+        run: pip install --quiet pyyaml
+
+      # The static gates, re-run against the tagged commit: the six-column contract, the
+      # catalog, and that no agent identifier has crept back into the SQL. The macOS
+      # gates -- cost bands and a real osqueryi run -- already ran on the push to main
+      # that this tag points at, so repeating them here would buy nothing and spend
+      # macOS runner minutes.
+      - name: Static checks
+        run: test/lint.sh
+
+      # dist/ is committed AND attached, so the two can disagree. test/lint.sh already
+      # asserts they don't, via build.py --check. The rebuild is what actually produces
+      # the file we upload, and the diff keeps that guarantee sitting next to the upload
+      # instead of three steps away.
+      - name: Rebuild dist/ from the tagged queries
+        run: |
+          python3 tools/build.py
+          if ! git diff --exit-code -- dist/; then
+            echo "::error::dist/ does not match queries/ at this tag"
+            exit 1
+          fi
+
+      # --clobber replaces whatever was attached to the draft by hand. A consumer pins a
+      # tag and downloads these two files; they are the deliverable, not a convenience.
+      - name: Attach the artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" \
+            dist/discovery.sql dist/ai-discovery.conf --clobber
