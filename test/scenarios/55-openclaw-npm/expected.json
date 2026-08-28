@@ -3,19 +3,25 @@
   "demo_beat": "step 4 coverage - the same agent, a different install shape",
   "counts": {
     "npm": ">=1",
-    "app": 0,
-    "brew": 0,
-    "daemon": 0,
-    "port": 0,
-    "ext": 0,
     "file": ">=1",
-    "nmh": 0,
+    "app": ">=0",
+    "brew": ">=0",
+    "ext": ">=0",
+    "nmh": ">=0",
+    "daemon": ">=0",
+    "port": ">=0",
     "model": 0
   },
+  "classified": {
+    "must_find": [
+      "openclaw"
+    ],
+    "forbid": []
+  },
+  "why": "The npm install route, which the cask scenario cannot see. This is also where the npx gap recorded at the foot of filesystem.sql would be proven or disproven: the claim that an npx-launched agent still creates its state dotdir is UNVERIFIED, and this scenario is the place to settle it.",
   "must_contain": [
     "openclaw",
     ".openclaw/"
   ],
-  "why": "50-autonomous covers the cask and asserts app>=1 and brew>=1. Neither fires here: an npm global installs no .app bundle and creates no Caskroom entry, so a fleet that standardised on the npm route would look completely clean to those two branches. app and brew are pinned to 0 deliberately - if either becomes non-zero this scenario has stopped testing what it was built to test. file>=1 was a correction: ~/.openclaw was predicted to appear only once the agent RUNS, but the npm install creates it immediately, which makes the state dir an install-time signal for this route and not merely a runtime one.",
   "unexplained": "Both this scenario and 20-cli-agents report the state dir under TWO users - /Users/admin/ and /Users/runner/ - though only admin ran anything, and 00-baseline shows neither. Most likely /Users/runner is aliased to admin's home in the Cirrus base image, which would mean one artifact is reported twice under two apparent users. If that is right it is a real dedup hazard for the collector, which keys findings per device and per user. NOT YET VERIFIED - do not build dedup logic on this until someone confirms it with KEEP_VM=1."
 }

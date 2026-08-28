@@ -12,6 +12,20 @@
     "nmh": ">=1",
     "model": ">=2"
   },
+  "classified": {
+    "must_find": [
+      "claude-desktop",
+      "cursor",
+      "chatgpt-desktop",
+      "perplexity-comet",
+      "ollama",
+      "claude-code",
+      "codex-cli",
+      "openclaw"
+    ],
+    "forbid": []
+  },
+  "why": "Every demo beat in one machine. The twelve must_contain identifiers became eight must_find agents, which is the same coverage asserted one layer up, where the catalog can be corrected without touching a single endpoint.",
   "must_contain": [
     "com.anthropic.claudefordesktop",
     "com.todesktop.230313mzl4w4u92",
@@ -25,6 +39,5 @@
     "18789",
     "nativeMessaging",
     "ai.openclaw.mac"
-  ],
-  "why": "Every kind non-zero. This is the scenario that proves the demo is possible at all, and its output is the template for the synthetic fleet in UP-4898. brew is >=2 because homebrew_packages covers casks as well as formulae. Requires a Sequoia+ host for the openclaw cask, same as 50-autonomous."
+  ]
 }

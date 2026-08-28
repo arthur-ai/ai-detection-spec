@@ -3,20 +3,31 @@
   "demo_beat": "step 1 - the fleet-wide list",
   "counts": {
     "app": ">=4",
-    "npm": 0,
     "brew": ">=3",
-    "daemon": 0,
-    "port": 0,
-    "ext": 0,
-    "file": 0,
-    "nmh": 0,
+    "npm": ">=0",
+    "file": ">=1",
+    "ext": ">=0",
+    "nmh": ">=0",
+    "daemon": ">=0",
+    "port": ">=0",
     "model": 0
   },
+  "classified": {
+    "must_find": [
+      "claude-desktop",
+      "cursor",
+      "chatgpt-desktop",
+      "perplexity-comet"
+    ],
+    "forbid": [
+      "openclaw"
+    ]
+  },
+  "why": "The four bundle ids that used to be must_contain are now must_find on the classifier, which is the layer that actually knows them. com.openai.codex is ChatGPT Desktop, not Codex CLI -- the obvious guess, com.openai.chat, is wrong, and pinning it here is the only thing that would catch a catalog edit getting it backwards.",
   "must_contain": [
     "com.anthropic.claudefordesktop",
     "com.todesktop.230313mzl4w4u92",
     "com.openai.codex",
     "ai.perplexity.comet"
-  ],
-  "why": "com.openai.codex is ChatGPT desktop, NOT com.openai.chat. com.todesktop.230313mzl4w4u92 is Cursor - an opaque ToDesktop id that cannot be guessed. Both are regression canaries for the catalog. brew is >=3, not 0: homebrew_packages covers CASKS as well as formulae, and of the five installed here the brew branch matches claude, cursor and lm-studio. An earlier pin of 0 predated that discovery and was never corrected."
+  ]
 }

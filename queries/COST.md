@@ -63,3 +63,110 @@ self-hosted run.
 
 If your query touches a daemon, socket or external service, measure it stopped and
 mid-startup before you trust either table above.
+
+# Measured payload
+
+Enumeration (D20) trades payload for not being wrong about the catalog. The Extension
+Attribute cap is roughly 30KB, so the trade only holds if the payload fits, and these are
+the numbers it was accepted on. Framing is `arthur1.<base64(gzip(json))>`.
+
+`tools/measure_payload.py` prints this per scenario on every Scenarios run. It fails over
+the cap and warns above 80%.
+
+## Clean runner, macOS 15.7.7 arm64
+
+Scenario `00-baseline` on the hosted runner: no AI agents, no browser profiles.
+
+| rows | raw | framed EA | % of cap |
+|---|---|---|---|
+| 582 | — | 12.2 KB | 41% |
+
+`app=402, brew=121, daemon=23, file=22, port=12, npm=2`
+
+**A clean machine is no longer a small payload**, which is the part of this trade worth
+understanding. 402 apps and 121 Homebrew packages are macOS and the runner image, not
+findings. Enumeration means every Mac reports its inventory whether or not it has an agent
+on it.
+
+## Loaded developer Mac
+
+macOS 26, Apple Silicon, 392 apps, 136 Homebrew packages, 53 browser extensions.
+
+| | rows | raw | framed EA | % of cap |
+|---|---|---|---|---|
+| filtered (before D20) | 76 | 9 KB | 2.6 KB | 9% |
+| enumerated | 748 | 113.5 KB | 17.4 KB | 58% |
+
+## Every scenario, same run
+
+| scenario | rows | framed EA | % of cap |
+|---|---|---|---|
+| 00-baseline | 582 | 12.2 KB | 41% |
+| 20-cli-agents | 585 | 12.3 KB | 41% |
+| 50-autonomous | 584 | 12.3 KB | 41% |
+| 55-openclaw-npm | 584 | 12.3 KB | 41% |
+| 60-persistence | 586 | 12.3 KB | 41% |
+| 25-python-agents | 589 | 12.3 KB | 41% |
+| 30-local-models | 591 | 12.5 KB | 42% |
+| 10-desktop-apps | 592 | 12.7 KB | 42% |
+| 40-browser | 590 | 12.8 KB | 43% |
+
+Installing agents barely moves the number. The payload is dominated by inventory the
+machine already had, so the marginal cost of a finding is close to nothing and the total
+is set by how loaded the Mac is.
+
+## Where the cap actually binds
+
+**Catalog growth is free.** The query holds no identifiers, so adding agents costs zero
+bytes. Verified rather than assumed: growing `catalog/agents.yaml` from 21 agents to 221
+left `dist/discovery.sql` byte-identical and the framed payload unchanged at 17868 bytes.
+Whatever limits this design, it is not how many agents we can name.
+
+**Inventory growth is not free**, and that is the real constraint. Measured by extending
+the reference Mac with structurally similar application rows:
+
+| total rows | framed EA | % of cap | marginal |
+|---|---|---|---|
+| 748 | 17.4 KB | 58% | — |
+| 998 | 25.4 KB | 85% | 32.6 B/row |
+| 1248 | 33.4 KB | 111% | 32.6 B/row |
+
+So the cap binds at roughly **1150 rows**, about 400 more than the reference Mac carries.
+Two real inventories concatenated — this Mac plus the hosted runner, 1338 rows — land at
+exactly **100%** of the cap. Headroom is real but it is not generous, and it is consumed
+by how loaded a machine is rather than by anything about AI.
+
+An earlier revision of this file put the marginal cost at 23 B/row and the ceiling near
+1300 rows. That came from measuring random subsets, which breaks up the runs of similar
+paths gzip exploits and understates the true marginal cost. Prefer the numbers above.
+
+### The lever, and why it is not simply pulled
+
+Applications dominate: **300 of 392 rows on the reference Mac are `/System/`**, stock
+macOS rather than anything installed. Dropping them takes 58% to 34% of the cap, and 43%
+to 19% on the runner. It is the single largest saving available and it is not a catalog
+match, so it looks free.
+
+It is not free. `/System/` carries `com.apple.GenerativePlaygroundApp`, `com.apple.Siri`,
+`com.apple.siri.launcher` and Shortcuts, which are exactly the first-party AI surface an
+AI-governance product should see. `browser.sql` already refused a blanket `com.apple.%`
+exclusion on this reasoning and excluded a single manifest by name instead, so a blanket
+exclusion here would contradict a decision this repo has already made deliberately.
+
+If the payload needs to come down, exclude `/System/` by an argued rule that keeps the
+Apple Intelligence surface, and record which bundles it keeps. Do not reach for the prefix.
+
+## Fleet cost, which is the real tradeoff
+
+EA values ride in every inventory submission and every `section=EXTENSION_ATTRIBUTES`
+response. At 10,000 Macs per full sync:
+
+| | per sync |
+|---|---|
+| filtered | 27 MB |
+| enumerated | 179 MB |
+
+That is the number to reject this design on, not the per-device cap. If it is
+unacceptable, the fallback is deliberately coarse matching -- vendor prefixes and name
+patterns rather than exact identifiers -- which keeps most of the benefit at a fraction of
+the size, and which is still not a catalog on the device.

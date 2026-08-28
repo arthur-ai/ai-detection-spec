@@ -2,19 +2,28 @@
   "description": "CLI coding agents - a native installer and an npm global.",
   "demo_beat": "step 1 - Claude Code and Codex CLI rows",
   "counts": {
-    "file": ">=1",
+    "file": ">=2",
     "npm": ">=1",
-    "app": 0,
-    "brew": 0,
-    "daemon": 0,
-    "port": 0,
-    "ext": 0,
-    "nmh": 0,
+    "app": ">=1",
+    "brew": ">=0",
+    "ext": ">=0",
+    "nmh": ">=0",
+    "daemon": ">=0",
+    "port": ">=0",
     "model": 0
   },
+  "classified": {
+    "must_find": [
+      "claude-code",
+      "codex-cli"
+    ],
+    "forbid": [
+      "openclaw"
+    ]
+  },
+  "why": "file >= 2 because Claude Code shows up twice under enumeration: the ~/.local/bin/ shim and the ~/.claude/ state dotdir. Both come from product-free globs now, which is the point -- the old query named the file 'claude' outright.",
   "must_contain": [
     "/.local/bin/claude",
     "@openai/codex"
-  ],
-  "why": "npm must stay at 1, not 800+. If it balloons, the nested-node_modules predicate has regressed and every transitive dependency is being reported."
+  ]
 }

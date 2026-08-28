@@ -4,17 +4,23 @@
   "counts": {
     "app": ">=1",
     "brew": ">=1",
-    "npm": 0,
-    "daemon": 0,
-    "port": 0,
-    "ext": 0,
-    "file": 0,
-    "nmh": 0,
+    "file": ">=1",
+    "npm": ">=0",
+    "ext": ">=0",
+    "nmh": ">=0",
+    "daemon": ">=0",
+    "port": ">=0",
     "model": 0
   },
+  "classified": {
+    "must_find": [
+      "openclaw"
+    ],
+    "forbid": []
+  },
+  "why": "The demo's punchline. must_find 'openclaw' is now the assertion that would have caught the bug that mattered most: the design said the bundle id was bot.molt.mac, the shipped app is ai.openclaw.mac, and under the old design the query matched nothing on any Mac while exiting 0. That identifier now lives in the catalog, where correcting it re-matches evidence already collected instead of needing a redeploy.",
   "must_contain": [
     "ai.openclaw.mac",
     "openclaw"
-  ],
-  "why": "ai.openclaw.mac is the REAL bundle id, read off a live 2026.7.1 install. The design said bot.molt.mac and that was wrong - it would have missed the demo's punchline on every Mac. The cask's zap stanza still lists bot.molt.mac paths, which is what misled us: zap enumerates artifacts to clean up including historical ones, so it is a superset of current identity, never a source for the bundle id. brew is >=1 because homebrew_packages DOES cover casks (it has a type column). daemon and port are 0 and are carried by 60-persistence: verified on a live install that OpenClaw registers no launchd job and no state dir until it is GUI-launched, which SSH cannot do."
+  ]
 }

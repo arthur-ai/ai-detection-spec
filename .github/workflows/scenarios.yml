@@ -33,12 +33,24 @@ jobs:
         run: |
           curl -fsSL -o /tmp/osquery.pkg https://pkg.osquery.io/darwin/osquery-5.23.1.pkg
           sudo installer -pkg /tmp/osquery.pkg -target /
+      # bin/classify reads the catalog, and assert.sh now runs it: since D20 the query
+      # enumerates and "did we find OpenClaw" is answered by the classifier, not by a
+      # row count.
+      - name: Install pyyaml
+        run: pip3 install --quiet --break-system-packages pyyaml || pip3 install --quiet pyyaml
+
       - name: Provision
         run: test/scenarios/${{ matrix.scenario }}/setup.sh
       - name: Query and assert
         run: |
           sudo -n /usr/local/bin/osqueryi --json < dist/discovery.sql > /tmp/out.json
           test/assert.sh /tmp/out.json test/scenarios/${{ matrix.scenario }}/expected.json
+
+      # Enumeration trades payload for not being wrong about the catalog, so the payload
+      # is now a number worth watching per scenario rather than once on a developer Mac.
+      - name: Measure the payload
+        if: always()
+        run: python3 tools/measure_payload.py /tmp/out.json
       - name: Keep the output
         if: always()
         uses: actions/upload-artifact@v4
