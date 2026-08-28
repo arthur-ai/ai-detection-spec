@@ -5,13 +5,19 @@
     "ext": ">=1",
     "nmh": ">=1",
     "app": ">=1",
-    "npm": 0,
     "brew": ">=1",
-    "daemon": 0,
-    "port": 0,
-    "file": 0,
+    "file": ">=1",
+    "npm": ">=0",
+    "daemon": ">=0",
+    "port": ">=0",
     "model": 0
   },
+  "classified": {
+    "forbid": [
+      "openclaw"
+    ]
+  },
+  "why": "browser.sql already enumerated before D20 and is unchanged by it. must_contain still carries the permission strings because those are raw evidence the collector needs, not catalog matches: '<all_urls>' is computed in SQL because recovering it from manifest_json costs 86.57 KB against a 30 KB budget, versus 30 bytes for the flag.",
   "must_contain": [
     "nativeMessaging",
     "NativeMessagingHosts",
@@ -19,7 +25,6 @@
     "scripting",
     "<all_urls>"
   ],
-  "why": "The nmh assertion is the regression test for the glob-depth defect. 'Application Support/Google/Chrome/NativeMessagingHosts' is TWO path components and a single % matches only one - the shipped form found Edge and silently missed Chrome, hiding the Claude browser bridge. '<all_urls>' is asserted again: it is NOT shipped via manifest_json, which measured 86.57 KB against a 30 KB budget, but computed as a flag in SQL for 30 bytes. The fixture manifest declares host_permissions ['<all_urls>'], so this asserts the flag fires on a real MV3 shape. brew is >=1 because the claude cask appears in homebrew_packages, which covers casks as well as formulae.",
   "known_gaps": [
     "The planted fixture returns an EMPTY identifier while the two real Chrome extensions return theirs. osquery derives identifier from the manifest key, which unpacked and sideloaded extensions do not carry. Sideloaded extensions are precisely the shadow-AI case, so the collector cannot assume identifier is a usable primary key - it must fall back to profile_path plus name."
   ]

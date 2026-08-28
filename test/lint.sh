@@ -107,6 +107,7 @@ python3 "$HERE/../tools/validate_catalog.py" || fail=1
 python3 "$HERE/../tools/build.py" --check || fail=1
 python3 "$HERE/../test/test_matcher.py" >/dev/null || { echo "FAIL: matcher tests"; fail=1; }
 python3 "$HERE/../tools/check_workflows.py" || fail=1
+python3 "$HERE/../tools/check_no_catalog.py" || fail=1
 
 [ "$fail" -eq 0 ] && echo "lint: PASS" || echo "lint: FAIL"
 exit "$fail"

@@ -141,7 +141,11 @@ def main():
                  "evidence": [r for _, r in hits]}
                 for aid, hits in sorted(findings.items())
             ],
-            "unmatched": unmatched if args.show_unmatched else [],
+            # Omitted rather than emitted empty when it was not computed. An empty
+            # list says "nothing was unclassified", which is a strong and usually
+            # wrong claim -- 686 rows on the reference Mac. A missing key makes a
+            # consumer ask for it instead of believing it.
+            **({"unmatched": unmatched} if args.show_unmatched else {}),
         }, sys.stdout, indent=2)
         print()
         return

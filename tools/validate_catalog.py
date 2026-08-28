@@ -8,6 +8,7 @@ pill, and an entry with no detection route at all is a catalog line that can nev
 match anything.
 """
 import pathlib
+import json
 import re
 import sys
 
@@ -66,12 +67,29 @@ def main():
         if not re.fullmatch(r"[a-z0-9-]+", str(aid)):
             errors.append(f"{aid}: id should be lowercase kebab-case")
 
+    # Scenario expectations name catalog agents by id. Those run on dispatch and on a
+    # schedule, not per pull request, so a typo'd id would sit undetected for as long as
+    # nobody triggers the matrix -- and would then fail as "agent not found", which reads
+    # like a broken query rather than a broken test. Check it here, where it runs in
+    # seconds on every push. 'comet' instead of 'perplexity-comet' is not hypothetical.
+    known = {a["id"] for a in doc["agents"]}
+    root = pathlib.Path(__file__).resolve().parent.parent
+    for path in sorted((root / "test" / "scenarios").glob("*/expected.json")):
+        block = json.loads(path.read_text()).get("classified", {})
+        for key in ("must_find", "forbid"):
+            for aid in block.get(key, []):
+                if aid not in known:
+                    errors.append(
+                        f"{path.parent.name}: classified.{key} names {aid!r}, "
+                        f"which is not an id in catalog/agents.yaml")
+
     if errors:
         print("catalog: FAIL")
         for e in errors:
             print(f"  {e}")
         sys.exit(1)
-    print(f"catalog: ok, {len(doc['agents'])} agents, {len(seen_route_values)} identifiers")
+    print(f"catalog: ok, {len(doc['agents'])} agents, {len(seen_route_values)} identifiers, "
+          f"scenario references resolve")
 
 
 if __name__ == "__main__":

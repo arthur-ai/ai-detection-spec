@@ -1,5 +1,5 @@
 -- name: packages
--- description: AI tooling installed through npm, Homebrew, pipx or uv
+-- description: Every npm global and every Homebrew formula and cask
 -- tables: npm_packages, homebrew_packages
 -- min-osquery: 5.10.0
 -- cost: fast
@@ -9,19 +9,22 @@
 -- Branches within this file are joined with UNION ALL, and the build joins files
 -- the same way. See CONTRIBUTING.md before changing the column list.
 
--- npm_packages recurses into each global's own node_modules: 883 rows -> 7 without this predicate.
-SELECT 'npm', name, version, path, '', '' FROM npm_packages
+-- ENUMERATE, DO NOT MATCH (D20). No package name appears below.
+--
+-- The name filter this replaces missed '@google/gemini-cli' and '@github/copilot',
+-- because they sit under vendor scopes rather than the '@anthropic-ai/' and '@openai/'
+-- globs it did check. That is the failure mode of a catalog on the device: it is wrong
+-- in exactly the places nobody thought to look, and silent about it.
+--
+-- The remaining predicate is STRUCTURAL, not a catalog. npm_packages recurses into each
+-- global's own node_modules, so a machine with seven globals returns 883 rows without it.
+SELECT 'npm' AS kind, name AS id, version AS ver, path AS loc, '' AS extra, '' AS perms
+  FROM npm_packages
   WHERE path NOT LIKE '%/node_modules/%/node_modules/%'
-    AND (name LIKE '@anthropic-ai/%' OR name LIKE '@openai/%' OR name LIKE '@modelcontextprotocol/%'
-         -- Scoped by vendor, so the @anthropic-ai/@openai globs above miss them. Named
-         -- explicitly rather than globbing @google/% or @github/%, which are mostly not AI.
-         OR name IN ('openclaw','moltbot','clawdbot','aider','cline','litellm','ollama','mcp',
-                     '@google/gemini-cli','@github/copilot'))
 UNION ALL
 -- homebrew_packages covers BOTH formulae and casks -- it has a `type` column returning
 -- 'formula' or 'cask', and cask rows carry a /opt/homebrew/Caskroom/... path. An earlier
 -- reading of this was wrong: a scenario installing an ollama formula AND an ollama-app
 -- cask returned one row, and we concluded casks were unmodelled rather than checking.
+-- `type` ships in `extra` so the collector can tell the install route apart.
 SELECT 'brew', name, version, path, type, '' FROM homebrew_packages
-  WHERE name IN ('ollama','ollama-app','aider','codex','gemini-cli','copilot-cli',
-                 'llama.cpp','openclaw','lm-studio','jan','claude','cursor')
