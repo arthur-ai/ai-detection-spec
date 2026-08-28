@@ -1,3 +1,6 @@
 artifacts/
 .DS_Store
+
+# Claude Code local state (worktrees, session scratch). Never part of the repo.
+.claude/
 .claude/worktrees/

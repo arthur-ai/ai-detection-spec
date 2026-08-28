@@ -25,6 +25,47 @@ QUERIES, DIST = ROOT / "queries", ROOT / "dist"
 COLUMNS = ["kind", "id", "ver", "loc", "extra", "perms"]
 
 
+def flatten(sql):
+    """Collapse SQL to one line for the pack, dropping -- comments first.
+
+    THE ORDER MATTERS AND IS THE WHOLE POINT. A `--` comment runs to end of LINE, so
+    flattening first and stripping never turns the first comment into a muzzle over
+    everything after it. That shipped: four of the five pack queries returned zero rows,
+    with no error, because the flattened string commented itself out after the first
+    branch. Zero rows is what a clean Mac returns, so the pack looked like it worked.
+
+    Quote-aware, because a literal could contain a double dash. None do today; a
+    stripper that assumed so would be a trap for whoever adds one.
+    """
+    out, in_string, i = [], False, 0
+    while i < len(sql):
+        ch = sql[i]
+        if in_string:
+            out.append(ch)
+            if ch == "'":
+                in_string = sql[i + 1:i + 2] == "'"   # '' is an escaped quote
+                if in_string:
+                    out.append("'")
+                    i += 1
+            i += 1
+            continue
+        if ch == "'":
+            in_string = True
+            out.append(ch)
+            i += 1
+            continue
+        if sql.startswith("--", i):
+            while i < len(sql) and sql[i] != "\n":
+                i += 1
+            continue
+        out.append(ch)
+        i += 1
+    flat = " ".join("".join(out).split())
+    if "--" in flat:
+        sys.exit(f"flatten left a comment in: {flat[:120]}")
+    return flat
+
+
 def frontmatter(text, path):
     """Read the `-- key: value` header. Absent keys are an error, not a default:
     a query with no declared cost silently escapes the performance gate."""
@@ -64,7 +105,7 @@ def main():
         fm = frontmatter(text, path)
         sql = body(text)
         pack[fm["name"]] = {
-            "query": " ".join(sql.split()).rstrip(";") + ";",
+            "query": flatten(sql).rstrip(";") + ";",
             "interval": 3600,
             "platform": fm["platform"],
             "description": fm["description"],

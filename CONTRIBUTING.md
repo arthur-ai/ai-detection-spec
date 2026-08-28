@@ -115,6 +115,7 @@ inherent. A `slow` query is fine; an undeclared one is not.
 ```console
 $ test/lint.sh                 # static checks, about a second, no VM
 $ tools/measure.py --check     # cost bands, needs osquery and a few seconds
+$ test/docker_states.sh        # container query against every daemon state, ~15s
 $ test/run.sh 00-baseline      # one scenario in a disposable macOS VM
 ```
 
