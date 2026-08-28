@@ -19,6 +19,8 @@ jobs:
         run: sudo apt-get update -qq && sudo apt-get install -y -qq zsh
       - name: Install pyyaml
         run: pip install --quiet pyyaml
+      - name: Install pyyaml for the catalog and matcher
+        run: pip install --quiet pyyaml
       - name: Static checks
         run: test/lint.sh
 
