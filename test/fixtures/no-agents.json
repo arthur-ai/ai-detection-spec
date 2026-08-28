@@ -1,0 +1,11 @@
+[
+  {"kind":"app","id":"com.apple.Safari","ver":"26.5","loc":"/Applications/Safari.app","extra":"","perms":""},
+  {"kind":"app","id":"com.google.Chrome","ver":"150.0","loc":"/Applications/Google Chrome.app","extra":"","perms":""},
+  {"kind":"brew","id":"cmake","ver":"3.30","loc":"/opt/homebrew/Cellar/cmake","extra":"formula","perms":""},
+  {"kind":"brew","id":"git-credential-manager","ver":"2.6","loc":"/opt/homebrew/Caskroom/git-credential-manager","extra":"cask","perms":""},
+  {"kind":"npm","id":"libxdmcp","ver":"1.0","loc":"/opt/homebrew/lib/node_modules/libxdmcp","extra":"","perms":""},
+  {"kind":"npm","id":"typescript","ver":"5.6","loc":"/opt/homebrew/lib/node_modules/typescript","extra":"","perms":""},
+  {"kind":"port","id":"8080","ver":"","loc":"/usr/bin/java","extra":"java","perms":""},
+  {"kind":"nmh","id":"com.1password.1password7.json","ver":"","loc":"/Library/Google/Chrome/NativeMessagingHosts/com.1password.1password7.json","extra":"","perms":""},
+  {"kind":"file","id":"/Users/dana/.config/","ver":"","loc":"/Users/dana/.config/","extra":"","perms":""}
+]

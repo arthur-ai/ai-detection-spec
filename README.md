@@ -20,8 +20,23 @@ This is that knowledge, as queries you can run and a catalog you can read.
 
 ```console
 $ brew install --cask osquery          # or https://osquery.io/downloads
-$ sudo osqueryi --json < dist/discovery.sql
+$ sudo osqueryi --json < dist/discovery.sql | bin/classify
 ```
+
+```
+Claude Code  [Coding agent]
+    file    /Users/dana/.local/bin/claude
+    file    /Users/dana/.claude/
+
+OpenClaw  [Personal agent]
+    app     ai.openclaw.mac  2026.7.1
+            /Applications/OpenClaw.app
+    daemon  ai.openclaw.gateway
+    port    18789
+```
+
+`bin/classify` joins the query output to `catalog/agents.yaml`. Run the query alone for raw
+inventory:
 
 Sample output from a developer Mac:
 

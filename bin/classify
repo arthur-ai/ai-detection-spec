@@ -1,0 +1,170 @@
+#!/usr/bin/env python3
+"""Turn osquery output into findings, using catalog/agents.yaml.
+
+    osqueryi --json < dist/discovery.sql | bin/classify
+
+This is the reference implementation of matching. It is deliberately small and meant
+to be read: if you want to know what a signature means, this is the answer, and any
+other implementation that disagrees with it is wrong.
+
+Standard library only, except PyYAML for the catalog.
+"""
+import argparse
+import json
+import os
+import pathlib
+import re
+import sys
+from collections import defaultdict
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+DEFAULT_CATALOG = ROOT / "catalog" / "agents.yaml"
+
+
+def load_catalog(path):
+    try:
+        import yaml
+    except ImportError:
+        sys.exit("PyYAML is required to read the catalog: pip install pyyaml")
+    return yaml.safe_load(pathlib.Path(path).read_text())
+
+
+def build_index(catalog):
+    """Map every catalog identifier to the agent that claims it.
+
+    Routes differ in how they match, and conflating them is how false positives
+    happen: `mcp` as an exact npm package name is a real signal, but `mcp` as a
+    substring also matches `libxdmcp`, an X11 library. Exact where exact is right.
+    """
+    exact, prefix, glob = {}, [], []
+    for agent in catalog["agents"]:
+        meta = {k: agent[k] for k in ("id", "name", "classification")}
+        for route in ("bundle_ids", "homebrew", "npm", "pypi"):
+            for value in agent.get(route, []):
+                if value.endswith("*"):          # e.g. @modelcontextprotocol/*
+                    prefix.append((value[:-1], route, meta))
+                else:
+                    exact[(route, value)] = meta
+        for value in agent.get("ports", []):
+            exact[("ports", str(value))] = meta
+        for route in ("launchd_prefixes",):
+            for value in agent.get(route, []):
+                prefix.append((value, route, meta))
+        for route in ("state_dirs", "binaries", "model_stores"):
+            for value in agent.get(route, []):
+                # ~/.openclaw matches /Users/<anyone>/.openclaw
+                glob.append((re.compile(r"^/Users/[^/]+/" + re.escape(value[2:])), route, meta))
+        for value in agent.get("native_messaging_hosts", []):
+            exact[("nmh", value)] = meta
+    return exact, prefix, glob
+
+
+def _corroborates(agent, row):
+    """Does the process holding this port look like the agent that claims it?"""
+    haystack = f"{row.get('loc', '')} {row.get('extra', '')}".lower()
+    needles = {agent["id"].replace("-", ""), agent["name"].lower().replace(" ", "")}
+    return any(n and n in haystack.replace("-", "").replace(" ", "") for n in needles)
+
+
+# Which osquery row kinds can satisfy which catalog routes. A bundle id never
+# appears in an npm row, so checking it there would only invite a coincidence.
+KIND_ROUTES = {
+    "app": ["bundle_ids"],
+    "brew": ["homebrew"],
+    "npm": ["npm", "pypi"],
+    "port": ["ports"],
+    "daemon": ["launchd_prefixes"],
+    "nmh": ["nmh"],
+    "file": ["state_dirs", "binaries", "model_stores"],
+}
+
+
+def classify(rows, catalog):
+    exact, prefix, glob = build_index(catalog)
+    findings, unmatched = defaultdict(list), []
+
+    for row in rows:
+        kind, ident, loc = row.get("kind"), row.get("id", ""), row.get("loc", "")
+        hit = None
+        for route in KIND_ROUTES.get(kind, []):
+            if (route, ident) in exact:
+                candidate = exact[(route, ident)]
+                # A port number alone is not a signature. 8080 is held by half the
+                # web servers ever written, and claiming llama.cpp for every one of
+                # them is a confident wrong finding on a large share of machines.
+                # Require the owning process to corroborate: `ollama` on 11434 is a
+                # finding, an unknown process on 11434 is a question for the
+                # collector, not an identification.
+                if route == "ports" and not _corroborates(candidate, row):
+                    continue
+                hit = candidate
+                break
+            for pre, proute, meta in prefix:
+                if proute == route and ident.startswith(pre):
+                    hit = meta
+                    break
+            if hit:
+                break
+            for pattern, proute, meta in glob:
+                if proute == route and (pattern.match(ident) or pattern.match(loc)):
+                    hit = meta
+                    break
+            if hit:
+                break
+        if hit:
+            findings[hit["id"]].append((hit, row))
+        elif kind in KIND_ROUTES:
+            unmatched.append(row)
+
+    return findings, unmatched
+
+
+def main():
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("input", nargs="?", help="osquery JSON; omit to read stdin")
+    ap.add_argument("--catalog", default=DEFAULT_CATALOG)
+    ap.add_argument("--json", action="store_true", help="machine-readable output")
+    ap.add_argument("--show-unmatched", action="store_true",
+                    help="also list rows no signature claimed")
+    args = ap.parse_args()
+
+    raw = pathlib.Path(args.input).read_text() if args.input else sys.stdin.read()
+    rows = json.loads(raw)
+    findings, unmatched = classify(rows, load_catalog(args.catalog))
+
+    if args.json:
+        json.dump({
+            "findings": [
+                {"id": aid, "name": hits[0][0]["name"],
+                 "classification": hits[0][0]["classification"],
+                 "evidence": [r for _, r in hits]}
+                for aid, hits in sorted(findings.items())
+            ],
+            "unmatched": unmatched if args.show_unmatched else [],
+        }, sys.stdout, indent=2)
+        print()
+        return
+
+    if not findings:
+        print("No AI agents found.")
+    for aid, hits in sorted(findings.items()):
+        meta = hits[0][0]
+        print(f"\n{meta['name']}  [{meta['classification']}]")
+        for _, row in hits:
+            detail = row.get("loc") or row.get("id")
+            ver = f"  {row['ver']}" if row.get("ver") else ""
+            print(f"    {row['kind']:7} {row.get('id','')}{ver}")
+            if detail and detail != row.get("id"):
+                print(f"            {detail}")
+
+    if args.show_unmatched and unmatched:
+        print(f"\nUnmatched ({len(unmatched)} rows no signature claimed):")
+        for row in unmatched:
+            print(f"    {row['kind']:7} {row.get('id','')}")
+
+    # Exit 0 either way. Finding nothing is a valid answer, not an error.
+
+
+if __name__ == "__main__":
+    main()
