@@ -12,7 +12,7 @@ Every query branch emits **six columns, in this order**:
 
 | # | Column | Meaning |
 |---|---|---|
-| 1 | `kind` | Row type: `app`, `npm`, `brew`, `daemon`, `port`, `ext`, `file`, `nmh`, `model` |
+| 1 | `kind` | Row type: `app`, `npm`, `brew`, `daemon`, `port`, `ext`, `file`, `nmh`, `model`, `image` |
 | 2 | `id` | The identifier: bundle id, package name, port, path |
 | 3 | `ver` | Version if statically readable, else `''` |
 | 4 | `loc` | Where it lives on disk |
@@ -24,6 +24,13 @@ query. `test/lint.sh` catches it in about a second. Run it first.
 
 Use `''` rather than `NULL` for a column a branch has nothing for. `NULL` propagates through
 string concatenation and silently empties whole rows.
+
+`image` is the one kind that is **not** in `dist/discovery.sql`. `containers.sql` is declared
+`expensive`, so the build puts it in `dist/ai-discovery.conf` only, and the scenario matrix does
+not exercise it — `KINDS` in `test/lint.sh` is the set every scenario must pin, and `image` is
+deliberately absent from it. `test/docker_states.sh` covers that branch instead, against a fake
+socket in every daemon state. Add a kind to both places when it belongs in the composed query;
+add it here only when it does not.
 
 ## Adding a signature
 

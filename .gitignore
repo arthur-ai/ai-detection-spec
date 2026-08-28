@@ -2,5 +2,9 @@ artifacts/
 .DS_Store
 
 # Claude Code local state (worktrees, session scratch). Never part of the repo.
-.claude/
-.claude/worktrees/
+# Skills ARE: .claude/skills/release encodes how a release is cut, and it is version
+# controlled with the process it describes. The glob is `.claude/*` rather than
+# `.claude/`, because git will not descend into an excluded directory to honour a
+# negation inside it.
+.claude/*
+!.claude/skills/
