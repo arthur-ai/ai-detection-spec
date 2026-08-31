@@ -166,7 +166,12 @@ jobs:
       # payload, and the scenarios job that normally covers this runs only on main.
       - name: The classifier reads the payload
         run: |
-          pip install --quiet pyyaml
+          # `python3 -m pip`, not `pip`: on this runner they are different interpreters, and
+          # bin/classify's shebang is `env python3`. Installing with bare `pip` put PyYAML
+          # somewhere classify could not see it and the step failed with "PyYAML is
+          # required". --break-system-packages first, per scenarios.yml's precedent.
+          python3 -m pip install --quiet --break-system-packages pyyaml \
+            || python3 -m pip install --quiet pyyaml
           bin/classify /tmp/inv.json > /tmp/classified.txt
           cat /tmp/classified.txt
           python3 - <<'EOF'
