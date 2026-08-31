@@ -402,6 +402,31 @@ check "a rewrite produces a new inode" "$([ "$ino1" != "$ino2" ] && echo 1 || ec
 stop_fake
 rm -f "$CACHE"
 
+echo "  a stripped environment does not turn into a wrong answer"
+# FOUND BY SIMULATING launchd, WHICH IS THE PATH THIS DEPLOYS ON. A LaunchDaemon is not
+# guaranteed to set HOME, and docker_socket_path expanded $HOME and ${DOCKER_HOST#unix://}
+# unguarded -- fatal under `set -u`. The failure was not visible as a crash: the function
+# runs inside a command substitution, so the unbound variable killed only the subshell, the
+# `||` branch ran, and the scan reported `absent` on a Mac that HAD a socket.
+#
+# DOCKER_SOCKET rather than --socket, deliberately: --socket bypasses docker_socket_path
+# entirely and would not exercise the bug at all.
+start_fake healthy
+stripped=$(env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin OSQI="$OSQI" DOCKER_SOCKET="$SOCK" \
+           /bin/bash "$ROOT/bin/container-scan" 2>/dev/null); rc=$?
+check "exit 0 with no HOME in the environment" "$([ "$rc" = 0 ] && echo 1 || echo 0)" \
+      "got $rc -- an unguarded \$HOME reports 'absent' here instead of scanning"
+check "the images are found, not reported absent" \
+      "$(printf '%s' "$stripped" | python3 -c "
+import json, sys
+try: rows = json.load(sys.stdin)
+except Exception: print(0); raise SystemExit
+imgs = [r for r in rows if r['kind'] == 'image']
+gaps = [r for r in rows if r['kind'] == 'scan' and r['extra'] != 'ok']
+print(1 if imgs and not gaps else 0)" 2>/dev/null)" \
+      "got: $(printf '%s' "$stripped" | head -c 120)"
+stop_fake
+
 echo "  one broken branch costs one branch"
 # THE RELIABILITY CLAIM the independent writer exists for. Composed, one unavailable table
 # returns zero rows for the WHOLE inventory; run apart, it costs its own branch and nothing

@@ -92,10 +92,22 @@ osqueryi_path() {
 # and Podman (/var/run/podman/podman.sock) are not looked for, and docker_images does not
 # read containerd or Podman image stores anyway. On those Macs this reports "did not scan",
 # which is the honest answer and is recorded as a blind spot in README.md.
+# EVERY VARIABLE HERE IS GUARDED, and the two that were not produced a wrong answer rather
+# than an error. Under `set -u`, `$HOME` and `${DOCKER_HOST#unix://}` are fatal when unset --
+# and a LaunchDaemon is not guaranteed either one. The failure was not a crash a reader would
+# notice: this function runs inside `sock="$(docker_socket_path)"`, so the unbound variable
+# killed only the command substitution, the `||` branch ran, and the scan reported
+# `containers=absent` on a Mac that has /var/run/docker.sock. A plausible answer, produced by
+# a crash, on the exact path this is deployed on. Reproduced with:
+#
+#   env -i PATH=/usr/bin:/bin OSQI=... bin/discover --write /tmp/x.json
+#
+# test/docker_states.sh pins it.
 docker_socket_path() {
-  local c
-  for c in "${DOCKER_SOCKET:-}" "${DOCKER_HOST#unix://}" /var/run/docker.sock \
-           "$HOME/.docker/run/docker.sock" \
+  local c host="${DOCKER_HOST:-}"
+  host="${host#unix://}"
+  for c in "${DOCKER_SOCKET:-}" "$host" /var/run/docker.sock \
+           "${HOME:-/var/root}/.docker/run/docker.sock" \
            ${SUDO_USER:+"/Users/$SUDO_USER/.docker/run/docker.sock"}; do
     [ -n "$c" ] && [ -S "$c" ] && { printf '%s\n' "$c"; return 0; }
   done

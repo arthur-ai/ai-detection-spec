@@ -71,6 +71,16 @@
          /var/run/docker.sock on a Docker Desktop Mac is owned by the installing user.
          bin/container-scan looks under the invoking user's home and SUDO_USER for the
          per user socket. -->
+    <!-- HOME is set explicitly because launchd does not guarantee it for a daemon, and
+         bin/container-scan looks under it for Docker Desktop's per user socket. The script
+         defaults to /var/root when HOME is unset, so this is belt and braces rather than
+         load bearing; it is here so a reader of this file does not have to know that. -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>HOME</key>
+        <string>/var/root</string>
+    </dict>
+
     <key>ProcessType</key>
     <string>Background</string>
     <key>Nice</key>
