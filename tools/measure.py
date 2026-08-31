@@ -4,10 +4,14 @@
     tools/measure.py            measure and print
     tools/measure.py --check    fail if any query exceeds its declared band
 
-A query must be fast in its WORST state, not its typical one. An Extension Attribute
-gets roughly ten seconds and 30KB; overrun either and the machine reports nothing,
-which is indistinguishable from a machine with nothing on it. Performance decides
-whether a device is seen at all.
+A query must be fast in its WORST state, not its typical one. A synchronous reporting
+path gives it seconds, and a value channel gives it kilobytes; overrun either and the
+machine reports nothing, which is indistinguishable from a machine with nothing on it.
+Performance decides whether a device is seen at all.
+
+The 10s gate below is SELF-IMPOSED. No macOS management tool documents a per-script
+timeout that we could find, so it is a budget chosen to keep collection brisk, not a
+platform limit.
 
 The failure this exists to catch is a query that blocks on an external dependency.
 A `docker_images` branch cost 0.35s with Docker absent and 10.4s with Docker
@@ -120,10 +124,10 @@ def main():
                     "seconds": round(total, 2), "rows": total_rows,
                     "over_budget": total > 10.0})
     if total > 10.0:
-        failures.append(f"dist/discovery.sql: {total:.2f}s exceeds the 10s Extension Attribute budget")
+        failures.append(f"dist/discovery.sql: {total:.2f}s exceeds the self-imposed 10s budget")
 
     # The deep artifact, measured against the bound bin/container-scan gives it rather than
-    # against the EA budget. It is a separate process and a separate Extension Attribute,
+    # against the composed budget. It is a separate process with its own bound,
     # so 10s is not its ceiling -- the wall clock is, and a deep artifact that cannot
     # finish inside its own bound on the ABSENT case is broken for a different reason than
     # a slow one.

@@ -19,18 +19,16 @@ event. Enforced at the same number, the boundary case flaps: `apps.sql` measured
 teaches people to re-run it, and then a real stall gets re-run too. 2x absorbs runner
 variance and is still five times below the 10.2s stall this exists to catch.
 
-The composed `dist/discovery.sql` is gated at 10s, and **that number is ours, not Jamf's.**
+The composed `dist/discovery.sql` is gated at 10s, and **that number is self-imposed.**
 
-An earlier version called 10s "the Extension Attribute's actual limit". It is not. No
-documented Jamf timeout for an EA script could be found, and the evidence runs the other way:
-Dan Snelson's EA audit optimises one that took **21 seconds**, and Jamf Nation is full of
-`jamf recon` *stalling* rather than being cut off. An unbounded EA does not fail fast — it
-hangs that Mac's inventory collection.
+An earlier version of this file called it a platform limit. It is not: no macOS management
+tool we checked documents a per-script timeout, and the evidence runs the other way — scripts
+measured at 21 seconds, and inventory collection *stalling* rather than being cut off. An
+unbounded collection script does not fail fast; it hangs that machine's inventory.
 
-So the gate stays, as a convention: 10s keeps recon brisk, and the real requirement is that
-nothing on the reporting path can block forever. The 30KB value cap is separate and is real.
-The better answer is not to run a blocking query during recon at all — see the scheduled
-writer below.
+So the gate stays as a convention: 10s keeps collection brisk, and the real requirement is
+that nothing on a synchronous reporting path can block forever. The better answer is not to
+run a blocking query on that path at all — see the scheduled writer below.
 
 ## CI baseline
 
@@ -87,7 +85,7 @@ self-hosted run.
 If your query touches a daemon, socket or external service, measure it stopped and
 mid-startup before you trust either table above.
 
-## The container scan, and why it is its own Extension Attribute
+## The container scan, and why it runs in its own process
 
 `bin/container-scan` is the only supported way to run `dist/discovery-deep.sql`. It carries
 the two things SQL cannot express: a round trip demanding HTTP 200, and a wall-clock kill.
@@ -124,8 +122,8 @@ row says which happened.
 | inventory EA (`bin/discover`) | 1.10s | 1.10s | 1.10s |
 | container EA (`bin/container-scan`) | 7.36s | 0.51s | — |
 
-Jamf's ten seconds and 30KB are **per Extension Attribute**, not a shared pool. Split, each
-half gets its own budget and neither can blank the other.
+Where a consumer's budgets are **per value** rather than a shared pool, splitting gives each
+half its own and neither can blank the other. Check whether yours are.
 
 **Scope the container EA to Macs that have Docker.** A Mac with none returns a marker row in
 0.18s, which is correct and is also 10,000 rows of "no Docker here" per full sync on a fleet
@@ -154,12 +152,12 @@ repo emits.**
 ### The scheduled writer, which is the recommended deployment
 
 Nothing upstream will bound us, so the fix is not a faster blocking call but not making one
-while something waits. `bin/discover --write` runs on a schedule; the endpoint reads the file
-with `cat`. `deploy/com.arthur.ai-discovery.plist` is the launchd job.
+while something waits. `bin/discover --write` runs on a schedule and whatever collects reads
+the file. The schedule itself belongs to your management stack, not to this repo.
 
 | path | cost | can it block? |
 |---|---|---|
-| `cat /var/lib/arthur/inventory.json` | **0.09s** | no |
+| `cat` of the written file | **0.09s** | no |
 | `bin/discover` (live, composed) | 1.19s | not today; one added daemon-touching branch and yes |
 | `bin/discover --deep` (live, wedged Docker) | 8.64s | bounded at the cost of the whole budget |
 | `bin/discover --write` (the scheduled job) | 4.16s | nothing is waiting for it |
@@ -237,7 +235,8 @@ transfer.
 
 Enumeration (D20) trades payload for not being wrong about the catalog. The Extension
 Attribute cap is roughly 30KB, so the trade only holds if the payload fits, and these are
-the numbers it was accepted on. Framing is `arthur1.<base64(gzip(json))>`.
+the numbers it was accepted on. Framed sizes below are gzip plus base64, which is what a
+value channel with a size limit will cost you.
 
 `tools/measure_payload.py` prints this per scenario on every Scenarios run. It fails over
 the cap and warns above 80%.

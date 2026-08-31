@@ -147,59 +147,54 @@ name is chosen by whoever tagged it**, which no other route here is true of: `do
 alpine ollama/ollama` produces an Ollama finding and nothing can tell it from the real image.
 Read an image row as weaker evidence than a bundle id.
 
-## Integrating with an endpoint tool
+## Running it on a fleet
 
-**A scheduled job writes files, and your tool reads them with `cat`.** Nothing on the
-reporting path touches a daemon, so nothing on the reporting path can block.
-
-**`dist/jamf-collect.sh` needs no package.** It is one self-contained file — `bin/` and
-`dist/` ride inside it as an embedded payload — so an MDM that can host a script and run it
-on a schedule needs nothing else. No package, no code signing, no notarization, no PPPC
-profile. It installs nothing: the payload is extracted to a temp directory, run, and deleted.
+**Do not put these queries on a synchronous reporting path.** `docker_images` has no timeout
+of its own, and against a daemon that accepts the connection and never answers the query does
+not return — so anything that runs it while something waits for the answer can hang rather
+than fail. Run it on a schedule and read the result:
 
 ```console
-# your MDM hosts this one file and runs it on a schedule: a Jamf Policy, a Kandji Custom
-# Script, an Intune shell script, a Munki postflight
-$ sudo /bin/bash dist/jamf-collect.sh
-ok 2026-08-31T19:43:23Z rows=775 apps=ok browser=ok containers=ok …
+# on a schedule, as root
+$ bin/discover --write /var/lib/ai-discovery/inventory.json \
+               --status /var/lib/ai-discovery/status.txt
 
-# then, from an Extension Attribute, custom fact, or agent
-$ cat /var/lib/arthur/inventory.ea      # 19 KB, fits a 30 KB attribute
-$ cat /var/lib/arthur/inventory.json    # 121 KB, the readable form
-$ cat /var/lib/arthur/status.txt        # one line, for a smart group
+# from wherever you collect, whenever you like
+$ cat /var/lib/ai-discovery/inventory.json
+$ cat /var/lib/ai-discovery/status.txt
 ```
 
-Measured cold, from a directory containing nothing but the script and under a stripped
-environment: 4.3s.
+Each branch runs in its own bounded process on the write path, which is a reliability choice:
+one unavailable table costs one branch rather than the whole inventory. Composed into a single
+statement it returns zero rows and a valid empty JSON array, which a consumer cannot tell from
+a clean machine.
 
-`.json` is the payload as rows; `.ea` is the same rows as `arthur1.<base64(gzip(json))>` on
-one line. **Report the `.ea` file** — raw JSON is 394% of a 30 KB attribute cap. Framing needs
-an interpreter, which is why the scheduled job does it and the reporting path stays a `cat`.
+`status.txt` is one line, and its vocabulary is a contract:
 
-**If you prefer a package**, `deploy/com.arthur.ai-discovery.plist` runs the same thing from a
-LaunchDaemon, which decouples the schedule from your MDM's check-in. It costs a build step and
-a signing identity, and writes the same three files.
-
-Each payload carries one dated `kind=scan` row per branch, because a reader that can only
-`cat` cannot check a file's mtime:
-
-```json
-{"kind":"scan","id":"containers","ver":"1788199567","loc":"/var/run/docker.sock","extra":"ok"}
+```
+ok 2026-08-31T20:30:29Z rows=775 apps=ok browser=ok containers=ok filesystem=ok packages=ok runtime=ok
 ```
 
-`extra` is `ok`, `absent`, `unhealthy:<http-code>`, `timeout:<seconds>`, `error` or
-`no-cache`. **Judge freshness on `ver`, not on the file's mtime** — redeploying the file
-resets the mtime and not the truth. `bin/classify` prints `STALE:` past a day.
+`ok`, `absent`, `unhealthy:<http-code>`, `timeout:<seconds>`, `error`, `no-cache`,
+`stale:<seconds>`. Every payload also carries one dated `kind=scan` row per branch with the
+same value, so a consumer that only has the JSON still knows which branches ran and when.
 
-**Each branch runs in its own process** on the write path, and that is a reliability choice:
-one unavailable table costs one branch instead of the whole inventory. Composed, it returns
-zero rows and a valid empty array.
+**Judge freshness on that timestamp, not the file's mtime** — redeploying a file resets the
+mtime without changing the truth.
 
-**If your tool runs scripts asynchronously**, skip the file and let it run `bin/discover
---deep` directly. The file exists to decouple a call that can block from a reporting path
-that is synchronous. What you must not do is put an unbounded query on a synchronous path.
+### What a deployment has to supply
 
-`deploy/com.arthur.ai-discovery.plist` carries the install and uninstall steps in its header.
+This repo ships osquery materials: the queries, the runner, the guard and the bound. The parts
+that belong to *your* management stack are deliberately not here, because they differ per
+consumer and would rot in a public repo:
+
+- **A schedule** — a launchd job, an MDM policy, cron.
+- **Transport** — whatever moves the file to wherever you read it.
+- **Framing**, if your channel has a size or encoding limit. Compressing the JSON is usually
+  enough; on a reference Mac 121 KB of rows becomes about 19 KB.
+- **Classification at scale.** `bin/classify` is the reference implementation and answers "what
+  is on this Mac". For a fleet, collect the rows and match them where the catalog lives, so
+  that adding a signature re-matches evidence you already hold instead of requiring a re-scan.
 
 ## Contributing
 

@@ -176,61 +176,6 @@ if len(expensive) > 1:
     sys.exit(1)
 print(f"expensive queries: {len(expensive)} ({expensive[0] if expensive else 'none'})")
 PY
-# The generated self-contained collector. A syntax error in it is invisible until someone
-# pastes it into Jamf, because it is generated rather than written -- nothing else in this
-# repo bash -n's a build output.
-python3 - "$HERE/.." <<'COLLECTOR' || fail=1
-import os, subprocess, sys
-path = os.path.join(sys.argv[1], "dist", "jamf-collect.sh")
-if not os.path.exists(path):
-    print("FAIL: dist/jamf-collect.sh missing. Run tools/build.py."); sys.exit(1)
-text = open(path).read()
-if subprocess.run(["bash", "-n", path], capture_output=True).returncode:
-    print("FAIL: dist/jamf-collect.sh is not valid bash"); sys.exit(1)
-for need in ("ARTHUR_PAYLOAD_EOF", "bin/discover", "--framed", "--status"):
-    if need not in text:
-        print(f"FAIL: dist/jamf-collect.sh does not mention {need!r}"); sys.exit(1)
-# The payload must not contain the collector, or every build embeds the last one and the
-# file grows without bound.
-if text.count("ARTHUR_PAYLOAD_EOF") != 2:
-    print("FAIL: dist/jamf-collect.sh has a nested payload marker"); sys.exit(1)
-if os.stat(path).st_size > 200 * 1024:
-    print(f"FAIL: dist/jamf-collect.sh is {os.stat(path).st_size // 1024}KB -- it may be "
-          f"embedding a previous copy of itself"); sys.exit(1)
-if not os.access(path, os.X_OK):
-    print("FAIL: dist/jamf-collect.sh is not executable"); sys.exit(1)
-print(f"collector: ok, {os.stat(path).st_size // 1024}KB, valid bash, one payload")
-COLLECTOR
-
-# The LaunchDaemon that ships in deploy/. Strict XML, because plutil accepts things a
-# config-management tool will not: an XML comment may not contain a double hyphen, and the
-# first draft of this plist was full of them. plistlib is used rather than plutil so this
-# runs on the Linux lint job too.
-python3 - "$HERE/.." <<'PLIST' || fail=1
-import glob, os, plistlib, sys
-found = sorted(glob.glob(os.path.join(sys.argv[1], "deploy", "*.plist")))
-if not found:
-    print("FAIL: no plist in deploy/"); sys.exit(1)
-for path in found:
-    name = os.path.basename(path)
-    try:
-        with open(path, "rb") as fh:
-            d = plistlib.load(fh)
-    except Exception as e:
-        print(f"FAIL: {name}: {type(e).__name__}: {e}"); sys.exit(1)
-    missing = {"Label", "ProgramArguments", "StartInterval", "RunAtLoad"} - set(d)
-    if missing:
-        print(f"FAIL: {name}: missing {sorted(missing)}"); sys.exit(1)
-    argv = d["ProgramArguments"]
-    # The job must actually write something, or the reporting path has nothing to cat.
-    if "--write" not in argv:
-        print(f"FAIL: {name}: ProgramArguments does not write a payload: {argv}"); sys.exit(1)
-    if not d["RunAtLoad"]:
-        print(f"FAIL: {name}: RunAtLoad is false, so a freshly installed Mac reports "
-              f"no-cache until the first interval elapses"); sys.exit(1)
-    print(f"plist: ok, {name} -> {' '.join(argv[0].split('/')[-1:] + argv[1:])}")
-PLIST
-
 python3 "$HERE/../tools/validate_catalog.py" || fail=1
 python3 "$HERE/../tools/build.py" --check || fail=1
 python3 "$HERE/../test/test_matcher.py" >/dev/null || { echo "FAIL: matcher tests"; fail=1; }

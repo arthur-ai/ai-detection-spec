@@ -290,9 +290,9 @@ print(1 if any(',' in r['id'] for r in rows) else 0)" 2>/dev/null)" \
 stop_fake
 
 echo "  bin/container-scan end to end against wedge"
-# The string a Jamf Extension Attribute would upload, which is what a smart group reads.
-# Jamf records stdout and discards the exit status, so [] here would be the same value a
-# Mac with no containers reports -- and every guard above would have worked for nothing.
+# The string a consumer would record, which is what any grouping is built on. A consumer that
+# keeps stdout and discards the exit status sees [] here as the same value a machine with no
+# containers reports -- and every guard above would have worked for nothing.
 start_fake wedge
 out=$(OSQI="$OSQI" "$ROOT/bin/container-scan" --socket "$SOCK" --scan-timeout 2 2>/dev/null)
 rc=$?
