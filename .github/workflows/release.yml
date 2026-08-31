@@ -63,10 +63,22 @@ jobs:
           fi
 
       # --clobber replaces whatever was attached to the draft by hand. A consumer pins a
-      # tag and downloads these two files; they are the deliverable, not a convenience.
+      # tag and downloads these files; they are the deliverable, not a convenience.
+      #
+      # The three dist/ files are rebuilt from queries/ at the tagged commit above, so they
+      # are derived from the tagged source by construction. bin/* are NOT generated -- they
+      # come from the checkout, and the tag-is-on-main check is the whole of their
+      # provenance.
+      #
+      # bin/container-scan resolves dist/discovery-deep.sql relative to its own parent
+      # directory, and bin/discover sources bin/container-scan. Downloaded loose into one
+      # folder they will not find each other: the layout is bin/ and dist/ side by side, as
+      # in the repo. Say so in the release notes.
       - name: Attach the artifacts
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release upload "${{ github.event.release.tag_name }}" \
-            dist/discovery.sql dist/ai-discovery.conf --clobber
+            dist/discovery.sql dist/discovery-deep.sql dist/ai-discovery.conf \
+            bin/discover bin/container-scan bin/classify \
+            deploy/com.arthur.ai-discovery.plist --clobber

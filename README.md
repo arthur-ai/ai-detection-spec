@@ -16,12 +16,41 @@ installer. None of it is written down anywhere.
 
 This is that knowledge, as queries you can run and a catalog you can read.
 
+## Requirements
+
+| | Minimum | Tested on |
+|---|---|---|
+| macOS | Apple Silicon or Intel. **No lower bound established** — see below | 15.7.7 (CI) and 26 |
+| osquery | **5.10.0** — every query declares it in `min-osquery:` | 5.23.1 |
+| `bash` | 3.2 — macOS system `bash`, so `/bin/bash` is enough | 3.2.57 |
+| `python3` | **3.7** (`subprocess` `capture_output`) — for `bin/classify`, `bin/discover`'s writer, and `tools/` | 3.12 |
+| `curl` | System `curl`. Only used to health-probe the Docker socket | — |
+| PyYAML | Only for `bin/classify` and `tools/validate_catalog.py`, which read the catalog | — |
+| Docker | Optional, and only for container images | Docker Desktop 28.4.0 |
+
+Running the queries needs **osquery alone**. `python3` and PyYAML are for the classifier and
+the scheduled writer, not the endpoint's reporting path — which is a `cat`.
+
+`sudo` is needed because some tables read other users' home directories. Without it you see
+only your own account.
+
+**Two cautions on the table above.** The macOS row says *no lower bound established* rather
+than naming one: these queries are tested on the two versions listed and nothing older, so a
+floor would be a guess. And on a fleet, `/usr/bin/python3` is a **stub** until Command Line
+Tools are installed — on a Mac without them the scheduled writer produces nothing at all,
+which surfaces as `no-cache` rather than as an error.
+
 ## Quickstart
 
 ```console
 $ brew install --cask osquery          # or https://osquery.io/downloads
 $ sudo osqueryi --json < dist/discovery.sql | bin/classify
+$ sudo bin/discover --deep | bin/classify     # the same, plus container images
 ```
+
+For a fleet, do not run either of those on a synchronous reporting path — schedule
+`bin/discover --write` and `cat` the file. See [Integrating with an endpoint
+tool](#integrating-with-an-endpoint-tool).
 
 ```
 Claude Code  [Coding agent]
@@ -77,11 +106,88 @@ Stated plainly, because a discovery tool that hides its blind spots is worse tha
 
 | Blind spot | Why |
 |---|---|
-| Anything inside a VM or container | The queries see the host filesystem, not a guest's |
+| Anything inside a VM | The queries see the host filesystem, not a guest's |
+| What is *running* in a container | `--deep` lists container **images**, and an image named `ollama/ollama` is evidence. What a running container is doing is not: `docker_containers` needs a per-container inspect document osquery reads strictly, and a hand-built one it merely accepts is worse than none |
+| Containers outside Docker Desktop | Colima, Rancher Desktop and Podman keep their sockets elsewhere, and `docker_images` does not read containerd or Podman image stores at all. On those Macs `--deep` says "did not scan" rather than "none" |
+| An untagged (dangling) image | Whether `docker_images` reports one is untested — no dangling image could be produced on the machine this was measured on. Treat it as unknown, not as covered |
 | Agents on a cloud dev box or Codespace | Same reason. The scanner sees the machine it runs on |
 | Which filesystem roots an MCP server exposes | Requires parsing arbitrary JSON config; osquery has no table for it |
 | Outbound destinations by hostname | `process_open_sockets` returns an IP, not a name |
 | A cloned-but-never-run source checkout | Nothing has been created on disk yet |
+
+## Containers
+
+An agent in a container is invisible to every other query here — no `.app` bundle, no
+Homebrew entry, no npm global, no dotdir on the host. This is the only branch that sees it,
+and it is opt-in because it is the only part of this that talks to a daemon.
+
+```console
+$ sudo bin/discover --deep | bin/classify     # base inventory plus container images
+$ sudo bin/container-scan --pretty            # containers alone
+```
+
+**Why opt-in.** `docker_images` has no timeout of its own, and against a daemon that accepts
+the connection and never answers — Docker Desktop mid-startup, or installed and not opened
+today — the query never returns. osquery offers no way to bound it, so the only bound is a
+kill on the process. That is why the branch ships as its own artifact
+(`dist/discovery-deep.sql`) run by its own process: bounded there, it costs the container
+rows; bounded inside the composed query it costs six of the ten seconds and reports success
+anyway. `queries/COST.md` has the measurements.
+
+`bin/container-scan` reports which happened in its exit code — `0` scanned, `2` did not scan,
+`3` asked and gave up, `1` could not run — and, on every outcome, in a `kind=scan` row. That
+row is not decoration: an interrupted `osqueryi` exits 0 having printed a valid empty array,
+so without it a wedged daemon and a Mac with no containers produce the same value.
+`bin/classify` prints it as `COULD NOT LOOK` above the findings.
+
+Image names resolve through the `images:` catalog route — exact match on the repository, tag
+stripped, `docker.io/` and Docker Hub's implicit `library/` removed, registry host kept for
+everything else. Four agents carry one: `ollama`, `litellm`, `llama-cpp`, `aider`. **An image
+name is chosen by whoever tagged it**, which no other route here is true of: `docker tag
+alpine ollama/ollama` produces an Ollama finding and nothing can tell it from the real image.
+Read an image row as weaker evidence than a bundle id.
+
+## Integrating with an endpoint tool
+
+**Run a scheduled job that writes a file, and have your tool read the file.** Nothing on the
+reporting path touches a daemon, so nothing on the reporting path can block.
+
+```console
+# once, as root
+$ install -d -m 755 /usr/local/arthur && cp -R bin dist catalog /usr/local/arthur/
+$ cp deploy/com.arthur.ai-discovery.plist /Library/LaunchDaemons/
+$ launchctl bootstrap system /Library/LaunchDaemons/com.arthur.ai-discovery.plist
+
+# then, from a Jamf EA, Kandji custom fact, Intune script, Munki condition, or an agent
+$ cat /var/lib/arthur/inventory.ea      # 18 KB, fits a 30 KB attribute
+$ cat /var/lib/arthur/inventory.json    # 118 KB, the readable form
+```
+
+The writer emits both: `.json` is the payload as rows, `.ea` is the same rows as
+`arthur1.<base64(gzip(json))>` on one line. **Report the `.ea` file** — raw JSON is 394% of a
+30 KB attribute cap. Framing needs an interpreter, which is why the scheduled job does it and
+the reporting path stays a `cat`.
+
+Each payload carries one dated `kind=scan` row per branch, because a reader that can only
+`cat` cannot check a file's mtime:
+
+```json
+{"kind":"scan","id":"containers","ver":"1788199567","loc":"/var/run/docker.sock","extra":"ok"}
+```
+
+`extra` is `ok`, `absent`, `unhealthy:<http-code>`, `timeout:<seconds>`, `error` or
+`no-cache`. **Judge freshness on `ver`, not on the file's mtime** — redeploying the file
+resets the mtime and not the truth. `bin/classify` prints `STALE:` past a day.
+
+**Each branch runs in its own process** on the write path, and that is a reliability choice:
+one unavailable table costs one branch instead of the whole inventory. Composed, it returns
+zero rows and a valid empty array.
+
+**If your tool runs scripts asynchronously**, skip the file and let it run `bin/discover
+--deep` directly. The file exists to decouple a call that can block from a reporting path
+that is synchronous. What you must not do is put an unbounded query on a synchronous path.
+
+`deploy/com.arthur.ai-discovery.plist` carries the install and uninstall steps in its header.
 
 ## Contributing
 

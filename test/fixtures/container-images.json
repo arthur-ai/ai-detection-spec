@@ -1,0 +1,74 @@
+[
+  {
+    "kind": "image",
+    "id": "ghcr.io/berriai/litellm:main-latest",
+    "ver": "",
+    "loc": "846795f2a2b5787ce2155170fd33b9ae886fd925f26635424ee613d53ece2fa4",
+    "extra": "1663809740",
+    "perms": ""
+  },
+  {
+    "kind": "image",
+    "id": "ghcr.io/ggml-org/llama.cpp:server",
+    "ver": "",
+    "loc": "c3728b9ba0c4c427770eec092fdb1bab1e86e811d578b27440771b8b3207f2c7",
+    "extra": "1182794759",
+    "perms": ""
+  },
+  {
+    "kind": "image",
+    "id": "ghcr.io/ggml-org/llama.cpp:probe,ghcr.io/ggml-org/llama.cpp:server",
+    "ver": "",
+    "loc": "c3728b9ba0c4c427770eec092fdb1bab1e86e811d578b27440771b8b3207f2c7",
+    "extra": "1182794759",
+    "perms": ""
+  },
+  {
+    "kind": "image",
+    "id": "alpine:3.20,localbuild-probe:latest",
+    "ver": "",
+    "loc": "d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc",
+    "extra": "13580309",
+    "perms": ""
+  },
+  {
+    "kind": "image",
+    "id": "authzed/spicedb:latest",
+    "ver": "",
+    "loc": "f2ba6c78b6c5bfc465d975ef5c0b8f7f4dce57049c3c02fd1f3155be819895f7",
+    "extra": "26908921",
+    "perms": ""
+  },
+  {
+    "kind": "image",
+    "id": "public.ecr.aws/docker/library/python:3.12.8-slim-bookworm",
+    "ver": "",
+    "loc": "2199a62885a12290dc9c5be3ca0681d367576ab7bf037da120e564723292a2f0",
+    "extra": "397377540",
+    "perms": ""
+  },
+  {
+    "kind": "image",
+    "id": "docker.io/ollama/ollama:latest",
+    "ver": "",
+    "loc": "0000000000000000000000000000000000000000000000000000000000000000",
+    "extra": "4500000000",
+    "perms": ""
+  },
+  {
+    "kind": "image",
+    "id": "myorg/ollama-fork:latest",
+    "ver": "",
+    "loc": "1111111111111111111111111111111111111111111111111111111111111111",
+    "extra": "4500000000",
+    "perms": ""
+  },
+  {
+    "kind": "image",
+    "id": "not-ollama:latest",
+    "ver": "",
+    "loc": "2222222222222222222222222222222222222222222222222222222222222222",
+    "extra": "4500000000",
+    "perms": ""
+  }
+]

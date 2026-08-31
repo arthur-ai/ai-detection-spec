@@ -77,6 +77,50 @@ claimed by two agents means one is wrong and both will fire.
 `classification` describes **deployment shape**, not risk. See the vocabulary at the top of
 the file.
 
+### The `images` route
+
+A container image repository, reached only by `bin/discover --deep`. It is matched exactly
+against the normalised tag, and the normalisation was read off 28 real images rather than
+reasoned about:
+
+```yaml
+  images: [ollama/ollama]                 # Docker Hub: no docker.io/, no library/
+  images: ["ghcr.io/ggml-org/llama.cpp"]  # anywhere else: the registry host IS part of it
+```
+
+Three things to know before adding one:
+
+- **Give the repository, never a tag.** `ollama/ollama:latest` in the catalog normalises to
+  `ollama/ollama` on the row side and would simply never match. `validate_catalog.py` rejects
+  it, because the failure is otherwise silent — the agent just stops being found.
+- **Prefer the two-segment published name.** A locally built image is shaped exactly like a
+  Docker Hub library image, so a bare `ollama` would claim anyone's `ollama:latest` build.
+- **This route is weaker evidence than the others, and the difference is real.** Every other
+  identifier here is chosen by a vendor. An image name is chosen by whoever ran `docker tag`,
+  so `docker tag alpine ollama/ollama` yields an Ollama finding that nothing can tell from
+  the genuine image. Say so when you use it; do not treat an image row as a bundle id.
+
+**Verification: pull it and read the row.** Identifiers are facts read off real installs, and
+for an image that means the `docker_images` row, not the registry — a `200` proves the name
+and says nothing about how a row renders it. Every `images` value in the catalog was read off
+a real row.
+
+**If Docker Hub pulls are blocked for you** (Registry Access Management: the daemon refuses
+with `authentication required - access token has insufficient scopes`, and it is daemon-side,
+so an isolated `DOCKER_CONFIG` will not help), side-load instead:
+
+1. Anonymous pull token from `auth.docker.io`, index from `registry-1.docker.io`, pick your
+   architecture's manifest.
+2. Download config and layers into `blobs/sha256/<digest>`, **verifying each blob's sha256
+   against the digest that named it** — a truncated layer loads and is wrong.
+3. Write `oci-layout` (`{"imageLayoutVersion":"1.0.0"}`) and an `index.json` whose manifest
+   entry carries `"io.containerd.image.name": "docker.io/<repo>:<tag>"`. That annotation names
+   the loaded image, and so decides what `docker_images` reports.
+4. `tar -cf - -C <dir> . | docker load`.
+
+Needs the containerd image store (`docker info` shows `containerd-snapshotter=true`).
+`ollama/ollama` and `paulgauthier/aider` were verified this way.
+
 ## Query frontmatter
 
 ```sql
@@ -101,6 +145,13 @@ Two ways this hides:
 - **A clean test machine lacks the dependency entirely**, so it never exercises the slow path.
 - **A liveness probe that only `connect()`s to a socket reports success** while the query still
   stalls, because osquery blocks on the *read*. Only a full round trip distinguishes them.
+- **A round trip that gets a 200 also reports success, and then the *next* request blocks.** A
+  health check is a fact about the past. Between the probe and the query there is a window, and
+  Docker Desktop spends real time in the state where its API answers and its engine does not
+  serve. A probe narrows that window; only a wall-clock bound on the process closes it. If the
+  table you are adding has no timeout of its own and osquery offers no flag to give it one —
+  check, because `docker_images` has neither — then it cannot go in `dist/discovery.sql` at any
+  band. It goes in `dist/discovery-deep.sql`, behind a runner that can kill it.
 
 If your query touches a daemon, socket or external service, test it **stopped and mid-startup**,
 not just healthy.
@@ -122,7 +173,8 @@ inherent. A `slow` query is fine; an undeclared one is not.
 ```console
 $ test/lint.sh                 # static checks, about a second, no VM
 $ tools/measure.py --check     # cost bands, needs osquery and a few seconds
-$ test/docker_states.sh        # container query against every daemon state, ~15s
+$ test/docker_states.sh        # every daemon state, that the bound kills the one the guard
+                               # wrongly admits, and that image rows classify, ~35s
 $ test/run.sh 00-baseline      # one scenario in a disposable macOS VM
 ```
 

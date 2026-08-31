@@ -78,6 +78,90 @@ check("port 8080 held by java is not claimed as llama.cpp",
       not any(f["id"] == "llama-cpp" for f in r["findings"]),
       "a port alone is not a signature")
 
+# --- container images -----------------------------------------------------------
+# Rows captured from a real daemon (Docker 28.4.0, 27 images, five registries), plus the
+# three forms a fixture has to invent: a fully-qualified docker.io/ pull, a fork, and a
+# lookalike. An image name is the one identifier here chosen by whoever ran `docker tag`
+# rather than by a vendor, so over-matching is easier and matters more.
+r = run("container-images.json")
+found = {f["id"] for f in r["findings"]}
+unmatched = {row["id"] for row in r["unmatched"]}
+
+check("a ghcr.io image resolves (ghcr.io/berriai/litellm -> litellm)", "litellm" in found,
+      f"got {sorted(found)}")
+check("the registry host is part of the identifier", "llama-cpp" in found,
+      "ghcr.io/ggml-org/llama.cpp, not ggerganov and not a bare llama.cpp")
+check("a docker.io/ prefix is stripped (docker.io/ollama/ollama -> ollama)",
+      "ollama" in found,
+      "Docker Hub is implicit in what a row reports, but a pull can name it explicitly")
+
+# A multi-tag row is ONE row with the tags comma-joined -- measured, not assumed. THE ROW
+# MUST CARRY AN AGENT ON ONE OF ITS TAGS, or the assertion is vacuous: an earlier version
+# used alpine+localbuild, where neither tag is an agent, so a matcher that never split the
+# field passed it just as happily. Verified by mutation.
+MULTI = "ghcr.io/ggml-org/llama.cpp:probe,ghcr.io/ggml-org/llama.cpp:server"
+check("a multi-tag row is split, and an agent on ANY tag is found",
+      "llama-cpp" in found and MULTI not in unmatched,
+      f"found {sorted(found)}; unsplit, this row matches nothing")
+check("a multi-tag row of non-agents stays unmatched",
+      "alpine:3.20,localbuild-probe:latest" in unmatched)
+
+check("a fork is NOT claimed (myorg/ollama-fork)", "myorg/ollama-fork:latest" in unmatched,
+      "exact on the normalised repository, never a substring")
+check("a lookalike is NOT claimed (not-ollama)", "not-ollama:latest" in unmatched)
+check("ordinary infrastructure images are left alone",
+      {"authzed/spicedb:latest",
+       "public.ecr.aws/docker/library/python:3.12.8-slim-bookworm"} <= unmatched,
+      "the ECR path contains 'library/', which must NOT be stripped the way Docker Hub's is")
+check("exactly three agents, no more", found == {"litellm", "llama-cpp", "ollama"},
+      f"got {sorted(found)}")
+
+# --- scan rows: provenance, gaps, and staleness -----------------------------------
+# All pure bin/classify behaviour, so it lives in the fast suite. test/docker_states.sh
+# proves the daemon states that PRODUCE these rows; this proves what is done with them.
+import subprocess as _sp, tempfile as _tf, time as _time
+
+
+def classify_rows(rows, *extra):
+    with _tf.NamedTemporaryFile("w", suffix=".json", delete=False) as fh:
+        json.dump(rows, fh)
+    out = _sp.run([sys.executable, str(ROOT / "bin" / "classify"), fh.name, *extra],
+                  capture_output=True, text=True, check=True).stdout
+    return out
+
+
+def scan_row(extra, age=0):
+    return {"kind": "scan", "id": "containers", "ver": str(int(_time.time()) - age),
+            "loc": "/var/run/docker.sock", "extra": extra, "perms": ""}
+
+
+r = json.loads(classify_rows([scan_row("ok")], "--json"))
+check("a dated success is provenance, not a gap",
+      "gaps" not in r and r.get("scans", [{}])[0].get("id") == "containers",
+      f"got {r}")
+check("...and is not reported stale when fresh", not r["scans"][0]["stale"])
+
+r = json.loads(classify_rows([scan_row("ok", age=4 * 86400)], "--json"))
+check("a four-day-old scan is flagged stale", r["scans"][0]["stale"],
+      "a writer that stopped must not read as a current scan")
+check("...and says so in the text output",
+      "STALE:" in classify_rows([scan_row("ok", age=4 * 86400)]))
+
+# Every non-ok outcome must reach the reader as a gap, with its own wording: an operator
+# fixes a wedged daemon differently from a Mac that has no Docker, and differently again
+# from a writer that was never installed.
+for extra, needle in (("absent", "no Docker socket"),
+                      ("no-cache", "never run"),
+                      ("unhealthy:500", "answered 500"),
+                      ("timeout:6", "stalled")):
+    text = classify_rows([scan_row(extra)])
+    check(f"{extra!r} reports COULD NOT LOOK, distinctly",
+          "COULD NOT LOOK" in text and needle in text, f"got: {text.splitlines()[:1]}")
+
+check("a gap is never silently an empty finding set",
+      "No AI agents found." not in classify_rows([scan_row("timeout:6")]),
+      "'no agents' under an unread branch is the lie this whole marker exists to stop")
+
 print()
 if failures:
     print(f"matcher: FAIL ({len(failures)})")

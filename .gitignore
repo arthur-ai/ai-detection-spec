@@ -8,3 +8,8 @@ artifacts/
 # negation inside it.
 .claude/*
 !.claude/skills/
+
+# bin/classify is importable (test/test_matcher.py runs it as a subprocess, but a
+# reader will import it to try image_repo()), and Python drops a __pycache__ beside it.
+__pycache__/
+*.pyc

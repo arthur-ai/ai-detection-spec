@@ -1,0 +1,312 @@
+#!/usr/bin/env bash
+# Inventory this Mac's AI tooling. The entry point for the shipped artifacts.
+#
+#     bin/discover                     # base inventory, as one JSON array
+#     bin/discover --deep              # base inventory plus a LIVE container scan
+#     bin/discover --write PATH        # EVERY branch, independently, into a cache file
+#     bin/discover --write PATH --framed EA   # ...and a framed value ready to cat into an EA
+#     bin/discover --write PATH --status TXT   # ...and a one-line status a smart group can read
+#     bin/discover --cache PATH        # emit that file. no queries run, nothing can block
+#     bin/discover --deep | bin/classify
+#
+# TWO ARTIFACTS, TWO PROCESSES, AND THAT IS THE POINT.
+#
+#   dist/discovery.sql       every fast and slow query, composed. ~1.2s, cannot block.
+#   dist/discovery-deep.sql  the expensive ones. CAN BLOCK FOREVER, so it runs behind a
+#                            health guard and a wall-clock kill -- bin/container-scan.
+#
+# osquery has no per-query timeout (5.23.1: --docker_socket is the only docker flag,
+# --alarm_timeout is shutdown-only, --schedule_timeout is osqueryd's schedule), so the only
+# bound available is a kill on a process. A kill is indivisible: composed into one file the
+# two would share one process, and bounding the container branch would mean discarding the
+# 580-odd rows the other branches had already produced. Separate processes is what makes
+# the bound cost nothing but the container rows.
+#
+# WITHOUT --deep NOTHING CHANGES. Same artifact, same single process, same cost as the
+# quickstart has always had. The flag is opt-in because the deep path talks to a daemon,
+# and a daemon is a dependency the base path deliberately does not have.
+#
+# A deep failure never costs the base rows. It prints them, plus one kind=scan marker row
+# saying why the container half is missing, and still exits 0 -- because the inventory did
+# succeed, and because a Jamf Extension Attribute records stdout and discards exit status,
+# so the marker row is the only channel the reason has. See bin/container-scan.
+set -uo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+BASE="$ROOT/dist/discovery.sql"
+DEEP_SCAN=0
+# --cache reads what a scheduled bin/container-scan --cache wrote, and never talks to a
+# daemon. That is the deployment shape to prefer: see bin/container-scan's cache_write.
+# --cache emits the file --write produced and RUNS NOTHING. The file already holds every
+# branch, so re-running the base query beside it double-counted the whole inventory: 773
+# rows read back as 1530. It is `cat` with a parse check, which is the point -- the endpoint
+# integration is a file read, and this is the same thing with a diagnostic.
+CACHE_PATH=""
+WRITE=""
+# --framed writes arthur1.<base64(gzip(json))>, on one line, next to the JSON.
+#
+# WHY THE WRITER DOES THIS AND NOT THE READER. The raw JSON is 118 KB on a reference Mac,
+# which is 394% of a 30KB Extension Attribute value cap; framed it is 18.7 KB, 62%. So an
+# EA cannot report the raw file -- and framing needs an interpreter, which is the one thing
+# a reporting path should not depend on. Doing it here keeps the endpoint side a literal
+# `cat` and keeps python3 a dependency of the scheduled job alone.
+FRAMED=""
+# --status writes ONE plain line, for a second attribute that inventory tooling can actually
+# match on. The framed value is base64 of gzip, so a Jamf smart group, a Kandji filter or an
+# Intune report cannot see inside it -- which means the payload alone cannot answer "show me
+# every Mac where the container scan is failing". This can:
+#
+#   degraded 2026-08-31T17:52:03Z apps=ok browser=ok containers=timeout:6 ...
+#
+# First token is ok or degraded, so a group is `like "degraded"`; per-branch tokens let a
+# group narrow to `like "containers=timeout"`.
+STATUS=""
+# One process per branch, for --write only. The composed artifact exists to save process
+# startup when something is WAITING; a scheduled writer has nobody waiting, and paying ~0.5s
+# per branch buys the reliability below. MEASURED, and it is not a small difference:
+#
+#   one branch's table unavailable, as on an older osquery:
+#     composed, one statement ..... 0 rows, exit 1, stdout "[\n\n]" -- five bytes of
+#                                   VALID EMPTY JSON. One missing table and the Mac
+#                                   reports as though nothing is installed on it.
+#     independent ................. 6 of 6 branches, 757 rows, the bad one contributes 0
+#
+# Every query declares `min-osquery: 5.10.0`, so a table being absent is a real deployment
+# state and not a hypothetical. Independent execution also gives each branch its own bound
+# and its own scan row, so "we could not look" is per branch instead of all-or-nothing.
+# Overridable so test/docker_states.sh can hand this a pack containing a deliberately
+# broken query and assert the other branches still report. That assertion is the whole
+# justification for running branches apart, and it should not live only in CI.
+PACK="${DISCOVER_PACK:-$ROOT/dist/ai-discovery.conf}"
+# An array, so a socket path with a space in it survives. Appended to with `+=` and
+# expanded with the ${a[@]+...} guard, because bash 3.2 -- the only bash a managed Mac has
+# -- treats "${a[@]}" on an EMPTY array as an unbound variable under `set -u`. It is fixed
+# in bash 4.4, which is why this is a bug that works on a dev Mac and fails on a fleet. Sourcing bin/container-scan
+# shares its namespace with this script. It defines DEEP, ROOT, TIMEOUT, SCAN_TIMEOUT,
+# PRETTY, SOCKET, MARKER, CACHE, DOCKER_CODE, BOUNDED_OUT and BOUNDED_SIGNAL, so nothing
+# here may reuse those names. Two have already bitten: DEEP was this script's --deep flag
+# until it silently became a file path, and CACHE was --cache's path until sourcing reset
+# it to empty and every --cache run quietly did a live scan instead. Hence CACHE_PATH.
+SCAN_ARGS=()
+
+usage() { sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'; }
+
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --deep)         DEEP_SCAN=1; shift ;;
+    # --cache implies --deep. Asking for the cached container data and then not including
+    # it would be a foot-gun with no legitimate use.
+    --cache)        [ -n "${2:-}" ] || { echo "discover: --cache needs a path" >&2; exit 1; }
+                    CACHE_PATH="$2"; shift 2 ;;
+    --write)        [ -n "${2:-}" ] || { echo "discover: --write needs a path" >&2; exit 1; }
+                    WRITE="$2"; shift 2 ;;
+    --framed)       [ -n "${2:-}" ] || { echo "discover: --framed needs a path" >&2; exit 1; }
+                    FRAMED="$2"; shift 2 ;;
+    --status)       [ -n "${2:-}" ] || { echo "discover: --status needs a path" >&2; exit 1; }
+                    STATUS="$2"; shift 2 ;;
+    --scan-timeout) [ -n "${2:-}" ] || { echo "discover: --scan-timeout needs a value" >&2; exit 1; }
+                    SCAN_ARGS+=(--scan-timeout "$2"); shift 2 ;;
+    --socket)       [ -n "${2:-}" ] || { echo "discover: --socket needs a value" >&2; exit 1; }
+                    SCAN_ARGS+=(--socket "$2"); shift 2 ;;
+    -h|--help)      usage; exit 0 ;;
+    *) echo "discover: unknown argument: $1" >&2; exit 1 ;;
+  esac
+done
+
+# bin/container-scan owns every candidate path; ask it rather than keeping a second list.
+# shellcheck source=container-scan
+. "$ROOT/bin/container-scan"
+osqi="$(osqueryi_path)" || { echo "discover: no osqueryi found (set OSQI)" >&2; exit 1; }
+[ -s "$BASE" ] || { echo "discover: no $BASE (run tools/build.py)" >&2; exit 1; }
+
+# --cache: emit and stop. Before the osqueryi lookup, because this path must work on a Mac
+# where osquery is not installed at all -- the writer's Mac and the reader's are the same
+# machine here, but they need not be, and a reader that required osquery would be a
+# surprising dependency for something documented as `cat`.
+if [ -n "$CACHE_PATH" ]; then
+  [ -z "$WRITE" ] || { echo "discover: --cache and --write are opposite ends of the same pipe; pick one" >&2; exit 1; }
+  if [ ! -r "$CACHE_PATH" ]; then
+    # A missing cache is a fact about the deployment, not about this Mac. Saying nothing
+    # would let it read as "nothing installed here".
+    echo "discover: no readable cache at $CACHE_PATH -- is the scheduled writer installed?" >&2
+    python3 -c 'import json,sys,time; print(json.dumps([{"kind":"scan","id":"inventory",
+        "ver":str(int(time.time())),"loc":sys.argv[1],"extra":"no-cache","perms":""}]))' \
+        "$CACHE_PATH"
+    exit 1
+  fi
+  # Parsed rather than echoed, so a truncated or half-written file is caught here instead of
+  # reaching a collector as "this Mac reported nothing".
+  python3 -c '
+import json, sys
+try:
+    rows = json.load(open(sys.argv[1]))
+except (OSError, ValueError) as e:
+    sys.exit(f"discover: {sys.argv[1]} is not valid JSON ({e}). The writer may have been "
+             f"interrupted; it writes by rename, so this should not happen.")
+if not isinstance(rows, list):
+    sys.exit(f"discover: {sys.argv[1]} is not a JSON array")
+json.dump(rows, sys.stdout, separators=(",", ":"))
+print()
+' "$CACHE_PATH" || exit 1
+  exit 0
+fi
+
+# --write: every branch in its own process, then one payload. Runs before anything else
+# because it is a different mode rather than an addition to the default one.
+if [ -n "$WRITE" ]; then
+  [ -s "$PACK" ] || { echo "discover: no $PACK (run tools/build.py)" >&2; exit 1; }
+  tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/discover.XXXXXX")" || exit 1
+  # The pack is the artifact that carries one named query per file, already flattened to a
+  # single argv-safe line. Running it is running what ships.
+  names="$(python3 -c 'import json,sys; print(" ".join(sorted(json.load(open(sys.argv[1]))["queries"])))' "$PACK")"
+  for name in $names; do
+    q="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["queries"][sys.argv[2]]["query"])' "$PACK" "$name")"
+    if [ "$name" = containers ]; then
+      # The one branch that needs a health guard and a wall clock. Delegated rather than
+      # reimplemented, and its own scan row comes back with it.
+      "$ROOT/bin/container-scan" ${SCAN_ARGS[@]+"${SCAN_ARGS[@]}"} > "$tmpdir/$name" 2>>"$tmpdir/stderr"
+      continue
+    fi
+    # Bounded too, even though none of these touches a daemon today. A branch that cannot
+    # finish must cost one branch, not the whole inventory -- which is the entire point of
+    # running them apart.
+    if run_bounded 30 /dev/null "$osqi" --docker_socket=/nonexistent/docker.sock --json "$q"; then
+      printf '%s' "$BOUNDED_OUT" > "$tmpdir/$name"
+    else
+      # A SENTINEL, because an empty output file is ambiguous: a branch that ran and matched
+      # nothing writes the same zero bytes as a branch that never finished. Without this the
+      # merge called both "ok", so a failed branch reported success -- found by the
+      # one-broken-branch test, which is the entire reason that test exists.
+      : > "$tmpdir/$name"
+      : > "$tmpdir/$name.failed"
+      echo "discover: branch '$name' did not complete" >> "$tmpdir/stderr"
+    fi
+  done
+
+  # Merge by parsing, and give every branch a dated scan row -- present or absent, ok or
+  # not. A branch that returned nothing and a branch that never ran are different facts.
+  python3 - "$tmpdir" $names <<'MERGE' > "$tmpdir/payload"
+import json, os, sys, time
+tmpdir, names, rows = sys.argv[1], sys.argv[2:], []
+now = str(int(time.time()))
+for name in names:
+    path = os.path.join(tmpdir, name)
+    outcome, got = "ok", []
+    if os.path.exists(path + ".failed"):
+        # The runner already knows this branch did not finish. Zero rows from a query that
+        # never ran is not an empty machine, which is the same distinction the container
+        # guard exists to make.
+        outcome = "error"
+    else:
+        try:
+            with open(path) as fh:
+                text = fh.read().strip()
+            got = json.loads(text) if text else []
+            if not isinstance(got, list):
+                raise ValueError("not a list")
+        except (OSError, ValueError):
+            outcome = "error"
+    # container-scan emits its own scan row, carrying a reason we must not overwrite.
+    own = [r for r in got if r.get("kind") == "scan"]
+    rows += [r for r in got if r.get("kind") != "scan"]
+    if own:
+        rows += own
+    else:
+        rows.append({"kind": "scan", "id": name, "ver": now, "loc": "", "extra": outcome,
+                     "perms": ""})
+json.dump(rows, sys.stdout, separators=(",", ":"))
+MERGE
+  [ -s "$tmpdir/payload" ] || { echo "discover: produced no payload; $WRITE left alone" >&2; rm -rf "$tmpdir"; exit 1; }
+  # Rename, never write in place: a `cat` that caught a half-written file yields truncated
+  # JSON, which a collector reads as a Mac that reported nothing.
+  mkdir -p "$(dirname "$WRITE")" 2>/dev/null
+  mv -f "$tmpdir/payload" "$WRITE" || { echo "discover: could not write $WRITE" >&2; rm -rf "$tmpdir"; exit 1; }
+  chmod 644 "$WRITE" 2>/dev/null
+
+  if [ -n "$FRAMED" ]; then
+    # Same rename discipline: a reporting path that caught a half-written value would upload
+    # a truncated base64 blob, which decodes to nothing at all.
+    ftmp="$(mktemp "${FRAMED}.XXXXXX")" || exit 1
+    if python3 -c '
+import base64, gzip, json, sys
+rows = json.load(open(sys.argv[1]))
+raw = json.dumps(rows, separators=(",", ":")).encode()
+value = b"arthur1." + base64.b64encode(gzip.compress(raw, 9))
+CAP = 30 * 1024
+if len(value) > CAP:
+    sys.exit(f"discover: framed value is {len(value)} bytes, over the {CAP}-byte Extension "
+             f"Attribute cap by {len(value) - CAP}. See queries/COST.md: the cap binds on how "
+             f"loaded the Mac is, not on how many agents it has.")
+open(sys.argv[2], "wb").write(value + b"\n")
+print(f"framed {len(raw)} bytes of JSON into {len(value)} bytes ({len(value) / CAP * 100:.0f}% of cap)",
+      file=sys.stderr)
+' "$WRITE" "$ftmp"; then
+      mkdir -p "$(dirname "$FRAMED")" 2>/dev/null
+      mv -f "$ftmp" "$FRAMED" && chmod 644 "$FRAMED" 2>/dev/null
+    else
+      # Over the cap is a real failure and must not leave a stale value looking current.
+      rm -f "$ftmp" "$FRAMED"
+      echo "discover: no framed value written" >&2
+    fi
+  fi
+
+  if [ -n "$STATUS" ]; then
+    stmp="$(mktemp "${STATUS}.XXXXXX")" || exit 1
+    python3 -c '
+import json, sys, time
+rows = json.load(open(sys.argv[1]))
+scans = sorted((r["id"], r["extra"]) for r in rows if r["kind"] == "scan")
+overall = "ok" if all(v == "ok" for _, v in scans) else "degraded"
+stamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+parts = " ".join(f"{k}={v}" for k, v in scans)
+open(sys.argv[2], "w").write(f"{overall} {stamp} rows={len(rows)} {parts}\n")
+' "$WRITE" "$stmp" && {
+      mkdir -p "$(dirname "$STATUS")" 2>/dev/null
+      mv -f "$stmp" "$STATUS" && chmod 644 "$STATUS" 2>/dev/null
+    } || rm -f "$stmp"
+  fi
+
+  [ -s "$tmpdir/stderr" ] && cat "$tmpdir/stderr" >&2
+  cat "$WRITE"; echo
+  rm -rf "$tmpdir"
+  exit 0
+fi
+
+# ON STDIN, NOT AS AN ARGUMENT. The artifact opens with a `--` banner and osqueryi reads an
+# argv query beginning with `--` as a command-line flag: it prints "unknown command line
+# flag", exits 0, and returns no rows. Silent and total.
+#
+# Unbounded, deliberately. The base artifact touches no daemon, no socket and no network --
+# every branch reads local state and the composed file measures 1.07s loaded, 1.20s on a
+# clean runner. There is nothing here for a kill to save us from, and a bound could only
+# discard good rows from a slow Mac.
+base="$("$osqi" --json < "$BASE")" || { echo "discover: the base query failed" >&2; exit 1; }
+
+if [ "$DEEP_SCAN" = 0 ]; then
+  printf '%s\n' "$base"
+  exit 0
+fi
+
+# Rows on stdout, the reason on stderr, the verdict in the exit code. Every outcome except
+# 0 also prints a marker row, so `deep` is never empty and never silently absent.
+deep="$("$ROOT/bin/container-scan" ${SCAN_ARGS[@]+"${SCAN_ARGS[@]}"})"; deep_rc=$?
+case "$deep_rc" in
+  0) ;;
+  2|3) ;;  # did not scan, or gave up. The marker row carries which, and base survives.
+  *) echo "discover: container-scan could not run (exit $deep_rc); reporting base rows only" >&2 ;;
+esac
+
+# Join by PARSING both documents, each arriving on its own channel -- the base on stdin,
+# the deep rows in the environment. Splicing brackets in bash, or splitting one stream on a
+# delimiter, would both be betting that the delimiter cannot appear in the data. A
+# malformed array reads to a collector as "this Mac reported nothing", which is the single
+# outcome every guard in this repo exists to prevent, so it is not a bet worth taking to
+# save a process.
+export DISCOVER_DEEP_JSON="${deep:-[]}"
+printf '%s' "$base" | python3 -c '
+import json, os, sys
+rows = json.load(sys.stdin)
+rows += json.loads(os.environ.get("DISCOVER_DEEP_JSON") or "[]")
+json.dump(rows, sys.stdout, separators=(",", ":"))
+print()
+'

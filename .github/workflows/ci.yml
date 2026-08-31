@@ -55,6 +55,135 @@ jobs:
             echo "::error::query took ${elapsed}s, over the 10s budget"; exit 1
           fi
 
+      # The runner that owns the --deep flag, on a machine with no Docker -- which is the
+      # state most of a fleet is in, and the one where "did not scan" must not be confused
+      # with "no containers". Asserts the deal the split exists to deliver: --deep never
+      # costs the base rows, and it says so out loud when the container half is missing.
+      - name: bin/discover, with and without --deep
+        run: |
+          OSQI=/usr/local/bin/osqueryi
+          sudo -n env OSQI="$OSQI" bin/discover > /tmp/base.json
+          sudo -n env OSQI="$OSQI" bin/discover --deep > /tmp/deep.json
+          python3 - <<'EOF'
+          import json, sys
+          base = json.load(open("/tmp/base.json"))
+          deep = json.load(open("/tmp/deep.json"))
+          gaps = [r for r in deep if r["kind"] == "scan"]
+          if not base:
+              sys.exit("::error::bin/discover returned no rows at all")
+          if len(deep) < len(base):
+              sys.exit(f"::error::--deep lost rows: {len(base)} base, {len(deep)} deep. "
+                       "The base inventory must survive a failed container scan.")
+          # No Docker on a hosted runner, so the scan cannot succeed -- and a missing
+          # marker would mean a wedged daemon reports as a Mac with no containers.
+          if not gaps:
+              sys.exit("::error::--deep found no Docker and said nothing about it. "
+                       "Expected one kind=scan marker row.")
+          print(f"{len(base)} base rows, {len(deep)} with --deep, gap: {gaps[0]['extra']}")
+          EOF
+
+      # The recommended deployment: a scheduled writer, and a reader that only cats a file.
+      # Asserts the reliability claim the independent-branch writer exists for -- one branch
+      # failing must cost one branch -- and that the payload dates itself, since a reader
+      # that can only cat cannot check an mtime.
+      - name: The cache pattern, write then read
+        run: |
+          OSQI=/usr/local/bin/osqueryi
+          sudo -n env OSQI="$OSQI" bin/discover \
+            --write /tmp/inv.json --framed /tmp/inv.ea --status /tmp/inv.status > /dev/null
+          sudo -n env OSQI="$OSQI" bin/discover --cache /tmp/inv.json > /tmp/read.json
+          python3 - <<'EOF'
+          import json, sys, time
+          inv = json.load(open("/tmp/inv.json"))
+          scans = {r["id"]: r for r in inv if r["kind"] == "scan"}
+          bad = [r for r in inv if set(r) != {"kind","id","ver","loc","extra","perms"}]
+          if bad:
+              sys.exit(f"::error::{len(bad)} rows violate the six-column contract: {bad[:1]}")
+          # One scan row per query file, so a failure is attributable to a branch.
+          if len(scans) < 6:
+              sys.exit(f"::error::expected a scan row per branch, got {sorted(scans)}")
+          for name, r in scans.items():
+              if not str(r["ver"]).isdigit() or int(r["ver"]) <= 0:
+                  sys.exit(f"::error::branch {name} has no usable timestamp: {r['ver']!r}")
+          # A hosted runner has no Docker, so containers must report that rather than 'ok'.
+          if scans["containers"]["extra"] == "ok":
+              sys.exit("::error::containers reported ok on a runner with no Docker")
+          rows = json.load(open("/tmp/read.json"))
+          if len(rows) < len(inv):
+              sys.exit(f"::error::reading the cache lost rows: {len(inv)} -> {len(rows)}")
+          print(f"{len(inv)} rows, {len(scans)} branches, containers={scans['containers']['extra']}")
+          EOF
+
+      # THE THREE OUTPUTS AN ENDPOINT ACTUALLY REPORTS. The cap is the gate that matters
+      # most: an attribute that overruns it reports nothing, which is indistinguishable from
+      # a Mac with nothing on it. Nothing per-PR checked it until now.
+      - name: The reported values fit, and say what they are
+        run: |
+          python3 - <<'EOF'
+          import base64, gzip, json, re, sys
+          CAP = 30 * 1024
+
+          value = open("/tmp/inv.ea", "rb").read().strip()
+          if not value.startswith(b"arthur1."):
+              sys.exit(f"::error::framed value has no arthur1. prefix: {value[:24]!r}")
+          if b"\n" in value:
+              sys.exit("::error::framed value contains a newline; it must be one line")
+          if len(value) > CAP:
+              sys.exit(f"::error::framed value is {len(value)} bytes, over the {CAP}-byte cap")
+          rows = json.loads(gzip.decompress(base64.b64decode(value[8:])))
+          if rows != json.load(open("/tmp/inv.json")):
+              sys.exit("::error::the framed value does not decode to the JSON payload")
+          pct = len(value) / CAP * 100
+          print(f"framed {len(value)} bytes = {pct:.0f}% of cap, {len(rows)} rows, round-trips")
+          if pct > 80:
+              print(f"::warning::framed value is {pct:.0f}% of the cap on a CLEAN runner. "
+                    f"A loaded Mac will not fit -- see queries/COST.md.")
+
+          status = open("/tmp/inv.status").read()
+          if status.count("\n") != 1:
+              sys.exit(f"::error::status must be exactly one line, got {status.count(chr(10))}")
+          first, stamp, rest = status.split(maxsplit=2)
+          if first not in ("ok", "degraded"):
+              sys.exit(f"::error::status starts with {first!r}, want ok or degraded")
+          if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", stamp):
+              sys.exit(f"::error::status timestamp is not ISO-8601 UTC: {stamp!r}")
+          tokens = dict(p.split("=", 1) for p in rest.split() if "=" in p)
+          for need in ("apps", "browser", "containers", "filesystem", "packages", "runtime"):
+              if need not in tokens:
+                  sys.exit(f"::error::status has no token for branch {need!r}: {rest!r}")
+          # A Smart Group matches on these strings, so the vocabulary is a contract.
+          ok = ("ok", "absent", "error")
+          for k, v in tokens.items():
+              if k == "rows":
+                  continue
+              if not (v in ok or v.startswith(("unhealthy:", "timeout:", "stale:"))):
+                  sys.exit(f"::error::unknown outcome {v!r} for {k}; Smart Groups match on "
+                           f"this vocabulary and it must not grow silently")
+          print(f"status: {first}, {len(tokens) - 1} branches, all outcomes in vocabulary")
+          EOF
+
+      # bin/classify is the reference reader. A payload the classifier cannot read is not a
+      # payload, and the scenarios job that normally covers this runs only on main.
+      - name: The classifier reads the payload
+        run: |
+          pip install --quiet pyyaml
+          bin/classify /tmp/inv.json > /tmp/classified.txt
+          cat /tmp/classified.txt
+          python3 - <<'EOF'
+          import json, sys
+          text = open("/tmp/classified.txt").read()
+          r = json.load(open("/tmp/inv.json"))
+          gaps = [x for x in r if x["kind"] == "scan" and x["extra"] != "ok"]
+          # A runner has no Docker, so at least the container branch must be reported as a
+          # gap -- and a gap must never render as a bare "no agents found".
+          if gaps and "COULD NOT LOOK" not in text:
+              sys.exit(f"::error::{len(gaps)} gap rows but the reader said nothing: {gaps[:1]}")
+          if gaps and text.strip() == "No AI agents found.":
+              sys.exit("::error::a gap rendered as a clean machine, which is the one "
+                       "outcome the scan row exists to prevent")
+          print(f"classifier reported {len(gaps)} gap(s) rather than silence")
+          EOF
+
       # The pack is a separate artifact built by a different code path, and nothing ran
       # it until it shipped with four of five queries silently returning zero rows.
       - name: Run every query in the pack
