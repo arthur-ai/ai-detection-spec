@@ -10,9 +10,9 @@ unchanged while letting the source be readable.
     dist/discovery.sql       every `fast` and `slow` query, joined with UNION ALL
     dist/discovery-deep.sql  every `expensive` query, joined the same way
     dist/ai-discovery.conf   an osquery pack, one named query per file
-    dist/jamf-collect.sh     one self-contained file: bin/ and dist/ as an embedded
-                             payload, for an MDM that hosts a script but cannot place
-                             files. NO PACKAGE, so no signing and no notarization.
+    dist/jamf-collect.sh     one self-contained file, carrying the runner and the queries
+                             as an embedded payload, for an MDM that hosts a script but
+                             cannot place files. NO PACKAGE, no signing, no notarization.
 
 `expensive` queries are excluded from discovery.sql and composed into discovery-deep.sql
 instead. THE SPLIT IS THE WHOLE POINT AND IT IS NOT COSMETIC: an expensive query is one
@@ -141,31 +141,75 @@ exit 0
 """
 
 
-def collector(root):
-    """One shell file carrying bin/ and dist/ as a base64 payload.
+# ONLY WHAT THE COLLECTOR RUNS. bin/classify is deliberately absent: classification happens
+# server-side, the collector never invokes it, and a payload carrying code it does not run is
+# a bigger file and a wider blast radius for no benefit.
+PAYLOAD_FILES = ("bin/discover", "bin/container-scan",
+                 "dist/discovery.sql", "dist/discovery-deep.sql", "dist/ai-discovery.conf")
 
-    REPRODUCIBLE BY CONSTRUCTION, or `build.py --check` reports drift on every run and the
-    gate gets trained away. tar records mtimes, uids and directory order, and gzip records a
-    timestamp; every one of them is pinned here.
-    """
+PAYLOAD_MARKER = "ARTHUR_PAYLOAD_EOF"
+
+
+def payload_tar(root):
+    """The embedded payload, as tar bytes. BYTE-REPRODUCIBLE ACROSS MACHINES, which the
+    compressed form is not: tar records mtimes, uids, modes and entry order, and every one of
+    them is pinned here."""
     raw = io.BytesIO()
     with tarfile.open(fileobj=raw, mode="w") as tar:
-        for sub in ("bin", "dist"):
-            for path in sorted((root / sub).rglob("*")):
-                if not path.is_file() or path.name.startswith("."):
-                    continue
-                if path.suffix == ".pyc" or path.name == "jamf-collect.sh":
-                    continue          # the collector cannot contain itself
-                info = tar.gettarinfo(str(path), arcname=str(path.relative_to(root)))
-                info.mtime, info.uid, info.gid = 0, 0, 0
-                info.uname = info.gname = ""
-                info.mode = 0o755 if path.parent.name == "bin" else 0o644
-                with path.open("rb") as fh:
-                    tar.addfile(info, fh)
-    packed = gzip.compress(raw.getvalue(), 9, mtime=0)
-    b64 = base64.b64encode(packed).decode()
+        for rel in sorted(PAYLOAD_FILES):
+            path = root / rel
+            if not path.is_file():
+                sys.exit(f"collector payload: {rel} is missing")
+            info = tar.gettarinfo(str(path), arcname=rel)
+            info.mtime, info.uid, info.gid = 0, 0, 0
+            info.uname = info.gname = ""
+            info.mode = 0o755 if rel.startswith("bin/") else 0o644
+            with path.open("rb") as fh:
+                tar.addfile(info, fh)
+    return raw.getvalue()
+
+
+def collector(root):
+    """One shell file carrying the payload as base64 of gzip of that tar."""
+    b64 = base64.b64encode(gzip.compress(payload_tar(root), 9, mtime=0)).decode()
     wrapped = "\n".join(b64[i:i + 76] for i in range(0, len(b64), 76))
     return COLLECTOR.replace("@PAYLOAD@", wrapped)
+
+
+PAYLOAD_OPEN = "<<'" + PAYLOAD_MARKER + "'\n"
+PAYLOAD_CLOSE = "\n" + PAYLOAD_MARKER + "\n"
+
+
+def _split_collector(text):
+    """(wrapper before the payload, the base64 body, wrapper after it)."""
+    open_at = text.index(PAYLOAD_OPEN) + len(PAYLOAD_OPEN)
+    close_at = text.index(PAYLOAD_CLOSE, open_at)
+    return text[:open_at], text[open_at:close_at], text[close_at:]
+
+
+def collector_matches(text, root):
+    """Does an existing collector carry this tree?
+
+    COMPARED BY MEANING, NOT BY BYTES, and the difference is not pedantry: zlib's output is
+    not identical across zlib versions, so a byte comparison passed on macOS and failed on the
+    Linux CI runner against the same content. That is a gate that fails at random, which this
+    repo has already learned trains people to re-run it -- and then a real failure gets re-run
+    too.
+
+    The wrapper is compared as text, and the payload DECOMPRESSED, where the tar is
+    reproducible by construction. Which bytes zlib chose is not a fact about this repo.
+    """
+    try:
+        head, body, tail = _split_collector(text)
+        want_head, _, want_tail = _split_collector(COLLECTOR)
+    except ValueError:
+        return False
+    if (head, tail) != (want_head, want_tail):
+        return False
+    try:
+        return gzip.decompress(base64.b64decode(body)) == payload_tar(root)
+    except (OSError, ValueError):
+        return False
 
 
 def compose(banner, parts):
@@ -286,8 +330,10 @@ def main():
         if not deep and deep_path.exists():
             stale.append(f"{deep_path.name} exists but no query declares itself expensive")
         collector_path = DIST / "jamf-collect.sh"
-        if not collector_path.exists() or collector_path.read_text() != collector(ROOT):
-            stale.append(f"{collector_path.name} does not match bin/ and dist/")
+        if not collector_path.exists():
+            stale.append(f"{collector_path.name} is missing")
+        elif not collector_matches(collector_path.read_text(), ROOT):
+            stale.append(f"{collector_path.name} does not carry the current bin/ and dist/")
         if stale:
             sys.exit(f"dist/ is stale: {', '.join(stale)}. Run tools/build.py.")
         print("dist/ is up to date")
@@ -306,7 +352,7 @@ def main():
     collector_path.write_text(collector(ROOT))
     collector_path.chmod(0o755)
     print(f"  wrote {collector_path.relative_to(ROOT)} "
-          f"({collector_path.stat().st_size // 1024} KB, embeds bin/ and dist/)")
+          f"({collector_path.stat().st_size // 1024} KB, embeds {len(PAYLOAD_FILES)} files)")
 
 
 if __name__ == "__main__":
