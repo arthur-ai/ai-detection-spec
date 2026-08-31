@@ -134,5 +134,37 @@
     "loc": "/Users/alice/.local/share/uv/tools/ruff/",
     "extra": "",
     "perms": ""
+  },
+  {
+    "kind": "ext",
+    "id": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
+    "ver": "1.0.90",
+    "loc": "/Users/x/Library/Application Support/Google/Chrome/Profile 1",
+    "extra": "chrome",
+    "perms": "sidePanel,storage,activeTab,scripting,debugger,tabs,nativeMessaging,<all_urls>"
+  },
+  {
+    "kind": "ext",
+    "id": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
+    "ver": "1.0.85",
+    "loc": "/Users/x/Library/Application Support/Google/Chrome/Profile 10",
+    "extra": "chrome",
+    "perms": "sidePanel,storage,activeTab,scripting,debugger,tabs,nativeMessaging,<all_urls>"
+  },
+  {
+    "kind": "ext",
+    "id": "cjpalhdlnbpafiamejdnhcphjbkeiagm",
+    "ver": "1.66.4",
+    "loc": "/Users/x/Library/Application Support/Google/Chrome/Profile 1",
+    "extra": "chrome",
+    "perms": "storage,webRequest"
+  },
+  {
+    "kind": "ext",
+    "id": "fcoeoabgfenejglbffodgkkbkcdhcgfa",
+    "ver": "9.9.9",
+    "loc": "/Users/x/Library/Application Support/Google/Chrome/Profile 1",
+    "extra": "chrome",
+    "perms": "storage"
   }
 ]

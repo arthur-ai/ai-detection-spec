@@ -62,7 +62,13 @@ run_scenario() {
 
   # Ship the whole scenario tree, not just this one setup.sh: 90-demo-fleet composes its
   # siblings by path, and would silently run nothing if they were absent from the guest.
-  vm_put "$vm" "$HERE/lib/guest.sh" /tmp/guest.sh
+  # /tmp/lib/, not /tmp/. Every setup.sh sources "$(dirname $0)/../../lib/guest.sh", which
+  # from /tmp/scenarios/<name>/ resolves to /tmp/lib/guest.sh. Landing it at /tmp/guest.sh
+  # broke every scenario on this path with "no such file or directory: /guest.sh", and CI
+  # never saw it: scenarios.yml runs setup.sh from the repo on a runner, where the same
+  # relative path resolves in-tree. The VM path is the one nothing else exercises.
+  vm_ssh "$vm" "mkdir -p /tmp/lib"
+  vm_put "$vm" "$HERE/lib/guest.sh" /tmp/lib/guest.sh
   tar -C "$HERE" -czf "$ART/scenarios.tgz" scenarios
   vm_put "$vm" "$ART/scenarios.tgz" /tmp/scenarios.tgz
   vm_ssh "$vm" "tar -C /tmp -xzf /tmp/scenarios.tgz && chmod +x /tmp/scenarios/*/setup.sh"

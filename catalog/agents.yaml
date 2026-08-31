@@ -54,6 +54,7 @@ classifications:
   - Local model         # inference served on the machine itself
   - AI browser          # a browser whose AI features are the product
   - Framework           # library or SDK an agent is built with
+  - Browser agent       # an extension that acts inside the browser on the user's behalf
   - Container runtime   # not an agent; presence changes what can be seen
 
 agents:
@@ -63,6 +64,26 @@ agents:
     bundle_ids: [com.anthropic.claudefordesktop]
     homebrew: [claude]
     native_messaging_hosts: [com.anthropic.claude_browser_extension.json]
+
+  # Its own entry rather than a route on claude-desktop, because it installs
+  # independently: no app bundle, no package manager, and it follows a Google account
+  # across machines. claude-desktop's native_messaging_hosts entry above is the DESKTOP
+  # side of the bridge this extension talks to -- related, separately installable, and a
+  # fleet can have either without the other.
+  #
+  # The id is a fact read off a real install, per the rule at the top of this file:
+  # collected by this repo's own browser query on a reference Mac, appearing three times
+  # -- v1.0.90 and v1.0.85 in one Chrome profile, v1.0.85 in another. A Chrome extension
+  # id is derived from the developer's public key, so it is stable across versions and
+  # across the profiles that carry it, which is what makes it worth matching on.
+  #
+  # Two further ids circulate for Anthropic-related extensions and are DELIBERATELY ABSENT:
+  # neither could be installed, so neither is a fact. See docs/signature-lifecycle.md --
+  # a catalog may carry a guess, but it may not hide one.
+  - id: claude-in-chrome
+    name: Claude in Chrome
+    classification: Browser agent
+    extension_ids: [fcoeoabgfenejglbffodgkkbkcdhcgfn]
 
   - id: claude-code
     name: Claude Code

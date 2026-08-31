@@ -69,6 +69,27 @@ unmatched = {row["id"] for row in r["unmatched"]}
 check("libxdmcp is NOT claimed by the 'mcp' signature", "libxdmcp" in unmatched)
 check("ordinary software is left alone", {"cmake", "com.apple.Safari"} <= unmatched)
 
+# --- browser extensions ----------------------------------------------------------
+# kind='ext' was emitted by browser.sql from the beginning and consumed by nothing, so
+# every extension row was DROPPED -- not unmatched, dropped, invisible even under
+# --show-unmatched. No test caught it because every assertion here was about agents that
+# were found, and Claude WAS found, through its native messaging bridge. The last two
+# checks are the guard: they assert on rows the classifier must decline to claim, which is
+# the only shape of assertion that can tell "correctly rejected" from "never looked at".
+check("the Claude Chrome extension is found by its id", "claude-in-chrome" in found,
+      "read off a real install; the VM cannot force-install from the Web Store")
+ext_ev = found.get("claude-in-chrome", {}).get("evidence", [])
+check("every profile and version carrying it is separate evidence, not a deduped row",
+      len(ext_ev) == 2,
+      f"got {len(ext_ev)}; one machine legitimately reports the id once per profile")
+
+check("an ordinary extension is NOT claimed (uBlock Origin)",
+      "cjpalhdlnbpafiamejdnhcphjbkeiagm" in unmatched,
+      "if this is missing, ext rows are being dropped rather than declined")
+check("an id one character off the real one is NOT claimed",
+      "fcoeoabgfenejglbffodgkkbkcdhcgfa" in unmatched,
+      "exact match on the full 32 characters, never a prefix or a substring")
+
 # --- a machine with none -------------------------------------------------------
 r = run("no-agents.json")
 check("an ordinary developer machine yields zero findings", r["findings"] == [],

@@ -58,6 +58,13 @@ def build_index(catalog):
                 glob.append((re.compile(r"^/Users/[^/]+/" + re.escape(value[2:])), route, meta))
         for value in agent.get("native_messaging_hosts", []):
             exact[("nmh", value)] = meta
+        # A Chrome extension id is derived from the developer's public key, so it is stable
+        # across versions and across every profile carrying the extension. That is what makes
+        # exact matching right here: the same machine legitimately reports the id several
+        # times -- one row per profile, and one per version left on disk -- and each is a
+        # separate piece of evidence for the same finding rather than a duplicate to suppress.
+        for value in agent.get("extension_ids", []):
+            exact[("extension_ids", value)] = meta
         # Exact on the NORMALISED repository, never a substring. `ollama` as a substring
         # would claim `myorg/ollama-fork` and `not-ollama`, and an image name is
         # attacker-choosable in a way a bundle id is not: anyone can `docker tag` anything.
@@ -134,6 +141,14 @@ KIND_ROUTES = {
     # also keeps an unclaimed image UNMATCHED rather than dropped: a kind absent from this
     # dict falls off the end of the loop below, invisible even under --show-unmatched.
     "image": ["images"],
+    # browser.sql has emitted kind='ext' since the beginning and nothing consumed it, so every
+    # extension row fell off the end of the loop -- dropped, not unmatched, exactly as the note
+    # above warns. Verified on a real Mac: the Claude extension was collected correctly by the
+    # query, carried a correct identifier and permissions, and did not appear in classify output
+    # even under --show-unmatched. Claude was still reported, but only through its native
+    # messaging bridge, so the fleet-visible symptom was one route quietly missing rather than
+    # an agent going unseen -- which is why it survived this long.
+    "ext": ["extension_ids"],
 }
 
 # pipx and uv give each installed tool a directory named for the PACKAGE, so the tool
