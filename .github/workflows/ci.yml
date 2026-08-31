@@ -189,6 +189,40 @@ jobs:
           print(f"classifier reported {len(gaps)} gap(s) rather than silence")
           EOF
 
+      # The one-file collector, run the way Jamf runs a Script: from a directory with no
+      # repo in it, under a stripped environment, with positional arguments it must ignore.
+      # This is the deployment that needs no package, so nothing else exercises it.
+      - name: The self-contained collector, as Jamf would run it
+        run: |
+          work=$(mktemp -d) && out=$(mktemp -d)
+          cp dist/jamf-collect.sh "$work/script-ci"
+          cd "$work"
+          sudo -n env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin HOME=/var/root \
+            OSQI=/usr/local/bin/osqueryi ARTHUR_OUT_DIR="$out" \
+            /bin/bash ./script-ci / runner-mac runner > stdout.txt 2> stderr.txt
+          echo "stdout (what Jamf logs): $(cat stdout.txt)"
+          grep -v '^framed' stderr.txt || true
+          python3 - "$out" <<'EOF'
+          import base64, glob, gzip, json, os, sys
+          out = sys.argv[1]
+          for name in ("inventory.json", "inventory.ea", "status.txt"):
+              path = os.path.join(out, name)
+              if not os.path.getsize(path):
+                  sys.exit(f"::error::{name} is missing or empty")
+          value = open(os.path.join(out, "inventory.ea"), "rb").read().strip()
+          rows = json.loads(gzip.decompress(base64.b64decode(value[8:])))
+          if rows != json.load(open(os.path.join(out, "inventory.json"))):
+              sys.exit("::error::the collector's framed value does not match its JSON")
+          status = open(os.path.join(out, "status.txt")).read().split()
+          if status[0] not in ("ok", "degraded"):
+              sys.exit(f"::error::status starts with {status[0]!r}")
+          # It installs nothing: no working directory may survive.
+          left = glob.glob("/var/tmp/arthur-collect.*") + glob.glob("/tmp/arthur-collect.*")
+          if left:
+              sys.exit(f"::error::the collector left {len(left)} temp dir(s) behind: {left}")
+          print(f"collector wrote {len(rows)} rows, {len(value)} byte value, cleaned up")
+          EOF
+
       # The pack is a separate artifact built by a different code path, and nothing ran
       # it until it shipped with four of five queries silently returning zero rows.
       - name: Run every query in the pack

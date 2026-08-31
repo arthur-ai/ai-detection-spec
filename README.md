@@ -149,24 +149,36 @@ Read an image row as weaker evidence than a bundle id.
 
 ## Integrating with an endpoint tool
 
-**Run a scheduled job that writes a file, and have your tool read the file.** Nothing on the
+**A scheduled job writes files, and your tool reads them with `cat`.** Nothing on the
 reporting path touches a daemon, so nothing on the reporting path can block.
 
-```console
-# once, as root
-$ install -d -m 755 /usr/local/arthur && cp -R bin dist catalog /usr/local/arthur/
-$ cp deploy/com.arthur.ai-discovery.plist /Library/LaunchDaemons/
-$ launchctl bootstrap system /Library/LaunchDaemons/com.arthur.ai-discovery.plist
+**`dist/jamf-collect.sh` needs no package.** It is one self-contained file — `bin/` and
+`dist/` ride inside it as an embedded payload — so an MDM that can host a script and run it
+on a schedule needs nothing else. No package, no code signing, no notarization, no PPPC
+profile. It installs nothing: the payload is extracted to a temp directory, run, and deleted.
 
-# then, from a Jamf EA, Kandji custom fact, Intune script, Munki condition, or an agent
-$ cat /var/lib/arthur/inventory.ea      # 18 KB, fits a 30 KB attribute
-$ cat /var/lib/arthur/inventory.json    # 118 KB, the readable form
+```console
+# your MDM hosts this one file and runs it on a schedule: a Jamf Policy, a Kandji Custom
+# Script, an Intune shell script, a Munki postflight
+$ sudo /bin/bash dist/jamf-collect.sh
+ok 2026-08-31T19:43:23Z rows=775 apps=ok browser=ok containers=ok …
+
+# then, from an Extension Attribute, custom fact, or agent
+$ cat /var/lib/arthur/inventory.ea      # 19 KB, fits a 30 KB attribute
+$ cat /var/lib/arthur/inventory.json    # 121 KB, the readable form
+$ cat /var/lib/arthur/status.txt        # one line, for a smart group
 ```
 
-The writer emits both: `.json` is the payload as rows, `.ea` is the same rows as
-`arthur1.<base64(gzip(json))>` on one line. **Report the `.ea` file** — raw JSON is 394% of a
-30 KB attribute cap. Framing needs an interpreter, which is why the scheduled job does it and
-the reporting path stays a `cat`.
+Measured cold, from a directory containing nothing but the script and under a stripped
+environment: 4.3s.
+
+`.json` is the payload as rows; `.ea` is the same rows as `arthur1.<base64(gzip(json))>` on
+one line. **Report the `.ea` file** — raw JSON is 394% of a 30 KB attribute cap. Framing needs
+an interpreter, which is why the scheduled job does it and the reporting path stays a `cat`.
+
+**If you prefer a package**, `deploy/com.arthur.ai-discovery.plist` runs the same thing from a
+LaunchDaemon, which decouples the schedule from your MDM's check-in. It costs a build step and
+a signing identity, and writes the same three files.
 
 Each payload carries one dated `kind=scan` row per branch, because a reader that can only
 `cat` cannot check a file's mtime:

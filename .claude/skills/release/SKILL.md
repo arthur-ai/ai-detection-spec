@@ -129,9 +129,13 @@ $ gh run list --workflow=release.yml --limit=1
 $ gh release view v<X.Y.Z> --json assets --jq '[.assets[].name]'
 ```
 
-Six assets, and a missing one is a broken release rather than a tidier one:
-`discovery.sql`, `discovery-deep.sql`, `ai-discovery.conf`, `discover`, `container-scan`,
-`classify`. The scripts resolve each other and the artifacts by relative path, so the notes
+Eight assets, and a missing one is a broken release rather than a tidier one:
+`discovery.sql`, `discovery-deep.sql`, `ai-discovery.conf`, `jamf-collect.sh`, `discover`,
+`container-scan`, `classify`, `com.arthur.ai-discovery.plist`.
+
+`jamf-collect.sh` is the one most consumers will actually deploy: it is self-contained, so it
+needs neither the other assets beside it nor a package. It embeds `bin/` and `dist/`, which is
+why `build.py` writes it last and `--check` compares it against a fresh build of the tree. The scripts resolve each other and the artifacts by relative path, so the notes
 must say the layout is `bin/` and `dist/` side by side — downloaded loose into one folder,
 `bin/discover` will not find `dist/discovery.sql`.
 
