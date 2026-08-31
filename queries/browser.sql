@@ -38,8 +38,18 @@
 -- merely mentioning the string in a description would match. That is the correct bias
 -- under D17 - the endpoint over-selects, the collector classifies. A false positive
 -- costs one triage row, a false negative hides an extension reading every page.
-SELECT 'ext', identifier, version, profile_path, browser_type,
+-- ALIASED, and every branch's first arm must be. A UNION ALL takes its column NAMES from
+-- the first arm only, so an unaliased first arm inherits whatever precedes it -- which is
+-- apps.sql inside dist/discovery.sql, and NOTHING when this file runs on its own. Run
+-- standalone unaliased, osquery named the columns 'ext', identifier, browser_type and
+-- "permissions || CASE WHEN manifest_json LIKE ...", and dist/ai-discovery.conf shipped
+-- that: the pack's browser query returned 74 rows that no consumer of the six-column
+-- contract could read. tools/check_pack.py counted the rows and passed it, and test/lint.sh
+-- checked the column COUNT and passed it. Both now check the names.
+SELECT 'ext' AS kind, identifier AS id, version AS ver, profile_path AS loc,
+       browser_type AS extra,
        permissions || CASE WHEN manifest_json LIKE '%<all_urls>%' THEN ',<all_urls>' ELSE '' END
+         AS perms
   FROM users CROSS JOIN chrome_extensions USING (uid)
 UNION ALL
 -- A single % matches ONE path component. 'Application Support/Google/Chrome/...' is TWO,

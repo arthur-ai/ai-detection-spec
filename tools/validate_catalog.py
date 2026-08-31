@@ -17,7 +17,7 @@ import yaml
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 ROUTES = {"bundle_ids", "homebrew", "npm", "pypi", "binaries",
           "state_dirs", "launchd_prefixes", "ports", "model_stores",
-          "native_messaging_hosts"}
+          "native_messaging_hosts", "images"}
 REQUIRED = {"id", "name", "classification"}
 
 
@@ -56,6 +56,19 @@ def main():
                         f"{aid}: {route} {value!r} already claimed by "
                         f"{seen_route_values[key]}")
                 seen_route_values[key] = aid
+
+        # An image value must be a repository, never a tag. `ollama/ollama:latest` in the
+        # catalog would normalise to `ollama/ollama` on the row side and never match, and
+        # it would fail silently -- the agent simply stops being found. Rejected here
+        # rather than discovered on a fleet.
+        for value in agent.get("images", []):
+            tail = str(value).rsplit("/", 1)[-1]
+            if ":" in tail:
+                errors.append(f"{aid}: images {value!r} carries a tag. Use the repository "
+                              f"alone; the matcher strips the tag from the row side.")
+            if str(value) != str(value).lower():
+                errors.append(f"{aid}: images {value!r} must be lowercase; a registry "
+                              f"rejects uppercase in a repository name.")
 
         # Paths are written with ~ so nothing user-specific is implied, and so the
         # matcher expands them consistently.

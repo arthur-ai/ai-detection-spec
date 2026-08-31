@@ -38,6 +38,12 @@ BANDS = {"fast": 1.0, "slow": 5.0, "expensive": float("inf")}
 # the 10.24s docker_images stall this exists to catch.
 TOLERANCE = 2.0
 RUNS = 3
+# Well above any band, and there only so a blocking query fails the gate instead of
+# hanging it. A run that hits this is reported as inf seconds, which no band tolerates.
+TIMEOUT = 60
+# bin/container-scan's default CONTAINER_SCAN_TIMEOUT. Kept in step by hand; the two live
+# in different languages and there is no shared config file to put it in.
+DEEP_BOUND = 6.0
 OSQI_CANDIDATES = ["/usr/local/bin/osqueryi",
                    "/opt/osquery/lib/osquery.app/Contents/MacOS/osqueryi", "osqueryi"]
 
@@ -58,11 +64,26 @@ def body(text):
 
 def measure(binary, sql):
     """Best of N. The floor is the honest number: anything above it is scheduler
-    noise, and we are looking for queries that block, not for microbenchmarks."""
+    noise, and we are looking for queries that block, not for microbenchmarks.
+
+    BOUNDED, AND POINTED AWAY FROM LOCAL DOCKER, for the same two reasons
+    tools/check_pack.py is. This function is handed every file in queries/, containers.sql
+    included, and `docker_images` has no timeout of its own -- so on a Mac with Docker
+    Desktop mid-startup this hung indefinitely instead of failing, and `measure.py --check`
+    is step 5 of the release checklist. A hang there reads as a broken machine rather than
+    as the finding it is. The socket path cannot exist, so the number this reports is the
+    absent case on every machine, which is at least the same number everywhere; the states
+    that block are measured by test/docker_states.sh, which can produce them on demand.
+    """
     best, rows = float("inf"), 0
     for _ in range(RUNS):
         start = time.time()
-        out = subprocess.run([binary, "--json", sql], capture_output=True, text=True)
+        try:
+            out = subprocess.run([binary, "--docker_socket", "/nonexistent/docker.sock",
+                                  "--json", sql],
+                                 capture_output=True, text=True, timeout=TIMEOUT)
+        except subprocess.TimeoutExpired:
+            return float("inf"), -1
         best = min(best, time.time() - start)
         try:
             rows = len(json.loads(out.stdout))
@@ -100,6 +121,22 @@ def main():
                     "over_budget": total > 10.0})
     if total > 10.0:
         failures.append(f"dist/discovery.sql: {total:.2f}s exceeds the 10s Extension Attribute budget")
+
+    # The deep artifact, measured against the bound bin/container-scan gives it rather than
+    # against the EA budget. It is a separate process and a separate Extension Attribute,
+    # so 10s is not its ceiling -- the wall clock is, and a deep artifact that cannot
+    # finish inside its own bound on the ABSENT case is broken for a different reason than
+    # a slow one.
+    deep = ROOT / "dist" / "discovery-deep.sql"
+    if deep.exists():
+        secs, rows = measure(binary, body(deep.read_text()))
+        results.append({"query": "dist/discovery-deep.sql", "band": "deep",
+                        "seconds": round(secs, 2), "rows": rows,
+                        "over_budget": secs > DEEP_BOUND})
+        if secs > DEEP_BOUND:
+            failures.append(f"dist/discovery-deep.sql: {secs:.2f}s exceeds the {DEEP_BOUND}s "
+                            f"wall clock bin/container-scan allows it, with no daemon to "
+                            f"answer -- so it would time out on every Mac")
 
     if args.json:
         print(json.dumps(results, indent=2))

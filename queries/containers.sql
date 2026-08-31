@@ -6,6 +6,16 @@
 -- platform: darwin
 --
 -- Emits the six-column contract: kind, id, ver, loc, extra, perms.
+--
+-- `id` IS A LIST, and it is the only branch here where that is true. osquery returns ONE
+-- row per image, and an image with several tags has them comma-joined into `tags` --
+-- measured: "alpine:3.20,localbuild-probe:latest". Every `:latest` alongside a version tag
+-- is such an image, so this is ordinary rather than exotic, and a consumer comparing `id`
+-- whole matches none of the tags. bin/classify splits it in image_repos().
+--
+-- `loc` is the image ID: a bare 64-character hex digest, with no `sha256:` prefix (osquery
+-- strips the one the Docker API sends). It is also the most expensive column in the payload
+-- -- a digest does not compress -- at about 89 bytes per row framed. See queries/COST.md.
 -- Branches within this file are joined with UNION ALL, and the build joins files
 -- the same way. See CONTRIBUTING.md before changing the column list.
 
@@ -13,41 +23,71 @@
 -- Homebrew entry, no npm global, no dotdir on the host. This is the only branch that
 -- sees it.
 --
--- MARKED expensive, SO IT IS NOT IN dist/discovery.sql. It ships in the pack, and the
--- Extension Attribute path adds it at runtime only after a round-trip health check.
--- The reason is that this table's cost is not bounded by anything we control:
+-- MARKED expensive, SO IT IS NOT IN dist/discovery.sql. The build composes it into
+-- dist/discovery-deep.sql, which bin/container-scan runs in a process of its own, behind a
+-- round-trip health check and a wall-clock kill. bin/discover --deep is that plus the base
+-- inventory. The reason is that this table's cost is not bounded by anything we control:
 --
---   Docker state                          osquery cost
---   no socket file                        0.49s   fails fast
---   stale socket, nothing listening       0.36s   connection refused
---   socket accepts, daemon never replies  >45s    STILL RUNNING when the test gave up
---   daemon answers 500                    0.45s   zero rows
---   daemon healthy                        0.44s   rows
+--   Docker state                          osquery cost      bin/container-scan
+--   no socket file                        0.49s  fails fast   skips,   exit 2, 0.18s
+--   stale socket, nothing listening       0.36s  refused      skips,   exit 2, 0.19s
+--   socket accepts, daemon never replies  >45s   UNBOUNDED    skips,   exit 2, 0.19s
+--   daemon answers 500                    0.45s  zero rows    skips,   exit 2, 0.20s
+--   pings 200, then never serves          >45s   UNBOUNDED    KILLED,  exit 3, 7.36s
+--   daemon healthy                        0.44s  rows         scans,   exit 0, 0.51s
 --
--- The third row is the one that matters and it is worse than previously recorded. The
+-- The unbounded rows are what matter, and they are worse than previously recorded. The
 -- figure in the ticket was 10.4s, measured against real Docker Desktop -- but that
 -- ceiling is Docker's own socket layer giving up, not osquery's. The table has NO
 -- timeout of its own, so against a daemon that simply holds the connection, this query
--- does not finish. A ten-second Extension Attribute budget is not the constraint here.
--- Unbounded is.
+-- does not finish.
+--
+-- A ten-second Extension Attribute budget was never the constraint. Unbounded was. So the
+-- constraint moved out of the SQL, which cannot express one, and into the runner, which
+-- can: osquery offers no flag to bound a query (5.23.1 -- --docker_socket is the only
+-- docker flag, --alarm_timeout is shutdown-only with a 10s floor, --schedule_timeout is
+-- osqueryd's schedule), and the only bound that exists on the machines this runs on is a
+-- kill on the process.
+--
+-- THIS FILE IS STILL `expensive` AND STILL MUST NOT REACH dist/discovery.sql. A kill
+-- belongs to a process, and there is no process to bound when this SQL is one arm of a
+-- UNION ALL inside somebody else's query: bounding it there discards the 750-odd rows the
+-- other branches have already produced. Re-declaring it `slow` would fold it into the
+-- composed file, where nothing bounds it and one wedged daemon blanks the whole inventory.
 --
 -- That state is not exotic. It is Docker Desktop mid-startup, and Docker Desktop
 -- installed-but-not-running, which is the ordinary condition of a developer Mac that
 -- has not opened Docker today.
 --
--- THE GUARD MUST BE A FULL ROUND TRIP, AND MUST CHECK THE STATUS CODE.
--- Measured, per state, on whether each guard lets this branch run:
+-- THE GUARD MUST BE A FULL ROUND TRIP, AND MUST CHECK THE STATUS CODE -- AND THAT IS
+-- STILL NOT ENOUGH. Measured, per state, on whether each guard lets this branch run:
 --
---                     absent  refuse  hang   error   healthy
---   connect() only    skip    skip    RUN    RUN     RUN      <- stalls forever
---   curl -s           skip    skip    skip   RUN     RUN      <- silent zero rows
---   HTTP 200 required skip    skip    skip   skip    RUN      <- correct
+--                       absent  refuse  hang   error  wedge   healthy
+--   connect() only      skip    skip    RUN    RUN    RUN     RUN     <- stalls forever
+--   curl -s             skip    skip    skip   RUN    RUN     RUN     <- silent zero rows
+--   HTTP 200 required   skip    skip    skip   skip   RUN     RUN     <- still stalls
+--   200 + wall clock    skip    skip    skip   skip   KILLED  RUN     <- correct
 --
 -- connect() is wrong because osquery blocks on the READ, not the connect: the probe
 -- succeeds in 0.000s against a daemon that never answers. `curl -s` is wrong because it
 -- exits 0 on an HTTP 500, and a 500 daemon yields zero rows -- which is indistinguishable
 -- from a machine with no containers, and is the silent failure this project keeps
 -- meeting. Only requiring a 200 separates "nothing there" from "we could not look".
+--
+-- A HEALTH CHECK IS NECESSARY AND IT IS NOT SUFFICIENT. `wedge` -- 200 on /_ping, silence
+-- on /images/json -- passes every probe in that table. It is Docker Desktop with a live
+-- API and an engine that is not serving, which is the ordinary condition of a Mac that is
+-- starting Docker, and the window between the probe and the query is small but not zero.
+-- The guard closes four states of six. The wall-clock kill closes the fifth.
+--
+-- And the kill cannot trust what it killed. Measured on 5.23.1: an interrupted osqueryi
+-- installs a SIGTERM handler, exits **0**, and prints "[\n\n]\n" -- a valid, parseable,
+-- EMPTY JSON array. A wrapper reading the child's exit code and stdout would therefore
+-- report a Mac with no containers about a daemon that never sent a byte. bin/container-scan
+-- discards the output because IT fired the kill, and for no other reason.
+--
+-- test/docker_states.sh asserts every row of both tables above, with no Docker installed,
+-- against test/lib/fake_docker.py.
 --
 -- Whoever simplifies this back to `test -S /var/run/docker.sock` will reintroduce an
 -- unbounded stall on the most common state, and nothing will error.

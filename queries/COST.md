@@ -3,8 +3,14 @@
 Best of three runs. The floor is the honest number: anything above it is scheduler noise,
 and what we are looking for is a query that *blocks*, not a microbenchmark.
 
-Bands: `fast` under 1s, `slow` 1 to 5s, `expensive` over 5s and excluded from
-`dist/discovery.sql`. `tools/measure.py --check` enforces them on every pull request.
+Bands: `fast` under 1s, `slow` 1 to 5s, `expensive` excluded from `dist/discovery.sql` and
+composed into `dist/discovery-deep.sql` instead. `tools/measure.py --check` enforces them on
+every pull request.
+
+`expensive` covers two different facts. `python_packages` at 15.6s is **slow** — a number.
+`docker_images` against a wedged daemon is **unbounded** — not a number, which is what
+`measure.py`'s `float("inf")` ceiling admits. A slow query can be scheduled; an unbounded one
+needs a process around it that can be killed. Neither belongs in `dist/discovery.sql`.
 
 The gate fires at **2x the declared band**, not at the band itself. A band is a declaration
 a reader can trust; the gate catches a query that *blocks*, which is an order-of-magnitude
@@ -13,12 +19,18 @@ event. Enforced at the same number, the boundary case flaps: `apps.sql` measured
 teaches people to re-run it, and then a real stall gets re-run too. 2x absorbs runner
 variance and is still five times below the 10.2s stall this exists to catch.
 
-The composed `dist/discovery.sql` has no tolerance: 10s is the Extension Attribute's actual
-limit, not a target.
+The composed `dist/discovery.sql` is gated at 10s, and **that number is ours, not Jamf's.**
 
-An Extension Attribute gets roughly ten seconds and 30KB. Overrun either and the machine
-reports nothing, which is indistinguishable from a machine with nothing on it. That is why
-this is a build gate and not a review note.
+An earlier version called 10s "the Extension Attribute's actual limit". It is not. No
+documented Jamf timeout for an EA script could be found, and the evidence runs the other way:
+Dan Snelson's EA audit optimises one that took **21 seconds**, and Jamf Nation is full of
+`jamf recon` *stalling* rather than being cut off. An unbounded EA does not fail fast — it
+hangs that Mac's inventory collection.
+
+So the gate stays, as a convention: 10s keeps recon brisk, and the real requirement is that
+nothing on the reporting path can block forever. The 30KB value cap is separate and is real.
+The better answer is not to run a blocking query during recon at all — see the scheduled
+writer below.
 
 ## CI baseline
 
@@ -53,6 +65,17 @@ several browser profiles, 76 matching rows.
 | `runtime.sql` | fast | 0.38 | 0 |
 | `dist/discovery.sql` | composed | 1.07 | 76 |
 
+## Deliberately not collected
+
+`python_packages`: 15.6s per scan, does not honour WHERE push-down, and contributed zero
+matches. It took the full query from 2.0s to 78s. If it is ever wanted, it goes in the
+scheduled writer, never on a synchronous reporting path.
+
+(This lived in `queries/NOTES.md`, which was deleted: its other entry described
+`docker_images` as absent, and `docker_images` now ships. A note about one table belongs
+beside that table — `queries/containers.sql` carries the current version — and a note about
+cost belongs here.)
+
 ## What neither baseline covers
 
 **A machine without the dependency installed is not a valid baseline.** A `docker_images`
@@ -63,6 +86,152 @@ self-hosted run.
 
 If your query touches a daemon, socket or external service, measure it stopped and
 mid-startup before you trust either table above.
+
+## The container scan, and why it is its own Extension Attribute
+
+`bin/container-scan` is the only supported way to run `dist/discovery-deep.sql`. It carries
+the two things SQL cannot express: a round trip demanding HTTP 200, and a wall-clock kill.
+
+Measured against `test/lib/fake_docker.py`, default bound (`CONTAINER_SCAN_TIMEOUT=6`):
+
+| daemon state | `bin/container-scan` | exit | value |
+|---|---|---|---|
+| no socket anywhere | 0.18s | 2 | one `scan` row, `extra=absent` |
+| stale socket / not a socket | 0.19s | 2 | one `scan` row, `extra=absent` |
+| accepts, never replies | 0.19s | 2 | one `scan` row, `extra=unhealthy:000` |
+| answers 500 | 0.20s | 2 | one `scan` row, `extra=unhealthy:500` |
+| **pings 200, then never serves** | **7.36s** | **3** | one `scan` row, `extra=timeout:6` |
+| healthy, 3 images | 0.51s | 0 | the image rows |
+
+7.36s is 0.04s probe + the 6s bound (osqueryi's 0.5s startup is *inside* it, so do not add
+them) + 0.35s to die + polling slop. Against a ten-second budget that leaves 2.6s; a bound
+above 8 does not fit. Raise it only with a measurement showing the daemon is slow rather than
+wedged.
+
+**Two attributes, not one.** Folded together, `bin/discover --deep` against a wedged daemon
+measures **8.64s**: it fits today and stops fitting the first time either half grows.
+
+Folding the *branch* into the composed query is worse than the arithmetic suggests. Measured,
+container arm third of six, wedged daemon, killed at 6s: all 757 base rows came back and
+osqueryi **exited 0**. The rows are not the casualty — the casualty is any evidence that the
+container half went unread, plus 7.21s against 1.19s for the base alone. Unbounded instead,
+the value blanks outright. Split, an overrun blanks only the container attribute and its scan
+row says which happened.
+
+| | wedged daemon | healthy | base only |
+|---|---|---|---|
+| one EA (`bin/discover --deep`) | 8.64s | 1.77s | — |
+| inventory EA (`bin/discover`) | 1.10s | 1.10s | 1.10s |
+| container EA (`bin/container-scan`) | 7.36s | 0.51s | — |
+
+Jamf's ten seconds and 30KB are **per Extension Attribute**, not a shared pool. Split, each
+half gets its own budget and neither can blank the other.
+
+**Scope the container EA to Macs that have Docker.** A Mac with none returns a marker row in
+0.18s, which is correct and is also 10,000 rows of "no Docker here" per full sync on a fleet
+that mostly has no Docker.
+
+### Container payload
+
+Measured twice on the same developer Mac, on two real image stores — the larger one spanning
+five registries: Docker Hub library and org, `ghcr.io`, `gcr.io`, `public.ecr.aws`.
+
+| | rows | raw | framed EA | % of cap |
+|---|---|---|---|---|
+| inventory EA (`bin/discover`) | 757 | 116.2 KB | 17.7 KB | 59% |
+| container EA, 27 images | 27 | 4.4 KB | 2.3 KB | **8%** |
+| container EA, 10 images | 10 | 1.6 KB | 0.9 KB | 3% |
+| both in one EA, 27 images | 784 | 120.5 KB | 20.1 KB | 67% |
+
+**Time binds long before 30KB does**, the reverse of the base inventory's problem.
+
+Two store sizes make the marginal cost a measurement: (2.3 − 0.9) KB over 17 rows is **84
+bytes per row**, against 32.6 for an application row. `loc` is a 64-character hex digest (no
+`sha256:` prefix, measured) and a digest does not compress, so gzip gets nothing from a run
+of them the way it does from `/System/` paths. **An image row is the most expensive row this
+repo emits.**
+
+### The scheduled writer, which is the recommended deployment
+
+Nothing upstream will bound us, so the fix is not a faster blocking call but not making one
+while something waits. `bin/discover --write` runs on a schedule; the endpoint reads the file
+with `cat`. `deploy/com.arthur.ai-discovery.plist` is the launchd job.
+
+| path | cost | can it block? |
+|---|---|---|
+| `cat /var/lib/arthur/inventory.json` | **0.09s** | no |
+| `bin/discover` (live, composed) | 1.19s | not today; one added daemon-touching branch and yes |
+| `bin/discover --deep` (live, wedged Docker) | 8.64s | bounded at the cost of the whole budget |
+| `bin/discover --write` (the scheduled job) | 4.16s | nothing is waiting for it |
+
+**On the write path each branch runs in its own process, and that is a reliability decision
+rather than a performance one.** Composition saves ~0.47s of osqueryi startup per branch —
+worth having when an attribute is waiting, worth nothing when a launchd job is. What it costs
+is measured:
+
+| one branch's table unavailable, as on an older osquery | result |
+|---|---|
+| composed, one statement | **0 rows**, exit 1, stdout `[\n\n]` — five bytes of valid, empty JSON |
+| independent, one process per branch | **6 of 6 branches, 757 rows**; the bad branch contributes 0 |
+
+Every query declares `min-osquery: 5.10.0`, so a missing table is a real deployment state.
+Composed, one unavailable table makes a Mac report as though nothing is installed on it — and
+a consumer that ignores exit status cannot tell that from a clean machine. The independent
+writer costs 4.16s instead of 1.19s and cannot do that.
+
+It also gives each branch its own `kind=scan` row, so "we could not look" is per branch instead
+of all-or-nothing.
+
+### How the scan scales
+
+**Wall clock is flat in the number of images, and independent of their size.** Measured
+against a fake daemon serving a varying count, best of three:
+
+| images | scan |
+|---|---|
+| 10 | 0.478s |
+| 50 | 0.464s |
+| 200 | 0.466s |
+| 1000 | 0.484s |
+
+A hundredfold more images costs 6 milliseconds. The real store's 10 images occupy 44.56 GB
+and scan in the same time as ten synthetic ones, so bytes on disk cost nothing either. What
+the 0.58s end-to-end scan is actually made of, on this Mac:
+
+| step | seconds |
+|---|---|
+| the guard, `curl /_ping` | 0.10 |
+| osqueryi process startup | 0.35 |
+| the `docker_images` query itself | 0.13 |
+| **total** | **0.58** |
+
+So the scan is fixed cost. Enumeration is free; **starting a process and asking a daemon
+whether it is alive is the whole bill**, which is also why composing this into a second
+invocation costs about half a second and no more.
+
+**Payload is what scales, and it is the binding constraint.** With realistic identifiers —
+random 64-char digests and varied repository names:
+
+| images | framed EA | % of cap |
+|---|---|---|
+| 10 | 0.8 KB | 3% |
+| 50 | 3.6 KB | 12% |
+| 200 | 14.3 KB | 48% |
+| 365 | 26.0 KB | 87% |
+| 500 | 35.4 KB | **118%** |
+
+**The 30KB cap binds at roughly 420 images**, holding steady at about 73 bytes per row. A Mac
+with a few hundred images overruns the container EA long before it comes close to the ten
+seconds.
+
+Measure this with random digests or not at all. Sequential synthetic ids (`%064x` of a
+counter) framed 1000 rows into 16.6 KB — 17 B/row, a quarter of the truth — because gzip
+exploits a run of near-identical hex that a real digest never gives it. The first attempt at
+this table used them and would have put the ceiling near 1800 images.
+
+Note that `size_bytes` is the UNCOMPRESSED size. `ollama/ollama:latest` reports 6.98 GB from
+a 2.78 GB download, so the figure `bin/container-scan --pretty` prints is disk footprint, not
+transfer.
 
 # Measured payload
 

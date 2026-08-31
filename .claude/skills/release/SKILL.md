@@ -37,14 +37,18 @@ $ python3 tools/validate_catalog.py
 $ python3 tools/check_no_catalog.py   # no agent identifiers leaked back into the SQL
 $ python3 tools/measure.py --check    # cost bands; needs osquery locally
 $ sudo python3 tools/check_pack.py    # every pack query actually returns rows
-$ sudo test/docker_states.sh          # containers.sql against every Docker state, ~15s
+$ sudo test/docker_states.sh          # every Docker state, guard, bound, catalog, ~35s
 ```
 
-The last two exist because **two artifacts ship, and they are not the same query**.
-`dist/discovery.sql` is the composed `fast` and `slow` queries; `dist/ai-discovery.conf` is the
-pack, and it additionally carries `containers.sql`, which is `expensive` and excluded from the
-composed file. A release that only checks `discovery.sql` has verified half of what it attaches —
-and the pack once shipped with four of five queries silently returning zero rows.
+The last two exist because **four things ship and they are not the same query**.
+`dist/discovery.sql` is the composed `fast` and `slow` queries. `dist/ai-discovery.conf` is the
+pack, and it additionally carries `containers.sql`, which is `expensive`.
+`dist/discovery-deep.sql` composes the `expensive` queries on their own — a **supplement, not a
+superset**. And `bin/container-scan` is not a query at all: it is the only supported way to run
+the deep artifact, because that artifact can block forever and the bound lives in the runner.
+`bin/discover` joins the two. A release that only checks `discovery.sql` has verified a quarter
+of what it attaches — and the pack once shipped with four of five queries silently returning
+zero rows.
 
 Confirm the last Scenarios run on `main` was green — it runs on dispatch and schedule, not per
 PR, so a red matrix can sit undetected:
@@ -74,10 +78,18 @@ a fleet. Cover, when each applies:
   six-column contract or the row kinds moved. Say which artifact a new query landed in: an
   `expensive` one is pack-only and does not reach anyone running the composed file.
 - **Anything the deployer must do**, where the repo cannot do it for them. `containers.sql` is
-  the standing case: it is safe on a schedule, and adding it to an Extension Attribute requires
-  a round-trip health check that demands HTTP 200, because Docker Desktop mid-startup makes
-  `docker_images` run unbounded. A release that ships it without saying so is a stall waiting to
-  happen.
+  the standing case, and what it asks for has changed: the repo now ships the runner, so tell
+  people to use it rather than to build their own. **`bin/container-scan` is the supported way
+  to run the deep artifact** — never inline it in an Extension Attribute. It carries a round
+  trip demanding HTTP 200 *and* a wall-clock kill, because a daemon that pings 200 and then
+  stops serving passes the health check and blocks the query anyway. Say in the notes that it
+  deploys as **its own** Extension Attribute, with its own ten seconds and its own 30KB, scoped
+  to Macs with Docker; that its non-zero outcomes print a `kind=scan` marker row because Jamf
+  records stdout and discards exit status; and what folding it into the inventory EA
+  actually costs, which is not obvious: measured, a bound on the combined query returns the
+  full base inventory and exits 0 while silently omitting the container half, and spends 6
+  of the 10 seconds doing it. Left unbounded, the inventory value blanks outright. A release that ships the query without
+  this is a stall waiting to happen.
 - **Detection changes** — new agents in the catalog, corrected identifiers, which install routes
   are covered. Say plainly whether a Mac must rescan, or whether reclassifying retained evidence
   repairs history.
@@ -116,6 +128,16 @@ After the user publishes, confirm the workflow went green and the assets are att
 $ gh run list --workflow=release.yml --limit=1
 $ gh release view v<X.Y.Z> --json assets --jq '[.assets[].name]'
 ```
+
+Eight assets, and a missing one is a broken release rather than a tidier one:
+`discovery.sql`, `discovery-deep.sql`, `ai-discovery.conf`, `jamf-collect.sh`, `discover`,
+`container-scan`, `classify`, `com.arthur.ai-discovery.plist`.
+
+`jamf-collect.sh` is the one most consumers will actually deploy: it is self-contained, so it
+needs neither the other assets beside it nor a package. It embeds `bin/` and `dist/`, which is
+why `build.py` writes it last and `--check` compares it against a fresh build of the tree. The scripts resolve each other and the artifacts by relative path, so the notes
+must say the layout is `bin/` and `dist/` side by side — downloaded loose into one folder,
+`bin/discover` will not find `dist/discovery.sql`.
 
 ## Don'ts
 

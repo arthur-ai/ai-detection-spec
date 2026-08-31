@@ -2,6 +2,7 @@
 """Turn osquery output into findings, using catalog/agents.yaml.
 
     osqueryi --json < dist/discovery.sql | bin/classify
+    bin/discover --deep | bin/classify
 
 This is the reference implementation of matching. It is deliberately small and meant
 to be read: if you want to know what a signature means, this is the answer, and any
@@ -15,6 +16,7 @@ import os
 import pathlib
 import re
 import sys
+import time
 from collections import defaultdict
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -56,7 +58,58 @@ def build_index(catalog):
                 glob.append((re.compile(r"^/Users/[^/]+/" + re.escape(value[2:])), route, meta))
         for value in agent.get("native_messaging_hosts", []):
             exact[("nmh", value)] = meta
+        # Exact on the NORMALISED repository, never a substring. `ollama` as a substring
+        # would claim `myorg/ollama-fork` and `not-ollama`, and an image name is
+        # attacker-choosable in a way a bundle id is not: anyone can `docker tag` anything.
+        for value in agent.get("images", []):
+            exact[("images", image_repo(value))] = meta
     return exact, prefix, glob
+
+
+# How a docker_images row names an image, read off 28 real images on a developer Mac
+# rather than reasoned about. All four rules below are load-bearing:
+#
+#   alpine:3.20                                 Docker Hub library: NO registry, NO library/
+#   authzed/spicedb:latest                      Docker Hub org:     NO docker.io/ prefix
+#   ghcr.io/ggml-org/llama.cpp:server           anywhere else:      registry host IS present
+#   public.ecr.aws/docker/library/python:3.12   ...including a path that contains 'library/'
+#   nextbite-backend:latest                     a LOCAL build is shaped like a Hub library
+#                                               image and cannot be told apart from one
+#
+# So a catalog value is normalised the same way a row is, and then compared exactly. The
+# local-build case is why exact matching matters: `docker tag alpine ollama/ollama` would
+# produce a finding, and nothing can distinguish that from the real image -- which is a
+# property of container images, not a defect here, and is recorded in README.md.
+def image_repo(tag):
+    """One tag string to its normalised repository. 'ghcr.io/x/y:v1' -> 'ghcr.io/x/y'."""
+    tag = tag.strip()
+    # The tag separator is the last ':' AFTER the last '/'. A registry may carry a port --
+    # localhost:5000/foo -- and splitting on the last ':' outright would eat the port and
+    # leave 'localhost'.
+    colon, slash = tag.rfind(":"), tag.rfind("/")
+    repo = tag[:colon] if colon > slash else tag
+    for implicit in ("docker.io/", "index.docker.io/", "registry-1.docker.io/"):
+        if repo.startswith(implicit):
+            repo = repo[len(implicit):]
+            break
+    # Only at the very front, and only once the registry is gone: 'library/' is implicit on
+    # Docker Hub, but public.ecr.aws/docker/library/python legitimately contains it.
+    if repo.startswith("library/") and "/" not in repo[len("library/"):]:
+        repo = repo[len("library/"):]
+    return repo
+
+
+def image_repos(tags):
+    """Every repository a docker_images row names.
+
+    ONE ROW CAN NAME SEVERAL, and missing that means missing the image entirely rather
+    than matching it loosely. Measured: after `docker tag alpine:3.20 probe/multitag:a`
+    and `:b`, osquery returned ONE row whose tags column was
+    "probe/multitag:a,probe/multitag:b,alpine:3.20". A matcher comparing the whole field
+    matches none of the three, and a multi-tagged image is completely ordinary -- every
+    `:latest` alongside a version tag is one.
+    """
+    return [image_repo(t) for t in tags.split(",") if t.strip()]
 
 
 def _corroborates(agent, row):
@@ -76,6 +129,11 @@ KIND_ROUTES = {
     "daemon": ["launchd_prefixes"],
     "nmh": ["nmh"],
     "file": ["state_dirs", "binaries", "model_stores"],
+    # An image row's `id` is the tags field, which may name several repositories at once,
+    # so it is matched through image_repos() rather than compared whole. Listing it here
+    # also keeps an unclaimed image UNMATCHED rather than dropped: a kind absent from this
+    # dict falls off the end of the loop below, invisible even under --show-unmatched.
+    "image": ["images"],
 }
 
 # pipx and uv give each installed tool a directory named for the PACKAGE, so the tool
@@ -94,13 +152,35 @@ TOOL_DIR = re.compile(
     r"^/Users/[^/]+/\.local/(?:pipx/venvs|share/uv/tools)/([^/]+)/?$")
 
 
+# A row that says a branch could not look, rather than what it found. bin/container-scan
+# emits one when the Docker daemon is absent, not serving, or wedged past the wall clock.
+#
+# IT HAS TO BE HANDLED EXPLICITLY OR IT DISAPPEARS. A kind outside KIND_ROUTES is dropped
+# at the foot of the loop below -- not unmatched, DROPPED, invisible even under
+# --show-unmatched, because `elif kind in KIND_ROUTES` is the only thing that collects
+# anything. So the row built specifically to stop a wedged daemon reading as an empty
+# machine would have been swallowed by the classifier one hop after surviving the scan.
+GAP_KIND = "scan"
+# `extra` on a scan row: "ok" means the branch ran and the rows beside it are real. Anything
+# else is a reason it could not look. `ver` is when the scan ran, in unix seconds, so a
+# cached payload dates itself and a consumer can judge staleness without stat()ing anything.
+SCAN_OK = "ok"
+STALE_AFTER = 24 * 3600
+
+
 def classify(rows, catalog):
     exact, prefix, glob = build_index(catalog)
-    findings, unmatched = defaultdict(list), []
+    findings, unmatched, gaps, scans = defaultdict(list), [], [], []
 
     for row in rows:
         kind, ident, loc = row.get("kind"), row.get("id", ""), row.get("loc", "")
         hit = None
+
+        if kind == GAP_KIND:
+            # A dated success is provenance, not a gap. Splitting them here is what lets
+            # `cat`-ing a cache file produce the same reading as a live scan.
+            (scans if row.get("extra") == SCAN_OK else gaps).append(row)
+            continue
 
         # A pipx/uv tool directory names its package. Try that before the path globs,
         # which describe state directories rather than install locations.
@@ -116,6 +196,14 @@ def classify(rows, catalog):
                     if proute in ("pypi", "npm") and name.startswith(pre):
                         hit = meta
                         break
+
+        # Before the generic loop, because the identifier has to be normalised first and
+        # there may be several of them in the one field.
+        if kind == "image" and not hit:
+            for repo in image_repos(ident):
+                if ("images", repo) in exact:
+                    hit = exact[("images", repo)]
+                    break
 
         for route in [] if hit else KIND_ROUTES.get(kind, []):
             if (route, ident) in exact:
@@ -147,7 +235,7 @@ def classify(rows, catalog):
         elif kind in KIND_ROUTES:
             unmatched.append(row)
 
-    return findings, unmatched
+    return findings, unmatched, gaps, scans
 
 
 def main():
@@ -162,7 +250,7 @@ def main():
 
     raw = pathlib.Path(args.input).read_text() if args.input else sys.stdin.read()
     rows = json.loads(raw)
-    findings, unmatched = classify(rows, load_catalog(args.catalog))
+    findings, unmatched, gaps, scans = classify(rows, load_catalog(args.catalog))
 
     if args.json:
         json.dump({
@@ -177,12 +265,69 @@ def main():
             # wrong claim -- 686 rows on the reference Mac. A missing key makes a
             # consumer ask for it instead of believing it.
             **({"unmatched": unmatched} if args.show_unmatched else {}),
+            # `gaps` is not subject to that argument and is never hidden behind a flag.
+            # It is not a computed absence but a positive report that a branch could not
+            # look, and a consumer that treats findings as complete while a gap is open
+            # is drawing the wrong conclusion from the right data.
+            **({"gaps": gaps} if gaps else {}),
+            # Provenance for the branches that DID run, with the age computed here so a
+            # consumer never has to know that `ver` holds unix seconds.
+            **({"scans": [{"id": r.get("id"), "at": int(r.get("ver") or 0),
+                           "age_seconds": max(0, int(time.time()) - int(r.get("ver") or 0)),
+                           "stale": max(0, int(time.time()) - int(r.get("ver") or 0)) > STALE_AFTER}
+                          for r in scans]} if scans else {}),
         }, sys.stdout, indent=2)
         print()
         return
 
+    # FIRST, and above the findings, because it changes what the findings mean. "No AI
+    # agents found" under an unread branch is not an answer.
+    # Staleness is judged HERE rather than on the endpoint. A cache is read with `cat`, so
+    # the endpoint cannot check an mtime -- the payload carries its own timestamp instead and
+    # the consumer decides what counts as old.
+    def ago(seconds):
+        return (f"{seconds // 86400}d" if seconds >= 86400 else
+                f"{seconds // 3600}h" if seconds >= 3600 else
+                f"{seconds // 60}m" if seconds >= 60 else f"{seconds}s")
+
+    now = int(time.time())
+    aged = [(max(0, now - int(r.get("ver") or 0)), r) for r in scans]
+    stale = [(a, r) for a, r in aged if a > STALE_AFTER]
+    # A line per branch would be six lines of noise on a healthy Mac, so the fresh case is
+    # one summary line and only the stale branches are named. Staleness is the part a reader
+    # has to act on: a `cat` of a cache file cannot check its own mtime, so if nobody reads
+    # the timestamp, a writer that stopped a month ago looks exactly like a current scan.
+    for age, row in stale:
+        print(f"STALE: {row.get('id', '?')} last scanned {ago(age)} ago. The scheduled "
+              f"writer may have stopped. These rows are real but not current.")
+    if aged and not stale:
+        print(f"{len(aged)} branch{'es' if len(aged) > 1 else ''} scanned, "
+              f"newest {ago(min(a for a, _ in aged))} ago")
+    if aged:
+        print()
+
+    for row in gaps:
+        reason, where = row.get("extra", ""), row.get("loc") or "the socket"
+        if reason == "absent":
+            detail = "no Docker socket on this Mac"
+        elif reason == "no-cache":
+            detail = (f"nothing has been written to {where}. The scheduled writer is not "
+                      f"installed, or has never run")
+        elif reason.startswith("unhealthy:"):
+            detail = f"the daemon at {where} answered {reason.split(':', 1)[1]}"
+        elif reason.startswith("timeout:"):
+            detail = (f"the daemon at {where} answered /_ping and then stalled; gave up at "
+                      f"{reason.split(':', 1)[1]}s")
+        else:
+            detail = f"{where} reported {reason!r}"
+        print(f"COULD NOT LOOK: {row.get('id', '?')} -- {detail}")
+    if gaps:
+        print("  These are not findings and not an absence of them. That part of the "
+              "machine was not read.\n")
+
     if not findings:
-        print("No AI agents found.")
+        print("No AI agents found." if not gaps else
+              "No AI agents found in the parts that could be read.")
     for aid, hits in sorted(findings.items()):
         meta = hits[0][0]
         print(f"\n{meta['name']}  [{meta['classification']}]")

@@ -10,8 +10,10 @@ SELECT 'app' AS kind, bundle_identifier AS id, bundle_short_version AS ver, path
 UNION ALL
 
 -- from browser.sql
-SELECT 'ext', identifier, version, profile_path, browser_type,
+SELECT 'ext' AS kind, identifier AS id, version AS ver, profile_path AS loc,
+       browser_type AS extra,
        permissions || CASE WHEN manifest_json LIKE '%<all_urls>%' THEN ',<all_urls>' ELSE '' END
+         AS perms
   FROM users CROSS JOIN chrome_extensions USING (uid)
 UNION ALL
 -- A single % matches ONE path component. 'Application Support/Google/Chrome/...' is TWO,

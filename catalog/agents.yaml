@@ -9,6 +9,26 @@
 # We shipped `bot.molt.mac` for OpenClaw once, straight from the vendor's own Homebrew
 # metadata, and it matched nothing on any Mac. See CONTRIBUTING.md.
 #
+# `images` is a container image REPOSITORY, matched exactly against a normalised
+# docker_images tag: no `docker.io/` prefix and no `library/` on Docker Hub, the registry
+# host present everywhere else. bin/classify's image_repo() does the normalising and
+# records the four rules it was read off. Two things about this route are worth knowing
+# before adding to it:
+#
+#   * An image name is CHOSEN BY WHOEVER TAGGED IT. `docker tag alpine ollama/ollama`
+#     produces a finding, and nothing can tell it from the real image. Every other route
+#     here names something a vendor controls; this one does not.
+#   * A local build is shaped exactly like a Docker Hub library image, so a one-segment
+#     value such as `ollama` would claim anybody's `ollama:latest` build. Prefer the
+#     two-segment published name.
+#
+# Every `images` value here was read off a real docker_images row, and the comment beside
+# each one records the row. Two of them needed a detour: Docker Hub pulls are blocked
+# daemon-side on the machine this was verified on, so the layers were fetched from the
+# registry directly and side-loaded as an OCI archive. CONTRIBUTING.md has the method. A
+# registry manifest alone would have been weaker -- authoritative about the NAME, silent
+# about how a row renders it -- and the detour was cheaper than that compromise.
+#
 # `classification` describes DEPLOYMENT SHAPE, not risk or quality. Whether an agent is
 # acceptable is the reader's judgement about their fleet, not ours about a vendor.
 #
@@ -98,6 +118,10 @@ agents:
     launchd_prefixes: [com.ollama.]
     ports: [11434]
     model_stores: ["~/.ollama/models/manifests"]
+    # Read off a real row: "ollama/ollama:latest", id 8818bcd5de52. The image's own config
+    # corroborates the port already listed above -- ENTRYPOINT /bin/ollama, CMD serve,
+    # EXPOSE 11434/tcp, OLLAMA_HOST=0.0.0.0:11434.
+    images: [ollama/ollama]
 
   - id: lm-studio
     name: LM Studio
@@ -117,6 +141,9 @@ agents:
     classification: Local model
     homebrew: ["llama.cpp"]            # version is an opaque build number, not semver
     ports: [8080]
+    # Read off a real pulled image: ghcr.io/ggml-org/llama.cpp:server. ggml-org, not
+    # ggerganov -- the org was renamed and the old path is not what ships today.
+    images: ["ghcr.io/ggml-org/llama.cpp"]
 
   - id: perplexity-comet
     name: Perplexity Comet
@@ -150,6 +177,9 @@ agents:
     npm: [aider]
     pypi: [aider-chat]                 # the usual route; the npm name differs
     state_dirs: ["~/.aider"]
+    # Read off a real row: "paulgauthier/aider:latest", id cd375f1ecbd1. ENTRYPOINT is
+    # /venv/bin/aider, which is the same package the pypi route above names.
+    images: [paulgauthier/aider]
 
   - id: gemini-cli
     name: Gemini CLI
@@ -173,6 +203,10 @@ agents:
     classification: Framework
     npm: [litellm]
     pypi: [litellm]
+    # Read off a real pulled image. The published tag is main-latest, not latest, and the
+    # repository is ghcr.io/berriai -- BerriAI is the org, and the registry host is part
+    # of the identifier for anything not on Docker Hub.
+    images: ["ghcr.io/berriai/litellm"]
 
   - id: mcp-sdk
     name: MCP SDK

@@ -27,6 +27,7 @@ if OSQI is None:
     sys.exit("osqueryi not found")
 
 pack = json.loads((ROOT / "dist" / "ai-discovery.conf").read_text())
+COLUMNS = ["kind", "id", "ver", "loc", "extra", "perms"]
 failed, total_rows = False, 0
 
 for name, spec in sorted(pack["queries"].items()):
@@ -48,6 +49,21 @@ for name, spec in sorted(pack["queries"].items()):
         print(f"FAIL: {name} did not finish in 30s")
         failed = True
         continue
+    # The COLUMN NAMES, not just the row count. The pack shipped a browser query returning
+    # 74 correctly-counted rows keyed 'ext' and "permissions || CASE WHEN ..." because its
+    # first UNION ALL arm carried no aliases -- well-formed only inside dist/discovery.sql,
+    # where apps.sql donated the names. Counting rows passed it every time.
+    try:
+        parsed = json.loads(proc.stdout)
+    except (json.JSONDecodeError, ValueError):
+        parsed = None
+    if parsed:
+        got = set(parsed[0])
+        if got != set(COLUMNS):
+            print(f"FAIL: {name} returns columns {sorted(got)}, not the six-column "
+                  f"contract. Alias the first UNION ALL arm.")
+            failed = True
+            continue
     try:
         rows = len(json.loads(proc.stdout))
     except (json.JSONDecodeError, ValueError):
