@@ -4,8 +4,7 @@
 #     bin/discover                     # base inventory, as one JSON array
 #     bin/discover --deep              # base inventory plus a LIVE container scan
 #     bin/discover --write PATH        # EVERY branch, independently, into a cache file
-#     bin/discover --write PATH --framed EA   # ...and a framed value ready to cat into an EA
-#     bin/discover --write PATH --status TXT   # ...and a one-line status a smart group can read
+#     bin/discover --write PATH --status TXT   # ...and a one-line health summary
 #     bin/discover --cache PATH        # emit that file. no queries run, nothing can block
 #     bin/discover --deep | bin/classify
 #
@@ -28,7 +27,8 @@
 #
 # A deep failure never costs the base rows. It prints them, plus one kind=scan marker row
 # saying why the container half is missing, and still exits 0 -- because the inventory did
-# succeed, and because a Jamf Extension Attribute records stdout and discards exit status,
+# succeed, and because a consumer that records stdout and discards the exit status sees only
+# what was printed,
 # so the marker row is the only channel the reason has. See bin/container-scan.
 set -uo pipefail
 
@@ -43,18 +43,10 @@ DEEP_SCAN=0
 # integration is a file read, and this is the same thing with a diagnostic.
 CACHE_PATH=""
 WRITE=""
-# --framed writes arthur1.<base64(gzip(json))>, on one line, next to the JSON.
-#
-# WHY THE WRITER DOES THIS AND NOT THE READER. The raw JSON is 118 KB on a reference Mac,
-# which is 394% of a 30KB Extension Attribute value cap; framed it is 18.7 KB, 62%. So an
-# EA cannot report the raw file -- and framing needs an interpreter, which is the one thing
-# a reporting path should not depend on. Doing it here keeps the endpoint side a literal
-# `cat` and keeps python3 a dependency of the scheduled job alone.
-FRAMED=""
 # --status writes ONE plain line, for a second attribute that inventory tooling can actually
-# match on. The framed value is base64 of gzip, so a Jamf smart group, a Kandji filter or an
-# Intune report cannot see inside it -- which means the payload alone cannot answer "show me
-# every Mac where the container scan is failing". This can:
+# match on. A consumer that compresses this payload for transport cannot see inside the result,
+# and a consumer that stores it as one blob cannot query it -- so the payload alone cannot
+# answer "show me every machine where the container scan is failing". This can:
 #
 #   degraded 2026-08-31T17:52:03Z apps=ok browser=ok containers=timeout:6 ...
 #
@@ -100,8 +92,6 @@ while [ $# -gt 0 ]; do
                     CACHE_PATH="$2"; shift 2 ;;
     --write)        [ -n "${2:-}" ] || { echo "discover: --write needs a path" >&2; exit 1; }
                     WRITE="$2"; shift 2 ;;
-    --framed)       [ -n "${2:-}" ] || { echo "discover: --framed needs a path" >&2; exit 1; }
-                    FRAMED="$2"; shift 2 ;;
     --status)       [ -n "${2:-}" ] || { echo "discover: --status needs a path" >&2; exit 1; }
                     STATUS="$2"; shift 2 ;;
     --scan-timeout) [ -n "${2:-}" ] || { echo "discover: --scan-timeout needs a value" >&2; exit 1; }
@@ -222,33 +212,6 @@ MERGE
   mkdir -p "$(dirname "$WRITE")" 2>/dev/null
   mv -f "$tmpdir/payload" "$WRITE" || { echo "discover: could not write $WRITE" >&2; rm -rf "$tmpdir"; exit 1; }
   chmod 644 "$WRITE" 2>/dev/null
-
-  if [ -n "$FRAMED" ]; then
-    # Same rename discipline: a reporting path that caught a half-written value would upload
-    # a truncated base64 blob, which decodes to nothing at all.
-    ftmp="$(mktemp "${FRAMED}.XXXXXX")" || exit 1
-    if python3 -c '
-import base64, gzip, json, sys
-rows = json.load(open(sys.argv[1]))
-raw = json.dumps(rows, separators=(",", ":")).encode()
-value = b"arthur1." + base64.b64encode(gzip.compress(raw, 9))
-CAP = 30 * 1024
-if len(value) > CAP:
-    sys.exit(f"discover: framed value is {len(value)} bytes, over the {CAP}-byte Extension "
-             f"Attribute cap by {len(value) - CAP}. See queries/COST.md: the cap binds on how "
-             f"loaded the Mac is, not on how many agents it has.")
-open(sys.argv[2], "wb").write(value + b"\n")
-print(f"framed {len(raw)} bytes of JSON into {len(value)} bytes ({len(value) / CAP * 100:.0f}% of cap)",
-      file=sys.stderr)
-' "$WRITE" "$ftmp"; then
-      mkdir -p "$(dirname "$FRAMED")" 2>/dev/null
-      mv -f "$ftmp" "$FRAMED" && chmod 644 "$FRAMED" 2>/dev/null
-    else
-      # Over the cap is a real failure and must not leave a stale value looking current.
-      rm -f "$ftmp" "$FRAMED"
-      echo "discover: no framed value written" >&2
-    fi
-  fi
 
   if [ -n "$STATUS" ]; then
     stmp="$(mktemp "${STATUS}.XXXXXX")" || exit 1

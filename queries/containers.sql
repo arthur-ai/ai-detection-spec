@@ -42,7 +42,7 @@
 -- timeout of its own, so against a daemon that simply holds the connection, this query
 -- does not finish.
 --
--- A ten-second Extension Attribute budget was never the constraint. Unbounded was. So the
+-- A ten-second collection budget was never the constraint. Unbounded was. So the
 -- constraint moved out of the SQL, which cannot express one, and into the runner, which
 -- can: osquery offers no flag to bound a query (5.23.1 -- --docker_socket is the only
 -- docker flag, --alarm_timeout is shutdown-only with a 10s floor, --schedule_timeout is

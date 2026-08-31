@@ -49,7 +49,7 @@ jobs:
           elapsed=$(( $(date +%s) - start ))
           rows=$(python3 -c "import json;print(len(json.load(open('/tmp/out.json'))))")
           echo "$rows rows in ${elapsed}s"
-          # An Extension Attribute gets ~10s. Overrun it and the machine reports
+          # Self-imposed 10s budget. Overrun it and the machine reports
           # nothing, which is indistinguishable from a machine with nothing on it.
           if [ "$elapsed" -gt 10 ]; then
             echo "::error::query took ${elapsed}s, over the 10s budget"; exit 1
@@ -90,7 +90,7 @@ jobs:
         run: |
           OSQI=/usr/local/bin/osqueryi
           sudo -n env OSQI="$OSQI" bin/discover \
-            --write /tmp/inv.json --framed /tmp/inv.ea --status /tmp/inv.status > /dev/null
+            --write /tmp/inv.json --status /tmp/inv.status > /dev/null
           sudo -n env OSQI="$OSQI" bin/discover --cache /tmp/inv.json > /tmp/read.json
           python3 - <<'EOF'
           import json, sys, time
@@ -114,31 +114,13 @@ jobs:
           print(f"{len(inv)} rows, {len(scans)} branches, containers={scans['containers']['extra']}")
           EOF
 
-      # THE THREE OUTPUTS AN ENDPOINT ACTUALLY REPORTS. The cap is the gate that matters
-      # most: an attribute that overruns it reports nothing, which is indistinguishable from
-      # a Mac with nothing on it. Nothing per-PR checked it until now.
-      - name: The reported values fit, and say what they are
+      # THE STATUS LINE IS A CONTRACT. Its vocabulary is what a consumer branches on, so
+      # it must not grow silently. The payload's size and any transport framing are the
+      # consumer's business, not this repo's.
+      - name: The status line says what it should
         run: |
           python3 - <<'EOF'
-          import base64, gzip, json, re, sys
-          CAP = 30 * 1024
-
-          value = open("/tmp/inv.ea", "rb").read().strip()
-          if not value.startswith(b"arthur1."):
-              sys.exit(f"::error::framed value has no arthur1. prefix: {value[:24]!r}")
-          if b"\n" in value:
-              sys.exit("::error::framed value contains a newline; it must be one line")
-          if len(value) > CAP:
-              sys.exit(f"::error::framed value is {len(value)} bytes, over the {CAP}-byte cap")
-          rows = json.loads(gzip.decompress(base64.b64decode(value[8:])))
-          if rows != json.load(open("/tmp/inv.json")):
-              sys.exit("::error::the framed value does not decode to the JSON payload")
-          pct = len(value) / CAP * 100
-          print(f"framed {len(value)} bytes = {pct:.0f}% of cap, {len(rows)} rows, round-trips")
-          if pct > 80:
-              print(f"::warning::framed value is {pct:.0f}% of the cap on a CLEAN runner. "
-                    f"A loaded Mac will not fit -- see queries/COST.md.")
-
+          import re, sys
           status = open("/tmp/inv.status").read()
           if status.count("\n") != 1:
               sys.exit(f"::error::status must be exactly one line, got {status.count(chr(10))}")
@@ -151,14 +133,13 @@ jobs:
           for need in ("apps", "browser", "containers", "filesystem", "packages", "runtime"):
               if need not in tokens:
                   sys.exit(f"::error::status has no token for branch {need!r}: {rest!r}")
-          # A Smart Group matches on these strings, so the vocabulary is a contract.
           ok = ("ok", "absent", "error")
           for k, v in tokens.items():
               if k == "rows":
                   continue
               if not (v in ok or v.startswith(("unhealthy:", "timeout:", "stale:"))):
-                  sys.exit(f"::error::unknown outcome {v!r} for {k}; Smart Groups match on "
-                           f"this vocabulary and it must not grow silently")
+                  sys.exit(f"::error::unknown outcome {v!r} for {k}. Consumers branch on this "
+                           f"vocabulary and it must not grow silently")
           print(f"status: {first}, {len(tokens) - 1} branches, all outcomes in vocabulary")
           EOF
 
@@ -187,40 +168,6 @@ jobs:
               sys.exit("::error::a gap rendered as a clean machine, which is the one "
                        "outcome the scan row exists to prevent")
           print(f"classifier reported {len(gaps)} gap(s) rather than silence")
-          EOF
-
-      # The one-file collector, run the way Jamf runs a Script: from a directory with no
-      # repo in it, under a stripped environment, with positional arguments it must ignore.
-      # This is the deployment that needs no package, so nothing else exercises it.
-      - name: The self-contained collector, as Jamf would run it
-        run: |
-          work=$(mktemp -d) && out=$(mktemp -d)
-          cp dist/jamf-collect.sh "$work/script-ci"
-          cd "$work"
-          sudo -n env -i PATH=/usr/bin:/bin:/usr/sbin:/sbin HOME=/var/root \
-            OSQI=/usr/local/bin/osqueryi ARTHUR_OUT_DIR="$out" \
-            /bin/bash ./script-ci / runner-mac runner > stdout.txt 2> stderr.txt
-          echo "stdout (what Jamf logs): $(cat stdout.txt)"
-          grep -v '^framed' stderr.txt || true
-          python3 - "$out" <<'EOF'
-          import base64, glob, gzip, json, os, sys
-          out = sys.argv[1]
-          for name in ("inventory.json", "inventory.ea", "status.txt"):
-              path = os.path.join(out, name)
-              if not os.path.getsize(path):
-                  sys.exit(f"::error::{name} is missing or empty")
-          value = open(os.path.join(out, "inventory.ea"), "rb").read().strip()
-          rows = json.loads(gzip.decompress(base64.b64decode(value[8:])))
-          if rows != json.load(open(os.path.join(out, "inventory.json"))):
-              sys.exit("::error::the collector's framed value does not match its JSON")
-          status = open(os.path.join(out, "status.txt")).read().split()
-          if status[0] not in ("ok", "degraded"):
-              sys.exit(f"::error::status starts with {status[0]!r}")
-          # It installs nothing: no working directory may survive.
-          left = glob.glob("/var/tmp/arthur-collect.*") + glob.glob("/tmp/arthur-collect.*")
-          if left:
-              sys.exit(f"::error::the collector left {len(left)} temp dir(s) behind: {left}")
-          print(f"collector wrote {len(rows)} rows, {len(value)} byte value, cleaned up")
           EOF
 
       # The pack is a separate artifact built by a different code path, and nothing ran

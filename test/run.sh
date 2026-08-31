@@ -48,14 +48,16 @@ run_scenario() {
     fi
   fi
 
-  # osquery: same official pkg Jamf deploys — signed and notarized upstream, we sign nothing.
+  # osquery: the same official pkg an MDM would deploy — signed and notarized upstream, we
+  # sign nothing.
   vm_ssh "$vm" "curl -fsSL -o /tmp/osquery.pkg https://pkg.osquery.io/darwin/osquery-${OSQUERY_VERSION}.pkg \
                 && sudo -n installer -pkg /tmp/osquery.pkg -target / >/dev/null" \
     || { echo "FAIL: osquery ${OSQUERY_VERSION} did not install" >&2; return 1; }
 
   # Absolute path, deliberately. The pkg symlinks /usr/local/bin/osqueryi, but sudo's
   # secure_path is /usr/bin:/bin:/usr/sbin:/sbin, so `sudo osqueryi` is "command not found"
-  # for root. The Jamf EA script runs as root too and hits exactly this — invoke by path.
+  # for root. A collection script deployed by an MDM runs as root too and hits exactly this
+  # — invoke by path.
   vm_ssh "$vm" "test -x $OSQI" || { echo "FAIL: $OSQI missing after install" >&2; return 1; }
 
   # Ship the whole scenario tree, not just this one setup.sh: 90-demo-fleet composes its

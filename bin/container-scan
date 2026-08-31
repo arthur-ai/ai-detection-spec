@@ -33,8 +33,8 @@
 #   1  could not run at all: no osqueryi, no deep artifact
 #
 # AND SO DOES STDOUT, because on the path this was written for the exit code reaches
-# nobody. A Jamf Extension Attribute's value is what the script printed; Jamf records
-# stdout and discards the status. So every non-success outcome also prints ONE row in the
+# nobody. A consumer that records stdout and discards the exit status -- which is how most
+# inventory channels work -- sees only what was printed. So every non-success outcome also prints ONE row in the
 # six-column contract -- kind=scan, id=containers, extra=absent|unhealthy:<code>|timeout:<n>
 # -- and without it the EA value for a wedged daemon would be the empty array, byte for
 # byte what a Mac with no containers reports. That is this project's recurring bug arriving
@@ -50,8 +50,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DEEP="$ROOT/dist/discovery-deep.sql"
 TIMEOUT="${DOCKER_PING_TIMEOUT:-1}"
 
-# Whole seconds of wall clock for the query itself, against a ~10s Jamf Extension
-# Attribute budget: ~1s guard + ~0.5s osqueryi startup + 6s here is ~7.5s worst case, and
+# Whole seconds of wall clock for the query itself, against a ~10s budget on a synchronous
+# reporting path: ~1s guard + ~0.5s osqueryi startup + 6s here is ~7.5s worst case, and
 # the healthy path finishes in about half a second regardless. Raise it for an interactive
 # scan of a Mac with hundreds of images; do not raise it inside an EA.
 SCAN_TIMEOUT="${CONTAINER_SCAN_TIMEOUT:-6}"
@@ -216,15 +216,15 @@ marker() {
 
 # THE RECOMMENDED DEPLOYMENT, AND THE FILE IS THE PAYLOAD.
 #
-# Nothing upstream will bound us. There is no documented Jamf timeout for an Extension
-# Attribute script -- searched, and the community evidence is of EAs running 21s and of
-# `jamf recon` STALLING rather than being cut off. An unbounded EA does not fail fast; it
-# hangs that Mac's inventory collection.
+# Nothing upstream will bound us. No macOS management tool we checked documents a per-script
+# timeout, and the evidence runs the other way: collection scripts measured at 21s, and
+# inventory *stalling* rather than being cut off. An unbounded collection script does not fail
+# fast; it hangs that machine's inventory.
 #
 # So the fix is not to make the blocking call faster, it is to not make it while something
 # is waiting. A scheduled job runs this scan and writes the file; the endpoint agent, EA or
-# custom fact does nothing but `cat` it. Same move as the Jamf community's standard advice
-# -- read the cached plist rather than invoking `softwareupdate` -- and it takes the
+# collector does nothing but `cat` it. The same move as reading a cached plist rather than
+# invoking the command that produces it, and it takes the
 # container check from 7.4s worst case to the cost of reading a file.
 #
 # WHAT IS IN THE FILE IS EXACTLY WHAT SHOULD BE REPORTED: a bare JSON array of six-column

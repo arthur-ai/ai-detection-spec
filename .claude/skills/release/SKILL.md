@@ -58,7 +58,7 @@ $ gh run list --workflow=scenarios.yml --branch=main --limit=3
 ```
 
 If the payload moved, `queries/COST.md` must say so. Enumeration means every Mac reports its
-whole inventory; the 30KB Extension Attribute cap binds around 1150 rows, and a release that
+whole inventory; a 30KB value channel binds around 1150 rows, and a release that
 pushes toward it needs the number in the notes, not just in the file.
 
 ## 3. Write the notes
@@ -80,12 +80,12 @@ a fleet. Cover, when each applies:
 - **Anything the deployer must do**, where the repo cannot do it for them. `containers.sql` is
   the standing case, and what it asks for has changed: the repo now ships the runner, so tell
   people to use it rather than to build their own. **`bin/container-scan` is the supported way
-  to run the deep artifact** — never inline it in an Extension Attribute. It carries a round
+  to run the deep artifact** — never inline it on a synchronous reporting path. It carries a round
   trip demanding HTTP 200 *and* a wall-clock kill, because a daemon that pings 200 and then
   stops serving passes the health check and blocks the query anyway. Say in the notes that it
-  deploys as **its own** Extension Attribute, with its own ten seconds and its own 30KB, scoped
-  to Macs with Docker; that its non-zero outcomes print a `kind=scan` marker row because Jamf
-  records stdout and discards exit status; and what folding it into the inventory EA
+  deploys on its own schedule, scoped to machines that have Docker; that its non-zero outcomes
+  print a `kind=scan` marker row, because a consumer that records stdout and discards the exit
+  status sees only what was printed; and what folding it into the inventory EA
   actually costs, which is not obvious: measured, a bound on the combined query returns the
   full base inventory and exits 0 while silently omitting the container half, and spends 6
   of the 10 seconds doing it. Left unbounded, the inventory value blanks outright. A release that ships the query without
@@ -129,15 +129,16 @@ $ gh run list --workflow=release.yml --limit=1
 $ gh release view v<X.Y.Z> --json assets --jq '[.assets[].name]'
 ```
 
-Eight assets, and a missing one is a broken release rather than a tidier one:
-`discovery.sql`, `discovery-deep.sql`, `ai-discovery.conf`, `jamf-collect.sh`, `discover`,
-`container-scan`, `classify`, `com.arthur.ai-discovery.plist`.
+Six assets, and a missing one is a broken release rather than a tidier one:
+`discovery.sql`, `discovery-deep.sql`, `ai-discovery.conf`, `discover`, `container-scan`,
+`classify`.
 
-`jamf-collect.sh` is the one most consumers will actually deploy: it is self-contained, so it
-needs neither the other assets beside it nor a package. It embeds `bin/` and `dist/`, which is
-why `build.py` writes it last and `--check` compares it against a fresh build of the tree. The scripts resolve each other and the artifacts by relative path, so the notes
-must say the layout is `bin/` and `dist/` side by side — downloaded loose into one folder,
-`bin/discover` will not find `dist/discovery.sql`.
+The scripts resolve each other and the artifacts by relative path, so the notes must say the
+layout is `bin/` and `dist/` side by side — downloaded loose into one folder, `bin/discover`
+will not find `dist/discovery.sql`.
+
+**Deployment glue for a particular MDM is not released from here.** A consumer wraps these
+artifacts; this repo ships osquery materials.
 
 ## Don'ts
 
