@@ -73,7 +73,26 @@ start_fake() {
   [ "$1" = absent ] && return 0
   python3 "$HERE/lib/fake_docker.py" "$SOCK" "$1" >/dev/null 2>&1 &
   FAKE_PID=$!
+  # THE SOCKET FILE IS NECESSARY AND NOT SUFFICIENT, which is the same sentence this suite
+  # exists to prove about Docker itself: the path appears at bind(), before anything is
+  # accepting on it. Waiting for the file alone let the query run against a socket that was
+  # not serving yet, and the healthy state returned 0 rows where 6 were expected -- a flake
+  # on a loaded runner, and one that reads exactly like the wedged-daemon bug this file was
+  # written for.
+  #
+  # So for `healthy`, wait until it actually ANSWERS. The other states are designed not to,
+  # and for them the file is the only readiness signal there can be.
   for _ in $(seq 1 40); do [ -e "$SOCK" ] && break; sleep 0.1; done
+  if [ "$1" = healthy ]; then
+    for _ in $(seq 1 50); do
+      if curl -s --max-time 2 --unix-socket "$SOCK" \
+              "http://localhost/images/json" 2>/dev/null | grep -q RepoTags; then
+        return 0
+      fi
+      sleep 0.1
+    done
+    echo "  WARN: fake daemon never served /images/json; assertions below will say so" >&2
+  fi
 }
 
 stop_fake() {
