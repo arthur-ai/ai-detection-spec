@@ -188,6 +188,12 @@ def collect():
         for rec in doc.get("identifiers", []):
             seen_in[(rec["agent"], rec["route"], rec["value"])].add(doc["scenario"])
     in_ci = ci_scenarios()
+    # A CI scenario that has never RECORDED contributes nothing to the numbers below, so
+    # the count is pessimistic until each has run once. Absence of an observation is not
+    # absence of a test, and reporting the total without saying which scenarios are
+    # missing would present a floor as a measurement.
+    recorded = {p.parent.name for p in (ROOT / "test" / "scenarios").glob("*/observed.json")}
+    unrecorded = sorted(in_ci - recorded)
 
     agents = []
     for agent in catalog["agents"]:
@@ -264,7 +270,7 @@ def collect():
             if len(cells) == 2 and cells[0]:
                 blind.append({"spot": cells[0], "why": cells[1]})
 
-    return {"blind_spots": blind,
+    return {"blind_spots": blind, "ci_unrecorded": unrecorded,
             "classifications": catalog["classifications"],
             "not_agents": list(catalog.get("not_agents", ())),
             "agents": agents, "limits": limits}
@@ -399,6 +405,11 @@ def markdown(data):  # noqa: C901
         f"| **local only** | {n_st('local-only')} | proved only by a scenario CI does not run. "
         f"Catches nothing on a pull request |",
         f"| **no test** | {n_st('none')} | nothing exercises it |",
+        "",
+        (("> **This number is a floor.** `" + "`, `".join(data["ci_unrecorded"]) + "` run in CI "
+          "and have recorded nothing yet, so identifiers they cover still count as *no test*. "
+          "Absence of an observation is not absence of a test; the count corrects itself once "
+          "each scenario has run.") if data.get("ci_unrecorded") else None),
         "",
         "`tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor",
         "carrying an `unverified` block, so an unverified signature cannot enter quietly.",
@@ -568,6 +579,10 @@ def main():
     print(f"  LOCAL ONLY       {n('local-only'):>3}  proved only by a scenario CI does not "
           f"run. Catches nothing\n{'':>21}  on a pull request")
     print(f"  NO TEST          {n('none'):>3}  nothing exercises it")
+    if data.get("ci_unrecorded"):
+        print(f"\n  THIS IS A FLOOR. {len(data['ci_unrecorded'])} scenario(s) run in CI and have "
+              f"recorded nothing yet, so\n  identifiers they cover still count as NO TEST: "
+              f"{', '.join(data['ci_unrecorded'])}")
 
 
 if __name__ == "__main__":

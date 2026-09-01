@@ -41,7 +41,7 @@ Mac. `aider` installs as `aider-chat` under `uv` and `pipx` while its state dire
 and neither survived contact with an actual install. Nothing short of installing the
 software catches that class of error.
 
-## 29/42 identifiers are covered by a CI test
+## 31/42 identifiers are covered by a CI test
 
 **Measured per identifier, and only counting tests CI actually runs.** Two things make
 that different from "has anyone tested this". An entry passes when a scenario finds it,
@@ -56,10 +56,12 @@ cannot drift apart again.
 
 | | identifiers | |
 |---|---:|---|
-| **CI: real install** | 22 | a scenario in the `scenarios.yml` matrix installs the software and asserts the classifier finds it |
-| **CI: fixture** | 7 | matched a captured row by `test_matcher.py`, which runs on **every pull request**. A weaker claim than a real install and a faster cadence — different axes |
+| **CI: real install** | 25 | a scenario in the `scenarios.yml` matrix installs the software and asserts the classifier finds it |
+| **CI: fixture** | 6 | matched a captured row by `test_matcher.py`, which runs on **every pull request**. A weaker claim than a real install and a faster cadence — different axes |
 | **local only** | 0 | proved only by a scenario CI does not run. Catches nothing on a pull request |
-| **no test** | 13 | nothing exercises it |
+| **no test** | 11 | nothing exercises it |
+
+> **This number is a floor.** `00-baseline`, `40-browser`, `50-autonomous`, `60-persistence` run in CI and have recorded nothing yet, so identifiers they cover still count as *no test*. Absence of an observation is not absence of a test; the count corrects itself once each scenario has run.
 
 `tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor
 carrying an `unverified` block, so an unverified signature cannot enter quietly.
@@ -85,7 +87,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 
 | name | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **OpenClaw** | real install | `ai.openclaw.mac`, `bot.molt.mac`, openclaw, openclaw, clawdbot, moltbot, `~/.openclaw`, `ai.openclaw.`, `bot.molt.`, 18789 | 50-autonomous, 55-openclaw-npm, 60-persistence, 90-demo-fleet |
+| **OpenClaw** | real install | `ai.openclaw.mac`, `bot.molt.mac`, **`openclaw`**, **`openclaw`**, clawdbot, moltbot, **`~/.openclaw`**, `ai.openclaw.`, `bot.molt.`, 18789 | 50-autonomous, 55-openclaw-npm, 60-persistence, 90-demo-fleet |
 
 ## AI browser
 
@@ -124,8 +126,6 @@ Each is a candidate for a fixture row or a scenario. A `local only` row is the m
 | Codex CLI | state dir | `~/.codex` | no test |
 | GitHub Copilot CLI | homebrew | `copilot-cli` | no test |
 | Gemini CLI | homebrew | `gemini-cli` | no test |
-| OpenClaw | homebrew | `openclaw` | no test |
-| OpenClaw | npm | `openclaw` | no test |
 | OpenClaw | npm | `clawdbot` | no test |
 | OpenClaw | npm | `moltbot` | no test |
 | OpenClaw | port | `18789` | no test |
