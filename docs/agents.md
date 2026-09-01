@@ -12,7 +12,7 @@ and the CI test behind each one.
 ![agents](https://img.shields.io/badge/agents-16-1D4E89)
 ![identifiers](https://img.shields.io/badge/identifiers-45-1D4E89)
 ![covered](https://img.shields.io/badge/covered_by_a_CI_test-43%2F43-2E7D57)
-![real install](https://img.shields.io/badge/by_real_install-37-2E7D57)
+![real install](https://img.shields.io/badge/by_real_install-41-2E7D57)
 
 </div>
 
@@ -48,8 +48,8 @@ cannot drift apart again.
 
 | | identifiers | |
 |---|---:|---|
-| **CI: real install** | 37 | a scenario in the `scenarios.yml` matrix installs the software and asserts the classifier finds it |
-| **CI: fixture** | 6 | matched a captured row by `test_matcher.py`, which runs on **every pull request**. A weaker claim than a real install and a faster cadence — different axes |
+| **CI: real install** | 41 | a scenario in the `scenarios.yml` matrix installs the software and asserts the classifier finds it |
+| **CI: fixture** | 2 | matched a captured row by `test_matcher.py`, which runs on **every pull request**. A weaker claim than a real install and a faster cadence — different axes |
 | **local only** | 0 | proved only by a scenario CI does not run. Catches nothing on a pull request |
 | **did not appear** ⚠ | 0 | a CI scenario installed the agent and this identifier never showed up. Usually installed by another route |
 | **no test** | 0 | nothing exercises it at all |
@@ -79,7 +79,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 
 | name | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **Hermes Agent** | real install | `hermes-agent`, `hermes-agent`, `~/.local/bin/hermes`, `~/.hermes` | 21-cli-agents-homebrew, 25-python-agents |
+| **Hermes Agent** | real install | **`hermes-agent`**, **`hermes-agent`**, **`~/.local/bin/hermes`**, **`~/.hermes`** | 21-cli-agents-homebrew, 25-python-agents |
 | **OpenClaw** | real install | **`ai.openclaw.mac`**, ~~`bot.molt.mac`~~, **`openclaw`**, **`openclaw`**, **`clawdbot`**, **`moltbot`**, **`~/.openclaw`**, **`ai.openclaw.`**, ~~`bot.molt.`~~ | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 60-persistence, 90-demo-fleet |
 
 ## AI browser

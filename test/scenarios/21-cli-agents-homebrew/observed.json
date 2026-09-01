@@ -80,6 +80,22 @@
       "agent_version": "0.46.0",
       "os": "15.7.7",
       "arch": "arm64"
+    },
+    {
+      "agent": "hermes",
+      "route": "homebrew",
+      "value": "hermes-agent",
+      "agent_version": "2026.6.19",
+      "os": "14.8.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "hermes",
+      "route": "homebrew",
+      "value": "hermes-agent",
+      "agent_version": "2026.7.20",
+      "os": "15.7.7",
+      "arch": "arm64"
     }
   ]
 }
