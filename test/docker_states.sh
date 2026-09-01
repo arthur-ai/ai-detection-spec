@@ -258,13 +258,20 @@ stop_fake
 
 echo "  the real image fixture classifies to the right agents"
 # The fixture is five REAL images captured from a real daemon (see test/lib/fake_docker.py).
-# Two are catalogued agents and three are not, and BOTH halves are assertions: a matcher
-# that claimed alpine, spicedb or an ECR python would be a confident wrong finding on a very
-# large share of developer Macs.
+# ONE is a catalogued agent and four are not, and BOTH halves are assertions: a matcher that
+# claimed alpine, spicedb or an ECR python would be a confident wrong finding on a very large
+# share of developer Macs.
+#
+# The LiteLLM image is the interesting one. It WAS catalogued and deliberately is not any
+# more -- a gateway an agent calls through is not an agent -- and its row stays in the
+# fixture precisely so this suite asserts it is DECLINED rather than absent. Deleting the row
+# with the signature would have left nothing to tell "correctly not an agent" from "the image
+# route silently stopped working".
 start_fake healthy
 scan_out=$("$ROOT/bin/container-scan" --socket "$SOCK" 2>/dev/null)
 classified=$(printf '%s' "$scan_out" | "$ROOT/bin/classify" --json 2>/dev/null)
-for want in litellm llama-cpp; do
+unmatched=$(printf '%s' "$scan_out" | "$ROOT/bin/classify" --json --show-unmatched 2>/dev/null)
+for want in llama-cpp; do
   check "finds $want" \
         "$(printf '%s' "$classified" | python3 -c "
 import json,sys
@@ -273,12 +280,20 @@ print(1 if any(f['id'] == '$want' for f in d['findings']) else 0)" 2>/dev/null)"
         "findings were: $(printf '%s' "$classified" | python3 -c "
 import json,sys;print([f['id'] for f in json.load(sys.stdin)['findings']])" 2>/dev/null)"
 done
+# Not merely "litellm is absent from findings" -- absent is what a dropped kind looks like
+# too. It has to arrive, be looked at, and be turned down.
+check "the LiteLLM image is DECLINED, not dropped" \
+      "$(printf '%s' "$unmatched" | python3 -c "
+import json,sys
+d = json.load(sys.stdin)
+print(1 if any('litellm' in r['id'] for r in d.get('unmatched', [])) else 0)" 2>/dev/null)" \
+      "a gateway is not an agent, and it must be visibly unclaimed rather than invisible"
 check "claims nothing else" \
       "$(printf '%s' "$classified" | python3 -c "
 import json,sys
 d = json.load(sys.stdin)
-print(1 if sorted(f['id'] for f in d['findings']) == ['litellm','llama-cpp'] else 0)" 2>/dev/null)" \
-      "alpine, spicedb and the ECR python image must stay unmatched"
+print(1 if sorted(f['id'] for f in d['findings']) == ['llama-cpp'] else 0)" 2>/dev/null)" \
+      "alpine, spicedb, the ECR python image and the LiteLLM gateway must stay unmatched"
 # A multi-tagged image is one comma-joined row, and matching the field whole finds neither
 # tag. The fixture's alpine carries two tags precisely so this cannot regress unnoticed.
 check "a comma-joined multi-tag row is still parsed" \
