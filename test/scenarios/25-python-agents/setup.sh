@@ -35,4 +35,24 @@ ls -d "$HOME/.local/share/uv/tools/"*/ 2>/dev/null | sed 's/^/  dir: /'
 # unmeasured, and asserting it before knowing would be a guess wearing a test's clothes.
 # The run records what actually appeared; if the directory shows up, coverage reports it,
 # and if it does not, the gap stays visible and honest.
-command -v aider >/dev/null 2>&1 && (aider --version >/dev/null 2>&1 || true)
+# ~/.aider NEEDS NO CREDENTIALS, which is worth stating because the obvious assumption was
+# that it did. Reading aider's own source settles it: Path.home()/".aider" holds
+# installs.json, analytics.json and oauth-keys.env, and installs.json is written by
+# is_first_run_of_new_version() -- a version check, not a model call.
+#
+# `--version` exits before that check runs, which is why the earlier attempt produced
+# nothing. `--just-check-update` runs the check and exits, needing no API key, no network
+# credential and no repository.
+# uv installs into ~/.local/bin, which uv itself warns is NOT on PATH here. So the binary
+# is addressed by path rather than by name -- `command -v aider` is false in this guest and
+# was true on the CI runner, which is why this passed in CI and failed in the VM.
+#
+# And it cannot end on a false test. A SCRIPT EXITS WITH THE STATUS OF ITS LAST COMMAND, so
+# `command -v aider && (...)` as the final line returns 1 when the binary is not on PATH --
+# and run.sh reports "scenario setup failed (exit 1)" after every install has succeeded,
+# naming nothing. Measured, because I first blamed `set -e` and that was wrong: the same
+# line with anything after it exits 0.
+AIDER="$HOME/.local/bin/aider"
+[ -x "$AIDER" ] && { "$AIDER" --just-check-update >/dev/null 2>&1 || true; } || true
+[ -d "$HOME/.aider" ] && echo "  ~/.aider created by the first-run check" || \
+  echo "  ~/.aider still absent after --just-check-update"

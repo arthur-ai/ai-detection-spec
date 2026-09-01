@@ -41,7 +41,7 @@ Mac. `aider` installs as `aider-chat` under `uv` and `pipx` while its state dire
 and neither survived contact with an actual install. Nothing short of installing the
 software catches that class of error.
 
-## 37/39 identifiers are covered by a CI test
+## 38/39 identifiers are covered by a CI test
 
 **Measured per identifier, and only counting tests CI actually runs.** Two things make
 that different from "has anyone tested this". An entry passes when a scenario finds it,
@@ -56,10 +56,10 @@ cannot drift apart again.
 
 | | identifiers | |
 |---|---:|---|
-| **CI: real install** | 35 | a scenario in the `scenarios.yml` matrix installs the software and asserts the classifier finds it |
+| **CI: real install** | 36 | a scenario in the `scenarios.yml` matrix installs the software and asserts the classifier finds it |
 | **CI: fixture** | 2 | matched a captured row by `test_matcher.py`, which runs on **every pull request**. A weaker claim than a real install and a faster cadence — different axes |
 | **local only** | 0 | proved only by a scenario CI does not run. Catches nothing on a pull request |
-| **did not appear** ⚠ | 2 | a CI scenario installed the agent and this identifier never showed up. Usually installed by another route |
+| **did not appear** ⚠ | 1 | a CI scenario installed the agent and this identifier never showed up. Usually installed by another route |
 | **no test** | 0 | nothing exercises it at all |
 | _retired alias_ | _2_ | _excluded from the count. Nothing installs these any more, so no scenario can cover one; the fixture row is the only evidence there is, and it proves the alias still resolves_ |
 
@@ -75,7 +75,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 
 | name | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **aider** | real install | **`aider`**, **`aider-chat`**, ~/.aider ⚠, `paulgauthier/aider` | 21-cli-agents-homebrew, 25-python-agents |
+| **aider** | real install | **`aider`**, **`aider-chat`**, **`~/.aider`**, `paulgauthier/aider` | 21-cli-agents-homebrew, 25-python-agents |
 | **Claude Code** | real install | **`@anthropic-ai/claude-code`**, **`~/.local/bin/claude`**, **`~/.claude`** | 20-cli-agents, 21-cli-agents-homebrew, 90-demo-fleet |
 | **Cline** | real install | **`cline`** | 20-cli-agents |
 | **Codex CLI** | real install | **`codex`**, **`@openai/codex`**, **`~/.codex`** | 20-cli-agents, 21-cli-agents-homebrew, 90-demo-fleet |
@@ -119,7 +119,6 @@ Every one is work, and the middle column says what kind. **did not appear** mean
 
 | agent | route | identifier | state | reached by |
 |---|---|---|---|---|
-| aider | state dir | `~/.aider` | did not appear | 21-cli-agents-homebrew, 25-python-agents |
 | OpenClaw | port | `18789` | did not appear | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 60-persistence |
 
 ## What osquery cannot see
