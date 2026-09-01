@@ -1,0 +1,30 @@
+{
+  "description": "Perplexity Desktop on its own, because its macOS floor is higher than the other desktop casks'.",
+  "demo_beat": "step 1 - the fleet-wide list",
+  "counts": {
+    "app": ">=1",
+    "brew": ">=1",
+    "npm": ">=0",
+    "file": ">=0",
+    "ext": ">=0",
+    "nmh": ">=0",
+    "daemon": ">=0",
+    "port": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "perplexity-desktop"
+    ],
+    "forbid": [
+      "perplexity-comet"
+    ]
+  },
+  "why": "ai.perplexity.macv3 is Perplexity Desktop and ai.perplexity.comet is the browser. Two agents, one vendor, one bundle-id prefix -- so `perplexity-comet` is forbidden here rather than merely unlisted. Without that, a signature that matched the prefix instead of the id would classify this install as both and nothing would say so; 10-desktop-apps installs both together and so cannot ask the question.",
+  "must_contain": [
+    "ai.perplexity.macv3",
+    "perplexity"
+  ],
+  "known_gaps": [
+    "Perplexity is account-gated. The install is unattended and the SIGN-IN is not, so nothing here exercises behaviour that only appears once a user is authenticated."
+  ]
+}

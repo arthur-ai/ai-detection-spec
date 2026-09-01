@@ -39,6 +39,7 @@ jobs:
         scenario:
           - 00-baseline
           - 10-desktop-apps
+          - 11-perplexity-desktop
           - 20-cli-agents
           - 21-cli-agents-homebrew
           - 25-python-agents
@@ -118,14 +119,25 @@ jobs:
 
       # Enumeration trades payload for not being wrong about the catalog, so the payload
       # is now a number worth watching per scenario rather than once on a developer Mac.
+      #
+      # always() AND runnable, not always() alone. always() includes SKIPPED, so on a runner
+      # the scenario cannot use, this measured a /tmp/out.json that no step ever wrote and
+      # turned an honest skip into a red job -- which is what the gate above exists to
+      # prevent. The always() half still earns its place: when the assert FAILS the query did
+      # run, and the payload of a failing run is the number worth having.
       - name: Measure the payload
-        if: always()
+        if: always() && steps.runnable.outputs.runnable == 'true'
         run: python3 tools/measure_payload.py /tmp/out.json
       - name: Keep the output
-        if: always()
+        if: always() && steps.runnable.outputs.runnable == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.scenario }}
+          # THE OS IS IN THE NAME, as it is for the observation above. Two jobs per scenario
+          # upload this one, and run 33476286840 shows both landing under the bare scenario
+          # name -- two artifacts, one name, and no way to tell which macOS produced the
+          # output you just downloaded. That is not a failure, it is worse: an ambiguity that
+          # reads as a single answer.
+          name: ${{ matrix.scenario }}--${{ matrix.os }}
           path: /tmp/out.json
 
   # One job after the matrix, so the commit happens once rather than eleven times.
