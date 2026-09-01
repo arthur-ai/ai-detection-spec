@@ -455,7 +455,9 @@ def markdown(data):  # noqa: C901
         f"cadence — different axes |",
         f"| **local only** | {n_st('local-only')} | proved only by a scenario CI does not run. "
         f"Catches nothing on a pull request |",
-        f"| **no test** | {n_st('none')} | nothing exercises it |",
+        f"| **did not appear** ⚠ | {n_st('tested-absent')} | a CI scenario installed the "
+        f"agent and this identifier never showed up. Usually installed by another route |",
+        f"| **no test** | {n_st('none')} | nothing exercises it at all |",
         (f"| _retired alias_ | _{n_st('alias')}_ | _excluded from the count. Nothing installs "
          f"these any more, so no scenario can cover one; the fixture row is the only evidence "
          f"there is, and it proves the alias still resolves_ |"
@@ -494,7 +496,7 @@ def markdown(data):  # noqa: C901
                     "| name | evidence | identifiers | scenarios |", "|---|---|---|---|"]
             for a in sorted(by_class[cls], key=lambda x: x["id"]):
                 MARK = {"ci-install": "**`%s`**", "ci-fixture": "`%s`", "alias": "~~`%s`~~",
-                        "local-only": "_`%s`_", "none": "%s"}
+                        "local-only": "_`%s`_", "tested-absent": "%s ⚠", "none": "%s"}
                 ids = ", ".join(MARK[i["state"]] % i["value"]
                                 for i in a["identifiers"]) or "--"
                 mark = "real install" if grade(a) == "standard" else "**exception**"
@@ -503,8 +505,8 @@ def markdown(data):  # noqa: C901
             out.append("")
 
     out += ["> **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = "
-            "retired alias, uninstallable by design. _`italic`_ = proved locally, not in CI. "
-            "plain = no test.", ""]
+            "retired alias, uninstallable by design. ⚠ = a scenario installed this agent and "
+            "the identifier did not appear. plain = nothing tests it.", ""]
 
     exceptions = [a for a in sorted(agents, key=lambda x: x["id"]) if not a["scenarios"]]
     if exceptions:
@@ -522,14 +524,20 @@ def markdown(data):  # noqa: C901
         out.append("")
 
     unex = [(a, i) for a in sorted(agents, key=lambda x: x["id"])
-            for i in a["identifiers"] if i["state"] in ("none", "local-only")]
+            for i in a["identifiers"]
+            if i["state"] in ("none", "local-only", "tested-absent")]
     if unex:
-        out += ["## Identifiers no CI test covers", "",
-                "Each is a candidate for a fixture row or a scenario. A `local only` row is the "
-                "more misleading of the two: something proved it once, on someone's machine.", "",
-                "| agent | route | identifier | state |", "|---|---|---|---|"]
+        out += ["## Identifiers that did not pass", "",
+                "Every one is work, and the middle column says what kind. **did not appear** "
+                "means a scenario installed the agent and this identifier never showed up — "
+                "the suite reached it and it did not reproduce, usually because the scenario "
+                "installs by a different route, or because the artifact only exists once the "
+                "agent has run.", "",
+                "| agent | route | identifier | state | reached by |", "|---|---|---|---|---|"]
+        LABEL = {"local-only": "local only", "tested-absent": "did not appear",
+                 "none": "no test"}
         out += [f"| {a['name']} | {ROUTE_LABEL.get(i['route'], i['route'])} | `{i['value']}` | "
-                f"{'local only' if i['state'] == 'local-only' else 'no test'} |"
+                f"{LABEL[i['state']]} | {', '.join(i.get('reached_by') or []) or '--'} |"
                 for a, i in unex]
         out.append("")
 
