@@ -279,12 +279,12 @@ macOS 26, Apple Silicon, 392 apps, 136 Homebrew packages, 53 browser extensions.
 | 10-desktop-apps | 592 | 12.7 KB | 42% |
 | 40-browser | 590 | 12.8 KB | 43% |
 
-The 10-desktop-apps row is from a run where that scenario installed seven casks. It now
-installs six -- `perplexity` was split into 11-perplexity-desktop for its macOS >= 15
-floor -- so that figure is high by roughly one app's worth of rows, and 11-perplexity-desktop
-has no measured row here at all. NOT RE-MEASURED RATHER THAN RE-ESTIMATED: every number in
-this table came off one run, and a subtracted guess sitting in a measured column is exactly
-the kind of figure that later gets quoted as fact. Both settle on the next full run.
+The 10-desktop-apps row predates the split that moved `perplexity` into
+11-perplexity-desktop, so it measures one more cask than that scenario now installs and
+11-perplexity-desktop has no measured row here at all. NOT RE-MEASURED RATHER THAN
+RE-ESTIMATED: every number in this table came off one run, and a subtracted guess sitting in
+a measured column is exactly the kind of figure that later gets quoted as fact. Both settle
+on the next full run.
 
 Installing agents barely moves the number. The payload is dominated by inventory the
 machine already had, so the marginal cost of a finding is close to nothing and the total

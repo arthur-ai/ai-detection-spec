@@ -1,4 +1,4 @@
 {
   "min_macos": 15,
-  "why": "The `perplexity` cask declares depends_on macos >= 15, read off the Homebrew API on 2026-09-01 (v26.34.0). Below Sequoia it cannot install and perplexity-desktop cannot be found, so this is a fact about the runner rather than a defect. It is the ONLY cask in this scenario, which is the entire point of the split: this floor used to sit in 10-desktop-apps and suppress six other casks that install on 13 or lower."
+  "why": "The `perplexity` cask declares depends_on macos >= 15, read off the Homebrew API on 2026-09-01 (v26.34.0). Below Sequoia it cannot install and perplexity-desktop cannot be found, so this is a fact about the runner rather than a defect. It is the only cask this scenario installs, which is the entire point of the split: this floor used to sit in 10-desktop-apps and suppress every other cask there, all of which install on 13 or lower."
 }
