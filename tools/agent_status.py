@@ -196,6 +196,7 @@ def collect():
     unrecorded = sorted(in_ci - recorded)
 
     agents = []
+    retired_of = {a["id"]: {str(v) for v in a.get("retired", [])} for a in catalog["agents"]}
     for agent in catalog["agents"]:
         aid = agent["id"]
         idents = []
@@ -215,7 +216,15 @@ def collect():
                 # test_matcher.py, on every pull request. It is a weaker CLAIM than a real
                 # install and a stronger CADENCE -- those are different axes and the report
                 # keeps them apart.
-                if ci_scens:
+                # A RETIRED ALIAS IS NOT A GAP. Nothing installs it any more, so no
+                # scenario can ever cover it, and a fixture is the only evidence that
+                # exists rather than a lesser one. Counting it as a shortfall would make
+                # the report demand something impossible -- and, worse, invite someone to
+                # "fix" it by deleting the alias, which is the one thing that would break
+                # detection on the machines it exists for.
+                if str(value) in retired_of.get(aid, ()):
+                    state = "alias"
+                elif ci_scens:
                     state = "ci-install"
                 elif proven:
                     state = "ci-fixture"
@@ -279,6 +288,7 @@ def collect():
 STATE_LABEL = {
     "ci-install": "CI: real install",
     "ci-fixture": "CI: fixture",
+    "alias": "alias (fixture)",
     "local-only": "LOCAL ONLY",
     "none": "NO TEST",
 }
@@ -382,7 +392,7 @@ def markdown(data):  # noqa: C901
         "and neither survived contact with an actual install. Nothing short of installing the",
         "software catches that class of error.",
         "",
-        f"## {n_ci}/{n_ident} identifiers are covered by a CI test",
+        f"## {n_ci}/{n_ident - n_st('alias')} identifiers are covered by a CI test",
         "",
         "**Measured per identifier, and only counting tests CI actually runs.** Two things make",
         "that different from \"has anyone tested this\". An entry passes when a scenario finds it,",
@@ -405,6 +415,10 @@ def markdown(data):  # noqa: C901
         f"| **local only** | {n_st('local-only')} | proved only by a scenario CI does not run. "
         f"Catches nothing on a pull request |",
         f"| **no test** | {n_st('none')} | nothing exercises it |",
+        (f"| _retired alias_ | _{n_st('alias')}_ | _excluded from the count. Nothing installs "
+         f"these any more, so no scenario can cover one; the fixture row is the only evidence "
+         f"there is, and it proves the alias still resolves_ |"
+         if n_st("alias") else None),
         "",
         (("> **This number is a floor.** `" + "`, `".join(data["ci_unrecorded"]) + "` run in CI "
           "and have recorded nothing yet, so identifiers they cover still count as *no test*. "
@@ -438,7 +452,7 @@ def markdown(data):  # noqa: C901
             out += [f"## {cls}", "",
                     "| name | evidence | identifiers | scenarios |", "|---|---|---|---|"]
             for a in sorted(by_class[cls], key=lambda x: x["id"]):
-                MARK = {"ci-install": "**`%s`**", "ci-fixture": "`%s`",
+                MARK = {"ci-install": "**`%s`**", "ci-fixture": "`%s`", "alias": "~~`%s`~~",
                         "local-only": "_`%s`_", "none": "%s"}
                 ids = ", ".join(MARK[i["state"]] % i["value"]
                                 for i in a["identifiers"]) or "--"
@@ -447,8 +461,9 @@ def markdown(data):  # noqa: C901
                            f"{', '.join(a['scenarios']) or '--'} |")
             out.append("")
 
-    out += ["> **`bold`** = CI installs it for real. `code` = CI fixture only. _`italic`_ = "
-            "proved locally, not in CI. plain = no test.", ""]
+    out += ["> **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = "
+            "retired alias, uninstallable by design. _`italic`_ = proved locally, not in CI. "
+            "plain = no test.", ""]
 
     exceptions = [a for a in sorted(agents, key=lambda x: x["id"]) if not a["scenarios"]]
     if exceptions:
@@ -569,8 +584,11 @@ def main():
     print(f"  exception {n_exc:>3}  recorded, with a reason")
     n = lambda s: sum(1 for a in agents for i in a["identifiers"] if i["state"] == s)
     covered = n("ci-install") + n("ci-fixture")
-    print(f"\nIDENTIFIERS COVERED BY A CI TEST   {covered}/{n_ident}"
-          f"   ({100 * covered // n_ident}%)")
+    # Retired aliases are out of the denominator. No install produces them, so including
+    # them would cap the number below 100% for a reason nobody can act on.
+    coverable = n_ident - n("alias")
+    print(f"\nIDENTIFIERS COVERED BY A CI TEST   {covered}/{coverable}"
+          f"   ({100 * covered // coverable}%)")
     print(f"  CI: real install {n('ci-install'):>3}  a scenario in the scenarios.yml matrix "
           f"installs the\n{'':>21}  software and asserts the classifier finds it")
     print(f"  CI: fixture      {n('ci-fixture'):>3}  matched a captured row by test_matcher, "
@@ -579,6 +597,10 @@ def main():
     print(f"  LOCAL ONLY       {n('local-only'):>3}  proved only by a scenario CI does not "
           f"run. Catches nothing\n{'':>21}  on a pull request")
     print(f"  NO TEST          {n('none'):>3}  nothing exercises it")
+    if n("alias"):
+        print(f"\n  {n('alias')} retired alias(es) are excluded: nothing installs them any "
+              f"more, so no\n  scenario can cover one. Their fixture rows are the only "
+              f"evidence there is.")
     if data.get("ci_unrecorded"):
         print(f"\n  THIS IS A FLOOR. {len(data['ci_unrecorded'])} scenario(s) run in CI and have "
               f"recorded nothing yet, so\n  identifiers they cover still count as NO TEST: "

@@ -41,7 +41,7 @@ Mac. `aider` installs as `aider-chat` under `uv` and `pipx` while its state dire
 and neither survived contact with an actual install. Nothing short of installing the
 software catches that class of error.
 
-## 31/42 identifiers are covered by a CI test
+## 29/38 identifiers are covered by a CI test
 
 **Measured per identifier, and only counting tests CI actually runs.** Two things make
 that different from "has anyone tested this". An entry passes when a scenario finds it,
@@ -57,9 +57,10 @@ cannot drift apart again.
 | | identifiers | |
 |---|---:|---|
 | **CI: real install** | 25 | a scenario in the `scenarios.yml` matrix installs the software and asserts the classifier finds it |
-| **CI: fixture** | 6 | matched a captured row by `test_matcher.py`, which runs on **every pull request**. A weaker claim than a real install and a faster cadence — different axes |
+| **CI: fixture** | 4 | matched a captured row by `test_matcher.py`, which runs on **every pull request**. A weaker claim than a real install and a faster cadence — different axes |
 | **local only** | 0 | proved only by a scenario CI does not run. Catches nothing on a pull request |
-| **no test** | 11 | nothing exercises it |
+| **no test** | 9 | nothing exercises it |
+| _retired alias_ | _4_ | _excluded from the count. Nothing installs these any more, so no scenario can cover one; the fixture row is the only evidence there is, and it proves the alias still resolves_ |
 
 > **This number is a floor.** `00-baseline`, `40-browser`, `50-autonomous`, `60-persistence` run in CI and have recorded nothing yet, so identifiers they cover still count as *no test*. Absence of an observation is not absence of a test; the count corrects itself once each scenario has run.
 
@@ -87,7 +88,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 
 | name | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **OpenClaw** | real install | `ai.openclaw.mac`, `bot.molt.mac`, **`openclaw`**, **`openclaw`**, clawdbot, moltbot, **`~/.openclaw`**, `ai.openclaw.`, `bot.molt.`, 18789 | 50-autonomous, 55-openclaw-npm, 60-persistence, 90-demo-fleet |
+| **OpenClaw** | real install | `ai.openclaw.mac`, ~~`bot.molt.mac`~~, **`openclaw`**, **`openclaw`**, ~~`clawdbot`~~, ~~`moltbot`~~, **`~/.openclaw`**, `ai.openclaw.`, ~~`bot.molt.`~~, 18789 | 50-autonomous, 55-openclaw-npm, 60-persistence, 90-demo-fleet |
 
 ## AI browser
 
@@ -110,7 +111,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | **Claude Desktop** | real install | **`com.anthropic.claudefordesktop`**, **`claude`**, `com.anthropic.claude_browser_extension.json` | 10-desktop-apps, 90-demo-fleet |
 | **Perplexity** | real install | **`ai.perplexity.macv3`**, **`perplexity`** | 10-desktop-apps |
 
-> **`bold`** = CI installs it for real. `code` = CI fixture only. _`italic`_ = proved locally, not in CI. plain = no test.
+> **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = retired alias, uninstallable by design. _`italic`_ = proved locally, not in CI. plain = no test.
 
 ## Identifiers no CI test covers
 
@@ -126,8 +127,6 @@ Each is a candidate for a fixture row or a scenario. A `local only` row is the m
 | Codex CLI | state dir | `~/.codex` | no test |
 | GitHub Copilot CLI | homebrew | `copilot-cli` | no test |
 | Gemini CLI | homebrew | `gemini-cli` | no test |
-| OpenClaw | npm | `clawdbot` | no test |
-| OpenClaw | npm | `moltbot` | no test |
 | OpenClaw | port | `18789` | no test |
 
 ## What osquery cannot see

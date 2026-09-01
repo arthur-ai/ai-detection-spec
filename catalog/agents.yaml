@@ -141,6 +141,13 @@ agents:
     npm: [openclaw, clawdbot, moltbot]
     state_dirs: ["~/.openclaw"]
     launchd_prefixes: [ai.openclaw., bot.molt.]
+    # RETIRED ALIASES. Kept because machines that installed the earlier version still
+    # carry them, and NOT reachable by installing anything today -- which makes them the
+    # one class of identifier a real-install scenario can never cover. A fixture row is
+    # not a weaker grade for these, it is the only possible evidence, and it earns its
+    # place: it proves the alias still resolves to this agent, so a later tidy-up of the
+    # catalog or a refactor of the matcher cannot drop them silently.
+    retired: [bot.molt.mac, bot.molt., clawdbot, moltbot]
     ports: [18789]
 
   - id: chatgpt-desktop

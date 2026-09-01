@@ -19,7 +19,7 @@ ROUTES = {"bundle_ids", "homebrew", "npm", "pypi", "binaries",
           "state_dirs", "launchd_prefixes", "ports", "model_stores",
           "native_messaging_hosts", "images", "extension_ids"}
 REQUIRED = {"id", "name", "classification"}
-OPTIONAL = {"unverified"}
+OPTIONAL = {"unverified", "retired"}
 
 # A REAL INSTALL IS THE STANDARD. An agent is verified when a VM scenario installs the
 # actual software and asserts the classifier finds it -- that is the only evidence that
@@ -102,6 +102,15 @@ def main():
             if str(value) != str(value).lower():
                 errors.append(f"{aid}: images {value!r} must be lowercase; a registry "
                               f"rejects uppercase in a repository name.")
+
+        # A retired alias must actually BE one of this agent's identifiers. A typo here
+        # would quietly exempt nothing while marking a value that does not exist, and the
+        # coverage report would keep counting the real one as a gap.
+        listed = {str(v) for r in (ROUTES & set(agent)) for v in agent[r]}
+        for value in agent.get("retired", []):
+            if str(value) not in listed:
+                errors.append(f"{aid}: retired {value!r} is not one of its identifiers. "
+                              f"Mark a value that exists, or remove it.")
 
         # A Chrome extension id is 32 characters drawn from a-p -- it is a base16 encoding of
         # the first half of a SHA-256 over the developer's public key, remapped onto letters.
