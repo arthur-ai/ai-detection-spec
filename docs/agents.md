@@ -81,6 +81,14 @@ cannot drift apart again.
 | _retired alias_ | _2_ | _excluded from the count. Nothing installs these any more, so no scenario can cover one; the fixture row is the only evidence there is, and it proves the alias still resolves_ |
 
 
+### When each scenario last verified
+
+| scenario | last verified | platform | identifiers |
+|---|---|---|---:|
+| `45-claude-extension` | 2026-09-01 | macOS 14.7.1 x86_64 | 1 |
+
+A date here is the last time a run *proved* those identifiers, not the last time anyone looked at the catalog. Coverage does not expire on a schedule, but it does go quietly out of date, and this is the only place that would show it.
+
 `tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor
 carrying an `unverified` block, so an unverified signature cannot enter quietly.
 

@@ -27,7 +27,15 @@ jobs:
         # version and not another becomes visible rather than averaged away. Kept at one
         # label until a second is confirmed available: an invented runner label fails the
         # entire matrix rather than the one job that needed it.
-        os: [macos-15]
+        # TWO LABELS, so the suite runs on two macOS versions and observed.json records
+        # which one produced each identifier. That is the whole point of the axis: a
+        # signature that appears on one version and not another becomes visible instead of
+        # being averaged into a single number.
+        #
+        # macos-14 is added rather than assumed available. If GitHub has retired the label,
+        # THAT job fails with "no runner matching labels" and macos-15 still reports -- which
+        # is why fail-fast is off. Read the result before adding a third.
+        os: [macos-15, macos-14]
         scenario:
           - 00-baseline
           - 10-desktop-apps
@@ -75,7 +83,10 @@ jobs:
       - name: Upload the observation
         uses: actions/upload-artifact@v4
         with:
-          name: observed-${{ matrix.scenario }}
+          # THE OS IS IN THE NAME. Two jobs per scenario now, and upload-artifact@v4 fails
+          # outright on a duplicate name -- so without this the second platform's upload
+          # errors and its evidence is lost.
+          name: observed-${{ matrix.scenario }}--${{ matrix.os }}
           path: test/scenarios/${{ matrix.scenario }}/observed.json
           if-no-files-found: error
 
@@ -111,20 +122,43 @@ jobs:
         with:
           pattern: observed-*
           path: /tmp/observed
-      - name: Put each one back where it belongs
+      - name: Merge every platform's observations
         run: |
-          # download-artifact lays each one out as /tmp/observed/observed-<scenario>/
-          for d in /tmp/observed/observed-*/; do
-            [ -d "$d" ] || continue
-            s=$(basename "$d" | sed 's/^observed-//')
-            [ -f "$d/observed.json" ] || continue
-            cp "$d/observed.json" "test/scenarios/$s/observed.json"
-            echo "  $s"
-          done
+          # MERGE, NOT COPY. There is one artifact per (scenario, OS) now, and both describe
+          # the same observed.json. Copying meant whichever landed last decided what the
+          # scenario had ever proved, and the other platform's evidence vanished -- which is
+          # the exact thing the OS axis exists to make visible.
+          #
+          # Records carry their own os and arch, so the union is keyed on
+          # (agent, route, value, os, arch) and needs no cleverness.
+          python3 - <<'PYEOF'
+          import json, pathlib, collections
+          merged = collections.defaultdict(dict)
+          for d in sorted(pathlib.Path("/tmp/observed").glob("observed-*--*")):
+              f = d / "observed.json"
+              if not f.is_file():
+                  continue
+              doc = json.loads(f.read_text())
+              scen = doc.get("scenario") or d.name.split("--")[0].removeprefix("observed-")
+              for r in doc.get("identifiers", []):
+                  key = (r["agent"], r["route"], r["value"], r.get("os"), r.get("arch"))
+                  merged[scen][key] = r
+          for scen, recs in sorted(merged.items()):
+              out = pathlib.Path("test/scenarios") / scen / "observed.json"
+              if not out.parent.is_dir():
+                  continue
+              rows = sorted(recs.values(),
+                            key=lambda r: (r["agent"], r["route"], r["value"],
+                                           r.get("os") or "", r.get("arch") or ""))
+              out.write_text(json.dumps({"scenario": scen, "identifiers": rows},
+                                        indent=2) + "\n")
+              plats = sorted({r.get("os") for r in rows if r.get("os")})
+              print(f"  {scen}: {len(rows)} records across {plats or ['(no platform)']}")
+          PYEOF
       - name: Regenerate the doc and commit if anything moved
         run: |
           python3 tools/agent_status.py --write
-          git add test/scenarios/*/observed.json docs/agents.md README.md
+          git add test/scenarios/*/observed.json docs/agents.md docs/last-verified.json README.md
           if git diff --cached --quiet; then
             echo "Coverage unchanged. Nothing to commit."
             exit 0

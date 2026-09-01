@@ -173,10 +173,75 @@ def record(artifact, scenario_dir, os_version="", arch=""):
                     if arch:
                         rec["arch"] = arch
                     idents.append(rec)
-    out = pathlib.Path(scenario_dir) / "observed.json"
+    # Sort once, before either write path below can use it.
+    idents.sort(key=lambda r: (r["agent"], r["route"], r["value"]))
+
+    out_path = pathlib.Path(scenario_dir) / "observed.json"
+
+    # MERGE BY PLATFORM. A scenario runs on more than one macOS version now, so a run adds
+    # its own platform's records and leaves every other platform's alone. Overwriting would
+    # mean the last job to finish decided what the whole scenario had ever proved.
+    plat = (os_version or None, arch or None)
+    kept = []
+    if out_path.exists():
+        for r in json.loads(out_path.read_text()).get("identifiers", []):
+            if (r.get("os"), r.get("arch")) != plat:
+                kept.append(r)
+
+    # A RUN THAT PROVES LESS THAN THE COMMITTED RECORD IS ALMOST ALWAYS A STALE ARTIFACT,
+    # not a regression. Re-recording from test/artifacts/ after the scenario had changed
+    # silently dropped codex's ~/.codex and took coverage from 38/38 to 37/38 -- a real
+    # identifier, proved by CI, erased by replaying an older local file over it.
+    #
+    # Genuine shrinkage happens (an identifier removed from the catalog, a route that
+    # stopped being produced) so this is refusable rather than forbidden -- but it has to be
+    # said out loud, because the silent version costs coverage nobody notices losing.
+    if out_path.exists() and "--allow-shrink" not in sys.argv:
+        was = {(r["agent"], r["route"], r["value"])
+               for r in json.loads(out_path.read_text()).get("identifiers", [])
+               if (r.get("os"), r.get("arch")) == plat}
+        now = {(r["agent"], r["route"], r["value"]) for r in idents}
+        lost = sorted(was - now)
+        if lost:
+            print(f"refusing to record {out_path.parent.name}: this run proves "
+                  f"{len(lost)} fewer identifier(s) than the committed record:")
+            for a, r, v in lost:
+                print(f"  lost  {a} {r}:{v}")
+            print("If the artifact is current and the loss is real, pass --allow-shrink.")
+            sys.exit(1)
+
+    # Stamp the run -- but ONLY for a real scenario. record() is called directly by
+    # test/test_matcher.py against a TemporaryDirectory, and stamping unconditionally wrote
+    # entries like "tmp0bqmvd6q" into docs/last-verified.json. That made the report change
+    # every time the test suite ran, so lint's own --check started failing on a file its own
+    # earlier step had dirtied: a side effect on a shared file, triggered by a test.
+    scen = pathlib.Path(scenario_dir).resolve()
+    if scen.parent != (ROOT / "test" / "scenarios").resolve():
+        print(f"recorded {len(idents)} identifiers observed by {scen.name} "
+              f"(not stamped: not a scenario directory)")
+        out_path.write_text(json.dumps({"scenario": scen.name, "identifiers": idents},
+                                       indent=2) + "\n")
+        return
+
+    # `at` is a date, not a timestamp: a scenario that runs twice in one day should not
+    # produce two different files.
+    import datetime
+    seen = json.loads(VERIFIED.read_text()) if VERIFIED.exists() else {}
+    seen[scen.name] = {
+        "at": datetime.date.today().isoformat(),
+        "os": os_version or None,
+        "arch": arch or None,
+        "identifiers": len(idents),
+    }
+    VERIFIED.parent.mkdir(exist_ok=True)
+    VERIFIED.write_text(json.dumps(dict(sorted(seen.items())), indent=2) + "\n")
+
+    out = out_path
     # Sorted and undated: this file is committed and compared, so it must change only
     # when what the run OBSERVED changes.
-    idents.sort(key=lambda r: (r["agent"], r["route"], r["value"]))
+    idents = kept + idents
+    idents.sort(key=lambda r: (r["agent"], r["route"], r["value"],
+                               r.get("os") or "", r.get("arch") or ""))
     out.write_text(json.dumps({"scenario": pathlib.Path(scenario_dir).name,
                                "identifiers": idents}, indent=2) + "\n")
     print(f"recorded {len(idents)} identifiers observed by {out.parent.name}")
@@ -213,10 +278,13 @@ def collect():
     # Keyed by scenario, so an identifier proved only outside CI can be told apart from
     # one a pull request would catch.
     seen_in = collections.defaultdict(set)      # (agent, route, value) -> {scenario}
+    observed_os = set()
     for path in sorted((ROOT / "test" / "scenarios").glob("*/observed.json")):
         doc = json.loads(path.read_text())
         for rec in doc.get("identifiers", []):
             seen_in[(rec["agent"], rec["route"], rec["value"])].add(doc["scenario"])
+            if rec.get("os"):
+                observed_os.add(rec["os"])
     in_ci = ci_scenarios()
     # Which agents each CI scenario claims to install, from its own expectations. An
     # identifier of such an agent that the run did NOT produce was reached by the suite and
@@ -325,7 +393,8 @@ def collect():
     # data now; README points at this report.
     blind = yaml.safe_load((ROOT / "docs" / "blind-spots.yaml").read_text())["blind_spots"]
 
-    return {"blind_spots": blind, "ci_unrecorded": unrecorded,
+    verified = json.loads(VERIFIED.read_text()) if VERIFIED.exists() else {}
+    return {"observed_os": sorted(observed_os), "verified": verified, "blind_spots": blind, "ci_unrecorded": unrecorded,
             "removed": catalog.get("removed", []),
             "classifications": catalog["classifications"],
             "not_agents": list(catalog.get("not_agents", ())),
@@ -347,6 +416,17 @@ ROUTE_LABEL = {"bundle_ids": "bundle id", "homebrew": "homebrew", "npm": "npm",
                "extension_ids": "extension id"}
 DOC = ROOT / "docs" / "agents.md"
 README = ROOT / "README.md"
+# WHEN each scenario last verified its identifiers, kept OUT of observed.json on purpose.
+#
+# observed.json holds WHAT a run matched, and it is deliberately churn-free: it changes only
+# when coverage does, so a diff on it means something. Putting a timestamp in it would
+# rewrite every file on every run and the collect job would commit daily noise -- and the
+# signal a reviewer wants ("coverage moved") would be buried in it.
+#
+# So the dates live in one small file that is EXPECTED to churn, and the report renders
+# absolute dates rather than "3 days ago": a relative age changes without a run, which would
+# make --check fail on an untouched repository every night.
+VERIFIED = ROOT / "docs" / "last-verified.json"
 # The coverage badge is GENERATED, for the same reason the doc is: a number written by hand
 # in a README is a claim nothing checks, and this one sits at the top of the page where it is
 # read first and verified least.
@@ -513,6 +593,20 @@ def markdown(data):  # noqa: C901
          f"there is, and it proves the alias still resolves_ |"
          if n_st("alias") else None),
         "",
+        # WHEN, beside WHAT. An identifier can read "covered by a CI test" on the strength of
+        # a run from months ago, and until now nothing said so. Absolute dates, because a
+        # relative age ("14 days ago") changes without a run and would make --check fail on
+        # an untouched repository every night.
+        *(["", "### When each scenario last verified", "",
+           "| scenario | last verified | platform | identifiers |", "|---|---|---|---:|"]
+          + [f"| `{k}` | {v['at']} | macOS {v.get('os') or '?'}"
+             f" {v.get('arch') or ''} | {v.get('identifiers', 0)} |"
+             for k, v in sorted(data.get("verified", {}).items())]
+          + ["",
+             "A date here is the last time a run *proved* those identifiers, not the last time "
+             "anyone looked at the catalog. Coverage does not expire on a schedule, but it does "
+             "go quietly out of date, and this is the only place that would show it."]
+          if data.get("verified") else []),
         (("> **This number is a floor.** `" + "`, `".join(data["ci_unrecorded"]) + "` run in CI "
           "and have recorded nothing yet, so identifiers they cover still count as *no test*. "
           "Absence of an observation is not absence of a test; the count corrects itself once "
