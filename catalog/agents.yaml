@@ -148,6 +148,21 @@ agents:
     # place: it proves the alias still resolves to this agent, so a later tidy-up of the
     # catalog or a refactor of the matcher cannot drop them silently.
     retired: [bot.molt.mac, bot.molt., clawdbot, moltbot]
+    # 18789 IS THE GATEWAY'S PORT AND IS NEARLY INERT IN PRACTICE. Measured: the gateway
+    # was started for real (`openclaw gateway run --allow-unconfigured`), the listener
+    # opened, and osquery collected the row -- and the classifier DECLINED it, correctly.
+    #
+    # A port only counts when the process holding it corroborates the agent, which is what
+    # stops 8080-held-by-java being reported as llama.cpp. OpenClaw installed from npm runs
+    # under node, so the row reads
+    #     loc=/opt/homebrew/Cellar/node/26.8.1/bin/node  extra=127.0.0.1
+    # and nothing in it names OpenClaw. The same is true of any agent that runs under an
+    # interpreter, which is most of them.
+    #
+    # Kept rather than deleted: it still corroborates if a row ever arrives whose process
+    # path names the agent, and it costs nothing when it does not. But it is not evidence
+    # this catalog can rely on, and the coverage report shows it as did-not-appear for that
+    # reason rather than for a missing test.
     ports: [18789]
 
   - id: chatgpt-desktop

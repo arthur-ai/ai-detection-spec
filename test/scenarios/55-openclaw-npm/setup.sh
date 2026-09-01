@@ -29,5 +29,28 @@ npm ls -g --depth=0 2>/dev/null | sed 's/^/  /'
 # a plausible-sounding subcommand is how a test comes to assert something nobody checked --
 # the same move that put npm `aider` in the catalog. So this captures the CLI's own help
 # into the run log, and the invocation gets written once the output says what it is.
-echo "--- openclaw CLI surface, for wiring the gateway next ---"
-openclaw --help 2>&1 | head -40 | sed 's/^/  /' || true
+# PORT 18789 NEEDS THE GATEWAY RUNNING, not merely installed. 50-autonomous uses `open -a`,
+# which needs an Aqua session SSH does not provide, so the listener never opens there.
+#
+# The invocation was NOT guessed. Three candidates were tried in a throwaway run and the
+# CLI answered precisely:
+#
+#   gateway start   -> "Tip: openclaw gateway install" -- wants the launchd daemon first
+#   gateway serve   -> "OpenClaw gateway has no command \"serve\"."
+#   gateway run     -> "Missing config. Run `openclaw setup` or set gateway.mode=local
+#                       (or pass --allow-unconfigured)."
+#
+# So `run` is the command and --allow-unconfigured is the flag, both named by the tool
+# rather than by me. --auth none keeps it from waiting on a credential that a disposable
+# guest has no way to supply.
+echo "--- starting the gateway ---"
+( openclaw gateway run --allow-unconfigured --auth none >/tmp/gw.log 2>&1 & ) || true
+for i in $(seq 1 20); do
+  if lsof -nP -iTCP:18789 -sTCP:LISTEN >/dev/null 2>&1; then
+    echo "  LISTENING on 18789"
+    break
+  fi
+  sleep 2
+done
+lsof -nP -iTCP:18789 -sTCP:LISTEN >/dev/null 2>&1 \
+  || { echo "  no listener on 18789; the gateway said:"; tail -5 /tmp/gw.log | sed 's/^/    /'; }
