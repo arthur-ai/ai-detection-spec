@@ -34,12 +34,12 @@ touches is the local Docker one, and only when you ask for a container scan.
 - **🔍 Nothing hidden.** It is SQL. Read `dist/discovery.sql` and you know exactly what it
   collects: names, paths, versions and declared permissions, and nothing else.
 - **✅ Every signature tested against a real install.** Not against documentation — which is how
-  this repo once shipped an identifier that matched nothing on any Mac. **38 of 38** identifiers
-  are covered by a test that runs in CI, and [the report](docs/agents.md) is generated, so it
-  cannot flatter itself.
+  this repo once shipped an identifier that matched nothing on any Mac. **Every identifier** is
+  covered by a test that runs in CI — lint fails on one that is not — and
+  [the report](docs/agents.md) is generated, so it cannot flatter itself.
 - **🧩 Add an agent without touching the endpoint.** The queries carry no product names, so a new
   signature re-matches evidence you already collected — nothing to redeploy to the fleet.
-- **🗺 Blind spots stated up front.** [Thirteen of them](docs/agents.md), in writing, because a
+- **🗺 Blind spots stated up front.** [Written down and counted](docs/agents.md), because a
   discovery tool that hides them is worse than none.
 
 ## What you get
@@ -82,27 +82,12 @@ one.
 per scenario, with the platform each run recorded — a generated table, not a claim maintained
 by hand here.
 
-**`curl` is deliberately not on that list either**, for the same reason and one more: it is
-used in exactly one place — the Docker socket health probe inside `bin/container-scan` — and
-`/usr/bin/curl` ships with macOS, so naming it as a prerequisite makes the list look longer
-than it is without telling anyone anything they can act on.
-
-**Docker is deliberately not on that list.** Nothing here needs it installed: if a Mac has no
-Docker, `bin/container-scan` finds no socket and reports `absent` — a stated outcome, not a
-failure. Docker is a property of the machine you are scanning, not a dependency of the scanner.
-What it buys you today is narrow and worth saying plainly: exactly **one** catalogued agent
-carries a container image (`aider`, as `paulgauthier/aider`), so `--deep` earns its place on
-fleets that run agents in containers and adds little elsewhere.
-
 Running the queries needs **osquery alone**. `python3` and PyYAML are for the classifier and
-the scheduled writer, not the endpoint's reporting path — which is a `cat`.
+the scheduled writer, not the endpoint's reporting path — which is a `cat`. `curl` and Docker
+are deliberately absent from that list; [deployment.md](docs/deployment.md) says why.
 
 `sudo` is needed because some tables read other users' home directories. Without it you see
 only your own account.
-
-**One caution.** On a fleet, `/usr/bin/python3` is a **stub** until Command Line Tools are
-installed — on a Mac without them the scheduled writer produces nothing at all, which surfaces
-as `no-cache` rather than as an error.
 
 ## Quickstart
 
@@ -113,8 +98,7 @@ $ sudo bin/discover --deep | bin/classify     # the same, plus container images
 ```
 
 For a fleet, do not run either of those on a synchronous reporting path — schedule
-`bin/discover --write` and `cat` the file. See [Integrating with an endpoint
-tool](#integrating-with-an-endpoint-tool).
+`bin/discover --write` and `cat` the file. See [Running it on a fleet](docs/deployment.md).
 
 ```
 Claude Code  [Coding agent]
@@ -128,10 +112,8 @@ OpenClaw  [Personal agent]
     npm     openclaw  2026.8.1
 ```
 
-`bin/classify` joins the query output to `catalog/agents.yaml`. Run the query alone for raw
-inventory:
-
-Sample output from a developer Mac:
+`bin/classify` joins the query output to `catalog/agents.yaml`. Run the query alone and you
+get the raw inventory instead:
 
 ```json
 [
@@ -143,9 +125,6 @@ Sample output from a developer Mac:
   {"kind":"ext",  "id":"kbhkmjgjmpbaeoinipbngmmpjppjlkmm","perms":"tabs,cookies,nativeMessaging,<all_urls>"}
 ]
 ```
-
-`sudo` is needed because some tables read other users' home directories. Without it you see only
-your own account.
 
 ## What it collects, and what it does not
 
@@ -166,34 +145,20 @@ its own. It reports; you decide.
 
 ### 📋 What it looks for — [`docs/agents.md`](docs/agents.md)
 
-**[Open the coverage report →](docs/agents.md)** Every agent in the catalog, every identifier
-each is matched on, and what actually proves it: a **real install** in a CI scenario, a **CI
-fixture**, or nothing yet.
+Every agent in the catalog, every identifier each is matched on, and what actually proves it:
+a **real install** in a CI scenario, a **CI fixture**, or nothing yet. The page is generated
+and gated by lint, so it cannot describe a catalog that has moved on without it — and it names
+what the suite *cannot* prove alongside what it can.
 
-It is **generated and kept current by CI** — not a snapshot. `test/lint.sh` fails if it is
-stale, a workflow regenerates it on `main`, and each scenario run records which identifiers it
-really matched, with the agent version and the OS that produced them. So the page cannot
-describe a catalog that has moved on without it.
-
-```console
-$ python3 tools/agent_status.py            # the same report, in the terminal
-$ python3 tools/agent_status.py --write    # regenerate docs/agents.md
-```
-
-It names what the suite *cannot* prove alongside what it can, and separates the two kinds of
-gap: identifiers **no test covers**, and identifiers a scenario installed the agent for that
-**did not appear**. A coverage summary that lists only its successes reads as complete when it
-is merely silent.
+**[Open the coverage report →](docs/agents.md)**
 
 ## What it cannot see
 
 A discovery tool that hides its blind spots is worse than none, so they are written down and
-counted: **13 of them**, from "anything inside a VM" to "what an agent *does*, as opposed to
-what it is permitted to do".
-
-They are properties of the platform and the osquery tables rather than gaps in the test suite —
-no amount of coverage moves them — and they live in one place so they cannot drift:
-[`docs/blind-spots.yaml`](docs/blind-spots.yaml), rendered into the report.
+counted: **13 blind spots**, from "anything inside a VM" to "what an agent *does*, as opposed
+to what it is permitted to do". They are properties of the platform and the osquery tables
+rather than gaps in the test suite — no amount of coverage moves them. They live in one
+place, [`docs/blind-spots.yaml`](docs/blind-spots.yaml), and are rendered into the report.
 
 **[Read them in context →](docs/agents.md#what-osquery-cannot-see)**
 
@@ -208,33 +173,17 @@ $ sudo bin/discover --deep | bin/classify     # base inventory plus container im
 $ sudo bin/container-scan --pretty            # containers alone
 ```
 
-**Why opt-in.** `docker_images` has no timeout of its own, and against a daemon that accepts
-the connection and never answers — Docker Desktop mid-startup, or installed and not opened
-today — the query never returns. osquery offers no way to bound it, so the only bound is a
-kill on the process. That is why the branch ships as its own artifact
-(`dist/discovery-deep.sql`) run by its own process: bounded there, it costs the container
-rows; bounded inside the composed query it costs six of the ten seconds and reports success
-anyway. `queries/COST.md` has the measurements.
+Opt-in because `docker_images` cannot be bounded from inside osquery: against a daemon that
+accepts the connection and never answers, the query never returns, so the bound has to be a
+kill on a separate process. Every outcome carries a reason rather than an empty result, and
+an image name is weaker evidence than a bundle id because whoever tagged it chose it.
 
-`bin/container-scan` reports which happened in its exit code — `0` scanned, `2` did not scan,
-`3` asked and gave up, `1` could not run — and, on every outcome, in a `kind=scan` row. That
-row is not decoration: an interrupted `osqueryi` exits 0 having printed a valid empty array,
-so without it a wedged daemon and a Mac with no containers produce the same value.
-`bin/classify` prints it as `COULD NOT LOOK` above the findings.
-
-Image names resolve through the `images:` catalog route — exact match on the repository, tag
-stripped, `docker.io/` and Docker Hub's implicit `library/` removed, registry host kept for
-everything else. One carries one: `aider`, as `paulgauthier/aider`. **An image name is chosen
-by whoever tagged it**, which no other route here is true of: `docker tag alpine
-paulgauthier/aider` produces an aider finding and nothing can tell it from the real image.
-Read an image row as weaker evidence than a bundle id.
+**[How the bound works, the exit codes, and how image names resolve →](docs/containers.md)**
 
 ## Running it on a fleet
 
-**Do not put these queries on a synchronous reporting path.** `docker_images` has no timeout
-of its own, and against a daemon that accepts the connection and never answers the query does
-not return — so anything that runs it while something waits for the answer can hang rather
-than fail. Run it on a schedule and read the result:
+**Do not put these queries on a synchronous reporting path** — they can hang rather than fail.
+Schedule the writer and read the file:
 
 ```console
 # on a schedule, as root
@@ -246,37 +195,11 @@ $ cat /var/lib/ai-discovery/inventory.json
 $ cat /var/lib/ai-discovery/status.txt
 ```
 
-Each branch runs in its own bounded process on the write path, which is a reliability choice:
-one unavailable table costs one branch rather than the whole inventory. Composed into a single
-statement it returns zero rows and a valid empty JSON array, which a consumer cannot tell from
-a clean machine.
+`status.txt` is one line and its vocabulary is a contract, so a consumer can always tell a
+clean machine from a branch that could not look. Scheduling, transport and classification at
+scale are yours to supply; this repo ships the queries, the runner, the guard and the bound.
 
-`status.txt` is one line, and its vocabulary is a contract:
-
-```
-ok 2026-08-31T20:30:29Z rows=775 apps=ok browser=ok containers=ok filesystem=ok packages=ok runtime=ok
-```
-
-`ok`, `absent`, `unhealthy:<http-code>`, `timeout:<seconds>`, `error`, `no-cache`,
-`stale:<seconds>`. Every payload also carries one dated `kind=scan` row per branch with the
-same value, so a consumer that only has the JSON still knows which branches ran and when.
-
-**Judge freshness on that timestamp, not the file's mtime** — redeploying a file resets the
-mtime without changing the truth.
-
-### What a deployment has to supply
-
-This repo ships osquery materials: the queries, the runner, the guard and the bound. The parts
-that belong to *your* management stack are deliberately not here, because they differ per
-consumer and would rot in a public repo:
-
-- **A schedule** — a launchd job, an MDM policy, cron.
-- **Transport** — whatever moves the file to wherever you read it.
-- **Framing**, if your channel has a size or encoding limit. Compressing the JSON is usually
-  enough; on a reference Mac 121 KB of rows becomes about 19 KB.
-- **Classification at scale.** `bin/classify` is the reference implementation and answers "what
-  is on this Mac". For a fleet, collect the rows and match them where the catalog lives, so
-  that adding a signature re-matches evidence you already hold instead of requiring a re-scan.
+**[The status contract, and what a deployment has to supply →](docs/deployment.md)**
 
 ## Contributing — genuinely, please do
 
