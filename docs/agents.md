@@ -119,19 +119,35 @@ No test matches these. Each is a candidate for a fixture row or a scenario.
 | OpenClaw | npm | `moltbot` |
 | OpenClaw | port | `18789` |
 
-## What the suite cannot prove
+## What osquery cannot see
 
-Carried alongside what it can. A coverage report that lists only its successes
-fails the same way an empty scan result does -- it reads as complete when it is
-merely silent.
+These are properties of the platform and the tables, not of any one scenario, so
+they are stated once. No amount of test coverage moves them.
+
+| blind spot | why |
+|---|---|
+| Anything inside a VM | The queries see the host filesystem, not a guest's |
+| What is *running* in a container | `--deep` lists container **images**, and an image named `ollama/ollama` is evidence. What a running container is doing is not: `docker_containers` needs a per-container inspect document osquery reads strictly, and a hand-built one it merely accepts is worse than none |
+| Containers outside Docker Desktop | Colima, Rancher Desktop and Podman keep their sockets elsewhere, and `docker_images` does not read containerd or Podman image stores at all. On those Macs `--deep` says "did not scan" rather than "none" |
+| An untagged (dangling) image | Whether `docker_images` reports one is untested — no dangling image could be produced on the machine this was measured on. Treat it as unknown, not as covered |
+| Agents on a cloud dev box or Codespace | Same reason. The scanner sees the machine it runs on |
+| Which filesystem roots an MCP server exposes | Requires parsing arbitrary JSON config; osquery has no table for it |
+| Outbound destinations by hostname | `process_open_sockets` returns an IP, not a name |
+| A cloned-but-never-run source checkout | Nothing has been created on disk yet |
+| What an agent *does* | Every route here reports presence and declared capability. `permissions` says an extension **may** read every page, never that it did. No osquery table carries use |
+| The identity of a sideloaded extension | osquery derives `identifier` from the manifest `key`, which unpacked and sideloaded extensions do not carry — so they report an **empty** one. The Web Store's signed CRX does carry it |
+| VS Code extensions | osquery has no table for them at all. An agent shipping as one is invisible on that route, whatever else it also installs |
+| Behaviour that only appears after launch or sign-in | Installing proves the bundle id. Nothing here launches an app — `open -a` needs an Aqua session and SSH has none — so first-launch launchd jobs, listening ports and state directories go unobserved, and account-gated products are never signed in to |
+
+## What individual scenarios do not cover
+
+Specific to one scenario and fixable by work, unlike the table above. A coverage
+report that lists only its successes fails the same way an empty scan result does
+-- it reads as complete when it is merely silent.
 
 **10-desktop-apps -- known gap**
 
 Windsurf's Homebrew token is `devin-desktop`, not `windsurf`. Read off the Homebrew API; a scenario written from the product name would install nothing and the WARN would scroll past.
-
-**10-desktop-apps -- known gap**
-
-Installing a cask proves the bundle id is right. It does not launch the app, so no scenario here observes a launchd job, a listening port or a state directory that only appears on first GUI launch -- `open -a` needs an Aqua session and there is none over SSH.
 
 **10-desktop-apps -- known gap**
 
@@ -140,14 +156,6 @@ These are paid or account-gated products in several cases. The install is unatte
 **20-cli-agents -- known gap**
 
 The Homebrew routes for gemini-cli (formula) and copilot-cli (cask) are NOT exercised. Both agents are installed from npm instead, because installing both ways would have the two packages fight over the same binary. The agents meet the standard; those two identifiers remain unexercised and docs/agents.md reports them as such.
-
-**20-cli-agents -- known gap**
-
-cline also ships as a VS Code extension, which is a different install path entirely and nothing here covers it. osquery has no table for VS Code extensions, so it is not merely untested but currently unreachable.
-
-**40-browser -- known gap**
-
-The planted fixture returns an EMPTY identifier while the two real Chrome extensions return theirs. osquery derives identifier from the manifest key, which unpacked and sideloaded extensions do not carry. Sideloaded extensions are precisely the shadow-AI case, so the collector cannot assume identifier is a usable primary key - it must fall back to profile_path plus name.
 
 **45-claude-extension -- known gap**
 
@@ -160,10 +168,6 @@ An EARLIER VERSION OF THIS FILE CLAIMED THE EXTENSION COULD NOT BE TESTED WITHOU
 **45-claude-extension -- known gap**
 
 Chrome's ExtensionInstallForcelist path remains untested. Whether it needs an MDM-delivered profile on macOS is UNVERIFIED -- the one attempt that failed proves nothing, because it failed for a different reason.
-
-**45-claude-extension -- known gap**
-
-Presence is all this proves. What the extension DOES -- which pages it reads, whether it acts autonomously -- is outside what any osquery table reports. The permissions column carries capability, never use.
 
 **45-claude-extension -- known gap**
 

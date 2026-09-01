@@ -35,7 +35,6 @@
   ],
   "known_gaps": [
     "Windsurf's Homebrew token is `devin-desktop`, not `windsurf`. Read off the Homebrew API; a scenario written from the product name would install nothing and the WARN would scroll past.",
-    "Installing a cask proves the bundle id is right. It does not launch the app, so no scenario here observes a launchd job, a listening port or a state directory that only appears on first GUI launch -- `open -a` needs an Aqua session and there is none over SSH.",
     "These are paid or account-gated products in several cases. The install is unattended and the SIGN-IN is not, so nothing here exercises behaviour that only appears once a user is authenticated."
   ]
 }

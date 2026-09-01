@@ -190,7 +190,25 @@ def collect():
         if path.name == "requires.json" and doc.get("why"):
             limits.append({"scenario": name, "kind": "skip", "text": doc["why"]})
 
-    return {"classifications": catalog["classifications"],
+    # THE GENERAL LIMITS COME FROM README's "What it cannot see", which is the canonical
+    # list and is written for a reader deciding whether to deploy this at all. They were
+    # previously repeated inside individual scenarios' known_gaps, which made a property of
+    # OSQUERY read as a property of one scenario -- "presence is all this proves" is not a
+    # fact about the Claude extension, and stating it there implied the others prove more.
+    blind = []
+    readme = (ROOT / "README.md").read_text()
+    if "## What it cannot see" in readme:
+        section = readme.split("## What it cannot see", 1)[1].split("\n## ", 1)[0]
+        for line in section.splitlines():
+            line = line.strip()
+            if not line.startswith("|") or line.startswith("|---") or "Blind spot" in line:
+                continue
+            cells = [c.strip() for c in line.strip("|").split("|")]
+            if len(cells) == 2 and cells[0]:
+                blind.append({"spot": cells[0], "why": cells[1]})
+
+    return {"blind_spots": blind,
+            "classifications": catalog["classifications"],
             "not_agents": list(catalog.get("not_agents", ())),
             "agents": agents, "limits": limits}
 
@@ -353,11 +371,19 @@ def markdown(data):  # noqa: C901
                 for a, i in unex]
         out.append("")
 
+    if data.get("blind_spots"):
+        out += ["## What osquery cannot see", "",
+                "These are properties of the platform and the tables, not of any one scenario, so",
+                "they are stated once. No amount of test coverage moves them.", "",
+                "| blind spot | why |", "|---|---|"]
+        out += [f"| {b['spot']} | {b['why']} |" for b in data["blind_spots"]]
+        out.append("")
+
     if data["limits"]:
-        out += ["## What the suite cannot prove", "",
-                "Carried alongside what it can. A coverage report that lists only its successes",
-                "fails the same way an empty scan result does -- it reads as complete when it is",
-                "merely silent.", ""]
+        out += ["## What individual scenarios do not cover", "",
+                "Specific to one scenario and fixable by work, unlike the table above. A coverage",
+                "report that lists only its successes fails the same way an empty scan result does",
+                "-- it reads as complete when it is merely silent.", ""]
         for lim in data["limits"]:
             head = "cannot run here" if lim["kind"] == "skip" else "known gap"
             out += [f"**{lim['scenario']} -- {head}**", "", lim["text"], ""]
