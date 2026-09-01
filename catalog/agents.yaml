@@ -306,5 +306,57 @@ agents:
     classification: Coding agent
     npm: [cline]
 
-
-
+  # Nous Research's terminal agent. Filed as a Personal agent rather than a Coding agent on
+  # the strength of what it ships: ONE GATEWAY PROCESS fronting Telegram, Discord, Slack,
+  # WhatsApp and Signal, plus cross-session memory. The Coding-agent reading is defensible --
+  # it depends on ripgrep and ships `hermes-acp`, an Agent Client Protocol adapter for
+  # editors -- but the messaging bridge is the product, which is OpenClaw's shape, not
+  # Claude Code's.
+  #
+  # THREE ROUTES, AND THE COMMAND NAME IS NOT THE PACKAGE NAME ON ANY OF THEM. The binary is
+  # `hermes`; every registry calls it `hermes-agent`. Each value below was read off the
+  # artifact, not off the vendor's page:
+  #
+  #   homebrew   a FORMULA, not a cask: homebrew-core Formula/h/hermes-agent.rb, a python
+  #              virtualenv build, stable 2026.8.31. Its install block writes THREE commands
+  #              -- hermes, hermes-agent, hermes-acp -- and none of them is what
+  #              homebrew_packages renders. The formula token is.
+  #   pypi       the wheel's own METADATA reads `Name: hermes-agent`, `Author: Nous
+  #              Research`, with console_scripts hermes/hermes-agent/hermes-acp. This route
+  #              is the STALE one: PyPI stops at 0.19.0 against a brew stable of 2026.8.31,
+  #              so it names a real distribution the project has moved past. Catalogued
+  #              anyway -- a Mac that installed it that way still carries the tool directory,
+  #              and that is the machine this route exists to find.
+  #   installer  `curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash`, the
+  #              vendor's primary route. Read off install.sh: it writes a launcher to
+  #              ~/.local/bin/hermes and puts everything else under HERMES_HOME.
+  - id: hermes
+    name: Hermes Agent
+    classification: Personal agent
+    homebrew: [hermes-agent]
+    pypi: [hermes-agent]
+    # Anchored at the front rather than fullmatched, so the sibling commands land here too:
+    # ~/.local/bin/hermes-acp and ~/.local/bin/hermes-agent are the same install, and a uv
+    # tool install writes all three.
+    binaries: ["~/.local/bin/hermes"]
+    # HERMES_HOME, and WHEN IT APPEARS DEPENDS ON THE ROUTE -- the distinction that made
+    # ~/.aider read DID NOT APPEAR while a scenario installed aider on every run. The
+    # installer puts the checkout at $HERMES_HOME/hermes-agent, so a curl install creates
+    # this at install time. A Homebrew or uv install does not: their code lives in the Cellar
+    # or the tool venv, and this directory exists only once the agent has been run.
+    state_dirs: ["~/.hermes"]
+    # NO npm ROUTE, DELIBERATELY, and this is the interesting one. npm's `hermes-agent`
+    # resolves, is current (0.21.0, ahead of PyPI), and does install the real thing -- and it
+    # is published by `wyrtensi`, describing itself in its own description as an "Unofficial
+    # npm bridge", with a postinstall script. Every other identifier in this file names
+    # something the VENDOR controls; that one names a third party's postinstall.
+    #
+    # Excluding it costs nothing detectable: the bridge runs the vendor installer, so the
+    # machine carries ~/.hermes and is found by the route above. The fixture keeps the row
+    # and test_matcher asserts it is DECLINED, which is what makes this a recorded decision
+    # rather than an omission -- and reversible in one line if the bridge is ever adopted
+    # upstream.
+    #
+    # npm's `hermes-engine` is React Native's JavaScript engine and is not this agent at all.
+    # It is in the fixture as a negative control, for the same reason `libxdmcp` is: it is
+    # the row a substring match would claim.

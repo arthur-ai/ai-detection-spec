@@ -101,6 +101,36 @@ check("npm's `aider` is NOT claimed as the coding agent",
       "the row must arrive and be declined; absent is also what a dropped kind looks like")
 check("ordinary software is left alone", {"cmake", "com.apple.Safari"} <= unmatched)
 
+# --- one agent, three registries, and none of them agrees on the name -------------
+# Hermes Agent is `hermes` on PATH, `hermes-agent` in Homebrew and `hermes-agent` on PyPI.
+# Four rows, four routes, one finding: the formula token, the uv tool directory named for
+# the package, the command uv writes beside it, and HERMES_HOME.
+hermes_ev = found.get("hermes", {}).get("evidence", [])
+check("finds Hermes Agent", "hermes" in found)
+check("finds it across all four of its routes", len(hermes_ev) == 4,
+      f"got {len(hermes_ev)}: {[e['id'] for e in hermes_ev]}")
+check("the Homebrew row is the formula token, not the command it installs",
+      any(e["kind"] == "brew" and e["id"] == "hermes-agent" for e in hermes_ev),
+      "the formula writes hermes, hermes-agent and hermes-acp; homebrew_packages renders "
+      "the formula name, and only an install settles which")
+
+# THE npm-`mcp` SHAPE, AND THE REASON KIND_ROUTES MAPS npm TO npm ALONE. `hermes-agent` is a
+# real name on npm and a real name on PyPI, and they are not published by the same people:
+# npm's is an "Unofficial npm bridge" from a third-party maintainer, catalogued nowhere here,
+# while the PyPI package's own wheel metadata reads Author: Nous Research. If the pypi route
+# were reachable from a kind='npm' row -- as it was when npm's `mcp` was reported as the MCP
+# SDK -- this row would be claimed on the strength of a signature written for another
+# registry. It must arrive and be DECLINED, which is a different fact from never appearing.
+check("npm's `hermes-agent` is NOT claimed by the PyPI signature of the same name",
+      "hermes-agent" in unmatched
+      and not any(e["kind"] == "npm" and e["id"] == "hermes-agent" for e in hermes_ev),
+      "same token, two registries, two publishers -- exactly the npm `mcp` failure")
+# React Native's JavaScript engine, on every machine that has ever built an RN app. Exact
+# matching is the only thing standing between it and a confident wrong finding, and this is
+# the row that proves the matching is exact -- the `libxdmcp` of this entry.
+check("npm's `hermes-engine` is NOT claimed as the agent", "hermes-engine" in unmatched,
+      "a JavaScript engine for React Native, and a prefix match claims it")
+
 # --- agent tooling is not an agent ------------------------------------------------
 # `mcp` was catalogued and is not any more, and the fixture rows STAY. Deleting them would
 # have removed the evidence along with the signature, leaving nothing to distinguish "we

@@ -9,9 +9,9 @@
 Every AI agent this repo finds on macOS, every identifier it is matched on,
 and the CI test behind each one.
 
-![agents](https://img.shields.io/badge/agents-15-1D4E89)
-![identifiers](https://img.shields.io/badge/identifiers-41-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-39%2F39-2E7D57)
+![agents](https://img.shields.io/badge/agents-16-1D4E89)
+![identifiers](https://img.shields.io/badge/identifiers-45-1D4E89)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-43%2F43-2E7D57)
 ![real install](https://img.shields.io/badge/by_real_install-37-2E7D57)
 
 </div>
@@ -23,7 +23,7 @@ and the CI test behind each one.
 
 **A real install is the standard, and every entry meets it.** A VM scenario installs the real software and asserts the classifier finds it. Anything less would be an exception recorded in the catalog with a reason, an evidence grade and a date; there are none open.
 
-15 agents carrying 41 identifiers.
+16 agents carrying 45 identifiers.
 
 ## 🧪 Why a real install is the bar
 
@@ -33,7 +33,7 @@ Mac. `aider` installs as `aider-chat` under `uv` and `pipx` while its state dire
 and neither survived contact with an actual install. Nothing short of installing the
 software catches that class of error.
 
-## 📊 39/39 identifiers are covered by a CI test
+## 📊 43/43 identifiers are covered by a CI test
 
 **Measured per identifier, and only counting tests CI actually runs.** Two things make
 that different from "has anyone tested this". An entry passes when a scenario finds it,
@@ -49,7 +49,7 @@ cannot drift apart again.
 | | identifiers | |
 |---|---:|---|
 | **CI: real install** | 37 | a scenario in the `scenarios.yml` matrix installs the software and asserts the classifier finds it |
-| **CI: fixture** | 2 | matched a captured row by `test_matcher.py`, which runs on **every pull request**. A weaker claim than a real install and a faster cadence — different axes |
+| **CI: fixture** | 6 | matched a captured row by `test_matcher.py`, which runs on **every pull request**. A weaker claim than a real install and a faster cadence — different axes |
 | **local only** | 0 | proved only by a scenario CI does not run. Catches nothing on a pull request |
 | **did not appear** ⚠ | 0 | a CI scenario installed the agent and this identifier never showed up. Usually installed by another route |
 | **no test** | 0 | nothing exercises it at all |
@@ -58,7 +58,7 @@ cannot drift apart again.
 `tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor
 carrying an `unverified` block, so an unverified signature cannot enter quietly.
 
-# Agents (15)
+# Agents (16)
 
 Software that acts on the user's behalf. This is what the catalog is for.
 
@@ -79,6 +79,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 
 | name | evidence | identifiers | scenarios |
 |---|---|---|---|
+| **Hermes Agent** | real install | `hermes-agent`, `hermes-agent`, `~/.local/bin/hermes`, `~/.hermes` | 21-cli-agents-homebrew, 25-python-agents |
 | **OpenClaw** | real install | **`ai.openclaw.mac`**, ~~`bot.molt.mac`~~, **`openclaw`**, **`openclaw`**, **`clawdbot`**, **`moltbot`**, **`~/.openclaw`**, **`ai.openclaw.`**, ~~`bot.molt.`~~ | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 60-persistence, 90-demo-fleet |
 
 ## AI browser
