@@ -56,7 +56,10 @@ import time
 #
 # Each entry is here for a naming rule bin/classify has to get right:
 #
-#   ghcr.io/berriai/litellm:main-latest    a real catalogued agent. The registry host is
+#   ghcr.io/berriai/litellm:main-latest    NOT catalogued -- a gateway an agent calls
+#                                          through, removed for that. Kept as a negative
+#                                          control: it must be DECLINED, and absent is
+#                                          also what a dropped kind looks like. Registry host
 #                                         PART of the identifier off Docker Hub, and the
 #                                         published tag is main-latest, not latest.
 #   ghcr.io/ggml-org/llama.cpp:server      a second one, and the org is ggml-org today

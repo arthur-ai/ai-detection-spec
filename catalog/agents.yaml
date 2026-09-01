@@ -69,10 +69,11 @@ version: 1
 #             the kind=scan marker row: `ok`, `absent`, `unhealthy:<code>`, `timeout:<n>`
 #             distinguish "no Docker" from "Docker wedged", which a bundle id cannot.
 #
-# One classification remains that is not an agent. A LOCAL MODEL server is what an agent
-# runs AGAINST -- it is the capability on the machine rather than a library describing one,
-# and a fleet owner asking what can run inference locally wants it. `not_agents` below
-# marks it, and the tooling counts it apart.
+# One classification remains that is not an agent. A MODEL RUNNER serves language models on
+# the machine -- it is the capability an agent runs AGAINST, rather than a library
+# describing one, and a fleet owner asking what can run inference locally wants it. It is
+# not itself a language model: the models are separate kind=model rows from model_stores.
+# `not_agents` below marks the classification, and the tooling counts it apart.
 classifications:
   # --- acts on the user's behalf ---
   - Coding agent        # operates on a codebase, usually with shell access
@@ -85,15 +86,18 @@ classifications:
                         # locally. Contested rather than settled, and overstating an agent
                         # is the safer error for an inventory than missing one
   # --- does not act on anyone's behalf; listed in not_agents below ---
-  - Local model         # inference served on the machine itself. A model server, not an
-                        # agent: something else has to drive it
+  - Model runner        # serves language models on this machine. NOT a language model
+                        # itself and not an agent: it is the runtime, something else
+                        # drives it, and the MODELS it holds are separate kind=model rows
+                        # from the model_stores route. Naming the app after the model
+                        # would blur two things this repo deliberately detects apart
 
 # Which of the above are NOT agents, as data rather than as a comment, so the tooling can
 # count them apart instead of every tool hardcoding its own opinion. Additive on purpose:
 # turning `classifications` into a mapping would have said the same thing but changed the
 # shape of the file, and a consumer parsing this YAML would break for a label.
 not_agents:
-  - Local model
+  - Model runner
 
 agents:
   - id: claude-desktop
@@ -173,7 +177,7 @@ agents:
 
   - id: ollama
     name: Ollama
-    classification: Local model
+    classification: Model runner
     bundle_ids: [com.electron.ollama]
     homebrew: [ollama, ollama-app]     # formula and cask are both real install routes
     npm: [ollama]
@@ -187,7 +191,7 @@ agents:
 
   - id: lm-studio
     name: LM Studio
-    classification: Local model
+    classification: Model runner
     # A local model runs on the HOST or in a CONTAINER, and both are install paths. The
     # host side is the cask below; this is the container side.
     #
@@ -207,7 +211,7 @@ agents:
 
   - id: jan
     name: Jan
-    classification: Local model
+    classification: Model runner
     # NO CONTAINER PATH EXISTS, and this is a recorded finding rather than an omission.
     # Checked before concluding: no image under any plausible name on Docker Hub, and
     # NOTHING matching dockerfile or docker-compose anywhere in janhq/jan's tree (44k
@@ -218,7 +222,7 @@ agents:
 
   - id: llama-cpp
     name: llama.cpp
-    classification: Local model
+    classification: Model runner
     homebrew: ["llama.cpp"]            # version is an opaque build number, not semver
     ports: [8080]
     # Read off a real pulled image: ghcr.io/ggml-org/llama.cpp:server. ggml-org, not

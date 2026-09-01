@@ -302,11 +302,11 @@ def markdown(data):  # noqa: C901
     for group, want_agent, blurb in (
             ("Agents", True,
              "Software that acts on the user's behalf. This is what the catalog is for."),
-            ("Supporting tools", False,
-             "**Not agents.** Listed because they change what is possible on the machine, and "
-             "counted separately so the agent count means what it says. A local model server "
-             "is what an agent runs *against*; a container runtime changes what can be *seen* "
-             "at all, which is why `containers.sql` exists.")):
+            ("Model runners", False,
+             "**Not agents, and not language models either.** These serve models on the "
+             "machine; an agent is what drives one. Counted separately so the agent number "
+             "means what it says. The *models* they hold are a different thing again and "
+             "appear as `kind=model` rows from the `model_stores` route.")):
         classes = [c for c in data["classifications"]
                    if c in by_class and (c not in na) == want_agent]
         if not classes:
@@ -407,7 +407,7 @@ def main():
     # Two top-level groups, not one list with a tag. A container runtime listed among
     # agents reads as an agent however it is labelled, and the count that matters to
     # someone asking "what AI is on this Mac" is the agent count.
-    for group, want_agent in (("AGENTS", True), ("SUPPORTING TOOLS (not agents)", False)):
+    for group, want_agent in (("AGENTS", True), ("MODEL RUNNERS (not agents)", False)):
         classes = [c for c in data["classifications"]
                    if c in by_class and (c not in na) == want_agent]
         if not classes:

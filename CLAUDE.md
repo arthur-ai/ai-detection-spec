@@ -41,8 +41,10 @@ from *route quietly broken*. Docker Desktop went the same way, and the reason
 generalises: what we detect inside a container is the agent **image** — the runtime is how we
 look, not what we look for — and whether Docker is present is already answered better by the
 `kind=scan` marker, which distinguishes *no Docker* from *Docker wedged* as a bundle id cannot.
-One non-agent classification remains, marked in `not_agents`: a **local model** server is the
-inference capability an agent runs against, not a library describing one.
+One non-agent classification remains, marked in `not_agents`: a **model runner** serves
+language models on the machine. It is not a language model either — the models themselves are
+separate `kind=model` rows from `model_stores` — and naming the app after the model would blur
+two things this repo detects apart.
 
 **A real install is the standard, and the catalog enforces it.** An agent is verified when a VM
 scenario installs the real software and asserts the classifier finds it. Anything less is an

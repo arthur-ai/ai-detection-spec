@@ -97,11 +97,11 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | **Claude Desktop** | real install | **`com.anthropic.claudefordesktop`**, **`claude`**, `com.anthropic.claude_browser_extension.json` | 10-desktop-apps, 90-demo-fleet |
 | **Perplexity** | real install | **`ai.perplexity.macv3`**, **`perplexity`** | 10-desktop-apps |
 
-# Supporting tools (4)
+# Model runners (4)
 
-**Not agents.** Listed because they change what is possible on the machine, and counted separately so the agent count means what it says. A local model server is what an agent runs *against*; a container runtime changes what can be *seen* at all, which is why `containers.sql` exists.
+**Not agents, and not language models either.** These serve models on the machine; an agent is what drives one. Counted separately so the agent number means what it says. The *models* they hold are a different thing again and appear as `kind=model` rows from the `model_stores` route.
 
-## Local model
+## Model runner
 
 | name | evidence | identifiers | scenarios |
 |---|---|---|---|

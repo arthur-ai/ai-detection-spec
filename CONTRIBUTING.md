@@ -85,9 +85,10 @@ An SDK is a library an agent is *built with*; a gateway is something an agent ca
 Detecting either says a developer imported a protocol or proxied some traffic, not that
 anything is acting on anyone's behalf.
 
-One exception is marked in `not_agents`: a **local model** server is the inference capability
-an agent runs *against*, which is a fact about the machine rather than a library describing
-one.
+One exception is marked in `not_agents`: a **model runner** serves language models on the
+machine — the capability an agent runs *against*, rather than a library describing one. It is
+not itself a language model; the models it holds arrive separately as `kind=model` rows from
+the `model_stores` route.
 
 A **container runtime** is not an exception and was removed. `containers.sql` exists because
 agents hide in containers — so what belongs in the catalog is the agent **image**
@@ -113,7 +114,7 @@ exception in the catalog** — `tools/validate_catalog.py` fails on an agent tha
 ```yaml
 - id: lm-studio
   name: LM Studio
-  classification: Local model
+  classification: Model runner
   bundle_ids: [ai.elementlabs.lmstudio]
   homebrew: [lm-studio]
   unverified:

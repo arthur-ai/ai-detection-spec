@@ -216,7 +216,7 @@ def main():
     # "entries", not "agents". An MCP SDK is a library and LiteLLM is a gateway; counting
     # them as agents overstates what was found on a machine.
     print(f"catalog: ok, {len(doc['agents'])} entries "
-          f"({len(doc['agents']) - n_tools} agents, {n_tools} supporting tools), "
+          f"({len(doc['agents']) - n_tools} agents, {n_tools} model runners), "
           f"{len(seen_route_values)} identifiers, scenario references resolve")
     print(f"  real install: {n_real}/{len(doc['agents'])} entries. "
           f"{n_exc} recorded exception(s).")
