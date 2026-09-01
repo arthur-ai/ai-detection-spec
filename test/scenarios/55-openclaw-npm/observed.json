@@ -5,12 +5,16 @@
       "agent": "openclaw",
       "route": "npm",
       "value": "openclaw",
-      "agent_version": "2026.8.1"
+      "agent_version": "2026.8.1",
+      "os": "15.7.7",
+      "arch": "arm64"
     },
     {
       "agent": "openclaw",
       "route": "state_dirs",
-      "value": "~/.openclaw"
+      "value": "~/.openclaw",
+      "os": "15.7.7",
+      "arch": "arm64"
     }
   ]
 }

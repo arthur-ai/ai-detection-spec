@@ -5,13 +5,17 @@
       "agent": "openclaw",
       "route": "bundle_ids",
       "value": "ai.openclaw.mac",
-      "agent_version": "2026.7.1"
+      "agent_version": "2026.7.1",
+      "os": "15.7.7",
+      "arch": "arm64"
     },
     {
       "agent": "openclaw",
       "route": "homebrew",
       "value": "openclaw",
-      "agent_version": "2026.7.1"
+      "agent_version": "2026.7.1",
+      "os": "15.7.7",
+      "arch": "arm64"
     }
   ]
 }
