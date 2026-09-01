@@ -181,6 +181,11 @@ python3 "$HERE/../tools/build.py" --check || fail=1
 python3 "$HERE/../test/test_matcher.py" >/dev/null || { echo "FAIL: matcher tests"; fail=1; }
 python3 "$HERE/../tools/check_workflows.py" || fail=1
 python3 "$HERE/../tools/check_no_catalog.py" || fail=1
+# docs/agents.md is generated from the catalog and its coverage, exactly as dist/ is
+# generated from queries/. Gated here so a contributor sees it locally in seconds rather
+# than finding out from a red PR -- and so the doc cannot quietly describe a catalog that
+# has moved on without it, which is the same failure this repo keeps having in other forms.
+python3 "$HERE/../tools/agent_status.py" --check || fail=1
 
 [ "$fail" -eq 0 ] && echo "lint: PASS" || echo "lint: FAIL"
 exit "$fail"

@@ -77,6 +77,28 @@ claimed by two agents means one is wrong and both will fire.
 `classification` describes **deployment shape**, not risk. See the vocabulary at the top of
 the file.
 
+### Regenerate the doc in the same commit
+
+[`docs/agents.md`](docs/agents.md) lists every agent, its identifiers and the evidence
+behind each one. It is **generated**, exactly as `dist/` is:
+
+```console
+$ python3 tools/agent_status.py            # read it in the terminal
+$ python3 tools/agent_status.py --write    # regenerate docs/agents.md
+```
+
+`test/lint.sh` fails if it is stale, so change the catalog and regenerate in the same
+commit. A workflow also regenerates it on `main` as a safety net, which covers a direct
+push or a merge that moves coverage without touching the catalog.
+
+The doc grades evidence at two strengths, and a new signature normally starts at the weaker
+one. A **fixture** proves the matcher works; only a **real install** in a VM scenario proves
+the identifier is real, which is the failure mode that shipped `bot.molt.mac` — a
+vendor-documented identifier that matched nothing on any Mac. An identifier with neither is
+listed as unexercised rather than omitted: unexercised is not the same as wrong, and
+`docs/signature-lifecycle.md` covers how one that genuinely cannot be verified is recorded
+rather than guessed at.
+
 ### The `images` route
 
 A container image repository, reached only by `bin/discover --deep`. It is matched exactly
