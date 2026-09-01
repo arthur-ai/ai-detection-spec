@@ -77,6 +77,43 @@ claimed by two agents means one is wrong and both will fire.
 `classification` describes **deployment shape**, not risk. See the vocabulary at the top of
 the file.
 
+### A real install is the standard
+
+An agent is verified when a **VM scenario installs the real software** and asserts the
+classifier finds it. That is the bar, and it is the bar because nothing lower catches the
+errors this catalog exists to avoid: `bot.molt.mac` came from OpenClaw's own Homebrew
+metadata and matched nothing on any Mac, and `aider` installs as `aider-chat` while its
+state directory is `~/.aider`, so evidence and signature never met. Both passed review.
+
+So add the agent to a scenario's `classified.must_find`. If you cannot, **record the
+exception in the catalog** — `tools/validate_catalog.py` fails on an agent that has neither:
+
+```yaml
+- id: lm-studio
+  name: LM Studio
+  classification: Local model
+  bundle_ids: [ai.elementlabs.lmstudio]
+  homebrew: [lm-studio]
+  unverified:
+    reason: "the `lm-studio` Homebrew cask resolves, so an unattended install exists; no scenario installs it yet"
+    evidence: vendor-documentation     # the weakest grade any of its identifiers rests on
+    belongs_in: 30-local-models        # where the scenario should go, when written
+    raised: 2026-08-31                 # so an exception that has sat for a year looks like one
+```
+
+`evidence` grades what you actually hold, weakest first. `real-install` is **not** a value
+here — an agent with one does not need this block.
+
+| grade | meaning |
+|---|---|
+| `vendor-documentation` | the vendor says so and nothing else does. This is what produced `bot.molt.mac` |
+| `registry-manifest` | the artifact resolves under this exact name from its registry — a cask token, a published npm or PyPI package. Authoritative about the **name**, silent about what an osquery row renders |
+| `artifact-metadata` | the artifact's own metadata confirms it: an image entrypoint, a bundle `Info.plist` |
+
+Omit `blocker` unless something genuinely stands in the way. Its absence says the only
+thing missing is the work, which is what turns [`docs/agents.md`](docs/agents.md)'s
+exception register into a work list rather than an excuse list.
+
 ### Regenerate the doc in the same commit
 
 [`docs/agents.md`](docs/agents.md) lists every agent, its identifiers and the evidence

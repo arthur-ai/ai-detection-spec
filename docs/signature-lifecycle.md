@@ -115,6 +115,14 @@ unverified:
 | `artifact-metadata` | the artifact's own config confirms what it is — an image entrypoint, a bundle `Info.plist` |
 | `real-install` | observed in `docker_images`, `apps`, `chrome_extensions` on a machine |
 
+**This is now implemented**, and slightly stricter than sketched above: the gate does not
+merely permit an exception, it *requires* one. `tools/validate_catalog.py` refuses an agent
+that is neither covered by a scenario nor carrying an `unverified` block, and refuses the
+block itself if the reason is too short to be a reason, the date is not a date, the grade is
+not one of the three, or the agent is in fact already covered — in which case the block
+contradicts the scenario and one of them is stale. `docs/agents.md` renders the register on
+every regeneration.
+
 The gate **permits** an unverified entry and **reports it every run**, so it cannot quietly
 become permanent. A catalog is allowed to carry a guess. It is not allowed to hide one.
 

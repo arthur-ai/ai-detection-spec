@@ -7,20 +7,32 @@
 Every AI agent this repo detects on macOS, the identifiers each is matched on, and the
 strength of the evidence behind them.
 
-**22 agents, 65 identifiers.** 10 agents are backed by a real install; 19 identifiers are matched by a fixture and 46 are unexercised.
+**A real install is the standard. Everything else is an exception, and every exception is recorded.**
 
-## What the grades mean
+| | agents | |
+|---|---:|---|
+| **standard** | 10 | a VM scenario installs the real software and asserts the classifier finds it |
+| **exception** | 12 | recorded in the catalog with a reason, an evidence grade and the date it was raised |
 
-| grade | what it proves |
-|---|---|
-| **real install** | a VM scenario installed the actual software and the classifier found it. The only evidence that survives a vendor-documented identifier matching nothing on any Mac. |
-| **fixture only** | the classifier matched a captured row. Those rows came from real machines, but nothing re-checks them against a current install, so a fixture proves the *matcher* works and cannot prove the *identifier* is current. |
-| **unexercised** | catalogued, but no test exercises it yet. Not a defect and not a wrong signature -- unexercised, which is a different thing, and is why each one is named below rather than left out. |
+22 agents, 65 identifiers.
 
-The two grades are also scoped differently: **per-agent** coverage comes from scenarios,
-**per-identifier** coverage from fixtures only. A scenario's `expected.json` names the
-*agent* it expects, never the identifier that found it -- so an agent can be backed by a
-real install while its identifiers still show no fixture row.
+## Why a real install is the bar
+
+`bot.molt.mac` was read off OpenClaw's own Homebrew metadata and matched nothing on any
+Mac. `aider` installs as `aider-chat` under `uv` and `pipx` while its state directory is
+`~/.aider`, so evidence and signature never met. Both were silent, both survived review,
+and neither survived contact with an actual install. Nothing short of installing the
+software catches that class of error.
+
+A **fixture** is not a weaker pass, it is a different claim: 19 of 65
+identifiers are matched by a captured row, which proves the *matcher* works and says
+nothing about whether the identifier is what the software ships today. Per-agent coverage
+comes from scenarios; per-identifier coverage comes from fixtures only, because a
+scenario's `expected.json` names the *agent* it expects and never the identifier that
+found it.
+
+`tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor
+carrying an `unverified` block, so an unverified signature cannot enter quietly.
 
 ## Coding agent
 
@@ -28,12 +40,12 @@ real install while its identifiers still show no fixture row.
 |---|---|---|---|
 | **aider** | real install | aider, aider, aider-chat, `~/.aider`, paulgauthier/aider | 25-python-agents |
 | **Claude Code** | real install | @anthropic-ai/claude-code, `~/.local/bin/claude`, `~/.claude` | 20-cli-agents, 90-demo-fleet |
-| **Cline** | unexercised | cline | -- |
+| **Cline** | **exception** | cline | -- |
 | **Codex CLI** | real install | codex, `@openai/codex`, ~/.codex | 20-cli-agents, 90-demo-fleet |
-| **GitHub Copilot CLI** | unexercised | copilot-cli, @github/copilot | -- |
+| **GitHub Copilot CLI** | **exception** | copilot-cli, @github/copilot | -- |
 | **Cursor** | real install | com.todesktop.230313mzl4w4u92, cursor | 10-desktop-apps, 90-demo-fleet |
-| **Gemini CLI** | unexercised | gemini-cli, @google/gemini-cli | -- |
-| **Windsurf** | unexercised | com.exafunction.windsurf, devin-desktop | -- |
+| **Gemini CLI** | **exception** | gemini-cli, @google/gemini-cli | -- |
+| **Windsurf** | **exception** | com.exafunction.windsurf, devin-desktop | -- |
 
 ## Personal agent
 
@@ -47,30 +59,30 @@ real install while its identifiers still show no fixture row.
 |---|---|---|---|
 | **ChatGPT Desktop** | real install | com.openai.codex, chatgpt | 10-desktop-apps, 90-demo-fleet |
 | **Claude Desktop** | real install | com.anthropic.claudefordesktop, claude, `com.anthropic.claude_browser_extension.json` | 10-desktop-apps, 90-demo-fleet |
-| **Perplexity** | unexercised | ai.perplexity.macv3, perplexity | -- |
+| **Perplexity** | **exception** | ai.perplexity.macv3, perplexity | -- |
 
 ## Local model
 
 | agent | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **Jan** | unexercised | jan.ai.app, jan | -- |
-| **llama.cpp** | fixture only | llama.cpp, 8080, `ghcr.io/ggml-org/llama.cpp` | -- |
-| **LM Studio** | unexercised | ai.elementlabs.lmstudio, lm-studio, 1234 | -- |
+| **Jan** | **exception** | jan.ai.app, jan | -- |
+| **llama.cpp** | **exception** | llama.cpp, 8080, `ghcr.io/ggml-org/llama.cpp` | -- |
+| **LM Studio** | **exception** | ai.elementlabs.lmstudio, lm-studio, 1234 | -- |
 | **Ollama** | real install | com.electron.ollama, `ollama`, `ollama-app`, `ollama`, com.ollama., `11434`, ~/.ollama/models/manifests, `ollama/ollama` | 30-local-models, 90-demo-fleet |
 
 ## AI browser
 
 | agent | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **Orion** | unexercised | com.kagi.kagimacOS, orion | -- |
+| **Orion** | **exception** | com.kagi.kagimacOS, orion | -- |
 | **Perplexity Comet** | real install | ai.perplexity.comet, comet | 10-desktop-apps, 90-demo-fleet |
 
 ## Framework
 
 | agent | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **LiteLLM** | fixture only | litellm, litellm, `ghcr.io/berriai/litellm` | -- |
-| **MCP SDK** | fixture only | mcp, `@modelcontextprotocol/*`, mcp | -- |
+| **LiteLLM** | **exception** | litellm, litellm, `ghcr.io/berriai/litellm` | -- |
+| **MCP SDK** | **exception** | mcp, `@modelcontextprotocol/*`, mcp | -- |
 
 ## Browser agent
 
@@ -82,9 +94,31 @@ real install while its identifiers still show no fixture row.
 
 | agent | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **Docker Desktop** | unexercised | com.docker.docker | -- |
+| **Docker Desktop** | **exception** | com.docker.docker | -- |
 
 > Identifiers in `code` are matched by a test fixture; the rest are unexercised.
+
+## The exception register
+
+Every agent not backed by a real install, and why. `belongs_in` names the
+scenario that should cover it, which makes this a work list rather than an
+excuse list. `blocker` appears only where something genuinely stands in the way
+-- its absence means the only thing missing is the work.
+
+| agent | evidence held | reason | belongs in | blocker |
+|---|---|---|---|---|
+| **Cline** | registry-manifest | `cline` is published on npm; no scenario installs it yet, and the VS Code extension it ships as is a separate install path nothing here covers | 20-cli-agents | -- |
+| **GitHub Copilot CLI** | registry-manifest | both the `copilot-cli` cask and `@github/copilot` on npm resolve; no scenario installs either yet | 20-cli-agents | -- |
+| **Docker Desktop** | vendor-documentation | test/docker_states.sh exercises every daemon state against a fake socket, which proves the guard and the bound but installs no Docker and so never sees this bundle id | -- | Docker Desktop needs nested virtualisation to RUN in a Tart guest, though installing the cask alone would register the bundle id |
+| **Gemini CLI** | registry-manifest | both the `gemini-cli` formula and `@google/gemini-cli` on npm resolve; no scenario installs either yet | 20-cli-agents | -- |
+| **Jan** | vendor-documentation | the `jan` Homebrew cask resolves, so an unattended install exists; no scenario installs it yet | 30-local-models | -- |
+| **LiteLLM** | registry-manifest | the images route was read off real docker_images rows, and `litellm` resolves on both npm and PyPI; no scenario installs the package | 25-python-agents | -- |
+| **llama.cpp** | registry-manifest | the `llama.cpp` formula resolves and the images route was read off real docker_images rows; no scenario installs it | 30-local-models | -- |
+| **LM Studio** | vendor-documentation | the `lm-studio` Homebrew cask resolves, so an unattended install exists; no scenario installs it yet | 30-local-models | -- |
+| **MCP SDK** | registry-manifest | `mcp` resolves on both npm and PyPI, and the @modelcontextprotocol/* wildcard is fixture-covered; no scenario installs the SDK itself | 20-cli-agents | -- |
+| **Orion** | vendor-documentation | the `orion` Homebrew cask resolves, so an unattended install exists; no scenario installs it yet | 10-desktop-apps | -- |
+| **Perplexity** | vendor-documentation | the `perplexity` Homebrew cask resolves, so an unattended install exists; no scenario installs it yet | 10-desktop-apps | -- |
+| **Windsurf** | vendor-documentation | the `devin-desktop` Homebrew cask resolves, so an unattended install exists; no scenario installs it yet | 10-desktop-apps | -- |
 
 ## Unexercised identifiers
 

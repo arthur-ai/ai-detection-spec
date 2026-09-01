@@ -48,6 +48,14 @@ ALL_ROUTES = ["bundle_ids", "homebrew", "npm", "pypi", "binaries", "state_dirs",
               "images", "extension_ids"]
 
 
+def _plain(block):
+    """Make an `unverified` block JSON-safe without losing anything."""
+    if not isinstance(block, dict):
+        return block
+    return {k: (v if isinstance(v, (str, int, float, bool, type(None))) else str(v))
+            for k, v in block.items()}
+
+
 def collect():
     catalog = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
 
@@ -103,7 +111,15 @@ def collect():
             "id": aid, "name": agent["name"], "classification": agent["classification"],
             "scenarios": sorted(scenarios.get(aid, ())),
             "identifiers": idents,
-            "notes": [c.strip("# ").strip() for c in ()],
+            # The recorded exception, when this agent is not backed by a real install.
+            # validate_catalog.py refuses an agent that has neither.
+            #
+            # `raised` is coerced to str because PyYAML resolves an unquoted YYYY-MM-DD to a
+            # datetime.date, which json.dumps cannot serialise -- so --json died while
+            # --write and --check, which never touch the field, both passed. Fixed here
+            # rather than by quoting the value in the catalog: a contributor writing a bare
+            # date is doing nothing wrong, and the tool should not break on it.
+            "unverified": _plain(agent.get("unverified")),
         })
     # What the suite cannot prove, carried alongside what it can. A coverage report that
     # lists only successes is the same failure mode as an empty result on a clean machine:
@@ -130,9 +146,14 @@ DOC = ROOT / "docs" / "agents.md"
 
 
 def grade(agent):
-    if agent["scenarios"]:
-        return "real install"
-    return "fixture only" if any(i["fixture"] for i in agent["identifiers"]) else "unexercised"
+    """A real install is the STANDARD. Everything else is an exception.
+
+    Deliberately binary at the top level. Reporting three peer grades invited reading
+    "fixture only" as a second kind of pass, and it is not one: a fixture proves the
+    matcher works against a row somebody captured once, and says nothing about whether
+    the identifier is still what the software installs today.
+    """
+    return "standard" if agent["scenarios"] else "exception"
 
 
 def markdown(data):
@@ -158,28 +179,35 @@ def markdown(data):
         "Every AI agent this repo detects on macOS, the identifiers each is matched on, and the",
         "strength of the evidence behind them.",
         "",
-        f"**{len(agents)} agents, {n_ident} identifiers.** {n_scen} agents are backed by a "
-        f"real install; {n_fix} identifiers are matched by a fixture and "
-        f"{n_ident - n_fix} are unexercised.",
+        f"**A real install is the standard. Everything else is an exception, and every "
+        f"exception is recorded.**",
         "",
-        "## What the grades mean",
+        f"| | agents | |",
+        f"|---|---:|---|",
+        f"| **standard** | {n_scen} | a VM scenario installs the real software and asserts the "
+        f"classifier finds it |",
+        f"| **exception** | {len(agents) - n_scen} | recorded in the catalog with a reason, an "
+        f"evidence grade and the date it was raised |",
         "",
-        "| grade | what it proves |",
-        "|---|---|",
-        "| **real install** | a VM scenario installed the actual software and the classifier "
-        "found it. The only evidence that survives a vendor-documented identifier matching "
-        "nothing on any Mac. |",
-        "| **fixture only** | the classifier matched a captured row. Those rows came from real "
-        "machines, but nothing re-checks them against a current install, so a fixture proves the "
-        "*matcher* works and cannot prove the *identifier* is current. |",
-        "| **unexercised** | catalogued, but no test exercises it yet. Not a defect and not a "
-        "wrong signature -- unexercised, which is a different thing, and is why each one is "
-        "named below rather than left out. |",
+        f"{len(agents)} agents, {n_ident} identifiers.",
         "",
-        "The two grades are also scoped differently: **per-agent** coverage comes from scenarios,",
-        "**per-identifier** coverage from fixtures only. A scenario's `expected.json` names the",
-        "*agent* it expects, never the identifier that found it -- so an agent can be backed by a",
-        "real install while its identifiers still show no fixture row.",
+        "## Why a real install is the bar",
+        "",
+        "`bot.molt.mac` was read off OpenClaw's own Homebrew metadata and matched nothing on any",
+        "Mac. `aider` installs as `aider-chat` under `uv` and `pipx` while its state directory is",
+        "`~/.aider`, so evidence and signature never met. Both were silent, both survived review,",
+        "and neither survived contact with an actual install. Nothing short of installing the",
+        "software catches that class of error.",
+        "",
+        f"A **fixture** is not a weaker pass, it is a different claim: {n_fix} of {n_ident}",
+        "identifiers are matched by a captured row, which proves the *matcher* works and says",
+        "nothing about whether the identifier is what the software ships today. Per-agent coverage",
+        "comes from scenarios; per-identifier coverage comes from fixtures only, because a",
+        "scenario's `expected.json` names the *agent* it expects and never the identifier that",
+        "found it.",
+        "",
+        "`tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor",
+        "carrying an `unverified` block, so an unverified signature cannot enter quietly.",
         "",
     ]
 
@@ -195,11 +223,27 @@ def markdown(data):
         for a in sorted(by_class[cls], key=lambda x: x["id"]):
             ids = ", ".join(f"`{i['value']}`" if i["fixture"] else f"{i['value']}"
                             for i in a["identifiers"]) or "--"
-            out.append(f"| **{a['name']}** | {grade(a)} | {ids} | "
+            mark = "real install" if grade(a) == "standard" else "**exception**"
+            out.append(f"| **{a['name']}** | {mark} | {ids} | "
                        f"{', '.join(a['scenarios']) or '--'} |")
         out.append("")
 
     out += ["> Identifiers in `code` are matched by a test fixture; the rest are unexercised.", ""]
+
+    exceptions = [a for a in sorted(agents, key=lambda x: x["id"]) if not a["scenarios"]]
+    if exceptions:
+        out += ["## The exception register", "",
+                "Every agent not backed by a real install, and why. `belongs_in` names the",
+                "scenario that should cover it, which makes this a work list rather than an",
+                "excuse list. `blocker` appears only where something genuinely stands in the way",
+                "-- its absence means the only thing missing is the work.", "",
+                "| agent | evidence held | reason | belongs in | blocker |",
+                "|---|---|---|---|---|"]
+        for a in exceptions:
+            e = a["unverified"] or {}
+            out.append(f"| **{a['name']}** | {e.get('evidence','?')} | {e.get('reason','?')} "
+                       f"| {e.get('belongs_in') or '--'} | {e.get('blocker') or '--'} |")
+        out.append("")
 
     unex = [(a, i) for a in sorted(agents, key=lambda x: x["id"])
             for i in a["identifiers"] if not i["fixture"]]
@@ -261,17 +305,28 @@ def main():
             continue
         print(f"\n{cls}")
         for a in sorted(by_class[cls], key=lambda x: x["id"]):
-            mark = "scenario" if a["scenarios"] else (
-                "fixture" if any(i["fixture"] for i in a["identifiers"]) else "unexercised")
-            print(f"  {a['name']:<22} {mark:<12} {len(a['identifiers'])} identifiers"
-                  + (f"  [{', '.join(a['scenarios'])}]" if a["scenarios"] else ""))
+            std = grade(a) == "standard"
+            mark = "real install" if std else "EXCEPTION"
+            print(f"  {a['name']:<22} {mark:<13} {len(a['identifiers'])} identifiers"
+                  + (f"  [{', '.join(a['scenarios'])}]" if std else ""))
+            if not std:
+                exc = a["unverified"] or {}
+                print(f"      {exc.get('evidence','?')}: {exc.get('reason','?')}")
+                if exc.get("blocker"):
+                    print(f"      blocked: {exc['blocker']}")
+                if exc.get("belongs_in"):
+                    print(f"      belongs in: {exc['belongs_in']}")
             for i in a["identifiers"]:
                 if not i["fixture"]:
                     print(f"      no fixture row  {i['route']}: {i['value']}")
 
-    print(f"\n{len(agents)} agents, {n_ident} identifiers. "
-          f"{n_scen} agents asserted by a VM scenario; "
-          f"{n_fix} identifiers matched by a fixture, {n_ident - n_fix} with no fixture row.")
+    n_exc = len(agents) - n_scen
+    print(f"\n{len(agents)} agents, {n_ident} identifiers.")
+    print(f"  standard  {n_scen:>3}  backed by a real install")
+    print(f"  exception {n_exc:>3}  recorded, with a reason")
+    print(f"\n{n_fix} of {n_ident} identifiers are matched by a fixture. A fixture proves the "
+          f"MATCHER\nworks; only a real install proves the IDENTIFIER is what the software "
+          f"ships today.")
     # Said plainly because the two columns answer different questions and are easy to
     # conflate: a scenario names the AGENT it expects, never the identifier that found it,
     # so an agent can be scenario-backed while its individual identifiers show no fixture.

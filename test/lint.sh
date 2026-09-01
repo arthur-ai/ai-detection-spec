@@ -186,6 +186,12 @@ python3 "$HERE/../tools/check_no_catalog.py" || fail=1
 # than finding out from a red PR -- and so the doc cannot quietly describe a catalog that
 # has moved on without it, which is the same failure this repo keeps having in other forms.
 python3 "$HERE/../tools/agent_status.py" --check || fail=1
+# --json separately, because it exercises a code path --check does not. An unquoted
+# YYYY-MM-DD in the catalog resolves to a datetime.date, which json.dumps cannot
+# serialise -- so --json died while --check and --write, which never read the field,
+# both passed clean. One gate per output format, or a format breaks unobserved.
+python3 "$HERE/../tools/agent_status.py" --json >/dev/null \
+  || { echo "FAIL: agent_status.py --json does not serialise"; fail=1; }
 
 [ "$fail" -eq 0 ] && echo "lint: PASS" || echo "lint: FAIL"
 exit "$fail"

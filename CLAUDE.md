@@ -32,6 +32,14 @@ the vendor's own Homebrew metadata and it matched nothing on any Mac; the real i
 `~/.aider`, so evidence and signature never met. Both were silent, and neither survived contact
 with an actual install.
 
+**A real install is the standard, and the catalog enforces it.** An agent is verified when a VM
+scenario installs the real software and asserts the classifier finds it. Anything less is an
+exception carrying a `reason`, an `evidence` grade and the date it was raised;
+`tools/validate_catalog.py` fails on an agent that has neither. `docs/agents.md` is generated
+from that, so the exception register is a work list rather than an excuse list — and a fixture
+is not a weaker pass but a different claim, because it proves the matcher works and says nothing
+about whether the identifier is what the software ships today.
+
 When something genuinely cannot be verified, say so in the tree rather than guessing —
 `docs/signature-lifecycle.md` covers how, and the standing rule is that **a catalog may carry a
 guess but may not hide one.**

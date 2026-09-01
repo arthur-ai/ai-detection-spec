@@ -150,12 +150,22 @@ agents:
     bundle_ids: [ai.elementlabs.lmstudio]
     homebrew: [lm-studio]
     ports: [1234]
+    unverified:
+      reason: "the `lm-studio` Homebrew cask resolves, so an unattended install exists; no scenario installs it yet"
+      evidence: vendor-documentation
+      belongs_in: 30-local-models
+      raised: 2026-08-31
 
   - id: jan
     name: Jan
     classification: Local model
     bundle_ids: [jan.ai.app]
     homebrew: [jan]
+    unverified:
+      reason: "the `jan` Homebrew cask resolves, so an unattended install exists; no scenario installs it yet"
+      evidence: vendor-documentation
+      belongs_in: 30-local-models
+      raised: 2026-08-31
 
   - id: llama-cpp
     name: llama.cpp
@@ -165,6 +175,11 @@ agents:
     # Read off a real pulled image: ghcr.io/ggml-org/llama.cpp:server. ggml-org, not
     # ggerganov -- the org was renamed and the old path is not what ships today.
     images: ["ghcr.io/ggml-org/llama.cpp"]
+    unverified:
+      reason: "the `llama.cpp` formula resolves and the images route was read off real docker_images rows; no scenario installs it"
+      evidence: registry-manifest
+      belongs_in: 30-local-models
+      raised: 2026-08-31
 
   - id: perplexity-comet
     name: Perplexity Comet
@@ -178,18 +193,33 @@ agents:
     classification: Desktop assistant
     bundle_ids: [ai.perplexity.macv3]  # a separate product from Comet; do not conflate
     homebrew: [perplexity]
+    unverified:
+      reason: "the `perplexity` Homebrew cask resolves, so an unattended install exists; no scenario installs it yet"
+      evidence: vendor-documentation
+      belongs_in: 10-desktop-apps
+      raised: 2026-08-31
 
   - id: windsurf
     name: Windsurf
     classification: Coding agent
     bundle_ids: [com.exafunction.windsurf]
     homebrew: [devin-desktop]          # cask renamed from `windsurf`
+    unverified:
+      reason: "the `devin-desktop` Homebrew cask resolves, so an unattended install exists; no scenario installs it yet"
+      evidence: vendor-documentation
+      belongs_in: 10-desktop-apps
+      raised: 2026-08-31
 
   - id: orion
     name: Orion
     classification: AI browser
     bundle_ids: [com.kagi.kagimacOS]
     homebrew: [orion]
+    unverified:
+      reason: "the `orion` Homebrew cask resolves, so an unattended install exists; no scenario installs it yet"
+      evidence: vendor-documentation
+      belongs_in: 10-desktop-apps
+      raised: 2026-08-31
 
   - id: aider
     name: aider
@@ -207,17 +237,32 @@ agents:
     classification: Coding agent
     homebrew: [gemini-cli]
     npm: ["@google/gemini-cli"]        # a vendor scope, missed by @anthropic-ai/@openai globs
+    unverified:
+      reason: "both the `gemini-cli` formula and `@google/gemini-cli` on npm resolve; no scenario installs either yet"
+      evidence: registry-manifest
+      belongs_in: 20-cli-agents
+      raised: 2026-08-31
 
   - id: copilot-cli
     name: GitHub Copilot CLI
     classification: Coding agent
     homebrew: [copilot-cli]
     npm: ["@github/copilot"]
+    unverified:
+      reason: "both the `copilot-cli` cask and `@github/copilot` on npm resolve; no scenario installs either yet"
+      evidence: registry-manifest
+      belongs_in: 20-cli-agents
+      raised: 2026-08-31
 
   - id: cline
     name: Cline
     classification: Coding agent
     npm: [cline]
+    unverified:
+      reason: "`cline` is published on npm; no scenario installs it yet, and the VS Code extension it ships as is a separate install path nothing here covers"
+      evidence: registry-manifest
+      belongs_in: 20-cli-agents
+      raised: 2026-08-31
 
   - id: litellm
     name: LiteLLM
@@ -228,12 +273,22 @@ agents:
     # repository is ghcr.io/berriai -- BerriAI is the org, and the registry host is part
     # of the identifier for anything not on Docker Hub.
     images: ["ghcr.io/berriai/litellm"]
+    unverified:
+      reason: "the images route was read off real docker_images rows, and `litellm` resolves on both npm and PyPI; no scenario installs the package"
+      evidence: registry-manifest
+      belongs_in: 25-python-agents
+      raised: 2026-08-31
 
   - id: mcp-sdk
     name: MCP SDK
     classification: Framework
     npm: [mcp, "@modelcontextprotocol/*"]
     pypi: [mcp]
+    unverified:
+      reason: "`mcp` resolves on both npm and PyPI, and the @modelcontextprotocol/* wildcard is fixture-covered; no scenario installs the SDK itself"
+      evidence: registry-manifest
+      belongs_in: 20-cli-agents
+      raised: 2026-08-31
 
   - id: docker
     name: Docker Desktop
@@ -242,3 +297,8 @@ agents:
     # the daemon is stopped, which is indistinguishable from "no AI containers".
     # Knowing Docker is INSTALLED lets a consumer tell "nothing there" from "could not look".
     bundle_ids: [com.docker.docker]
+    unverified:
+      reason: "test/docker_states.sh exercises every daemon state against a fake socket, which proves the guard and the bound but installs no Docker and so never sees this bundle id"
+      evidence: vendor-documentation
+      blocker: "Docker Desktop needs nested virtualisation to RUN in a Tart guest, though installing the cask alone would register the bundle id"
+      raised: 2026-08-31
