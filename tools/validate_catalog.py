@@ -17,7 +17,7 @@ import yaml
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 ROUTES = {"bundle_ids", "homebrew", "npm", "pypi", "binaries",
           "state_dirs", "launchd_prefixes", "ports", "model_stores",
-          "native_messaging_hosts", "images"}
+          "native_messaging_hosts", "images", "extension_ids"}
 REQUIRED = {"id", "name", "classification"}
 
 
@@ -69,6 +69,16 @@ def main():
             if str(value) != str(value).lower():
                 errors.append(f"{aid}: images {value!r} must be lowercase; a registry "
                               f"rejects uppercase in a repository name.")
+
+        # A Chrome extension id is 32 characters drawn from a-p -- it is a base16 encoding of
+        # the first half of a SHA-256 over the developer's public key, remapped onto letters.
+        # So a hex-looking id, an id with a digit, or one of the wrong length was transcribed
+        # rather than read off an install, and would silently match nothing.
+        for value in agent.get("extension_ids", []):
+            if not re.fullmatch(r"[a-p]{32}", str(value)):
+                errors.append(f"{aid}: extension_ids {value!r} is not a Chrome extension id "
+                              f"(32 characters, a-p only). Read it from chrome_extensions on a "
+                              f"real install rather than from a Web Store URL.")
 
         # Paths are written with ~ so nothing user-specific is implied, and so the
         # matcher expands them consistently.
