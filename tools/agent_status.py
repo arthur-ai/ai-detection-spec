@@ -592,6 +592,42 @@ def main():
         DOC.write_text(markdown(data))
         print(f"wrote {DOC.relative_to(ROOT)}")
         return
+    if "--gate" in sys.argv:
+        # NOTHING SHIPS IN THE CATALOG WITHOUT A REAL TEST. Fails on any identifier no CI
+        # test covers, unless the catalog carries a dated reason for it.
+        #
+        # The exception list can shrink silently and never grow silently: an entry whose
+        # identifier IS now covered is itself a failure, so a reason cannot outlive the gap
+        # it excused. That is the property that stops such a list becoming a dumping ground.
+        catalog = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
+        excused = {(e["agent"], e["route"], str(e["value"])): e
+                   for e in catalog.get("untested", [])}
+        bad = []
+        for agent in data["agents"]:
+            for i in agent["identifiers"]:
+                key = (agent["id"], i["route"], i["value"])
+                covered = i["state"] in ("ci-install", "ci-fixture", "alias")
+                if not covered and key not in excused:
+                    bad.append(f"{agent['id']}: {i['route']}:{i['value']} is {i['state']} "
+                               f"-- no CI test covers it. Cover it, remove it, or record "
+                               f"why under `untested:` with a reason and a raised date.")
+                if covered and key in excused:
+                    bad.append(f"{agent['id']}: {i['route']}:{i['value']} is listed under "
+                               f"`untested:` but IS covered ({i['state']}). Delete the "
+                               f"entry -- a reason must not outlive the gap it excused.")
+        for k in excused:
+            if not any(a["id"] == k[0] for a in data["agents"]):
+                bad.append(f"`untested:` names {k[0]}, which is not an agent in the catalog")
+        if bad:
+            print("catalog-gate: FAIL")
+            for b in bad:
+                print(f"  {b}")
+            sys.exit(1)
+        n = sum(len(a["identifiers"]) for a in data["agents"])
+        print(f"catalog-gate: ok, all {n} identifiers are covered by a CI test"
+              + (f" ({len(excused)} excused)" if excused else ""))
+        return
+
     if "--check" in sys.argv:
         want = markdown(data)
         have = DOC.read_text() if DOC.exists() else ""

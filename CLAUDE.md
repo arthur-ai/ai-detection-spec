@@ -64,7 +64,8 @@ Two consequences worth knowing before you extend anything:
 If the scope widens, the model runners are the strongest candidates to return, and the
 `model` branch with them.
 
-**NOTHING SHIPS IN THE CATALOG WITHOUT A REAL TEST.** An identifier that no test produces is
+**NOTHING SHIPS IN THE CATALOG WITHOUT A REAL TEST**, and `tools/agent_status.py --gate`
+enforces it in lint — currently **40/40**. An identifier that no test produces is
 not a signature, it is a guess with a comment beside it — and the two are indistinguishable
 until something tries to install it. Both catalog bugs found this way had one: npm `mcp` was
 Mintlify's package, and npm `aider` is *"Lightweight website popular article component for
@@ -81,6 +82,11 @@ That means one of three things, and they are worth telling apart —
 | the scenario installs by another route | install that route, on **another machine** — two routes claiming one binary name cannot share a host |
 | the artifact only exists once the agent **runs** | invoke it; a state directory does not exist until first run |
 | **the identifier is wrong** | remove it. This is how both catalog bugs surfaced |
+| **the route cannot identify at all** | remove the route. A listening port only matches when the process holding it already names the agent, so it is a second opinion from the same witness — `ports` was retired for that |
+
+An identifier that genuinely cannot be covered goes under `untested:` with a reason and a
+date. That list can shrink silently and never grow silently: an entry whose identifier *is*
+covered fails the gate, so a reason cannot outlive the gap it excused.
 
 **A real install is the standard, and the catalog enforces it.** An agent is verified when a VM
 scenario installs the real software and asserts the classifier finds it. Anything less is an
