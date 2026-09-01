@@ -41,17 +41,25 @@ Mac. `aider` installs as `aider-chat` under `uv` and `pipx` while its state dire
 and neither survived contact with an actual install. Nothing short of installing the
 software catches that class of error.
 
-**Coverage is reported per identifier, not per entry.** An entry passes when a scenario
-finds it, but a scenario's `expected.json` names the *agent* and never the identifier that
-matched — so an entry could be verified while carrying identifiers nothing had ever
-exercised. Each scenario now records what it actually matched, in its own `observed.json`,
-and those are the numbers below.
+## 29/42 identifiers are covered by a CI test
 
-| identifiers | 42 | |
+**Measured per identifier, and only counting tests CI actually runs.** Two things make
+that different from "has anyone tested this". An entry passes when a scenario finds it,
+but `expected.json` names the *agent* and never the identifier that matched — so an entry
+could look verified while carrying identifiers nothing had exercised. And a scenario that
+runs only on a maintainer's Mac catches nothing on a pull request: `45-claude-extension`
+sat in exactly that state, passing locally and absent from the CI matrix.
+
+Each scenario records what it actually matched in its own `observed.json`, and
+`tools/check_workflows.py` fails if a scenario is missing from the matrix, so the two
+cannot drift apart again.
+
+| | identifiers | |
 |---|---:|---|
-| **real install** | 22 | observed in a scenario's own output, on a machine where the software was installed |
-| **fixture only** | 7 | matched a captured row. Proves the *matcher*; says nothing about whether the identifier is current |
-| **unexercised** | 13 | nothing matches it yet |
+| **CI: real install** | 22 | a scenario in the `scenarios.yml` matrix installs the software and asserts the classifier finds it |
+| **CI: fixture** | 7 | matched a captured row by `test_matcher.py`, which runs on **every pull request**. A weaker claim than a real install and a faster cadence — different axes |
+| **local only** | 0 | proved only by a scenario CI does not run. Catches nothing on a pull request |
+| **no test** | 13 | nothing exercises it |
 
 `tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor
 carrying an `unverified` block, so an unverified signature cannot enter quietly.
@@ -100,27 +108,27 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | **Claude Desktop** | real install | **`com.anthropic.claudefordesktop`**, **`claude`**, `com.anthropic.claude_browser_extension.json` | 10-desktop-apps, 90-demo-fleet |
 | **Perplexity** | real install | **`ai.perplexity.macv3`**, **`perplexity`** | 10-desktop-apps |
 
-> **`bold code`** = observed in a real install. `code` = matched by a fixture only. plain = unexercised.
+> **`bold`** = CI installs it for real. `code` = CI fixture only. _`italic`_ = proved locally, not in CI. plain = no test.
 
-## Unexercised identifiers
+## Identifiers no CI test covers
 
-No test matches these. Each is a candidate for a fixture row or a scenario.
+Each is a candidate for a fixture row or a scenario. A `local only` row is the more misleading of the two: something proved it once, on someone's machine.
 
-| agent | route | identifier |
-|---|---|---|
-| aider | homebrew | `aider` |
-| aider | npm | `aider` |
-| aider | state dir | `~/.aider` |
-| Claude Code | npm | `@anthropic-ai/claude-code` |
-| Codex CLI | homebrew | `codex` |
-| Codex CLI | state dir | `~/.codex` |
-| GitHub Copilot CLI | homebrew | `copilot-cli` |
-| Gemini CLI | homebrew | `gemini-cli` |
-| OpenClaw | homebrew | `openclaw` |
-| OpenClaw | npm | `openclaw` |
-| OpenClaw | npm | `clawdbot` |
-| OpenClaw | npm | `moltbot` |
-| OpenClaw | port | `18789` |
+| agent | route | identifier | state |
+|---|---|---|---|
+| aider | homebrew | `aider` | no test |
+| aider | npm | `aider` | no test |
+| aider | state dir | `~/.aider` | no test |
+| Claude Code | npm | `@anthropic-ai/claude-code` | no test |
+| Codex CLI | homebrew | `codex` | no test |
+| Codex CLI | state dir | `~/.codex` | no test |
+| GitHub Copilot CLI | homebrew | `copilot-cli` | no test |
+| Gemini CLI | homebrew | `gemini-cli` | no test |
+| OpenClaw | homebrew | `openclaw` | no test |
+| OpenClaw | npm | `openclaw` | no test |
+| OpenClaw | npm | `clawdbot` | no test |
+| OpenClaw | npm | `moltbot` | no test |
+| OpenClaw | port | `18789` | no test |
 
 ## What osquery cannot see
 

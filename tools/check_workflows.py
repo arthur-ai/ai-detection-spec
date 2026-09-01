@@ -64,7 +64,32 @@ for path in sorted(root.glob("*.y*ml")):
                       f"request fails on a schedule instead.")
                 failed = True
 
+# EVERY SCENARIO DIRECTORY IS EITHER IN THE CI MATRIX OR EXPLICITLY EXCLUDED.
+#
+# The matrix names scenarios as strings, and the step that runs them is templated --
+# `test/scenarios/${{ matrix.scenario }}/setup.sh` -- so the path check above cannot see
+# them. That gap let a DELETED scenario sit in the matrix, where CI would have failed
+# trying to run it, and let a scenario exist with no CI coverage at all. The second is the
+# worse one: it looked tested, because a local VM run had passed it.
+EXCLUDED = {
+    "90-demo-fleet": "a demo fleet, not a regression test: it installs the whole catalogue "
+                     "to populate a walkthrough, and asserts breadth rather than a signature",
+}
+_doc = yaml.safe_load((root / "scenarios.yml").read_text())
+_matrix = set(_doc["jobs"]["scenario"]["strategy"]["matrix"]["scenario"])
+_on_disk = {d.name for d in (repo / "test" / "scenarios").iterdir() if d.is_dir()}
+for _name in sorted(_matrix - _on_disk):
+    print(f"FAIL: scenarios.yml runs {_name!r}, which is not a directory under "
+          f"test/scenarios/. CI would fail trying to run it.")
+    failed = True
+for _name in sorted(_on_disk - _matrix - set(EXCLUDED)):
+    print(f"FAIL: test/scenarios/{_name}/ is not in the scenarios.yml matrix and is not "
+          f"EXCLUDED. It would never run in CI, while looking tested to anyone who ran it "
+          f"locally.")
+    failed = True
+
 if not failed:
     print(f"workflows: ok, {len(list(root.glob('*.y*ml')))} parse and declare jobs, "
-          f"every referenced path exists")
+          f"every referenced path exists, {len(_matrix)} scenarios in CI "
+          f"({len(EXCLUDED)} excluded by name)")
 sys.exit(1 if failed else 0)

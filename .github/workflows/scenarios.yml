@@ -22,8 +22,8 @@ jobs:
           - 10-desktop-apps
           - 20-cli-agents
           - 25-python-agents
-          - 30-local-models
           - 40-browser
+          - 45-claude-extension
           - 50-autonomous
           - 55-openclaw-npm
           - 60-persistence
