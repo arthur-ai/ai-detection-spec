@@ -1,29 +1,36 @@
 {
-  "description": "CLI coding agents - a native installer and an npm global.",
+  "description": "CLI coding agents - a native installer and four npm globals.",
   "demo_beat": "step 1 - Claude Code and Codex CLI rows",
   "counts": {
     "file": ">=2",
-    "npm": ">=1",
+    "npm": ">=4",
     "app": ">=1",
     "brew": ">=0",
     "ext": ">=0",
     "nmh": ">=0",
     "daemon": ">=0",
-    "port": ">=0",
-    "model": 0
+    "port": ">=0"
   },
   "classified": {
     "must_find": [
       "claude-code",
-      "codex-cli"
+      "codex-cli",
+      "gemini-cli",
+      "copilot-cli",
+      "cline"
     ],
     "forbid": [
       "openclaw"
     ]
   },
-  "why": "file >= 2 because Claude Code shows up twice under enumeration: the ~/.local/bin/ shim and the ~/.claude/ state dotdir. Both come from product-free globs now, which is the point -- the old query named the file 'claude' outright.",
+  "why": "file >= 2 because Claude Code shows up twice under enumeration: the ~/.local/bin/ shim and the ~/.claude/ state dotdir. Both come from product-free globs now, which is the point -- the old query named the file 'claude' outright. npm >= 4 covers the four npm globals; it is a floor rather than an equality because npm installs each package's dependencies globally too and the row count is not ours to predict.",
   "must_contain": [
     "/.local/bin/claude",
-    "@openai/codex"
+    "@openai/codex",
+    "@google/gemini-cli",
+    "@github/copilot"
+  ],
+  "known_gaps": [
+    "The Homebrew routes for gemini-cli (formula) and copilot-cli (cask) are NOT exercised. Both agents are installed from npm instead, because installing both ways would have the two packages fight over the same binary. The agents meet the standard; those two identifiers remain unexercised and docs/agents.md reports them as such."
   ]
 }

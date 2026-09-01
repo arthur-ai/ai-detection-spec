@@ -19,12 +19,45 @@ ROUTES = {"bundle_ids", "homebrew", "npm", "pypi", "binaries",
           "state_dirs", "launchd_prefixes", "ports", "model_stores",
           "native_messaging_hosts", "images", "extension_ids"}
 REQUIRED = {"id", "name", "classification"}
+OPTIONAL = {"unverified", "retired"}
+
+# A REAL INSTALL IS THE STANDARD. An agent is verified when a VM scenario installs the
+# actual software and asserts the classifier finds it -- that is the only evidence that
+# survives the failure this catalog was built around: `bot.molt.mac` came from the vendor's
+# own Homebrew metadata and matched nothing on any Mac.
+#
+# Anything less is an EXCEPTION and must say so in the tree. The gate below refuses an
+# agent that is neither covered by a scenario nor carrying an `unverified` block, because
+# the alternative is what we had before: verified and assumed identifiers sitting side by
+# side, indistinguishable, with nothing recording which was which.
+#
+# The grades, weakest first. See docs/signature-lifecycle.md.
+EVIDENCE = {
+    # What produced bot.molt.mac. The vendor says so and nothing else does.
+    "vendor-documentation",
+    # The artifact resolves under this exact name from its registry -- a Homebrew cask
+    # token, a published npm or PyPI package. Authoritative about the NAME, and silent
+    # about what an osquery row actually renders, which is a different question.
+    "registry-manifest",
+    # The artifact's own metadata confirms it: an image entrypoint, a bundle Info.plist.
+    "artifact-metadata",
+}
+UNVERIFIED_REQUIRED = {"reason", "evidence", "raised"}
+UNVERIFIED_OPTIONAL = {"blocker", "belongs_in"}
 
 
 def main():
     doc = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
     known = set(doc["classifications"])
-    errors, seen_ids, seen_route_values = [], set(), {}
+
+    # not_agents names classifications, so a typo here would silently count an agent as a
+    # supporting tool or the reverse -- a wrong headline number with nothing to notice it.
+    unknown_na = set(doc.get("not_agents", ())) - known
+    errors = []
+    if unknown_na:
+        errors.append(f"not_agents names {sorted(unknown_na)}, which are not "
+                      f"classifications")
+    seen_ids, seen_route_values = set(), {}
 
     for agent in doc["agents"]:
         aid = agent.get("id", "<missing id>")
@@ -38,7 +71,7 @@ def main():
             errors.append(f"{aid}: duplicate id, which would produce duplicate findings")
         seen_ids.add(aid)
 
-        unknown = set(agent) - REQUIRED - ROUTES
+        unknown = set(agent) - REQUIRED - ROUTES - OPTIONAL
         if unknown:
             errors.append(f"{aid}: unknown field(s) {sorted(unknown)}")
 
@@ -70,6 +103,15 @@ def main():
                 errors.append(f"{aid}: images {value!r} must be lowercase; a registry "
                               f"rejects uppercase in a repository name.")
 
+        # A retired alias must actually BE one of this agent's identifiers. A typo here
+        # would quietly exempt nothing while marking a value that does not exist, and the
+        # coverage report would keep counting the real one as a gap.
+        listed = {str(v) for r in (ROUTES & set(agent)) for v in agent[r]}
+        for value in agent.get("retired", []):
+            if str(value) not in listed:
+                errors.append(f"{aid}: retired {value!r} is not one of its identifiers. "
+                              f"Mark a value that exists, or remove it.")
+
         # A Chrome extension id is 32 characters drawn from a-p -- it is a base16 encoding of
         # the first half of a SHA-256 over the developer's public key, remapped onto letters.
         # So a hex-looking id, an id with a digit, or one of the wrong length was transcribed
@@ -90,6 +132,53 @@ def main():
         if not re.fullmatch(r"[a-z0-9-]+", str(aid)):
             errors.append(f"{aid}: id should be lowercase kebab-case")
 
+    # THE STANDARD GATE. Every agent is either backed by a real install or carries a
+    # recorded exception. Nothing is allowed to be silently unverified.
+    covered = set()
+    for path in sorted((ROOT / "test" / "scenarios").glob("*/expected.json")):
+        for aid in json.loads(path.read_text()).get("classified", {}).get("must_find", []):
+            covered.add(aid)
+
+    for agent in doc["agents"]:
+        aid = agent.get("id", "<missing id>")
+        exc = agent.get("unverified")
+        if aid in covered:
+            # A scenario installs it AND an exception claims it cannot be verified. One of
+            # the two is out of date, and leaving both means the doc contradicts itself.
+            if exc:
+                errors.append(f"{aid}: has an `unverified` block but IS covered by a "
+                              f"scenario. Delete the block -- it is now verified.")
+            continue
+        if not exc:
+            errors.append(
+                f"{aid}: NOT backed by a real install and carries no `unverified` block. "
+                f"A real install is the standard. Either add it to a VM scenario's "
+                f"classified.must_find, or record the exception:\n"
+                f"      unverified:\n"
+                f"        reason: <why there is no scenario yet>\n"
+                f"        evidence: {'|'.join(sorted(EVIDENCE))}\n"
+                f"        raised: YYYY-MM-DD")
+            continue
+        if not isinstance(exc, dict):
+            errors.append(f"{aid}: `unverified` must be a mapping")
+            continue
+        missing = UNVERIFIED_REQUIRED - set(exc)
+        if missing:
+            errors.append(f"{aid}: `unverified` missing {sorted(missing)}")
+        extra = set(exc) - UNVERIFIED_REQUIRED - UNVERIFIED_OPTIONAL
+        if extra:
+            errors.append(f"{aid}: `unverified` has unknown field(s) {sorted(extra)}")
+        if exc.get("evidence") not in EVIDENCE:
+            errors.append(f"{aid}: `unverified.evidence` is {exc.get('evidence')!r}, "
+                          f"not one of {sorted(EVIDENCE)}. `real-install` is not a value "
+                          f"here -- an agent with a real install does not need this block.")
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(exc.get("raised", ""))):
+            errors.append(f"{aid}: `unverified.raised` must be YYYY-MM-DD, so an exception "
+                          f"that has sat for a year is visible as one")
+        if len(str(exc.get("reason", ""))) < 20:
+            errors.append(f"{aid}: `unverified.reason` is too short to be a reason. Say "
+                          f"what stands between this agent and a real install.")
+
     # Scenario expectations name catalog agents by id. Those run on dispatch and on a
     # schedule, not per pull request, so a typo'd id would sit undetected for as long as
     # nobody triggers the matrix -- and would then fail as "agent not found", which reads
@@ -106,13 +195,42 @@ def main():
                         f"{path.parent.name}: classified.{key} names {aid!r}, "
                         f"which is not an id in catalog/agents.yaml")
 
+    # test/docker_states.sh hardcodes the agents its image fixture must resolve to, and it
+    # needs sudo, so it does not run in the fast loop -- a catalog change that breaks it
+    # surfaces minutes later on someone's machine instead of here. Removing `litellm` did
+    # exactly that. Cheap to check: the ids that suite names must still exist.
+    suite = ROOT / "test" / "docker_states.sh"
+    if suite.exists():
+        text = suite.read_text()
+        m = re.search(r"== \['([a-z0-9,'-]+)'\] else 0", text)
+        if m:
+            named = [x.strip("'") for x in m.group(1).split("','")]
+            for aid in named:
+                if aid not in known:
+                    errors.append(
+                        f"test/docker_states.sh expects findings {named}, but {aid!r} is "
+                        f"not an id in catalog/agents.yaml. That suite needs sudo and does "
+                        f"not run in the fast loop, so this would surface as a red run "
+                        f"minutes later instead of here.")
+
     if errors:
         print("catalog: FAIL")
         for e in errors:
             print(f"  {e}")
         sys.exit(1)
-    print(f"catalog: ok, {len(doc['agents'])} agents, {len(seen_route_values)} identifiers, "
-          f"scenario references resolve")
+    n_exc = sum(1 for a in doc["agents"] if a.get("unverified"))
+    n_real = len(doc["agents"]) - n_exc
+    # `not_agents` is empty now that the scope is agents only. The machinery stays,
+    # because the argument that produced it will be had again: something detectable and
+    # AI-adjacent will be proposed, and the question will be whether it ACTS on anyone's
+    # behalf. Print the split only when there is one.
+    na = set(doc.get("not_agents", ()))
+    n_tools = sum(1 for a in doc["agents"] if a.get("classification") in na)
+    split = f" ({len(doc['agents']) - n_tools} agents, {n_tools} not)" if n_tools else ""
+    print(f"catalog: ok, {len(doc['agents'])} agents{split}, "
+          f"{len(seen_route_values)} identifiers, scenario references resolve")
+    print(f"  real install: {n_real}/{len(doc['agents'])} entries. "
+          f"{n_exc} recorded exception(s).")
 
 
 if __name__ == "__main__":

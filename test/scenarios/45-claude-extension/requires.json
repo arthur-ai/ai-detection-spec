@@ -1,3 +1,0 @@
-{
-  "why": "Chrome only force-installs from the Web Store when ExtensionInstallForcelist arrives as an MDM-delivered managed policy. An unenrolled Tart guest has no MDM, so the policy is written but never honoured: Chrome's updater wakes, fetches nothing, and the extension never appears. Verified on macOS 26.6.2 with Chrome 152 -- the updater ran to completion and returned 0 with no extension fetched. There is no unattended path to a real Web Store install on an unmanaged machine, so this scenario can only assert on a host that already carries the extension."
-}

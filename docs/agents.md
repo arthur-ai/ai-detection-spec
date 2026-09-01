@@ -7,168 +7,198 @@
 Every AI agent this repo detects on macOS, the identifiers each is matched on, and the
 strength of the evidence behind them.
 
-**22 agents, 65 identifiers.** 10 agents are backed by a real install; 19 identifiers are matched by a fixture and 46 are unexercised.
+**A real install is the standard, and every entry meets it.** A VM scenario installs the real software and asserts the classifier finds it. Anything less would be an exception recorded in the catalog with a reason, an evidence grade and a date; there are none open.
 
-## What the grades mean
+15 agents carrying 41 identifiers.
 
-| grade | what it proves |
+## What counts as an agent
+
+**Something that acts on the user's behalf.** That is the whole test. It is not *is this
+AI software* and not *can we detect it* &mdash; everything below passed both and was
+removed anyway, because counting it as an agent overstates what was found on a machine.
+
+| removed | what it actually is |
 |---|---|
-| **real install** | a VM scenario installed the actual software and the classifier found it. The only evidence that survives a vendor-documented identifier matching nothing on any Mac. |
-| **fixture only** | the classifier matched a captured row. Those rows came from real machines, but nothing re-checks them against a current install, so a fixture proves the *matcher* works and cannot prove the *identifier* is current. |
-| **unexercised** | catalogued, but no test exercises it yet. Not a defect and not a wrong signature -- unexercised, which is a different thing, and is why each one is named below rather than left out. |
+| `mcp-sdk` | a library an agent is **built with** |
+| `litellm` | a gateway an agent **calls through** |
+| `docker` | a runtime: **how we look**, not what we look for |
+| `ollama`, `lm-studio`, `jan`, `llama-cpp` | model runners. They **serve** models; an agent drives one |
 
-The two grades are also scoped differently: **per-agent** coverage comes from scenarios,
-**per-identifier** coverage from fixtures only. A scenario's `expected.json` names the
-*agent* it expects, never the identifier that found it -- so an agent can be backed by a
-real install while its identifiers still show no fixture row.
+Each keeps its fixture rows, with the assertion inverted to *must not match*. Deleting
+the evidence with the signature would leave nothing to tell *correctly not an agent*
+from *route quietly broken*.
+
+One boundary is contested rather than settled. **Desktop assistant** is counted as an
+agent: the old definition read *no autonomous execution*, which stopped being true when
+these clients gained MCP and began running tools locally. Overstating an agent is the
+safer error for an inventory than missing one, but it is a judgement, not a fact.
+
+## Why a real install is the bar
+
+`bot.molt.mac` was read off OpenClaw's own Homebrew metadata and matched nothing on any
+Mac. `aider` installs as `aider-chat` under `uv` and `pipx` while its state directory is
+`~/.aider`, so evidence and signature never met. Both were silent, both survived review,
+and neither survived contact with an actual install. Nothing short of installing the
+software catches that class of error.
+
+## 31/39 identifiers are covered by a CI test
+
+**Measured per identifier, and only counting tests CI actually runs.** Two things make
+that different from "has anyone tested this". An entry passes when a scenario finds it,
+but `expected.json` names the *agent* and never the identifier that matched — so an entry
+could look verified while carrying identifiers nothing had exercised. And a scenario that
+runs only on a maintainer's Mac catches nothing on a pull request: `45-claude-extension`
+sat in exactly that state, passing locally and absent from the CI matrix.
+
+Each scenario records what it actually matched in its own `observed.json`, and
+`tools/check_workflows.py` fails if a scenario is missing from the matrix, so the two
+cannot drift apart again.
+
+| | identifiers | |
+|---|---:|---|
+| **CI: real install** | 28 | a scenario in the `scenarios.yml` matrix installs the software and asserts the classifier finds it |
+| **CI: fixture** | 3 | matched a captured row by `test_matcher.py`, which runs on **every pull request**. A weaker claim than a real install and a faster cadence — different axes |
+| **local only** | 0 | proved only by a scenario CI does not run. Catches nothing on a pull request |
+| **did not appear** ⚠ | 8 | a CI scenario installed the agent and this identifier never showed up. Usually installed by another route |
+| **no test** | 0 | nothing exercises it at all |
+| _retired alias_ | _2_ | _excluded from the count. Nothing installs these any more, so no scenario can cover one; the fixture row is the only evidence there is, and it proves the alias still resolves_ |
+
+> **This number is a floor.** `00-baseline`, `21-cli-agents-homebrew`, `40-browser`, `60-persistence` run in CI and have recorded nothing yet, so identifiers they cover still count as *no test*. Absence of an observation is not absence of a test; the count corrects itself once each scenario has run.
+
+`tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor
+carrying an `unverified` block, so an unverified signature cannot enter quietly.
+
+# Agents (15)
+
+Software that acts on the user's behalf. This is what the catalog is for.
 
 ## Coding agent
 
-| agent | evidence | identifiers | scenarios |
+| name | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **aider** | real install | aider, aider, aider-chat, `~/.aider`, paulgauthier/aider | 25-python-agents |
-| **Claude Code** | real install | @anthropic-ai/claude-code, `~/.local/bin/claude`, `~/.claude` | 20-cli-agents, 90-demo-fleet |
-| **Cline** | unexercised | cline | -- |
-| **Codex CLI** | real install | codex, `@openai/codex`, ~/.codex | 20-cli-agents, 90-demo-fleet |
-| **GitHub Copilot CLI** | unexercised | copilot-cli, @github/copilot | -- |
-| **Cursor** | real install | com.todesktop.230313mzl4w4u92, cursor | 10-desktop-apps, 90-demo-fleet |
-| **Gemini CLI** | unexercised | gemini-cli, @google/gemini-cli | -- |
-| **Windsurf** | unexercised | com.exafunction.windsurf, devin-desktop | -- |
+| **aider** | real install | aider ⚠, **`aider-chat`**, ~/.aider ⚠, `paulgauthier/aider` | 21-cli-agents-homebrew, 25-python-agents |
+| **Claude Code** | real install | @anthropic-ai/claude-code ⚠, **`~/.local/bin/claude`**, **`~/.claude`** | 20-cli-agents, 21-cli-agents-homebrew, 90-demo-fleet |
+| **Cline** | real install | **`cline`** | 20-cli-agents |
+| **Codex CLI** | real install | codex ⚠, **`@openai/codex`**, ~/.codex ⚠ | 20-cli-agents, 21-cli-agents-homebrew, 90-demo-fleet |
+| **GitHub Copilot CLI** | real install | copilot-cli ⚠, **`@github/copilot`** | 20-cli-agents, 21-cli-agents-homebrew |
+| **Cursor** | real install | **`com.todesktop.230313mzl4w4u92`**, **`cursor`** | 10-desktop-apps, 90-demo-fleet |
+| **Gemini CLI** | real install | gemini-cli ⚠, **`@google/gemini-cli`** | 20-cli-agents, 21-cli-agents-homebrew |
+| **Windsurf** | real install | **`com.exafunction.windsurf`**, **`devin-desktop`** | 10-desktop-apps |
 
 ## Personal agent
 
-| agent | evidence | identifiers | scenarios |
+| name | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **OpenClaw** | real install | `ai.openclaw.mac`, `bot.molt.mac`, openclaw, openclaw, clawdbot, moltbot, `~/.openclaw`, `ai.openclaw.`, `bot.molt.`, 18789 | 50-autonomous, 55-openclaw-npm, 60-persistence, 90-demo-fleet |
-
-## Desktop assistant
-
-| agent | evidence | identifiers | scenarios |
-|---|---|---|---|
-| **ChatGPT Desktop** | real install | com.openai.codex, chatgpt | 10-desktop-apps, 90-demo-fleet |
-| **Claude Desktop** | real install | com.anthropic.claudefordesktop, claude, `com.anthropic.claude_browser_extension.json` | 10-desktop-apps, 90-demo-fleet |
-| **Perplexity** | unexercised | ai.perplexity.macv3, perplexity | -- |
-
-## Local model
-
-| agent | evidence | identifiers | scenarios |
-|---|---|---|---|
-| **Jan** | unexercised | jan.ai.app, jan | -- |
-| **llama.cpp** | fixture only | llama.cpp, 8080, `ghcr.io/ggml-org/llama.cpp` | -- |
-| **LM Studio** | unexercised | ai.elementlabs.lmstudio, lm-studio, 1234 | -- |
-| **Ollama** | real install | com.electron.ollama, `ollama`, `ollama-app`, `ollama`, com.ollama., `11434`, ~/.ollama/models/manifests, `ollama/ollama` | 30-local-models, 90-demo-fleet |
+| **OpenClaw** | real install | **`ai.openclaw.mac`**, ~~`bot.molt.mac`~~, **`openclaw`**, **`openclaw`**, **`clawdbot`**, **`moltbot`**, **`~/.openclaw`**, `ai.openclaw.`, ~~`bot.molt.`~~, 18789 ⚠ | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 60-persistence, 90-demo-fleet |
 
 ## AI browser
 
-| agent | evidence | identifiers | scenarios |
+| name | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **Orion** | unexercised | com.kagi.kagimacOS, orion | -- |
-| **Perplexity Comet** | real install | ai.perplexity.comet, comet | 10-desktop-apps, 90-demo-fleet |
-
-## Framework
-
-| agent | evidence | identifiers | scenarios |
-|---|---|---|---|
-| **LiteLLM** | fixture only | litellm, litellm, `ghcr.io/berriai/litellm` | -- |
-| **MCP SDK** | fixture only | mcp, `@modelcontextprotocol/*`, mcp | -- |
+| **Orion** | real install | **`com.kagi.kagimacOS`**, **`orion`** | 10-desktop-apps |
+| **Perplexity Comet** | real install | **`ai.perplexity.comet`**, **`comet`** | 10-desktop-apps, 90-demo-fleet |
 
 ## Browser agent
 
-| agent | evidence | identifiers | scenarios |
+| name | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **Claude in Chrome** | real install | `fcoeoabgfenejglbffodgkkbkcdhcgfn` | 45-claude-extension |
+| **Claude in Chrome** | real install | **`fcoeoabgfenejglbffodgkkbkcdhcgfn`** | 45-claude-extension |
 
-## Container runtime
+## Desktop assistant
 
-| agent | evidence | identifiers | scenarios |
+| name | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **Docker Desktop** | unexercised | com.docker.docker | -- |
+| **ChatGPT Desktop** | real install | **`com.openai.codex`**, **`chatgpt`** | 10-desktop-apps, 90-demo-fleet |
+| **Claude Desktop** | real install | **`com.anthropic.claudefordesktop`**, **`claude`**, `com.anthropic.claude_browser_extension.json` | 10-desktop-apps, 90-demo-fleet |
+| **Perplexity** | real install | **`ai.perplexity.macv3`**, **`perplexity`** | 10-desktop-apps |
 
-> Identifiers in `code` are matched by a test fixture; the rest are unexercised.
+> **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = retired alias, uninstallable by design. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it.
 
-## Unexercised identifiers
+## Identifiers that did not pass
 
-No test matches these. Each is a candidate for a fixture row or a scenario.
+Every one is work, and the middle column says what kind. **did not appear** means a scenario installed the agent and this identifier never showed up — the suite reached it and it did not reproduce, usually because the scenario installs by a different route, or because the artifact only exists once the agent has run.
 
-| agent | route | identifier |
-|---|---|---|
-| aider | homebrew | `aider` |
-| aider | npm | `aider` |
-| aider | PyPI | `aider-chat` |
-| aider | image | `paulgauthier/aider` |
-| ChatGPT Desktop | bundle id | `com.openai.codex` |
-| ChatGPT Desktop | homebrew | `chatgpt` |
-| Claude Code | npm | `@anthropic-ai/claude-code` |
-| Claude Desktop | bundle id | `com.anthropic.claudefordesktop` |
-| Claude Desktop | homebrew | `claude` |
-| Cline | npm | `cline` |
-| Codex CLI | homebrew | `codex` |
-| Codex CLI | state dir | `~/.codex` |
-| GitHub Copilot CLI | homebrew | `copilot-cli` |
-| GitHub Copilot CLI | npm | `@github/copilot` |
-| Cursor | bundle id | `com.todesktop.230313mzl4w4u92` |
-| Cursor | homebrew | `cursor` |
-| Docker Desktop | bundle id | `com.docker.docker` |
-| Gemini CLI | homebrew | `gemini-cli` |
-| Gemini CLI | npm | `@google/gemini-cli` |
-| Jan | bundle id | `jan.ai.app` |
-| Jan | homebrew | `jan` |
-| LiteLLM | npm | `litellm` |
-| LiteLLM | PyPI | `litellm` |
-| llama.cpp | homebrew | `llama.cpp` |
-| llama.cpp | port | `8080` |
-| LM Studio | bundle id | `ai.elementlabs.lmstudio` |
-| LM Studio | homebrew | `lm-studio` |
-| LM Studio | port | `1234` |
-| MCP SDK | npm | `mcp` |
-| MCP SDK | PyPI | `mcp` |
-| Ollama | bundle id | `com.electron.ollama` |
-| Ollama | launchd | `com.ollama.` |
-| Ollama | model store | `~/.ollama/models/manifests` |
-| OpenClaw | homebrew | `openclaw` |
-| OpenClaw | npm | `openclaw` |
-| OpenClaw | npm | `clawdbot` |
-| OpenClaw | npm | `moltbot` |
-| OpenClaw | port | `18789` |
-| Orion | bundle id | `com.kagi.kagimacOS` |
-| Orion | homebrew | `orion` |
-| Perplexity Comet | bundle id | `ai.perplexity.comet` |
-| Perplexity Comet | homebrew | `comet` |
-| Perplexity | bundle id | `ai.perplexity.macv3` |
-| Perplexity | homebrew | `perplexity` |
-| Windsurf | bundle id | `com.exafunction.windsurf` |
-| Windsurf | homebrew | `devin-desktop` |
+| agent | route | identifier | state | reached by |
+|---|---|---|---|---|
+| aider | homebrew | `aider` | did not appear | 25-python-agents |
+| aider | state dir | `~/.aider` | did not appear | 25-python-agents |
+| Claude Code | npm | `@anthropic-ai/claude-code` | did not appear | 20-cli-agents |
+| Codex CLI | homebrew | `codex` | did not appear | 20-cli-agents |
+| Codex CLI | state dir | `~/.codex` | did not appear | 20-cli-agents |
+| GitHub Copilot CLI | homebrew | `copilot-cli` | did not appear | 20-cli-agents |
+| Gemini CLI | homebrew | `gemini-cli` | did not appear | 20-cli-agents |
+| OpenClaw | port | `18789` | did not appear | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names |
 
-## What the suite cannot prove
+## What osquery cannot see
 
-Carried alongside what it can. A coverage report that lists only its successes
-fails the same way an empty scan result does -- it reads as complete when it is
-merely silent.
+These are properties of the platform and the tables, not of any one scenario, so
+they are stated once. No amount of test coverage moves them.
 
-**40-browser -- known gap**
+| blind spot | why |
+|---|---|
+| Anything inside a VM | The queries see the host filesystem, not a guest's |
+| What is *running* in a container | `--deep` lists container **images**, and an image named `ollama/ollama` is evidence. What a running container is doing is not: `docker_containers` needs a per-container inspect document osquery reads strictly, and a hand-built one it merely accepts is worse than none |
+| Containers outside Docker Desktop | Colima, Rancher Desktop and Podman keep their sockets elsewhere, and `docker_images` does not read containerd or Podman image stores at all. On those Macs `--deep` says "did not scan" rather than "none" |
+| An untagged (dangling) image | Whether `docker_images` reports one is untested — no dangling image could be produced on the machine this was measured on. Treat it as unknown, not as covered |
+| Agents on a cloud dev box or Codespace | Same reason. The scanner sees the machine it runs on |
+| Which filesystem roots an MCP server exposes | Requires parsing arbitrary JSON config; osquery has no table for it |
+| Outbound destinations by hostname | `process_open_sockets` returns an IP, not a name |
+| A cloned-but-never-run source checkout | Nothing has been created on disk yet |
+| What an agent *does* | Every route here reports presence and declared capability. `permissions` says an extension **may** read every page, never that it did. No osquery table carries use |
+| The identity of a sideloaded extension | osquery derives `identifier` from the manifest `key`, which unpacked and sideloaded extensions do not carry — so they report an **empty** one. The Web Store's signed CRX does carry it |
+| VS Code extensions | osquery has no table for them at all. An agent shipping as one is invisible on that route, whatever else it also installs |
+| Behaviour that only appears after launch or sign-in | Installing proves the bundle id. Nothing here launches an app — `open -a` needs an Aqua session and SSH has none — so first-launch launchd jobs, listening ports and state directories go unobserved, and account-gated products are never signed in to |
 
-The planted fixture returns an EMPTY identifier while the two real Chrome extensions return theirs. osquery derives identifier from the manifest key, which unpacked and sideloaded extensions do not carry. Sideloaded extensions are precisely the shadow-AI case, so the collector cannot assume identifier is a usable primary key - it must fall back to profile_path plus name.
+## What individual scenarios do not cover
 
-**45-claude-extension -- known gap**
+Specific to one scenario and fixable by work, unlike the table above. A coverage
+report that lists only its successes fails the same way an empty scan result does
+-- it reads as complete when it is merely silent.
 
-CANNOT BE TESTED WITH A REAL INSTALL IN AN UNMANAGED VM. Chrome honours ExtensionInstallForcelist only as an MDM-delivered managed policy; an unenrolled Tart guest has none, so the policy is written and ignored. Measured on macOS 26.6.2 / Chrome 152. This scenario SKIPS (exit 3) rather than failing, and asserts only on a host that already carries the extension.
+**10-desktop-apps -- known gap**
+
+Windsurf's Homebrew token is `devin-desktop`, not `windsurf`. Read off the Homebrew API; a scenario written from the product name would install nothing and the WARN would scroll past.
+
+**10-desktop-apps -- known gap**
+
+These are paid or account-gated products in several cases. The install is unattended and the SIGN-IN is not, so nothing here exercises behaviour that only appears once a user is authenticated.
+
+**20-cli-agents -- known gap**
+
+The Homebrew routes for gemini-cli (formula) and copilot-cli (cask) are NOT exercised. Both agents are installed from npm instead, because installing both ways would have the two packages fight over the same binary. The agents meet the standard; those two identifiers remain unexercised and docs/agents.md reports them as such.
+
+**21-cli-agents-homebrew -- known gap**
+
+Installing proves the token. It does not run any of these agents, so state directories that only appear on first invocation (~/.codex, ~/.aider) are still not exercised here.
+
+**21-cli-agents-homebrew -- known gap**
+
+codex and copilot-cli are casks: on a runner the app bundle lands but is never launched, so anything written at first launch is out of reach for the same reason.
 
 **45-claude-extension -- known gap**
 
-A planted fixture is not a substitute: osquery derives identifier from the manifest key, which unpacked and sideloaded extensions do not carry, so a planted extension reports an EMPTY identifier. See 40-browser.
+The extension is installed by unpacking the Web Store's signed CRX into a real Chrome profile, NOT by the browser's own install flow. The bytes and the manifest key are the publisher's and the id osquery reports is derived from that key, so the identifier claim is genuine -- but nothing here exercises Chrome's install path, its update path, or its enterprise policy handling.
 
 **45-claude-extension -- known gap**
 
-Two further ids circulate for Anthropic-related extensions. Neither could be installed, so neither is in the catalog. docs/signature-lifecycle.md covers how an unverifiable identifier is recorded rather than guessed at.
+An EARLIER VERSION OF THIS FILE CLAIMED THE EXTENSION COULD NOT BE TESTED WITHOUT MDM. That was wrong on two counts: Chrome had never been launched, so no profile existed for osquery to read, and going through the browser's install flow was never necessary. Recorded rather than quietly deleted, because the wrong version was written with more confidence than the evidence supported.
 
 **45-claude-extension -- known gap**
 
-Presence is all this proves. What the extension DOES -- which pages it reads, whether it acts autonomously -- is outside what any osquery table reports. The permissions column carries capability, never use.
+Chrome's ExtensionInstallForcelist path remains untested. Whether it needs an MDM-delivered profile on macOS is UNVERIFIED -- the one attempt that failed proves nothing, because it failed for a different reason.
 
-**45-claude-extension -- cannot run here**
+**45-claude-extension -- known gap**
 
-Chrome only force-installs from the Web Store when ExtensionInstallForcelist arrives as an MDM-delivered managed policy. An unenrolled Tart guest has no MDM, so the policy is written but never honoured: Chrome's updater wakes, fetches nothing, and the extension never appears. Verified on macOS 26.6.2 with Chrome 152 -- the updater ran to completion and returned 0 with no extension fetched. There is no unattended path to a real Web Store install on an unmanaged machine, so this scenario can only assert on a host that already carries the extension.
+Two further ids circulate for Anthropic-related extensions. Neither is in the catalog. This method would verify one in minutes if an id were confirmed, since it needs only a Web Store id.
 
 **50-autonomous -- cannot run here**
 
 The openclaw cask refuses to install below Sequoia. A Tart guest cannot be newer than the host, so this scenario is unrunnable on a Sonoma host and is skipped rather than failed.
+
+**56-openclaw-retired-names -- known gap**
+
+This covers the retired NPM names only. bot.molt.mac (bundle id) and bot.molt. (launchd prefix) come from the old .app, and Homebrew keeps no versioned cask for it -- whether an old build is still downloadable is UNVERIFIED, not established either way.
+
+**56-openclaw-retired-names -- known gap**
+
+It installs deliberately outdated software, which is safe only because the guest is disposable, unenrolled and holds no credentials. Never run this setup on a managed host.

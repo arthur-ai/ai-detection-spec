@@ -166,5 +166,29 @@
     "loc": "/Users/x/Library/Application Support/Google/Chrome/Profile 1",
     "extra": "chrome",
     "perms": "storage"
+  },
+  {
+    "kind": "npm",
+    "id": "mcp",
+    "ver": "1.4.2",
+    "loc": "/usr/local/lib/node_modules/mcp",
+    "extra": "",
+    "perms": ""
+  },
+  {
+    "kind": "file",
+    "id": "/Users/alice/.local/share/uv/tools/mcp/",
+    "ver": "",
+    "loc": "/Users/alice/.local/share/uv/tools/mcp/",
+    "extra": "",
+    "perms": ""
+  },
+  {
+    "kind": "npm",
+    "id": "aider",
+    "ver": "1.0.1",
+    "loc": "/usr/local/lib/node_modules/aider",
+    "extra": "",
+    "perms": ""
   }
 ]

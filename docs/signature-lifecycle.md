@@ -115,6 +115,14 @@ unverified:
 | `artifact-metadata` | the artifact's own config confirms what it is — an image entrypoint, a bundle `Info.plist` |
 | `real-install` | observed in `docker_images`, `apps`, `chrome_extensions` on a machine |
 
+**This is now implemented**, and slightly stricter than sketched above: the gate does not
+merely permit an exception, it *requires* one. `tools/validate_catalog.py` refuses an agent
+that is neither covered by a scenario nor carrying an `unverified` block, and refuses the
+block itself if the reason is too short to be a reason, the date is not a date, the grade is
+not one of the three, or the agent is in fact already covered — in which case the block
+contradicts the scenario and one of them is stale. `docs/agents.md` renders the register on
+every regeneration.
+
 The gate **permits** an unverified entry and **reports it every run**, so it cannot quietly
 become permanent. A catalog is allowed to carry a guess. It is not allowed to hide one.
 
@@ -133,6 +141,77 @@ pull request.
 **Hashing inputs, AutoPkg-style, rather than observing outputs** — trust hashes catch *a recipe
 changing*. Our failure is *the world changing while our file stays the same*, which a hash of
 our own file cannot see.
+
+## A stronger grade than observation, where the artifact allows it
+
+The grades above run from *the vendor says so* up to *observed on a machine*, and observation
+is normally the ceiling. For one route it is not.
+
+A Chromium extension id is not assigned, it is **derived**: SHA-256 over the developer's DER
+public key, first 16 bytes, hex mapped `0-f` to `a-p`. The Web Store's signed CRX carries
+that key in its manifest. So the id can be recomputed from the publisher's own signed
+artifact:
+
+```console
+$ curl -sL "https://clients2.google.com/service/update2/crx?response=redirect\
+&prodversion=152.0&acceptformat=crx3&x=id%3D<id>%26uc" -o ext.crx
+  manifest key present: True
+  id derived from the key: fcoeoabgfenejglbffodgkkbkcdhcgfn
+```
+
+That is a different kind of claim from *we saw this id on a Mac*. An observation says one
+machine reported it once; a derivation says the id belongs to that signing key and could not
+belong to anyone else's. It also explains, exactly, why a planted extension reports an EMPTY
+identifier — unpacked extensions carry no key, so there is nothing to derive from.
+
+This is the PURL argument arriving at its conclusion. PURL beats CPE because an identifier
+derivable from the artifact needs no registry to vouch for it; a key-derived extension id is
+that property taken to its limit — the artifact does not merely *carry* its identifier, it
+*proves* it. Where a route offers this, prefer it: it is cheaper than a VM scenario, it does
+not decay when a vendor renames a product, and it cannot be faked without the signing key.
+
+Most routes offer nothing like it. A bundle id is a string in a plist that anyone can write,
+an image tag is chosen by whoever ran `docker tag`, and a Homebrew token is a name in a
+repository. For those, a real install remains the bar.
+
+## What was actually built, and how it differs
+
+The design above is not a plan any more, and the differences are worth recording because
+each was a decision rather than a drift.
+
+| designed | built | why |
+|---|---|---|
+| `catalog/observations/<agent>.yaml` | `test/scenarios/<name>/observed.json` | the producer is a scenario RUN, so the file lives beside the thing that writes it. A run changes exactly one file, and a reviewer reads the diff next to the scenario that caused it |
+| one record per (identifier, environment, install route), collapsed to `first_seen`/`last_seen` | one record per (agent, route, value) with `agent_version`, `os`, `arch` | no history is kept yet. The collapse solves a growth problem that does not exist at 42 identifiers, and inventing `first_seen` from a single run would date evidence we do not have |
+| a **Fresh** gate warning on stale observations | **not implemented** | with no `first_seen`/`last_seen` there is no age to compare. An identifier can read *covered by CI* on the strength of a run from months ago, and nothing says so |
+
+Two things the implementation added that the design did not anticipate, both because the
+first version was wrong in a way only a real run exposed:
+
+**Credits are keyed by (route, value), never by value alone.** OpenClaw ships an npm package
+*and* a Homebrew cask both called `openclaw`, so a value-keyed credit let an npm-only scenario
+record the Homebrew token as observed — a real install that no row supported.
+
+**Coverage is counted against CI, not against "has anyone run this".** A scenario that passes
+only on a maintainer's machine catches nothing on a pull request, and one scenario sat in
+exactly that state: passing locally, absent from the matrix, indistinguishable from covered.
+
+## The state that does the most work
+
+`did not appear` — a CI scenario installed the agent and the identifier never showed up. It
+carries more information than any other state because it means one of three things:
+
+1. **the scenario installs by another route.** Fixable, and the fix is a separate scenario:
+   two routes claiming the same binary name cannot share a machine.
+2. **the artifact only exists once the agent runs.** A state directory is not created by
+   installing.
+3. **the identifier is wrong.** Nothing can produce it, because it names something else.
+
+The third case is why this state earns its place. Both catalog bugs found so far surfaced
+through it and neither survived a registry lookup: npm `mcp` is Mintlify's package, and npm
+`aider` is a static-site component by an unrelated maintainer. Each sat beside a comment
+explaining the discrepancy rather than questioning it — which is precisely how a guess
+survives review, and exactly what an evidence grade cannot catch on its own.
 
 ## Scale
 

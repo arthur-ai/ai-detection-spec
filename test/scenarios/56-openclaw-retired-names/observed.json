@@ -1,0 +1,17 @@
+{
+  "scenario": "56-openclaw-retired-names",
+  "identifiers": [
+    {
+      "agent": "openclaw",
+      "route": "npm",
+      "value": "clawdbot",
+      "agent_version": "2026.1.24-3"
+    },
+    {
+      "agent": "openclaw",
+      "route": "npm",
+      "value": "moltbot",
+      "agent_version": "0.1.0"
+    }
+  ]
+}

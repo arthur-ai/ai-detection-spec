@@ -23,6 +23,11 @@ def run(fixture):
     return json.loads(out)
 
 
+def unmatched_ids(result):
+    """Ids the classifier looked at and declined. Distinct from ids it never saw."""
+    return {row["id"] for row in result["unmatched"]}
+
+
 def check(label, condition, detail=""):
     print(f"  {'ok  ' if condition else 'FAIL'}  {label}{'' if condition else '  ' + detail}")
     if not condition:
@@ -39,10 +44,15 @@ check("finds it across all four of its routes",
       f"got {len(found.get('openclaw', {}).get('evidence', []))}")
 check("the retired bot.molt.mac alias still resolves to OpenClaw",
       any(e["id"] == "bot.molt.mac" for e in found.get("openclaw", {}).get("evidence", [])))
-check("finds Ollama as formula, cask and listening port",
-      len(found.get("ollama", {}).get("evidence", [])) == 3,
-      "port 11434 counts because the process holding it is ollama")
-check("a wildcard npm scope matches (@modelcontextprotocol/sdk)", "mcp-sdk" in found)
+check("an Ollama install is NOT an agent finding",
+      "ollama" not in found,
+      "a model runner serves language models; an agent is what drives one. Its rows stay "
+      "in the fixture so this asserts DECLINED rather than absent")
+check("an MCP SDK install is NOT an agent finding",
+      not any(f["id"] == "mcp-sdk" for f in r["findings"])
+      and "@modelcontextprotocol/sdk" in unmatched_ids(r),
+      "the SDK is a library an agent is built with. Detecting it says a developer "
+      "imported a protocol, not that anything is acting on a user's behalf")
 
 # --- PyPI agents installed through pipx or uv -----------------------------------
 # The endpoint cannot query python_packages (15.6s, no WHERE push-down), so it globs
@@ -53,7 +63,9 @@ check("a wildcard npm scope matches (@modelcontextprotocol/sdk)", "mcp-sdk" in f
 check("a uv tool directory resolves by package name (aider-chat -> aider)",
       "aider" in found,
       "the tool dir names the package, which is the only identifier in the path")
-check("a pipx venv directory resolves the same way (litellm)", "litellm" in found)
+check("a LiteLLM install is NOT an agent finding",
+      not any(f["id"] == "litellm" for f in r["findings"]),
+      "an LLM gateway an agent calls THROUGH. Detecting it says traffic may be proxied")
 check("a non-AI tool in the same directory is NOT claimed",
       not any("ruff" in json.dumps(f) for f in r["findings"]),
       "ruff installs through uv like anything else; matching the location must not "
@@ -67,7 +79,30 @@ check("carries the classification",
 # that a real probe hit during design.
 unmatched = {row["id"] for row in r["unmatched"]}
 check("libxdmcp is NOT claimed by the 'mcp' signature", "libxdmcp" in unmatched)
+# npm's `aider` is a static-site component by an unrelated maintainer, not the AI pair
+# programmer -- which ships on PyPI as aider-chat and has no npm distribution. It was
+# catalogued anyway, with a comment explaining the discrepancy rather than questioning it.
+check("npm's `aider` is NOT claimed as the coding agent",
+      "aider" in unmatched,
+      "the row must arrive and be declined; absent is also what a dropped kind looks like")
 check("ordinary software is left alone", {"cmake", "com.apple.Safari"} <= unmatched)
+
+# --- agent tooling is not an agent ------------------------------------------------
+# `mcp` was catalogued and is not any more, and the fixture rows STAY. Deleting them would
+# have removed the evidence along with the signature, leaving nothing to distinguish "we
+# correctly decided this is not an agent" from "the npm route silently stopped working".
+#
+# Two things were also learned while checking it, and both are recorded here because they
+# outlived the entry. npm's `mcp` is Mintlify's package -- no repository, unrelated to the
+# protocol SDK -- while PyPI's `mcp` is the official one from "Model Context Protocol a
+# Series of LF Projects". Same token, different software, different registries. And
+# kind='npm' was mapped to the pypi route as well, so a PyPI signature claimed npm rows
+# regardless of what the npm route said; a kind='npm' row comes from npm_packages and is a
+# node package by construction, so that mapping had nothing to legitimately match.
+u = unmatched_ids(r)
+check("npm `mcp` is not claimed", "mcp" in u)
+check("a uv tool directory named mcp is not claimed",
+      not any("uv/tools/mcp" in json.dumps(f) for f in r["findings"]))
 
 # --- browser extensions ----------------------------------------------------------
 # kind='ext' was emitted by browser.sql from the beginning and consumed by nothing, so
@@ -108,34 +143,50 @@ r = run("container-images.json")
 found = {f["id"] for f in r["findings"]}
 unmatched = {row["id"] for row in r["unmatched"]}
 
-check("a ghcr.io image resolves (ghcr.io/berriai/litellm -> litellm)", "litellm" in found,
-      f"got {sorted(found)}")
-check("the registry host is part of the identifier", "llama-cpp" in found,
-      "ghcr.io/ggml-org/llama.cpp, not ggerganov and not a bare llama.cpp")
-check("a docker.io/ prefix is stripped (docker.io/ollama/ollama -> ollama)",
-      "ollama" in found,
-      "Docker Hub is implicit in what a row reports, but a pull can name it explicitly")
+check("a LiteLLM image is NOT claimed as an agent",
+      "litellm" not in found and "ghcr.io/berriai/litellm:main-latest" in unmatched,
+      f"got {sorted(found)}; a gateway image is not an agent, and it must be visibly "
+      f"declined rather than dropped")
+check("the registry host is still parsed, and the image is declined",
+      "llama-cpp" not in found and "ghcr.io/ggml-org/llama.cpp:server" in unmatched,
+      "a model runner is out of scope, and its image must be visibly unclaimed")
+# The images route now rests entirely on aider, so the normalisation rules need a live
+# subject. This row was captured from a real docker_images row after side-loading the
+# image, the same method the catalog header records.
+check("a two-segment Docker Hub image resolves (paulgauthier/aider -> aider)",
+      "aider" in found, f"got {sorted(found)}")
 
 # A multi-tag row is ONE row with the tags comma-joined -- measured, not assumed. THE ROW
 # MUST CARRY AN AGENT ON ONE OF ITS TAGS, or the assertion is vacuous: an earlier version
 # used alpine+localbuild, where neither tag is an agent, so a matcher that never split the
 # field passed it just as happily. Verified by mutation.
-MULTI = "ghcr.io/ggml-org/llama.cpp:probe,ghcr.io/ggml-org/llama.cpp:server"
+# THE AGENT IS THE SECOND TAG, deliberately. A matcher that compared the comma-joined
+# field whole would miss it, and every real multi-tag row in this fixture now carries no
+# catalogued agent -- so they pass whether the field is split or not, and only this row
+# can fail. Synthetic, like the fork and the lookalike beside it.
 check("a multi-tag row is split, and an agent on ANY tag is found",
-      "llama-cpp" in found and MULTI not in unmatched,
-      f"found {sorted(found)}; unsplit, this row matches nothing")
+      "aider" in found
+      and "localbuild-probe:latest,paulgauthier/aider:pinned" not in unmatched,
+      "unsplit, this row matches nothing")
+check("a multi-tag row of non-agents stays whole and unmatched",
+      "ghcr.io/ggml-org/llama.cpp:probe,ghcr.io/ggml-org/llama.cpp:server" in unmatched,
+      "declined, and reported by the id the row actually carried")
 check("a multi-tag row of non-agents stays unmatched",
       "alpine:3.20,localbuild-probe:latest" in unmatched)
 
 check("a fork is NOT claimed (myorg/ollama-fork)", "myorg/ollama-fork:latest" in unmatched,
       "exact on the normalised repository, never a substring")
 check("a lookalike is NOT claimed (not-ollama)", "not-ollama:latest" in unmatched)
+check("the LM Studio image is out of scope too", "lm-studio" not in found)
 check("ordinary infrastructure images are left alone",
       {"authzed/spicedb:latest",
        "public.ecr.aws/docker/library/python:3.12.8-slim-bookworm"} <= unmatched,
       "the ECR path contains 'library/', which must NOT be stripped the way Docker Hub's is")
-check("exactly three agents, no more", found == {"litellm", "llama-cpp", "ollama"},
-      f"got {sorted(found)}")
+# A local model runs on the HOST or in a CONTAINER and both are install paths. This row
+# was captured from a real docker_images row after side-loading the vendor's own image
+# (lmstudio namespace, "Headless LM Studio Docker Image"); there is no lmstudio/lmstudio.
+check("exactly one agent, no more", found == {"aider"},
+      f"got {sorted(found)}; every model runner and gateway in this fixture must be declined")
 
 # --- scan rows: provenance, gaps, and staleness -----------------------------------
 # All pure bin/classify behaviour, so it lives in the fast suite. test/docker_states.sh
@@ -182,6 +233,36 @@ for extra, needle in (("absent", "no Docker socket"),
 check("a gap is never silently an empty finding set",
       "No AI agents found." not in classify_rows([scan_row("timeout:6")]),
       "'no agents' under an unread branch is the lie this whole marker exists to stop")
+
+# --- the coverage recorder must credit the route that actually matched ------------
+# tools/agent_status.py --record replays a run and writes which identifiers it proved.
+# It used to credit the whole glob GROUP for any kind='file' match, so a row for
+# ~/.local/share/uv/tools/aider-chat/ recorded `state_dirs: ~/.aider` as observed in a
+# real install -- an identifier that appeared nowhere in that run. A measuring tool
+# reporting a plausible wrong answer is the exact failure this repo is built around, so
+# it is asserted here rather than trusted.
+import importlib.util as _ilu, importlib.machinery as _ilm, tempfile as _tf2
+
+_spec = _ilu.spec_from_loader("agent_status",
+    _ilm.SourceFileLoader("agent_status", str(ROOT / "tools" / "agent_status.py")))
+_st = _ilu.module_from_spec(_spec)
+_spec.loader.exec_module(_st)
+
+_rows = [{"kind": "file", "id": "/Users/x/.local/share/uv/tools/aider-chat/", "ver": "",
+          "loc": "/Users/x/.local/share/uv/tools/aider-chat/", "extra": "", "perms": ""}]
+with _tf2.NamedTemporaryFile("w", suffix=".json", delete=False) as _fh:
+    json.dump(_rows, _fh)
+with _tf2.TemporaryDirectory() as _d:
+    _st.record(_fh.name, _d)
+    _rec = json.loads((pathlib.Path(_d) / "observed.json").read_text())["identifiers"]
+_got = {(r["route"], r["value"]) for r in _rec}
+
+check("recording credits the route that matched (pypi, from the tool dir)",
+      ("pypi", "aider-chat") in _got, f"got {sorted(_got)}")
+check("recording does NOT credit a state dir the run never produced",
+      not any(r == "state_dirs" for r, _ in _got),
+      "~/.aider appears in no row here; crediting it would report the strongest evidence "
+      "for a path no machine produced")
 
 print()
 if failures:

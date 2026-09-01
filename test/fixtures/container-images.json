@@ -70,5 +70,29 @@
     "loc": "2222222222222222222222222222222222222222222222222222222222222222",
     "extra": "4500000000",
     "perms": ""
+  },
+  {
+    "kind": "image",
+    "id": "lmstudio/llmster-preview:latest",
+    "ver": "",
+    "loc": "dab287c899dc0be4d3c6dc346ea3a0e4b1238746699c5281e79cbecec1da96cb",
+    "extra": "",
+    "perms": ""
+  },
+  {
+    "kind": "image",
+    "id": "paulgauthier/aider:latest",
+    "ver": "",
+    "loc": "cd375f1ecbd1e0ac6752bba40de5f69f3b36b75cd3d24b2c41fcca502d054ad3",
+    "extra": "",
+    "perms": ""
+  },
+  {
+    "kind": "image",
+    "id": "localbuild-probe:latest,paulgauthier/aider:pinned",
+    "ver": "",
+    "loc": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "extra": "",
+    "perms": ""
   }
 ]

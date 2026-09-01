@@ -10,3 +10,35 @@ curl -fsSL https://claude.ai/install.sh | bash || echo "WARN: claude code instal
 # Codex CLI is a genuine npm global.
 need_node
 npm install -g @openai/codex || echo "WARN: codex install failed"
+
+# Four more agents that ship on npm. Installed here rather than left as catalog
+# exceptions, because a real install is the standard and every one of these had an
+# unattended path available -- the only thing missing was this.
+#
+# Each package name was READ OFF THE REGISTRY before being trusted. Checking them is
+# also what retired two catalog entries: npm's `mcp` turned out to be Mintlify's package
+# rather than the protocol SDK, and the SDK itself is a LIBRARY an agent is built with --
+# agent tooling, not an agent -- so neither is scanned for any more.
+#
+# npm is chosen over Homebrew for gemini-cli and copilot-cli deliberately. Both also
+# ship a formula/cask, and installing both ways would have them fight over the same
+# binary; npm is the primary distribution. The Homebrew identifiers stay unexercised
+# and docs/agents.md says so per-identifier -- the AGENT meets the standard, one of
+# its routes is verified, and the report does not pretend otherwise.
+#
+# `|| echo WARN` so a network failure does not abort the whole scenario. It still
+# FAILS, in the assertion, where the reason is visible: a missing must_find names the
+# agent, while an aborted setup names nothing.
+for pkg in @google/gemini-cli @github/copilot cline; do
+  npm install -g "$pkg" || echo "WARN: $pkg install failed"
+done
+
+# INVOKED, NOT JUST INSTALLED. A state directory does not exist until the agent runs once,
+# which is why ~/.codex read DID NOT APPEAR while a scenario was installing Codex CLI on every run.
+# `--version` is the smallest invocation that is not a no-op and needs no credentials.
+#
+# NOT ASSERTED. Whether this particular agent writes its state directory on --version is
+# unmeasured, and asserting it before knowing would be a guess wearing a test's clothes.
+# The run records what actually appeared; if the directory shows up, coverage reports it,
+# and if it does not, the gap stays visible and honest.
+command -v codex >/dev/null 2>&1 && (codex --version >/dev/null 2>&1 || true)

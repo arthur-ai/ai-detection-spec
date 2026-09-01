@@ -116,7 +116,35 @@ EOF
   [ "$elapsed" -le 10 ] || { echo "FAIL: runtime ${elapsed}s exceeds the 10s EA budget" >&2; rc=1; }
   [ "$bytes" -le 30000 ] || { echo "FAIL: payload ${bytes} exceeds the 30000 byte EA budget" >&2; rc=1; }
 
+  # BOTH layers, the same two test/assert.sh runs in CI. run.sh called only assert_counts,
+  # so the VM path -- the one that installs real software, and the only reason the VM
+  # exists -- never asked the classifier anything. Counts prove each BRANCH still returns
+  # rows; whether that evidence resolves to the right agent is a different question, and
+  # `classified.must_find` is where it is asked. A scenario could add an agent to
+  # must_find, pass here, and have verified nothing.
+  #
+  # Found by adding five agents to must_find and noticing the run reported ALL PASS
+  # without ever printing them.
   assert_counts "$ART/$s.json" "$dir/expected.json" || rc=1
+  assert_classified "$ART/$s.json" "$dir/expected.json" "$HERE/.." || rc=1
+
+  # Record WHICH IDENTIFIERS this run actually matched, into a committed observed.json.
+  # test/artifacts/ is gitignored and per-machine, so the raw output cannot back a
+  # document anyone else can check. Without this, coverage could only ever be reported per
+  # AGENT -- and expected.json names the agent, never the identifier that found it, so an
+  # entry could read as verified while carrying identifiers nothing had exercised.
+  #
+  # Only on success: a failed run's matches are not evidence of anything.
+  # The GUEST's OS and arch, not the host's. An identifier is a fact about one build on
+  # one platform, and a scenario is the subject rather than the platform -- so the platform
+  # travels with the observation instead of multiplying the scenario directories.
+  if [ "$rc" -eq 0 ]; then
+    local guest_os guest_arch
+    guest_os=$(vm_ssh "$vm" "sw_vers -productVersion" 2>/dev/null | tr -d '\r')
+    guest_arch=$(vm_ssh "$vm" "uname -m" 2>/dev/null | tr -d '\r')
+    python3 "$HERE/../tools/agent_status.py" --record "$ART/$s.json" "$dir" \
+      --os "$guest_os" --arch "$guest_arch"
+  fi
   echo
   return $rc
 }

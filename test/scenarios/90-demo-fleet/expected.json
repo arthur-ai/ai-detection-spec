@@ -9,8 +9,7 @@
     "port": ">=1",
     "ext": ">=1",
     "file": ">=1",
-    "nmh": ">=1",
-    "model": ">=2"
+    "nmh": ">=1"
   },
   "classified": {
     "must_find": [
@@ -18,7 +17,6 @@
       "cursor",
       "chatgpt-desktop",
       "perplexity-comet",
-      "ollama",
       "claude-code",
       "codex-cli",
       "openclaw"
@@ -31,7 +29,6 @@
     "com.todesktop.230313mzl4w4u92",
     "com.openai.codex",
     "ai.perplexity.comet",
-    "com.electron.ollama",
     "@openai/codex",
     "/.local/bin/claude",
     "11434",

@@ -16,8 +16,15 @@ on:
       - 'test/fixtures/**'
       - 'test/scenarios/*/expected.json'
       - 'test/scenarios/*/requires.json'
+      # Coverage is per identifier now, and this is where a real run's evidence lands.
+      # Without it an observation could be committed while the doc kept reporting the
+      # coverage that existed before it.
+      - 'test/scenarios/*/observed.json'
       - 'bin/classify'
       - 'tools/agent_status.py'
+      # The general blind-spot table is parsed out of the README, so editing it changes the
+      # report. Without this the two would drift and the doc would keep the old wording.
+      - 'README.md'
   workflow_dispatch:
 
 # Two pushes in quick succession would otherwise race to commit the same file. The later

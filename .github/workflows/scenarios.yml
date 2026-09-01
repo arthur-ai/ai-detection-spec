@@ -12,20 +12,33 @@ on:
 
 jobs:
   scenario:
-    name: ${{ matrix.scenario }}
-    runs-on: macos-15
+    name: ${{ matrix.scenario }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        # THE OS IS AN AXIS, NOT PART OF A SCENARIO'S NAME. A scenario is a subject --
+        # what software, installed how -- and the platform it ran on travels with the
+        # OBSERVATION instead. Encoding it in directory names would mean one copy of every
+        # scenario per OS, edited in lockstep whenever a signature moves.
+        #
+        # Adding a label here fans the whole suite across both, and observed.json records
+        # which OS produced each identifier -- so a signature that appears on one macOS
+        # version and not another becomes visible rather than averaged away. Kept at one
+        # label until a second is confirmed available: an invented runner label fails the
+        # entire matrix rather than the one job that needed it.
+        os: [macos-15]
         scenario:
           - 00-baseline
           - 10-desktop-apps
           - 20-cli-agents
+          - 21-cli-agents-homebrew
           - 25-python-agents
-          - 30-local-models
           - 40-browser
+          - 45-claude-extension
           - 50-autonomous
           - 55-openclaw-npm
+          - 56-openclaw-retired-names
           - 60-persistence
     steps:
       - uses: actions/checkout@v4
@@ -46,6 +59,25 @@ jobs:
           sudo -n /usr/local/bin/osqueryi --json < dist/discovery.sql > /tmp/out.json
           test/assert.sh /tmp/out.json test/scenarios/${{ matrix.scenario }}/expected.json
 
+      # These runners install the REAL software, so this job's output is real-install
+      # evidence -- the same grade test/run.sh records from a VM. Recording it here keeps
+      # docs/agents.md's per-identifier coverage current without anyone remembering to run
+      # VMs locally and commit the result.
+      #
+      # Uploaded rather than committed: eleven matrix jobs pushing to the same branch would
+      # race, and the loser's observation would be lost silently. The collect job below
+      # merges them and commits once.
+      - name: Record which identifiers this run matched
+        run: |
+          python3 tools/agent_status.py --record /tmp/out.json \
+            test/scenarios/${{ matrix.scenario }}
+      - name: Upload the observation
+        uses: actions/upload-artifact@v4
+        with:
+          name: observed-${{ matrix.scenario }}
+          path: test/scenarios/${{ matrix.scenario }}/observed.json
+          if-no-files-found: error
+
       # Enumeration trades payload for not being wrong about the catalog, so the payload
       # is now a number worth watching per scenario rather than once on a developer Mac.
       - name: Measure the payload
@@ -57,3 +89,49 @@ jobs:
         with:
           name: ${{ matrix.scenario }}
           path: /tmp/out.json
+
+  # One job after the matrix, so the commit happens once rather than eleven times.
+  collect:
+    name: Commit observations
+    needs: scenario
+    # always() so a green scenario's observation still lands when a DIFFERENT scenario
+    # failed. Each observation is independent evidence, and discarding all of them because
+    # one scenario broke would throw away the runs that worked.
+    if: always() && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install pyyaml
+        run: pip install --quiet pyyaml
+      - name: Download every observation
+        uses: actions/download-artifact@v4
+        with:
+          pattern: observed-*
+          path: /tmp/observed
+      - name: Put each one back where it belongs
+        run: |
+          # download-artifact lays each one out as /tmp/observed/observed-<scenario>/
+          for d in /tmp/observed/observed-*/; do
+            [ -d "$d" ] || continue
+            s=$(basename "$d" | sed 's/^observed-//')
+            [ -f "$d/observed.json" ] || continue
+            cp "$d/observed.json" "test/scenarios/$s/observed.json"
+            echo "  $s"
+          done
+      - name: Regenerate the doc and commit if anything moved
+        run: |
+          python3 tools/agent_status.py --write
+          git add test/scenarios/*/observed.json docs/agents.md
+          if git diff --cached --quiet; then
+            echo "Coverage unchanged. Nothing to commit."
+            exit 0
+          fi
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit \
+            -m "docs: record identifier coverage observed by the scenario run" \
+            -m "Written by tools/agent_status.py --record from each scenario's own output. Triggered by ${{ github.sha }}."
+          git push
+          python3 tools/agent_status.py | tail -5 >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,17 @@
+{
+  "scenario": "50-autonomous",
+  "identifiers": [
+    {
+      "agent": "openclaw",
+      "route": "bundle_ids",
+      "value": "ai.openclaw.mac",
+      "agent_version": "2026.8.1"
+    },
+    {
+      "agent": "openclaw",
+      "route": "homebrew",
+      "value": "openclaw",
+      "agent_version": "2026.8.1"
+    }
+  ]
+}

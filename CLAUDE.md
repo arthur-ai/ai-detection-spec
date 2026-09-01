@@ -32,6 +32,64 @@ the vendor's own Homebrew metadata and it matched nothing on any Mac; the real i
 `~/.aider`, so evidence and signature never met. Both were silent, and neither survived contact
 with an actual install.
 
+## The scope is agents, and only agents
+
+**An agent is something that acts on the user's behalf.** That is the whole test. It is not
+"is this AI software" and not "can we detect it" — everything removed below passed both and
+was removed anyway.
+
+| removed | what it actually is |
+|---|---|
+| `mcp-sdk` | a **library an agent is built with**. Detecting it says a developer imported a protocol |
+| `litellm` | a **gateway an agent calls through**. Detecting it says traffic may be proxied |
+| `docker` | a **runtime**: how we look, not what we look for. What we detect in a container is the agent *image* |
+| `ollama`, `lm-studio`, `jan`, `llama-cpp` | **model runners**. They serve language models; an agent is what drives one |
+
+Each was easy to detect and each belongs in *some* AI inventory, which is exactly why the
+reasoning is written into `catalog/agents.yaml`'s header rather than left to memory — the
+temptation to re-add them is obvious. **Counting them among "agents found on this Mac"
+overstates the finding**, and that is the one error this repo exists to avoid.
+
+Two consequences worth knowing before you extend anything:
+
+- **A removed entry keeps its fixture rows**, and the assertion inverts to *must not match*.
+  Deleting the evidence with the signature leaves nothing to tell *correctly not an agent*
+  from *route quietly broken* — which is the ambiguity the dropped `ext` kind hid behind for
+  months. `25-python-agents` still installs LiteLLM for exactly this reason.
+- **A query branch that no agent can be found through is payload nobody can read.** The
+  `model` branch went when the model runners did: it emitted a row per model manifest, and
+  `bin/classify` never had a `model` key in `KIND_ROUTES`, so every one of those rows was
+  *dropped* — the same failure as `ext`, undetected because the row counts were right.
+
+If the scope widens, the model runners are the strongest candidates to return, and the
+`model` branch with them.
+
+**NOTHING SHIPS IN THE CATALOG WITHOUT A REAL TEST.** An identifier that no test produces is
+not a signature, it is a guess with a comment beside it — and the two are indistinguishable
+until something tries to install it. Both catalog bugs found this way had one: npm `mcp` was
+Mintlify's package, and npm `aider` is *"Lightweight website popular article component for
+static website"*, sitting under a note reading "the usual route; the npm name differs", which
+explained the discrepancy instead of questioning it.
+
+`tools/agent_status.py` reports coverage **per identifier and against CI**, because a scenario
+that only runs on a maintainer's Mac catches nothing on a pull request. Its most useful state
+is **`did not appear`**: a CI scenario installed the agent and this identifier never showed up.
+That means one of three things, and they are worth telling apart —
+
+| it means | what to do |
+|---|---|
+| the scenario installs by another route | install that route, on **another machine** — two routes claiming one binary name cannot share a host |
+| the artifact only exists once the agent **runs** | invoke it; a state directory does not exist until first run |
+| **the identifier is wrong** | remove it. This is how both catalog bugs surfaced |
+
+**A real install is the standard, and the catalog enforces it.** An agent is verified when a VM
+scenario installs the real software and asserts the classifier finds it. Anything less is an
+exception carrying a `reason`, an `evidence` grade and the date it was raised;
+`tools/validate_catalog.py` fails on an agent that has neither. `docs/agents.md` is generated
+from that, so the exception register is a work list rather than an excuse list — and a fixture
+is not a weaker pass but a different claim, because it proves the matcher works and says nothing
+about whether the identifier is what the software ships today.
+
 When something genuinely cannot be verified, say so in the tree rather than guessing —
 `docs/signature-lifecycle.md` covers how, and the standing rule is that **a catalog may carry a
 guess but may not hide one.**
@@ -72,8 +130,11 @@ Every row is the **six-column contract**: `kind, id, ver, loc, extra, perms`.
 - **A single `%` matches one path component.** `Application Support/Google/Chrome/…` is two.
 - **Bash 3.2** is what a managed Mac has. No `timeout(1)`, and an empty array under `set -u` is an
   unbound-variable error: append with `+=` and expand as `${a[@]+"${a[@]}"}`.
-- **A planted browser extension reports an EMPTY `identifier`** — osquery derives it from the
-  manifest key, which sideloaded extensions lack. Fixtures cannot test id matching.
+- **`identifier` is derived from the manifest `key`.** That is why a planted or unpacked
+  extension reports an EMPTY one — it has no key. The consequence is not that ids are
+  untestable: the Web Store's signed CRX *does* carry the key, so unpacking one into a real
+  profile yields the real id, and `45-claude-extension` does exactly that. Chromium ids are
+  key-derived, so they are identical across all 11 `browser_type`s osquery enumerates.
 
 ## Testing
 
@@ -96,10 +157,11 @@ bug hid behind.
 months because its fixture had no agent on either tag. If removing the code does not turn the
 test red, the test proves nothing.
 
-VM scenarios (`test/run.sh`) need Tart and run on dispatch and a schedule, not per PR. Some
-things **cannot** be tested with a real install — Chrome will not force-install from the Web
-Store without an MDM-delivered policy — and those scenarios `exit 3` to SKIP, with the reason in
-`requires.json`. A scenario that fails where nobody can act on it trains people to ignore a red
+VM scenarios (`test/run.sh`) need Tart and run on dispatch and a schedule, not per PR. Where something genuinely cannot be
+tested, a scenario `exit 3`s to SKIP with the reason in `requires.json` — but **be slow to
+conclude that.** This repo asserted that the Claude extension could not be installed without
+MDM, and was wrong twice over: Chrome had never been launched, so no profile existed to read,
+and the browser's install flow was never needed in the first place. A scenario that fails where nobody can act on it trains people to ignore a red
 suite.
 
 ## Register

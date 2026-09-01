@@ -9,8 +9,7 @@
     "file": ">=1",
     "npm": ">=0",
     "ext": ">=0",
-    "nmh": ">=0",
-    "model": 0
+    "nmh": ">=0"
   },
   "classified": {
     "must_find": [

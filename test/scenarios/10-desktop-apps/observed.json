@@ -1,0 +1,117 @@
+{
+  "scenario": "10-desktop-apps",
+  "identifiers": [
+    {
+      "agent": "chatgpt-desktop",
+      "route": "bundle_ids",
+      "value": "com.openai.codex",
+      "agent_version": "26.825.51511",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "chatgpt-desktop",
+      "route": "homebrew",
+      "value": "chatgpt",
+      "agent_version": "26.825.51511",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "claude-desktop",
+      "route": "bundle_ids",
+      "value": "com.anthropic.claudefordesktop",
+      "agent_version": "1.40609.0",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "claude-desktop",
+      "route": "homebrew",
+      "value": "claude",
+      "agent_version": "1.40609.0,f65e386db0db64c8f8b39950e25adb11f5f5e3f3",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "cursor",
+      "route": "bundle_ids",
+      "value": "com.todesktop.230313mzl4w4u92",
+      "agent_version": "3.18.9",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "cursor",
+      "route": "homebrew",
+      "value": "cursor",
+      "agent_version": "3.18.9,2ba48ff3f7514cc4643c52ca9f7b3173d9b66137",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "orion",
+      "route": "bundle_ids",
+      "value": "com.kagi.kagimacOS",
+      "agent_version": "1.1.2",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "orion",
+      "route": "homebrew",
+      "value": "orion",
+      "agent_version": "1.1.2,151",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "perplexity-comet",
+      "route": "bundle_ids",
+      "value": "ai.perplexity.comet",
+      "agent_version": "151.0.7922.247",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "perplexity-comet",
+      "route": "homebrew",
+      "value": "comet",
+      "agent_version": "145.2.7632.4581",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "perplexity-desktop",
+      "route": "bundle_ids",
+      "value": "ai.perplexity.macv3",
+      "agent_version": "26.34.0",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "perplexity-desktop",
+      "route": "homebrew",
+      "value": "perplexity",
+      "agent_version": "26.34.0",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "windsurf",
+      "route": "bundle_ids",
+      "value": "com.exafunction.windsurf",
+      "agent_version": "3.8.20",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "windsurf",
+      "route": "homebrew",
+      "value": "devin-desktop",
+      "agent_version": "3.8.20,2d9020110aa91587b3c3b0fcf7d1faaf601fc7b8",
+      "os": "26.6.2",
+      "arch": "arm64"
+    }
+  ]
+}

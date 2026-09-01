@@ -1,0 +1,32 @@
+{
+  "description": "The CLI coding agents installed through their OTHER route -- Homebrew, and npm for Claude Code -- so the identifiers 20-cli-agents cannot reach are exercised by a real install.",
+  "counts": {
+    "brew": ">=4",
+    "app": ">=0",
+    "npm": ">=1",
+    "file": ">=0",
+    "ext": ">=0",
+    "nmh": ">=0",
+    "daemon": ">=0",
+    "port": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "aider",
+      "gemini-cli",
+      "codex-cli",
+      "copilot-cli",
+      "claude-code"
+    ]
+  },
+  "why": "These four homebrew tokens read DID NOT APPEAR: 20-cli-agents and 25-python-agents install the same agents from npm and uv, so the Homebrew identifiers were catalogued and never produced by any run. A second route needs a second machine, because both routes claim the same binary name. Claude Code is here for the same reason in mirror image: 20-cli-agents installs it from the native installer, which leaves a shim and no npm row.",
+  "must_contain": [
+    "aider",
+    "gemini-cli",
+    "@anthropic-ai/claude-code"
+  ],
+  "known_gaps": [
+    "Installing proves the token. It does not run any of these agents, so state directories that only appear on first invocation (~/.codex, ~/.aider) are still not exercised here.",
+    "codex and copilot-cli are casks: on a runner the app bundle lands but is never launched, so anything written at first launch is out of reach for the same reason."
+  ]
+}

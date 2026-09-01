@@ -74,18 +74,6 @@ UNION ALL
 SELECT 'file', path, '', path, '', '' FROM file
   WHERE path LIKE '/Users/%/.local/pipx/venvs/%/'
      OR path LIKE '/Users/%/.local/share/uv/tools/%/'
-UNION ALL
--- LOCAL MODEL STORES. Was '/Users/%/.ollama/models/manifests/...', which named a product
--- and would miss any other runtime adopting the same layout. The dotdir is a % now.
---
--- Verified equivalent rather than assumed: built the exact manifest tree Ollama creates
--- (manifests/<host>/<namespace>/<name>/<tag>) with a library model and an hf.co one, and
--- both globs returned the same 2 rows. The four %s are one per path component, and the
--- fourth is what catches a model outside the 'library' namespace -- hardcoding
--- registry.ollama.ai/library returns 1 of 2 and looks perfectly healthy.
-SELECT 'model', filename, '', path, '', '' FROM file
-  WHERE path LIKE '/Users/%/.%/models/manifests/%/%/%/%'
-
 -- KNOWN GAP, deliberately not covered: packages executed via `npx`/`bunx` and never
 -- installed. They land in a content-addressed cache, /Users/x/.npm/_npx/<hash>/
 -- node_modules/<pkg>, where the invoked package is indistinguishable BY PATH from its

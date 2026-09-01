@@ -77,6 +77,66 @@ claimed by two agents means one is wrong and both will fire.
 `classification` describes **deployment shape**, not risk. See the vocabulary at the top of
 the file.
 
+### What belongs in the catalog
+
+**Agents.** Something that acts on the user's behalf. The test is not "is this AI software"
+and not "can we detect it" — both `mcp-sdk` and `litellm` passed those and were still removed.
+An SDK is a library an agent is *built with*; a gateway is something an agent calls *through*.
+Detecting either says a developer imported a protocol or proxied some traffic, not that
+anything is acting on anyone's behalf.
+
+**Model runners went the same way** — `ollama`, `lm-studio`, `jan`, `llama-cpp`. They serve
+language models; an agent is what drives one. The `model` query branch went with them, because
+no agent is found through a model store and `bin/classify` never had a `model` key in
+`KIND_ROUTES` — every one of those rows was *dropped*, the same failure as `ext`.
+
+A **container runtime** went too. `containers.sql` exists because agents hide in containers —
+so what belongs in the catalog is the agent **image** (`paulgauthier/aider`), not Docker. The
+runtime is instrumentation, and
+whether it is present is already reported by the `kind=scan` marker, which tells *no Docker*
+apart from *Docker wedged*. A bundle id cannot.
+
+If you remove an entry, **leave its rows in the fixtures** and assert they are declined.
+Deleting the evidence with the signature leaves nothing to distinguish *correctly not an
+agent* from *route quietly broken*.
+
+### A real install is the standard
+
+An agent is verified when a **VM scenario installs the real software** and asserts the
+classifier finds it. That is the bar, and it is the bar because nothing lower catches the
+errors this catalog exists to avoid: `bot.molt.mac` came from OpenClaw's own Homebrew
+metadata and matched nothing on any Mac, and `aider` installs as `aider-chat` while its
+state directory is `~/.aider`, so evidence and signature never met. Both passed review.
+
+So add the agent to a scenario's `classified.must_find`. If you cannot, **record the
+exception in the catalog** — `tools/validate_catalog.py` fails on an agent that has neither:
+
+```yaml
+- id: some-agent
+  name: Some Agent
+  classification: Coding agent
+  bundle_ids: [com.example.someagent]
+  homebrew: [some-agent]
+  unverified:
+    reason: "the `lm-studio` Homebrew cask resolves, so an unattended install exists; no scenario installs it yet"
+    evidence: vendor-documentation     # the weakest grade any of its identifiers rests on
+    belongs_in: 30-local-models        # where the scenario should go, when written
+    raised: 2026-08-31                 # so an exception that has sat for a year looks like one
+```
+
+`evidence` grades what you actually hold, weakest first. `real-install` is **not** a value
+here — an agent with one does not need this block.
+
+| grade | meaning |
+|---|---|
+| `vendor-documentation` | the vendor says so and nothing else does. This is what produced `bot.molt.mac` |
+| `registry-manifest` | the artifact resolves under this exact name from its registry — a cask token, a published npm or PyPI package. Authoritative about the **name**, silent about what an osquery row renders |
+| `artifact-metadata` | the artifact's own metadata confirms it: an image entrypoint, a bundle `Info.plist` |
+
+Omit `blocker` unless something genuinely stands in the way. Its absence says the only
+thing missing is the work, which is what turns [`docs/agents.md`](docs/agents.md)'s
+exception register into a work list rather than an excuse list.
+
 ### Regenerate the doc in the same commit
 
 [`docs/agents.md`](docs/agents.md) lists every agent, its identifiers and the evidence
@@ -91,13 +151,26 @@ $ python3 tools/agent_status.py --write    # regenerate docs/agents.md
 commit. A workflow also regenerates it on `main` as a safety net, which covers a direct
 push or a merge that moves coverage without touching the catalog.
 
-The doc grades evidence at two strengths, and a new signature normally starts at the weaker
-one. A **fixture** proves the matcher works; only a **real install** in a VM scenario proves
-the identifier is real, which is the failure mode that shipped `bot.molt.mac` — a
-vendor-documented identifier that matched nothing on any Mac. An identifier with neither is
-listed as unexercised rather than omitted: unexercised is not the same as wrong, and
-`docs/signature-lifecycle.md` covers how one that genuinely cannot be verified is recorded
-rather than guessed at.
+**Nothing ships without a real test.** Coverage is counted per identifier and against **CI**,
+because a scenario that only runs on a maintainer's Mac catches nothing on a pull request. A
+**fixture** proves the matcher works; only a **real install in a CI scenario** proves the
+identifier is what the software ships today — the failure that produced `bot.molt.mac`, a
+vendor-documented identifier matching nothing on any Mac.
+
+The state to read closely is **`did not appear`**: a scenario installed the agent and this
+identifier never showed up. It means one of three things, and telling them apart is the work:
+
+| it means | what to do |
+|---|---|
+| the scenario installs by another route | install that route in a **separate** scenario — two routes claiming one binary name cannot share a machine, which is why `21-cli-agents-homebrew` exists beside `20-cli-agents` |
+| the artifact only exists once the agent **runs** | invoke it. A state directory does not exist until first run |
+| **the identifier is wrong** | remove it, and keep its row as a negative control |
+
+That last case is not hypothetical. Both catalog bugs found so far surfaced this way: npm
+`mcp` is Mintlify's package, and npm `aider` is *"Lightweight website popular article component
+for static website"*. Neither could ever appear, because neither names the product.
+`docs/signature-lifecycle.md` covers how something genuinely unverifiable is recorded rather
+than guessed at.
 
 ### The `images` route
 

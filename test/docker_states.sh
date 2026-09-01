@@ -88,6 +88,17 @@ check() {
   else printf "    FAIL  %s  %s\n" "$label" "$detail"; fail=1; fi
 }
 
+# How many images the fake daemon serves, read from the fake itself. Hardcoding it meant
+# adding an image to fake_docker.py silently broke this suite -- and because it needs sudo
+# it does not run in the fast loop, so the failure surfaced in CI minutes later rather than
+# on the machine that made the change. Adding paulgauthier/aider did exactly that.
+FAKE_IMAGE_COUNT=$(python3 -c "
+import importlib.util, importlib.machinery, sys
+s = importlib.util.spec_from_loader('fd', importlib.machinery.SourceFileLoader(
+    'fd', '$HERE/lib/fake_docker.py'))
+m = importlib.util.module_from_spec(s); s.loader.exec_module(m)
+print(len(m.IMAGES))")
+
 # want_guard: 1 if the guard should admit this state. want_rows: expected row count when
 # the guard admits. Only 'healthy' may ever produce rows.
 run_state() {
@@ -130,7 +141,7 @@ run_state absent  0 0
 run_state refuse  0 0
 run_state hang    0 0
 run_state error   0 0
-run_state healthy 1 5
+run_state healthy 1 "$FAKE_IMAGE_COUNT"
 
 # The guard's whole purpose: prove the unguarded query really does stall on 'hang', so
 # nobody concludes the guard is defending against nothing. Bounded, because it does not
@@ -258,13 +269,20 @@ stop_fake
 
 echo "  the real image fixture classifies to the right agents"
 # The fixture is five REAL images captured from a real daemon (see test/lib/fake_docker.py).
-# Two are catalogued agents and three are not, and BOTH halves are assertions: a matcher
-# that claimed alpine, spicedb or an ECR python would be a confident wrong finding on a very
-# large share of developer Macs.
+# ONE is a catalogued agent (aider) and five are not, and BOTH halves are assertions: a matcher that
+# claimed alpine, spicedb or an ECR python would be a confident wrong finding on a very large
+# share of developer Macs.
+#
+# The LiteLLM image is the interesting one. It WAS catalogued and deliberately is not any
+# more -- a gateway an agent calls through is not an agent -- and its row stays in the
+# fixture precisely so this suite asserts it is DECLINED rather than absent. Deleting the row
+# with the signature would have left nothing to tell "correctly not an agent" from "the image
+# route silently stopped working".
 start_fake healthy
 scan_out=$("$ROOT/bin/container-scan" --socket "$SOCK" 2>/dev/null)
 classified=$(printf '%s' "$scan_out" | "$ROOT/bin/classify" --json 2>/dev/null)
-for want in litellm llama-cpp; do
+unmatched=$(printf '%s' "$scan_out" | "$ROOT/bin/classify" --json --show-unmatched 2>/dev/null)
+for want in aider; do
   check "finds $want" \
         "$(printf '%s' "$classified" | python3 -c "
 import json,sys
@@ -273,12 +291,20 @@ print(1 if any(f['id'] == '$want' for f in d['findings']) else 0)" 2>/dev/null)"
         "findings were: $(printf '%s' "$classified" | python3 -c "
 import json,sys;print([f['id'] for f in json.load(sys.stdin)['findings']])" 2>/dev/null)"
 done
+# Not merely "litellm is absent from findings" -- absent is what a dropped kind looks like
+# too. It has to arrive, be looked at, and be turned down.
+check "the LiteLLM image is DECLINED, not dropped" \
+      "$(printf '%s' "$unmatched" | python3 -c "
+import json,sys
+d = json.load(sys.stdin)
+print(1 if any('litellm' in r['id'] for r in d.get('unmatched', [])) else 0)" 2>/dev/null)" \
+      "a gateway is not an agent, and it must be visibly unclaimed rather than invisible"
 check "claims nothing else" \
       "$(printf '%s' "$classified" | python3 -c "
 import json,sys
 d = json.load(sys.stdin)
-print(1 if sorted(f['id'] for f in d['findings']) == ['litellm','llama-cpp'] else 0)" 2>/dev/null)" \
-      "alpine, spicedb and the ECR python image must stay unmatched"
+print(1 if sorted(f['id'] for f in d['findings']) == ['aider'] else 0)" 2>/dev/null)" \
+      "alpine, spicedb, the ECR python image, the LiteLLM gateway and the llama.cpp model runner must all stay unmatched"
 # A multi-tagged image is one comma-joined row, and matching the field whole finds neither
 # tag. The fixture's alpine carries two tags precisely so this cannot regress unnoticed.
 check "a comma-joined multi-tag row is still parsed" \

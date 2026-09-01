@@ -1,0 +1,12 @@
+{
+  "scenario": "25-python-agents",
+  "identifiers": [
+    {
+      "agent": "aider",
+      "route": "pypi",
+      "value": "aider-chat",
+      "os": "26.6.2",
+      "arch": "arm64"
+    }
+  ]
+}

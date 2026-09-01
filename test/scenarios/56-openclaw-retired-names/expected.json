@@ -1,0 +1,27 @@
+{
+  "description": "OpenClaw's retired npm names, installed for real so the alias route is not untestable by assumption.",
+  "counts": {
+    "npm": ">=2",
+    "app": ">=0",
+    "brew": ">=0",
+    "file": ">=0",
+    "ext": ">=0",
+    "nmh": ">=0",
+    "daemon": ">=0",
+    "port": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "openclaw"
+    ]
+  },
+  "why": "The retired names were recorded as coverable only by a fixture, on the reasoning that nothing installs them any more. Both packages are still on npm, so the reasoning was wrong and this scenario is the correction: a real install, producing the real rows, for the identifiers a fleet that never upgraded still reports.",
+  "must_contain": [
+    "clawdbot",
+    "moltbot"
+  ],
+  "known_gaps": [
+    "This covers the retired NPM names only. bot.molt.mac (bundle id) and bot.molt. (launchd prefix) come from the old .app, and Homebrew keeps no versioned cask for it -- whether an old build is still downloadable is UNVERIFIED, not established either way.",
+    "It installs deliberately outdated software, which is safe only because the guest is disposable, unenrolled and holds no credentials. Never run this setup on a managed host."
+  ]
+}
