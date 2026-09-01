@@ -16,15 +16,16 @@
       "claude-in-chrome"
     ]
   },
-  "why": "This scenario runs only where a real Claude extension install already exists, so it pins ext >=1 and leaves every other kind open: it does not provision the host and must not assert about software it did not install. The id-matching logic is covered without a VM in test/test_matcher.py, against rows captured from a real install.",
+  "why": "Verifies the ext route end to end: a real signed artifact, a real profile, and an identifier osquery derives from the manifest key rather than one we assert. The same method works on any Chromium browser -- osquery's chrome_extensions spans 11 browser_types and a Chromium extension id is key-derived, so it is identical in Brave, Edge and Chromium.",
   "must_contain": [
     "fcoeoabgfenejglbffodgkkbkcdhcgfn",
     "nativeMessaging"
   ],
   "known_gaps": [
-    "CANNOT BE TESTED WITH A REAL INSTALL IN AN UNMANAGED VM. Chrome honours ExtensionInstallForcelist only as an MDM-delivered managed policy; an unenrolled Tart guest has none, so the policy is written and ignored. Measured on macOS 26.6.2 / Chrome 152. This scenario SKIPS (exit 3) rather than failing, and asserts only on a host that already carries the extension.",
-    "A planted fixture is not a substitute: osquery derives identifier from the manifest key, which unpacked and sideloaded extensions do not carry, so a planted extension reports an EMPTY identifier. See 40-browser.",
-    "Two further ids circulate for Anthropic-related extensions. Neither could be installed, so neither is in the catalog. docs/signature-lifecycle.md covers how an unverifiable identifier is recorded rather than guessed at.",
-    "Presence is all this proves. What the extension DOES -- which pages it reads, whether it acts autonomously -- is outside what any osquery table reports. The permissions column carries capability, never use."
+    "The extension is installed by unpacking the Web Store's signed CRX into a real Chrome profile, NOT by the browser's own install flow. The bytes and the manifest key are the publisher's and the id osquery reports is derived from that key, so the identifier claim is genuine -- but nothing here exercises Chrome's install path, its update path, or its enterprise policy handling.",
+    "An EARLIER VERSION OF THIS FILE CLAIMED THE EXTENSION COULD NOT BE TESTED WITHOUT MDM. That was wrong on two counts: Chrome had never been launched, so no profile existed for osquery to read, and going through the browser's install flow was never necessary. Recorded rather than quietly deleted, because the wrong version was written with more confidence than the evidence supported.",
+    "Chrome's ExtensionInstallForcelist path remains untested. Whether it needs an MDM-delivered profile on macOS is UNVERIFIED -- the one attempt that failed proves nothing, because it failed for a different reason.",
+    "Presence is all this proves. What the extension DOES -- which pages it reads, whether it acts autonomously -- is outside what any osquery table reports. The permissions column carries capability, never use.",
+    "Two further ids circulate for Anthropic-related extensions. Neither is in the catalog. This method would verify one in minutes if an id were confirmed, since it needs only a Web Store id."
   ]
 }

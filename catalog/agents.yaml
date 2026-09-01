@@ -111,8 +111,11 @@ agents:
   # across the profiles that carry it, which is what makes it worth matching on.
   #
   # Two further ids circulate for Anthropic-related extensions and are DELIBERATELY ABSENT:
-  # neither could be installed, so neither is a fact. See docs/signature-lifecycle.md --
-  # a catalog may carry a guess, but it may not hide one.
+  # neither id was confirmed, so neither is a fact. Note this is a claim about the IDS, not
+  # about testability -- 45-claude-extension verifies an id by fetching the Web Store's
+  # signed CRX and deriving the id from its manifest key, so a confirmed id could be
+  # verified in minutes. See docs/signature-lifecycle.md: a catalog may carry a guess, but
+  # it may not hide one.
   - id: claude-in-chrome
     name: Claude in Chrome
     classification: Browser agent

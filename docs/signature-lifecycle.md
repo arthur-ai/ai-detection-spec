@@ -142,6 +142,38 @@ pull request.
 changing*. Our failure is *the world changing while our file stays the same*, which a hash of
 our own file cannot see.
 
+## A stronger grade than observation, where the artifact allows it
+
+The grades above run from *the vendor says so* up to *observed on a machine*, and observation
+is normally the ceiling. For one route it is not.
+
+A Chromium extension id is not assigned, it is **derived**: SHA-256 over the developer's DER
+public key, first 16 bytes, hex mapped `0-f` to `a-p`. The Web Store's signed CRX carries
+that key in its manifest. So the id can be recomputed from the publisher's own signed
+artifact:
+
+```console
+$ curl -sL "https://clients2.google.com/service/update2/crx?response=redirect\
+&prodversion=152.0&acceptformat=crx3&x=id%3D<id>%26uc" -o ext.crx
+  manifest key present: True
+  id derived from the key: fcoeoabgfenejglbffodgkkbkcdhcgfn
+```
+
+That is a different kind of claim from *we saw this id on a Mac*. An observation says one
+machine reported it once; a derivation says the id belongs to that signing key and could not
+belong to anyone else's. It also explains, exactly, why a planted extension reports an EMPTY
+identifier — unpacked extensions carry no key, so there is nothing to derive from.
+
+This is the PURL argument arriving at its conclusion. PURL beats CPE because an identifier
+derivable from the artifact needs no registry to vouch for it; a key-derived extension id is
+that property taken to its limit — the artifact does not merely *carry* its identifier, it
+*proves* it. Where a route offers this, prefer it: it is cheaper than a VM scenario, it does
+not decay when a vendor renames a product, and it cannot be faked without the signing key.
+
+Most routes offer nothing like it. A bundle id is a string in a plist that anyone can write,
+an image tag is chosen by whoever ran `docker tag`, and a Homebrew token is a name in a
+repository. For those, a real install remains the bar.
+
 ## Scale
 
 Three things grow, at very different rates, and only one of them is a problem.

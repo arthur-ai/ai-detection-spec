@@ -89,8 +89,11 @@ Every row is the **six-column contract**: `kind, id, ver, loc, extra, perms`.
 - **A single `%` matches one path component.** `Application Support/Google/Chrome/…` is two.
 - **Bash 3.2** is what a managed Mac has. No `timeout(1)`, and an empty array under `set -u` is an
   unbound-variable error: append with `+=` and expand as `${a[@]+"${a[@]}"}`.
-- **A planted browser extension reports an EMPTY `identifier`** — osquery derives it from the
-  manifest key, which sideloaded extensions lack. Fixtures cannot test id matching.
+- **`identifier` is derived from the manifest `key`.** That is why a planted or unpacked
+  extension reports an EMPTY one — it has no key. The consequence is not that ids are
+  untestable: the Web Store's signed CRX *does* carry the key, so unpacking one into a real
+  profile yields the real id, and `45-claude-extension` does exactly that. Chromium ids are
+  key-derived, so they are identical across all 11 `browser_type`s osquery enumerates.
 
 ## Testing
 
@@ -113,10 +116,11 @@ bug hid behind.
 months because its fixture had no agent on either tag. If removing the code does not turn the
 test red, the test proves nothing.
 
-VM scenarios (`test/run.sh`) need Tart and run on dispatch and a schedule, not per PR. Some
-things **cannot** be tested with a real install — Chrome will not force-install from the Web
-Store without an MDM-delivered policy — and those scenarios `exit 3` to SKIP, with the reason in
-`requires.json`. A scenario that fails where nobody can act on it trains people to ignore a red
+VM scenarios (`test/run.sh`) need Tart and run on dispatch and a schedule, not per PR. Where something genuinely cannot be
+tested, a scenario `exit 3`s to SKIP with the reason in `requires.json` — but **be slow to
+conclude that.** This repo asserted that the Claude extension could not be installed without
+MDM, and was wrong twice over: Chrome had never been launched, so no profile existed to read,
+and the browser's install flow was never needed in the first place. A scenario that fails where nobody can act on it trains people to ignore a red
 suite.
 
 ## Register
