@@ -82,22 +82,6 @@
       "arch": "arm64"
     },
     {
-      "agent": "perplexity-desktop",
-      "route": "bundle_ids",
-      "value": "ai.perplexity.macv3",
-      "agent_version": "26.34.0",
-      "os": "15.7.7",
-      "arch": "arm64"
-    },
-    {
-      "agent": "perplexity-desktop",
-      "route": "homebrew",
-      "value": "perplexity",
-      "agent_version": "26.28.1",
-      "os": "15.7.7",
-      "arch": "arm64"
-    },
-    {
       "agent": "windsurf",
       "route": "bundle_ids",
       "value": "com.exafunction.windsurf",

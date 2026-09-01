@@ -39,6 +39,7 @@ jobs:
         scenario:
           - 00-baseline
           - 10-desktop-apps
+          - 11-perplexity-desktop
           - 20-cli-agents
           - 21-cli-agents-homebrew
           - 25-python-agents

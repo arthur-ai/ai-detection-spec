@@ -134,7 +134,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 |---|---|---|---|
 | **ChatGPT Desktop** | real install | **`com.openai.codex`**, **`chatgpt`** | 10-desktop-apps, 90-demo-fleet |
 | **Claude Desktop** | real install | **`com.anthropic.claudefordesktop`**, **`claude`**, `com.anthropic.claude_browser_extension.json` | 10-desktop-apps, 90-demo-fleet |
-| **Perplexity** | real install | **`ai.perplexity.macv3`**, **`perplexity`** | 10-desktop-apps |
+| **Perplexity** | real install | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
 
 > **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = retired alias, uninstallable by design. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it.
 
@@ -173,9 +173,17 @@ Windsurf's Homebrew token is `devin-desktop`, not `windsurf`. Read off the Homeb
 
 These are paid or account-gated products in several cases. The install is unattended and the SIGN-IN is not, so nothing here exercises behaviour that only appears once a user is authenticated.
 
-**10-desktop-apps -- cannot run here**
+**10-desktop-apps -- known gap**
 
-The `perplexity` cask declares depends_on macos >= 15, so on macOS 14 it cannot install and perplexity-desktop cannot be found. Read off the Homebrew API: openclaw and perplexity are the only two casks in this repo that require 15; claude, cursor, chatgpt, comet and devin-desktop all install on 12 or 13. NOBODY KNEW THIS until a second runner was added to the matrix -- which is what the OS axis is for. Splitting perplexity into its own scenario would recover macOS 14 coverage for the other six casks, and is worth doing.
+The seventh cask, `perplexity`, is not installed here. It declares depends_on macos >= 15 and lives in 11-perplexity-desktop; splitting it out is what lets these six be tested on macos-14.
+
+**11-perplexity-desktop -- known gap**
+
+Perplexity is account-gated. The install is unattended and the SIGN-IN is not, so nothing here exercises behaviour that only appears once a user is authenticated.
+
+**11-perplexity-desktop -- cannot run here**
+
+The `perplexity` cask declares depends_on macos >= 15, read off the Homebrew API on 2026-09-01 (v26.34.0). Below Sequoia it cannot install and perplexity-desktop cannot be found, so this is a fact about the runner rather than a defect. It is the ONLY cask in this scenario, which is the entire point of the split: this floor used to sit in 10-desktop-apps and suppress six other casks that install on 13 or lower.
 
 **20-cli-agents -- known gap**
 
