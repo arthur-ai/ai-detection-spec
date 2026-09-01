@@ -9,7 +9,7 @@ Which coding agents, chat clients, AI browsers and browser extensions are instal
 
 [![CI](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/ci.yml/badge.svg)](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/ci.yml)
 [![Scenarios](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/scenarios.yml/badge.svg)](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/scenarios.yml)
-[![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-40%2F40-2E7D57)](docs/agents.md)
+[![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-38%2F38-2E7D57)](docs/agents.md)
 [![osquery](https://img.shields.io/badge/osquery-5.23.1-1D4E89)](https://osquery.io)
 [![macOS only](https://img.shields.io/badge/macOS-only-6B7480)](#requirements)
 [![License](https://img.shields.io/badge/license-MIT-6B7480)](LICENSE)
@@ -28,15 +28,18 @@ Which coding agents, chat clients, AI browsers and browser extensions are instal
 
 ## What you get
 
-| | |
-|---|---|
-| 🗂 **`dist/discovery.sql`** | one file, ~760 rows on a developer Mac, no agent names anywhere in it |
-| 🧭 **`catalog/agents.yaml`** | 15 agents, 40 identifiers — matching happens **off** the machine |
-| 🐳 **`bin/container-scan`** | the deep artifact, bounded, because a wedged Docker daemon blocks forever |
-| 📋 **[`docs/agents.md`](docs/agents.md)** | what each identifier is, and which CI test proves it |
+| | | |
+|---|---|---|
+| 🗂 | **`dist/discovery.sql`** | One SQL file to run on the Mac. **No agent name appears in anything it matches on** — the queries look for shapes (an app bundle, an npm global, a state dotdir), never for "Cursor" or "ollama" — so you never edit it when a new agent appears. It returns the machine's whole AI-relevant inventory: about **760 rows** on a developer Mac, 17.9 KB gzipped |
+| 🧭 | **`catalog/agents.yaml`** | The 15 agents and 40 identifiers those rows are matched **against**, off the machine. Add a signature here and it re-matches evidence you already collected — no going back to the fleet |
+| 🔎 | **`bin/classify`** | Does that matching, wherever you keep the output |
+| 🐳 | **`bin/container-scan`** | The container half, run separately and on a hard time bound, because a wedged Docker daemon blocks forever |
+| 📋 | **[`docs/agents.md`](docs/agents.md)** | Every identifier and the CI test that proves it. Generated — the numbers are counted, never typed |
 
-The endpoint **enumerates**; it holds no catalog and does no filtering. That is what lets a new
-signature re-match evidence you already collected, without going back to the fleet.
+**Why the split matters.** The endpoint *enumerates* and the matching happens elsewhere. A
+scanner that knows the agent names has to be redeployed to the whole fleet every time the list
+changes, and can only ever find what it already knew to look for. This one collects the
+evidence once and answers new questions about it later.
 
 ## Why this exists
 
@@ -51,7 +54,7 @@ This is that knowledge, as queries you can run and a catalog you can read.
 
 | | Minimum | Tested on |
 |---|---|---|
-| macOS | Apple Silicon or Intel. **No lower bound established** — see below | 15.7.7 (CI) and 26 |
+| macOS | Apple Silicon or Intel. **No lower bound established** — see below | 15.7.7, on every CI run |
 | osquery | **5.10.0** — every query declares it in `min-osquery:` | 5.23.1 |
 | `bash` | 3.2 — macOS system `bash`, so `/bin/bash` is enough | 3.2.57 |
 | `python3` | **3.7** (`subprocess` `capture_output`) — for `bin/classify`, `bin/discover`'s writer, and `tools/` | 3.12 |
@@ -66,8 +69,11 @@ the scheduled writer, not the endpoint's reporting path — which is a `cat`.
 only your own account.
 
 **Two cautions on the table above.** The macOS row says *no lower bound established* rather
-than naming one: these queries are tested on the two versions listed and nothing older, so a
-floor would be a guess. And on a fleet, `/usr/bin/python3` is a **stub** until Command Line
+than naming one: a floor would be a guess. What the column reports is what the scenarios have
+actually run on and recorded — every `observed.json` carries the OS that produced it, so that
+figure is read from evidence rather than remembered. The VM harness also runs on macOS 26
+locally, and that is deliberately *not* claimed here: those runs are not recorded in the repo,
+and an untracked platform is not a tested one. And on a fleet, `/usr/bin/python3` is a **stub** until Command Line
 Tools are installed — on a Mac without them the scheduled writer produces nothing at all,
 which surfaces as `no-cache` rather than as an error.
 
@@ -154,23 +160,15 @@ is merely silent.
 
 ## What it cannot see
 
-Stated plainly, because a discovery tool that hides its blind spots is worse than none:
+A discovery tool that hides its blind spots is worse than none, so they are written down and
+counted: **13 of them**, from "anything inside a VM" to "what an agent *does*, as opposed to
+what it is permitted to do".
 
-| Blind spot | Why |
-|---|---|
-| Anything inside a VM | The queries see the host filesystem, not a guest's |
-| What is *running* in a container | `--deep` lists container **images**, and an image named `paulgauthier/aider` is evidence. What a running container is doing is not: `docker_containers` needs a per-container inspect document osquery reads strictly, and a hand-built one it merely accepts is worse than none |
-| Containers outside Docker Desktop | Colima, Rancher Desktop and Podman keep their sockets elsewhere, and `docker_images` does not read containerd or Podman image stores at all. On those Macs `--deep` says "did not scan" rather than "none" |
-| An untagged (dangling) image | Whether `docker_images` reports one is untested — no dangling image could be produced on the machine this was measured on. Treat it as unknown, not as covered |
-| Agents on a cloud dev box or Codespace | Same reason. The scanner sees the machine it runs on |
-| Which filesystem roots an MCP server exposes | Requires parsing arbitrary JSON config; osquery has no table for it |
-| Outbound destinations by hostname | `process_open_sockets` returns an IP, not a name |
-| A cloned-but-never-run source checkout | Nothing has been created on disk yet |
-| Which agent holds a listening port | Nothing is detected by port number, and the `ports` route was **retired** for it. A port can only be attributed when the process holding it already names the agent — otherwise 8080-held-by-java reads as llama.cpp — so it never identifies anything on its own. Ports are still collected as raw evidence; they are simply never a signature |
-| What an agent *does* | Every route here reports presence and declared capability. `permissions` says an extension **may** read every page, never that it did. No osquery table carries use |
-| The identity of a sideloaded extension | osquery derives `identifier` from the manifest `key`, which unpacked and sideloaded extensions do not carry — so they report an **empty** one. The Web Store's signed CRX does carry it |
-| VS Code extensions | osquery has no table for them at all. An agent shipping as one is invisible on that route, whatever else it also installs |
-| Behaviour that only appears after launch or sign-in | Installing proves the bundle id. Nothing here launches an app — `open -a` needs an Aqua session and SSH has none — so first-launch launchd jobs, listening ports and state directories go unobserved, and account-gated products are never signed in to |
+They are properties of the platform and the osquery tables rather than gaps in the test suite —
+no amount of coverage moves them — and they live in one place so they cannot drift:
+[`docs/blind-spots.yaml`](docs/blind-spots.yaml), rendered into the report.
+
+**[Read them in context →](docs/agents.md#what-osquery-cannot-see)**
 
 ## Containers
 

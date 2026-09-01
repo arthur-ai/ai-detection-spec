@@ -2,16 +2,30 @@
      Regenerate with `python3 tools/agent_status.py --write`.
      CI fails if this file does not match the catalog. -->
 
-# What we scan for, and what proves it
+<div align="center">
 
-Every AI agent this repo detects on macOS, the identifiers each is matched on, and the
-strength of the evidence behind them.
+# 🔎 What we detect, and what proves it
+
+Every AI agent this repo finds on macOS, every identifier it is matched on,
+and the CI test behind each one.
+
+![agents](https://img.shields.io/badge/agents-15-1D4E89)
+![identifiers](https://img.shields.io/badge/identifiers-40-1D4E89)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-38%2F38-2E7D57)
+![real install](https://img.shields.io/badge/by_real_install-36-2E7D57)
+
+</div>
+
+> **This page is generated.** `tools/agent_status.py` counts it from
+> `catalog/agents.yaml`, the test fixtures, and what each CI scenario actually
+> matched. Lint fails when it drifts, so it cannot describe a catalog that has
+> moved on without it. Nothing here is typed by hand.
 
 **A real install is the standard, and every entry meets it.** A VM scenario installs the real software and asserts the classifier finds it. Anything less would be an exception recorded in the catalog with a reason, an evidence grade and a date; there are none open.
 
 15 agents carrying 40 identifiers.
 
-## What counts as an agent
+## 🎯 What counts as an agent
 
 **Something that acts on the user's behalf.** That is the whole test. It is not *is this
 AI software* and not *can we detect it* &mdash; everything below passed both and was
@@ -33,7 +47,7 @@ agent: the old definition read *no autonomous execution*, which stopped being tr
 these clients gained MCP and began running tools locally. Overstating an agent is the
 safer error for an inventory than missing one, but it is a judgement, not a fact.
 
-## Why a real install is the bar
+## 🧪 Why a real install is the bar
 
 `bot.molt.mac` was read off OpenClaw's own Homebrew metadata and matched nothing on any
 Mac. `aider` installs as `aider-chat` under `uv` and `pipx` while its state directory is
@@ -41,7 +55,7 @@ Mac. `aider` installs as `aider-chat` under `uv` and `pipx` while its state dire
 and neither survived contact with an actual install. Nothing short of installing the
 software catches that class of error.
 
-## 38/38 identifiers are covered by a CI test
+## 📊 38/38 identifiers are covered by a CI test
 
 **Measured per identifier, and only counting tests CI actually runs.** Two things make
 that different from "has anyone tested this". An entry passes when a scenario finds it,
@@ -113,7 +127,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 
 > **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = retired alias, uninstallable by design. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it.
 
-## What osquery cannot see
+## 🚧 What osquery cannot see
 
 These are properties of the platform and the tables, not of any one scenario, so
 they are stated once. No amount of test coverage moves them.
@@ -134,7 +148,7 @@ they are stated once. No amount of test coverage moves them.
 | VS Code extensions | osquery has no table for them at all. An agent shipping as one is invisible on that route, whatever else it also installs |
 | Behaviour that only appears after launch or sign-in | Installing proves the bundle id. Nothing here launches an app — `open -a` needs an Aqua session and SSH has none — so first-launch launchd jobs, listening ports and state directories go unobserved, and account-gated products are never signed in to |
 
-## What individual scenarios do not cover
+## 🧩 What individual scenarios do not cover
 
 Specific to one scenario and fixable by work, unlike the table above. A coverage
 report that lists only its successes fails the same way an empty scan result does
