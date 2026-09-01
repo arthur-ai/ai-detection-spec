@@ -236,6 +236,8 @@ PYEOF
 python3 "$HERE/../tools/agent_status.py" --check || fail=1
 # Nothing ships in the catalog without a real test.
 python3 "$HERE/../tools/agent_status.py" --gate || fail=1
+# Prose goes stale silently; generated pages cannot. This checks the numbers a human wrote.
+python3 "$HERE/../tools/check_doc_numbers.py" || fail=1
 # --json separately, because it exercises a code path --check does not. An unquoted
 # YYYY-MM-DD in the catalog resolves to a datetime.date, which json.dumps cannot
 # serialise -- so --json died while --check and --write, which never read the field,

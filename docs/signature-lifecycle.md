@@ -182,7 +182,7 @@ each was a decision rather than a drift.
 | designed | built | why |
 |---|---|---|
 | `catalog/observations/<agent>.yaml` | `test/scenarios/<name>/observed.json` | the producer is a scenario RUN, so the file lives beside the thing that writes it. A run changes exactly one file, and a reviewer reads the diff next to the scenario that caused it |
-| one record per (identifier, environment, install route), collapsed to `first_seen`/`last_seen` | one record per (agent, route, value) with `agent_version`, `os`, `arch` | no history is kept yet. The collapse solves a growth problem that does not exist at 42 identifiers, and inventing `first_seen` from a single run would date evidence we do not have |
+| one record per (identifier, environment, install route), collapsed to `first_seen`/`last_seen` | one record per (agent, route, value) with `agent_version`, `os`, `arch` | no history is kept yet. The collapse solves a growth problem the catalog does not have at its current size, and inventing `first_seen` from a single run would date evidence we do not have |
 | a **Fresh** gate warning on stale observations | **not implemented** | with no `first_seen`/`last_seen` there is no age to compare. An identifier can read *covered by CI* on the strength of a run from months ago, and nothing says so |
 
 Two things the implementation added that the design did not anticipate, both because the
@@ -219,17 +219,17 @@ Three things grow, at very different rates, and only one of them is a problem.
 
 **Identifiers: free, and measured.** The queries hold no identifiers, so the catalog does not
 reach an endpoint and adding agents costs nothing on the wire. Verified rather than assumed:
-growing `agents.yaml` from 21 agents to **221** left `dist/discovery.sql` byte-identical and the
+growing `agents.yaml` from 21 agents to **221** left `dist/discovery.sql` byte-identical and the <!--fixed-number-->
 framed payload unchanged at 17,868 bytes. Whatever limits this design, it is not how many agents
 we can name.
 
-**Matching: already the right shape, with one thing to watch.** Today's 21 agents give 55 exact
+**Matching: already the right shape, with one thing to watch.** When measured, 21 agents gave 55 exact <!--fixed-number-->
 identifiers, 4 prefixes and 6 path globs. A row costs one dictionary lookup — O(1), and flat as
 the catalog grows — *plus* a linear pass over the prefixes and, for `file` rows only, the globs.
 
 So the exact routes scale indefinitely and the **prefix and glob routes do not**. Every
 `launchd_prefixes` entry and every `state_dirs`/`binaries`/`model_stores` glob is compared
-against every candidate row. At 500 agents that is a few hundred regexes per `file` row across
+against every candidate row. At 500 agents that is a few hundred regexes per `file` row across <!--fixed-number-->
 hundreds of rows. The rule that follows: **prefer an exact route; justify a glob.** If the glob
 count outgrows the exact count, group them by first path component before matching rather than
 scanning the whole list.

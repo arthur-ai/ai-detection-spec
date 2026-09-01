@@ -286,7 +286,7 @@ is set by how loaded the Mac is.
 ## Where the cap actually binds
 
 **Catalog growth is free.** The query holds no identifiers, so adding agents costs zero
-bytes. Verified rather than assumed: growing `catalog/agents.yaml` from 21 agents to 221
+bytes. Verified rather than assumed: growing `catalog/agents.yaml` from 21 agents to 221 <!--fixed-number-->
 left `dist/discovery.sql` byte-identical and the framed payload unchanged at 17868 bytes.
 Whatever limits this design, it is not how many agents we can name.
 

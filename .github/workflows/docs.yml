@@ -22,8 +22,10 @@ on:
       - 'test/scenarios/*/observed.json'
       - 'bin/classify'
       - 'tools/agent_status.py'
-      # The general blind-spot table is parsed out of the README, so editing it changes the
-      # report. Without this the two would drift and the doc would keep the old wording.
+      - 'tools/check_doc_numbers.py'
+      # The blind spots are data now, and the report renders them.
+      - 'docs/blind-spots.yaml'
+      # README still carries the generated coverage badge.
       - 'README.md'
   workflow_dispatch:
 

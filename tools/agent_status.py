@@ -278,7 +278,12 @@ def collect():
                     state = "ci-fixture"
                 elif scens:
                     state = "local-only"
-                elif asserted_by.get(aid) - set(unrecorded):
+                # .get() on a defaultdict does NOT create the default, so a brand-new
+                # agent that no scenario asserts yet returned None and crashed the whole
+                # report -- adding one entry to the catalog broke the page that describes
+                # the catalog. Found by simulating exactly the change this tooling exists
+                # to survive.
+                elif asserted_by[aid] - set(unrecorded):
                     # A scenario installed this agent and this identifier never showed up.
                     state = "tested-absent"
                 else:
@@ -286,7 +291,7 @@ def collect():
                 idents.append({"route": route, "value": value,
                                "fixture": proven, "real": bool(scens),
                                "scenarios": scens, "ci_scenarios": ci_scens,
-                               "reached_by": sorted(asserted_by.get(aid, ()) - set(unrecorded)),
+                               "reached_by": sorted(asserted_by[aid] - set(unrecorded)),
                                "state": state, "precision": precision})
         agents.append({
             "id": aid, "name": agent["name"], "classification": agent["classification"],
@@ -314,22 +319,11 @@ def collect():
         if path.name == "requires.json" and doc.get("why"):
             limits.append({"scenario": name, "kind": "skip", "text": doc["why"]})
 
-    # THE GENERAL LIMITS COME FROM README's "What it cannot see", which is the canonical
-    # list and is written for a reader deciding whether to deploy this at all. They were
-    # previously repeated inside individual scenarios' known_gaps, which made a property of
-    # OSQUERY read as a property of one scenario -- "presence is all this proves" is not a
-    # fact about the Claude extension, and stating it there implied the others prove more.
-    blind = []
-    readme = (ROOT / "README.md").read_text()
-    if "## What it cannot see" in readme:
-        section = readme.split("## What it cannot see", 1)[1].split("\n## ", 1)[0]
-        for line in section.splitlines():
-            line = line.strip()
-            if not line.startswith("|") or line.startswith("|---") or "Blind spot" in line:
-                continue
-            cells = [c.strip() for c in line.strip("|").split("|")]
-            if len(cells) == 2 and cells[0]:
-                blind.append({"spot": cells[0], "why": cells[1]})
+    # THE GENERAL LIMITS LIVE IN ONE FILE, docs/blind-spots.yaml. They used to live in
+    # README and be parsed back out of it, which meant the same thirteen rows existed in two
+    # places and the one a reader met first was whichever page they opened. The data is the
+    # data now; README points at this report.
+    blind = yaml.safe_load((ROOT / "docs" / "blind-spots.yaml").read_text())["blind_spots"]
 
     return {"blind_spots": blind, "ci_unrecorded": unrecorded,
             "classifications": catalog["classifications"],
@@ -359,10 +353,20 @@ BADGE = re.compile(r"(identifiers_covered_by_a_CI_test-)(\d+)(%2F)(\d+)(-)([0-9A
 
 
 def badge_for(data):
-    """The badge line's numbers and colour, from the same states the report counts."""
-    n = sum(len(a["identifiers"]) for a in data["agents"])
-    covered = sum(1 for a in data["agents"] for i in a["identifiers"]
-                  if i["state"] in ("ci-install", "ci-fixture", "alias"))
+    """The one place the coverage numbers are computed. Every badge uses it.
+
+    A RETIRED ALIAS IS OUT OF BOTH HALVES. Nothing installs it any more, so no CI test can
+    cover it -- counting it in the numerator would claim a test that does not exist, and
+    counting it only in the denominator would cap the figure below complete for a reason
+    nobody can act on. It is excluded, and the report says how many were excluded.
+
+    Two badges disagreed before this existed: README read 40/40 by counting aliases as
+    covered, and the report read 38/40 by counting them only in the denominator. Both were
+    drawn from the same data and neither was right.
+    """
+    ids = [i for a in data["agents"] for i in a["identifiers"]]
+    n = sum(1 for i in ids if i["state"] != "alias")
+    covered = sum(1 for i in ids if i["state"] in ("ci-install", "ci-fixture"))
     # Green only at complete. Anything less is amber -- a badge that reads green at 90%
     # trains the reader to stop looking at the number beside it.
     colour = "2E7D57" if covered == n else "A26A16"
@@ -407,10 +411,26 @@ def markdown(data):  # noqa: C901
         "     Regenerate with `python3 tools/agent_status.py --write`.",
         "     CI fails if this file does not match the catalog. -->",
         "",
-        "# What we scan for, and what proves it",
+        "<div align=\"center\">",
         "",
-        "Every AI agent this repo detects on macOS, the identifiers each is matched on, and the",
-        "strength of the evidence behind them.",
+        "# 🔎 What we detect, and what proves it",
+        "",
+        "Every AI agent this repo finds on macOS, every identifier it is matched on,",
+        "and the CI test behind each one.",
+        "",
+        f"![agents](https://img.shields.io/badge/agents-{len(agents)}-1D4E89)",
+        f"![identifiers](https://img.shields.io/badge/identifiers-{n_ident}-1D4E89)",
+        f"![covered](https://img.shields.io/badge/covered_by_a_CI_test-"
+        f"{badge_for(data)[0]}%2F{badge_for(data)[1]}-{badge_for(data)[2]})",
+        f"![real install](https://img.shields.io/badge/by_real_install-{n_st('ci-install')}"
+        f"-2E7D57)",
+        "",
+        "</div>",
+        "",
+        "> **This page is generated.** `tools/agent_status.py` counts it from",
+        "> `catalog/agents.yaml`, the test fixtures, and what each CI scenario actually",
+        "> matched. Lint fails when it drifts, so it cannot describe a catalog that has",
+        "> moved on without it. Nothing here is typed by hand.",
         "",
         # One line, not two. The policy and the current state were being stated separately
         # and adjacently, which read as emphasis rather than as information.
@@ -435,7 +455,7 @@ def markdown(data):  # noqa: C901
          f"{len(agents)} entries carrying {n_ident} identifiers &mdash; "
          f"**{len(agents) - n_tools} agents** and **{n_tools} not**."),
         "",
-        "## What counts as an agent",
+        "## 🎯 What counts as an agent",
         "",
         "**Something that acts on the user's behalf.** That is the whole test. It is not *is this",
         "AI software* and not *can we detect it* &mdash; everything below passed both and was",
@@ -458,7 +478,7 @@ def markdown(data):  # noqa: C901
         "these clients gained MCP and began running tools locally. Overstating an agent is the",
         "safer error for an inventory than missing one, but it is a judgement, not a fact.",
         "",
-        "## Why a real install is the bar",
+        "## 🧪 Why a real install is the bar",
         "",
         "`bot.molt.mac` was read off OpenClaw's own Homebrew metadata and matched nothing on any",
         "Mac. `aider` installs as `aider-chat` under `uv` and `pipx` while its state directory is",
@@ -466,7 +486,7 @@ def markdown(data):  # noqa: C901
         "and neither survived contact with an actual install. Nothing short of installing the",
         "software catches that class of error.",
         "",
-        f"## {n_ci}/{n_ident - n_st('alias')} identifiers are covered by a CI test",
+        f"## 📊 {n_ci}/{n_ident - n_st('alias')} identifiers are covered by a CI test",
         "",
         "**Measured per identifier, and only counting tests CI actually runs.** Two things make",
         "that different from \"has anyone tested this\". An entry passes when a scenario finds it,",
@@ -560,7 +580,7 @@ def markdown(data):  # noqa: C901
             for i in a["identifiers"]
             if i["state"] in ("none", "local-only", "tested-absent")]
     if unex:
-        out += ["## Identifiers that did not pass", "",
+        out += ["## ⚠️ Identifiers that did not pass", "",
                 "Every one is work, and the middle column says what kind. **did not appear** "
                 "means a scenario installed the agent and this identifier never showed up — "
                 "the suite reached it and it did not reproduce, usually because the scenario "
@@ -575,7 +595,7 @@ def markdown(data):  # noqa: C901
         out.append("")
 
     if data.get("blind_spots"):
-        out += ["## What osquery cannot see", "",
+        out += ["## 🚧 What osquery cannot see", "",
                 "These are properties of the platform and the tables, not of any one scenario, so",
                 "they are stated once. No amount of test coverage moves them.", "",
                 "| blind spot | why |", "|---|---|"]
@@ -583,7 +603,7 @@ def markdown(data):  # noqa: C901
         out.append("")
 
     if data["limits"]:
-        out += ["## What individual scenarios do not cover", "",
+        out += ["## 🧩 What individual scenarios do not cover", "",
                 "Specific to one scenario and fixable by work, unlike the table above. A coverage",
                 "report that lists only its successes fails the same way an empty scan result does",
                 "-- it reads as complete when it is merely silent.", ""]
@@ -651,9 +671,14 @@ def main():
             for b in bad:
                 print(f"  {b}")
             sys.exit(1)
-        n = sum(len(a["identifiers"]) for a in data["agents"])
-        print(f"catalog-gate: ok, all {n} identifiers are covered by a CI test"
-              + (f" ({len(excused)} excused)" if excused else ""))
+        # The same numbers as every badge, from badge_for, so the gate cannot say "all 40"
+        # while the page beside it says 38/38.
+        covered, n, _ = badge_for(data)
+        aliases = sum(1 for a in data["agents"] for i in a["identifiers"]
+                      if i["state"] == "alias")
+        print(f"catalog-gate: ok, {covered}/{n} identifiers are covered by a CI test"
+              + (f", {aliases} retired alias(es) excluded" if aliases else "")
+              + (f", {len(excused)} excused" if excused else ""))
         return
 
     if "--check" in sys.argv:
