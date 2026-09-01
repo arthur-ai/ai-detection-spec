@@ -24,6 +24,22 @@ uv tool install --python 3.12 aider-chat || { echo "FAIL: aider-chat install fai
 # stays here as a live negative control -- a real uv tool install that must produce a row
 # and no finding. Remove it and nothing proves the classifier still declines it.
 uv tool install litellm                  || { echo "FAIL: litellm install failed" >&2; exit 1; }
+# Hermes Agent, the third route this agent ships through and the one that lands in the
+# Python ecosystem. 21-cli-agents-homebrew installs it from the formula on a DIFFERENT
+# machine, deliberately: both routes put a `hermes` on PATH, and two routes claiming one
+# binary name cannot share a host.
+#
+# --python 3.12 IS LOAD-BEARING, exactly as it is for aider above, and for a reason read off
+# the wheel rather than assumed: hermes-agent declares requires_python >=3.11,<3.14, and the
+# guest ships 3.14. Without the pin uv resolves nothing and the install fails on a machine
+# where the agent is perfectly installable.
+#
+# WARN rather than exit, unlike the two above. This install is the newest thing in the
+# scenario and PyPI is the route the project has moved PAST -- 0.19.0 there against a
+# Homebrew stable of 2026.8.31 -- so a resolution failure here is a fact about that
+# distribution, not a reason to redden aider's coverage with it. The assertion is where a
+# missing agent gets reported, because it names which one.
+uv tool install --python 3.12 hermes-agent || echo "WARN: hermes-agent install failed"
 uv tool list 2>/dev/null | sed 's/^/  /'
 ls -d "$HOME/.local/share/uv/tools/"*/ 2>/dev/null | sed 's/^/  dir: /'
 
@@ -56,3 +72,18 @@ AIDER="$HOME/.local/bin/aider"
 [ -x "$AIDER" ] && { "$AIDER" --just-check-update >/dev/null 2>&1 || true; } || true
 [ -d "$HOME/.aider" ] && echo "  ~/.aider created by the first-run check" || \
   echo "  ~/.aider still absent after --just-check-update"
+
+# HERMES, INVOKED THE SAME WAY AND FOR THE SAME REASON. A uv tool install writes three
+# commands into ~/.local/bin -- hermes, hermes-agent, hermes-acp -- so the binaries route is
+# proven by the install alone. ~/.hermes is the one that is not: HERMES_HOME is created at
+# install time only by the vendor's curl installer, which puts its checkout inside it. Under
+# uv the code lives in the tool venv, so the directory can only appear on first run.
+#
+# NOT ASSERTED, for the same reason as aider: whether `--version` is enough to create it is
+# unmeasured, and asserting it before knowing would be a guess wearing a test's clothes. The
+# run prints what actually happened, so the gap stays visible either way.
+HERMES="$HOME/.local/bin/hermes"
+[ -x "$HERMES" ] && { "$HERMES" --version >/dev/null 2>&1 || true; } || true
+ls -1 "$HOME/.local/bin/" 2>/dev/null | grep -i '^hermes' | sed 's/^/  bin: /'
+[ -d "$HOME/.hermes" ] && echo "  ~/.hermes created by --version" || \
+  echo "  ~/.hermes still absent after --version"

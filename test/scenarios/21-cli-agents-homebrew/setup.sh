@@ -12,17 +12,23 @@
 # is the only way to test two routes honestly.
 #
 # Tokens verified against the Homebrew API before being written here -- two are casks and
-# two are formulae, which is not guessable from the product name:
+# three are formulae, which is not guessable from the product name:
 #
 #     codex        cask        copilot-cli  cask
 #     aider        formula     gemini-cli   formula
+#     hermes-agent formula
+#
+# hermes-agent is the formula token, and it is NOT the command it installs: the formula's
+# install block writes three commands -- hermes, hermes-agent, hermes-acp -- while
+# homebrew_packages renders the formula name. Installing it is the only way to prove that
+# is what the row actually says.
 set -e
 source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest.sh"
 need_brew
 
 # WARN rather than exit: a download failing is a network fact, and the assertion is where a
 # missing agent should be reported, because it names WHICH one.
-for f in aider gemini-cli; do
+for f in aider gemini-cli hermes-agent; do
   brew install "$f" || echo "WARN: formula $f failed"
 done
 for c in codex copilot-cli; do
@@ -34,6 +40,11 @@ brew list --versions 2>/dev/null | sed 's/^/  /'
 # proven by the install alone. The state directories that appear on first invocation are
 # therefore absent from this run, and that is not a hole in the suite: ~/.codex comes from
 # 20-cli-agents and ~/.aider from 25-python-agents, both recorded.
+#
+# Hermes is the sharper case: its ~/.hermes lives under HERMES_HOME, which a Homebrew
+# install never creates -- the code is in the Cellar and the directory appears on first run.
+# So this machine proves the formula token and nothing else about it, and 25-python-agents
+# is where the other routes are exercised.
 #
 # Claude Code's npm package, for the same reason: 20-cli-agents installs it through the
 # NATIVE installer -- a shim at ~/.local/bin/claude, no npm row -- so @anthropic-ai/

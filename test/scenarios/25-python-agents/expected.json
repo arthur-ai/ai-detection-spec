@@ -2,7 +2,7 @@
   "description": "PyPI-published agents installed with uv - the ecosystem the query used to miss entirely.",
   "demo_beat": "coverage - Python-packaged agents",
   "counts": {
-    "file": ">=2",
+    "file": ">=3",
     "app": ">=1",
     "npm": ">=0",
     "brew": ">=0",
@@ -13,15 +13,17 @@
   },
   "classified": {
     "must_find": [
-      "aider"
+      "aider",
+      "hermes"
     ],
     "forbid": [
       "openclaw"
     ]
   },
-  "why": "pipx and uv tool directories were already product-free globs and are unchanged. python_packages stays out of the query at 15.6s with no WHERE push-down, so these globs are the only thing standing between us and an invisible PyPI ecosystem.",
+  "why": "pipx and uv tool directories were already product-free globs and are unchanged. python_packages stays out of the query at 15.6s with no WHERE push-down, so these globs are the only thing standing between us and an invisible PyPI ecosystem. file >= 3 because Hermes arrives twice under enumeration -- the uv tool directory named for the package, `hermes-agent`, and the `hermes` command uv writes into ~/.local/bin -- and those are two different catalog routes reading the same install. It is a floor, not an equality: uv writes three commands and the state directory may or may not appear on first run, and neither count is ours to predict.",
   "must_contain": [
     "aider",
-    "uv/tools"
+    "uv/tools",
+    "hermes-agent"
   ]
 }

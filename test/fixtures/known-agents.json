@@ -198,5 +198,53 @@
     "loc": "/usr/local/lib/node_modules/aider",
     "extra": "",
     "perms": ""
+  },
+  {
+    "kind": "brew",
+    "id": "hermes-agent",
+    "ver": "2026.8.31",
+    "loc": "/opt/homebrew/Cellar/hermes-agent",
+    "extra": "formula",
+    "perms": ""
+  },
+  {
+    "kind": "file",
+    "id": "/Users/alice/.local/share/uv/tools/hermes-agent/",
+    "ver": "",
+    "loc": "/Users/alice/.local/share/uv/tools/hermes-agent/",
+    "extra": "",
+    "perms": ""
+  },
+  {
+    "kind": "file",
+    "id": "/Users/alice/.local/bin/hermes",
+    "ver": "",
+    "loc": "/Users/alice/.local/bin/hermes",
+    "extra": "",
+    "perms": ""
+  },
+  {
+    "kind": "file",
+    "id": "/Users/alice/.hermes/",
+    "ver": "",
+    "loc": "/Users/alice/.hermes/",
+    "extra": "",
+    "perms": ""
+  },
+  {
+    "kind": "npm",
+    "id": "hermes-agent",
+    "ver": "0.21.0",
+    "loc": "/opt/homebrew/lib/node_modules/hermes-agent",
+    "extra": "",
+    "perms": ""
+  },
+  {
+    "kind": "npm",
+    "id": "hermes-engine",
+    "ver": "0.11.0",
+    "loc": "/opt/homebrew/lib/node_modules/hermes-engine",
+    "extra": "",
+    "perms": ""
   }
 ]
