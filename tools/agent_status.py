@@ -66,6 +66,9 @@ def replay(paths, catalog):
     """
     values = collections.defaultdict(set)
     routes = collections.defaultdict(set)
+    by_id = {a["id"]: a for a in catalog["agents"]}
+    def agent_of(aid):
+        return by_id.get(aid, {})
     for path in paths:
         rows = json.loads(path.read_text())
         rows = rows["findings"] if isinstance(rows, dict) else rows
@@ -84,8 +87,36 @@ def replay(paths, catalog):
                     values[aid].add(ident)
                     routes[aid].update(("npm", "pypi"))
                 elif kind == "file":
-                    routes[aid].update(GLOB_ROUTES & {"state_dirs", "binaries", "model_stores"})
+                    # RESOLVE WHICH GLOB MATCHED. Crediting the whole route group here was
+                    # a false positive with a very plausible face: 25-python-agents matched
+                    # aider on ~/.local/share/uv/tools/aider-chat/ and this recorded
+                    # `state_dirs: ~/.aider` as observed in a real install -- an identifier
+                    # that appears NOWHERE in that run's output. The report then showed the
+                    # strongest possible evidence for a path no machine had produced.
+                    #
+                    # Rebuilt the same way bin/classify builds it, so the two cannot
+                    # disagree: ~/.openclaw matches /Users/<anyone>/.openclaw.
+                    agent = by_id.get(aid, {})
+                    loc = ev.get("loc", "")
+                    for route in ("state_dirs", "binaries", "model_stores"):
+                        for value in agent.get(route, []):
+                            pat = re.compile(r"^/Users/[^/]+/" + re.escape(str(value)[2:]))
+                            if pat.match(ident) or pat.match(loc):
+                                values[aid].add(str(value))
+                                routes[aid].add(route)
+                    # A pipx/uv tool directory names its PACKAGE, which is why classify
+                    # checks the npm and pypi routes for it and not the path globs.
+                    tool = classify_mod.TOOL_DIR.match(ident) or classify_mod.TOOL_DIR.match(loc)
+                    if tool:
+                        name = tool.group(1)
+                        for route in ("pypi", "npm"):
+                            if name in [str(v) for v in agent.get(route, [])]:
+                                values[aid].add(name)
+                                routes[aid].add(route)
                 elif kind == "daemon":
+                    for value in agent_of(aid).get("launchd_prefixes", []):
+                        if ident.startswith(str(value)):
+                            values[aid].add(str(value))
                     routes[aid].add("launchd_prefixes")
     return values, routes
 

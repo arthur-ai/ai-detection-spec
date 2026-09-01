@@ -228,6 +228,36 @@ check("a gap is never silently an empty finding set",
       "No AI agents found." not in classify_rows([scan_row("timeout:6")]),
       "'no agents' under an unread branch is the lie this whole marker exists to stop")
 
+# --- the coverage recorder must credit the route that actually matched ------------
+# tools/agent_status.py --record replays a run and writes which identifiers it proved.
+# It used to credit the whole glob GROUP for any kind='file' match, so a row for
+# ~/.local/share/uv/tools/aider-chat/ recorded `state_dirs: ~/.aider` as observed in a
+# real install -- an identifier that appeared nowhere in that run. A measuring tool
+# reporting a plausible wrong answer is the exact failure this repo is built around, so
+# it is asserted here rather than trusted.
+import importlib.util as _ilu, importlib.machinery as _ilm, tempfile as _tf2
+
+_spec = _ilu.spec_from_loader("agent_status",
+    _ilm.SourceFileLoader("agent_status", str(ROOT / "tools" / "agent_status.py")))
+_st = _ilu.module_from_spec(_spec)
+_spec.loader.exec_module(_st)
+
+_rows = [{"kind": "file", "id": "/Users/x/.local/share/uv/tools/aider-chat/", "ver": "",
+          "loc": "/Users/x/.local/share/uv/tools/aider-chat/", "extra": "", "perms": ""}]
+with _tf2.NamedTemporaryFile("w", suffix=".json", delete=False) as _fh:
+    json.dump(_rows, _fh)
+with _tf2.TemporaryDirectory() as _d:
+    _st.record(_fh.name, _d)
+    _rec = json.loads((pathlib.Path(_d) / "observed.json").read_text())["identifiers"]
+_got = {(r["route"], r["value"]) for r in _rec}
+
+check("recording credits the route that matched (pypi, from the tool dir)",
+      ("pypi", "aider-chat") in _got, f"got {sorted(_got)}")
+check("recording does NOT credit a state dir the run never produced",
+      not any(r == "state_dirs" for r, _ in _got),
+      "~/.aider appears in no row here; crediting it would report the strongest evidence "
+      "for a path no machine produced")
+
 print()
 if failures:
     print(f"matcher: FAIL ({len(failures)})")

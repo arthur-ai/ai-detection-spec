@@ -49,8 +49,8 @@ and those are the numbers below.
 
 | identifiers | 42 | |
 |---|---:|---|
-| **real install** | 21 | observed in a scenario's own output, on a machine where the software was installed |
-| **fixture only** | 8 | matched a captured row. Proves the *matcher*; says nothing about whether the identifier is current |
+| **real install** | 22 | observed in a scenario's own output, on a machine where the software was installed |
+| **fixture only** | 7 | matched a captured row. Proves the *matcher*; says nothing about whether the identifier is current |
 | **unexercised** | 13 | nothing matches it yet |
 
 `tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor
@@ -64,7 +64,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 
 | name | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **aider** | real install | aider, aider, aider-chat, `~/.aider`, `paulgauthier/aider` | 25-python-agents |
+| **aider** | real install | aider, aider, **`aider-chat`**, ~/.aider, `paulgauthier/aider` | 25-python-agents |
 | **Claude Code** | real install | @anthropic-ai/claude-code, **`~/.local/bin/claude`**, **`~/.claude`** | 20-cli-agents, 90-demo-fleet |
 | **Cline** | real install | **`cline`** | 20-cli-agents |
 | **Codex CLI** | real install | codex, **`@openai/codex`**, ~/.codex | 20-cli-agents, 90-demo-fleet |
@@ -110,7 +110,7 @@ No test matches these. Each is a candidate for a fixture row or a scenario.
 |---|---|---|
 | aider | homebrew | `aider` |
 | aider | npm | `aider` |
-| aider | PyPI | `aider-chat` |
+| aider | state dir | `~/.aider` |
 | Claude Code | npm | `@anthropic-ai/claude-code` |
 | Codex CLI | homebrew | `codex` |
 | Codex CLI | state dir | `~/.codex` |
