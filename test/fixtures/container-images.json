@@ -70,5 +70,13 @@
     "loc": "2222222222222222222222222222222222222222222222222222222222222222",
     "extra": "4500000000",
     "perms": ""
+  },
+  {
+    "kind": "image",
+    "id": "lmstudio/llmster-preview:latest",
+    "ver": "",
+    "loc": "dab287c899dc0be4d3c6dc346ea3a0e4b1238746699c5281e79cbecec1da96cb",
+    "extra": "",
+    "perms": ""
   }
 ]

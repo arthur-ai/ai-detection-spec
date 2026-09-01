@@ -164,7 +164,14 @@ check("ordinary infrastructure images are left alone",
       {"authzed/spicedb:latest",
        "public.ecr.aws/docker/library/python:3.12.8-slim-bookworm"} <= unmatched,
       "the ECR path contains 'library/', which must NOT be stripped the way Docker Hub's is")
-check("exactly two agents, no more", found == {"llama-cpp", "ollama"},
+# A local model runs on the HOST or in a CONTAINER and both are install paths. This row
+# was captured from a real docker_images row after side-loading the vendor's own image
+# (lmstudio namespace, "Headless LM Studio Docker Image"); there is no lmstudio/lmstudio.
+check("LM Studio's container path resolves (lmstudio/llmster-preview)",
+      "lm-studio" in found,
+      "the same product the 10-desktop-apps cask covers on the host")
+
+check("exactly three agents, no more", found == {"llama-cpp", "ollama", "lm-studio"},
       f"got {sorted(found)}")
 
 # --- scan rows: provenance, gaps, and staleness -----------------------------------

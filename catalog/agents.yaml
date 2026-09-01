@@ -188,6 +188,19 @@ agents:
   - id: lm-studio
     name: LM Studio
     classification: Local model
+    # A local model runs on the HOST or in a CONTAINER, and both are install paths. The
+    # host side is the cask below; this is the container side.
+    #
+    # `lmstudio/llmster-preview` is the vendor's own namespace on Docker Hub -- "Headless
+    # LM Studio Docker Image", 27k pulls -- and there is no `lmstudio/lmstudio`. Read off a
+    # REAL docker_images row, not off the registry: side-loaded as an OCI archive per
+    # CONTRIBUTING (8 layers, 0.39 GB, every blob's sha256 verified against the digest that
+    # named it), and the row renders exactly `lmstudio/llmster-preview:latest`. The image's
+    # own config corroborates it: entrypoint /app/daemon-run.sh, EXTS=llm-llama-cpu.
+    #
+    # It is a TECHNICAL PREVIEW and the name may well change. That is what the alias
+    # convention at the top of this file is for -- keep the old value, add the new one.
+    images: [lmstudio/llmster-preview]
     bundle_ids: [ai.elementlabs.lmstudio]
     homebrew: [lm-studio]
     ports: [1234]
@@ -195,6 +208,11 @@ agents:
   - id: jan
     name: Jan
     classification: Local model
+    # NO CONTAINER PATH EXISTS, and this is a recorded finding rather than an omission.
+    # Checked before concluding: no image under any plausible name on Docker Hub, and
+    # NOTHING matching dockerfile or docker-compose anywhere in janhq/jan's tree (44k
+    # stars, active, full recursive tree, not truncated). Jan ships as a desktop app.
+    # If that changes, `images:` is the route to add.
     bundle_ids: [jan.ai.app]
     homebrew: [jan]
 

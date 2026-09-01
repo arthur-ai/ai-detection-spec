@@ -56,20 +56,17 @@ def _plain(block):
             for k, v in block.items()}
 
 
-def collect():
-    catalog = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
+def replay(paths, catalog):
+    """Classify rows from `paths` and record what each finding was matched ON.
 
-    scenarios = collections.defaultdict(set)
-    for path in sorted((ROOT / "test" / "scenarios").glob("*/expected.json")):
-        block = json.loads(path.read_text()).get("classified", {})
-        for aid in block.get("must_find", []):
-            scenarios[aid].add(path.parent.name)
-
-    # Replay the fixtures through the real classifier and record what each finding was
-    # matched ON, not merely that it was found.
-    values = collections.defaultdict(set)   # agent id -> identifier values proven
-    routes = collections.defaultdict(set)   # agent id -> route groups proven
-    for path in sorted((ROOT / "test" / "fixtures").glob("*.json")):
+    Not merely that an agent was found -- which identifier proved it. An evidence row
+    carries the raw row, so the identifier is recovered by kind: the exact kinds compare
+    whole, images normalise through the shipping matcher, and the glob routes can only be
+    credited at route level because a path does not name the pattern that matched it.
+    """
+    values = collections.defaultdict(set)
+    routes = collections.defaultdict(set)
+    for path in paths:
         rows = json.loads(path.read_text())
         rows = rows["findings"] if isinstance(rows, dict) else rows
         # classify() returns findings as {agent id: [(meta, row), ...]}, not a list.
@@ -90,6 +87,59 @@ def collect():
                     routes[aid].update(GLOB_ROUTES & {"state_dirs", "binaries", "model_stores"})
                 elif kind == "daemon":
                     routes[aid].add("launchd_prefixes")
+    return values, routes
+
+
+def record(artifact, scenario_dir):
+    """Write scenario/observed.json: which identifiers a REAL run actually matched.
+
+    test/artifacts/ is gitignored and per-machine, so the raw output cannot back a
+    committed document. This is the compact, reviewable residue of a run -- the
+    observations layer of docs/signature-lifecycle.md, at its smallest useful size.
+    """
+    catalog = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
+    values, routes = replay([pathlib.Path(artifact)], catalog)
+    idents = []
+    for agent in catalog["agents"]:
+        aid = agent["id"]
+        for route in ALL_ROUTES:
+            for value in agent.get(route, []):
+                value = str(value)
+                if route in GLOB_ROUTES or value.endswith("*"):
+                    proven = route in routes[aid]
+                else:
+                    key = classify_mod.image_repo(value) if route == "images" else value
+                    proven = key in values[aid]
+                if proven:
+                    idents.append({"agent": aid, "route": route, "value": value})
+    out = pathlib.Path(scenario_dir) / "observed.json"
+    # Sorted and undated: this file is committed and compared, so it must change only
+    # when what the run OBSERVED changes.
+    idents.sort(key=lambda r: (r["agent"], r["route"], r["value"]))
+    out.write_text(json.dumps({"scenario": pathlib.Path(scenario_dir).name,
+                               "identifiers": idents}, indent=2) + "\n")
+    print(f"recorded {len(idents)} identifiers observed by {out.parent.name}")
+
+
+def collect():
+    catalog = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
+
+    scenarios = collections.defaultdict(set)
+    for path in sorted((ROOT / "test" / "scenarios").glob("*/expected.json")):
+        block = json.loads(path.read_text()).get("classified", {})
+        for aid in block.get("must_find", []):
+            scenarios[aid].add(path.parent.name)
+
+    # Fixtures prove the MATCHER. A scenario's own output proves the IDENTIFIER, because
+    # those rows came off a machine where the software was really installed. Same replay,
+    # two sources, and the stronger one wins per identifier.
+    values, routes = replay(sorted((ROOT / "test" / "fixtures").glob("*.json")), catalog)
+    real_values, real_routes = collections.defaultdict(set), collections.defaultdict(set)
+    for path in sorted((ROOT / "test" / "scenarios").glob("*/observed.json")):
+        doc = json.loads(path.read_text())
+        for rec in doc.get("identifiers", []):
+            real_values[rec["agent"]].add(rec["value"])
+            real_routes[rec["agent"]].add(rec["route"])
 
     agents = []
     for agent in catalog["agents"]:
@@ -105,8 +155,15 @@ def collect():
                     key = classify_mod.image_repo(value) if route == "images" else value
                     proven = key in values[aid]
                     precision = "exact"
+                if route in GLOB_ROUTES or value.endswith("*"):
+                    real = route in real_routes[aid]
+                else:
+                    key = classify_mod.image_repo(value) if route == "images" else value
+                    real = key in real_values[aid]
                 idents.append({"route": route, "value": value,
-                               "fixture": proven, "precision": precision})
+                               "fixture": proven, "real": real,
+                               "state": "real" if real else ("fixture" if proven else "none"),
+                               "precision": precision})
         agents.append({
             "id": aid, "name": agent["name"], "classification": agent["classification"],
             "scenarios": sorted(scenarios.get(aid, ())),
@@ -171,6 +228,8 @@ def markdown(data):  # noqa: C901
     n_scen = sum(1 for a in agents if a["scenarios"])
     na = set(data.get("not_agents", ()))
     n_tools = sum(1 for a in agents if a["classification"] in na)
+    n_real = sum(1 for a in agents for i in a["identifiers"] if i["state"] == "real")
+    n_fixonly = sum(1 for a in agents for i in a["identifiers"] if i["state"] == "fixture")
 
     out = [
         "<!-- GENERATED BY tools/agent_status.py -- DO NOT EDIT.",
@@ -217,12 +276,19 @@ def markdown(data):  # noqa: C901
         "and neither survived contact with an actual install. Nothing short of installing the",
         "software catches that class of error.",
         "",
-        f"A **fixture** is not a weaker pass, it is a different claim: {n_fix} of {n_ident}",
-        "identifiers are matched by a captured row, which proves the *matcher* works and says",
-        "nothing about whether the identifier is what the software ships today. Per-agent coverage",
-        "comes from scenarios; per-identifier coverage comes from fixtures only, because a",
-        "scenario's `expected.json` names the *agent* it expects and never the identifier that",
-        "found it.",
+        "**Coverage is reported per identifier, not per entry.** An entry passes when a scenario",
+        "finds it, but a scenario's `expected.json` names the *agent* and never the identifier that",
+        "matched — so an entry could be verified while carrying identifiers nothing had ever",
+        "exercised. Each scenario now records what it actually matched, in its own `observed.json`,",
+        "and those are the numbers below.",
+        "",
+        f"| identifiers | {n_ident} | |",
+        "|---|---:|---|",
+        f"| **real install** | {n_real} | observed in a scenario's own output, on a machine where "
+        f"the software was installed |",
+        f"| **fixture only** | {n_fixonly} | matched a captured row. Proves the *matcher*; says "
+        f"nothing about whether the identifier is current |",
+        f"| **unexercised** | {n_ident - n_real - n_fixonly} | nothing matches it yet |",
         "",
         "`tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor",
         "carrying an `unverified` block, so an unverified signature cannot enter quietly.",
@@ -251,14 +317,16 @@ def markdown(data):  # noqa: C901
             out += [f"## {cls}", "",
                     "| name | evidence | identifiers | scenarios |", "|---|---|---|---|"]
             for a in sorted(by_class[cls], key=lambda x: x["id"]):
-                ids = ", ".join(f"`{i['value']}`" if i["fixture"] else f"{i['value']}"
+                MARK = {"real": "**`%s`**", "fixture": "`%s`", "none": "%s"}
+                ids = ", ".join(MARK[i["state"]] % i["value"]
                                 for i in a["identifiers"]) or "--"
                 mark = "real install" if grade(a) == "standard" else "**exception**"
                 out.append(f"| **{a['name']}** | {mark} | {ids} | "
                            f"{', '.join(a['scenarios']) or '--'} |")
             out.append("")
 
-    out += ["> Identifiers in `code` are matched by a test fixture; the rest are unexercised.", ""]
+    out += ["> **`bold code`** = observed in a real install. `code` = matched by a fixture "
+            "only. plain = unexercised.", ""]
 
     exceptions = [a for a in sorted(agents, key=lambda x: x["id"]) if not a["scenarios"]]
     if exceptions:
@@ -276,7 +344,7 @@ def markdown(data):  # noqa: C901
         out.append("")
 
     unex = [(a, i) for a in sorted(agents, key=lambda x: x["id"])
-            for i in a["identifiers"] if not i["fixture"]]
+            for i in a["identifiers"] if i["state"] == "none"]
     if unex:
         out += ["## Unexercised identifiers", "",
                 "No test matches these. Each is a candidate for a fixture row or a scenario.", "",
@@ -299,6 +367,10 @@ def markdown(data):  # noqa: C901
 
 def main():
     data = collect()
+    if "--record" in sys.argv:
+        i = sys.argv.index("--record")
+        record(sys.argv[i + 1], sys.argv[i + 2])
+        return
     if "--json" in sys.argv:
         print(json.dumps(data, indent=2))
         return
@@ -356,23 +428,24 @@ def main():
                     if exc.get("belongs_in"):
                         print(f"        belongs in: {exc['belongs_in']}")
                 for i in a["identifiers"]:
-                    if not i["fixture"]:
-                        print(f"        no fixture row  {i['route']}: {i['value']}")
+                    label = {"real": "real install", "fixture": "fixture only",
+                             "none": "UNEXERCISED"}[i["state"]]
+                    print(f"        {label:<13} {i['route']}: {i['value']}")
 
     n_exc = len(agents) - n_scen
     print(f"\n{len(agents)} entries: {len(agents) - n_tools} agents and {n_tools} "
           f"supporting tools. {n_ident} identifiers.")
     print(f"  standard  {n_scen:>3}  backed by a real install")
     print(f"  exception {n_exc:>3}  recorded, with a reason")
-    print(f"\n{n_fix} of {n_ident} identifiers are matched by a fixture. A fixture proves the "
-          f"MATCHER\nworks; only a real install proves the IDENTIFIER is what the software "
-          f"ships today.")
-    # Said plainly because the two columns answer different questions and are easy to
-    # conflate: a scenario names the AGENT it expects, never the identifier that found it,
-    # so an agent can be scenario-backed while its individual identifiers show no fixture.
-    print("Per-agent coverage comes from VM scenarios; per-identifier coverage comes from "
-          "fixtures only.\nA scenario's expected.json names the agent, not the identifier "
-          "that matched it.")
+    n_real = sum(1 for a in agents for i in a["identifiers"] if i["state"] == "real")
+    n_fixonly = sum(1 for a in agents for i in a["identifiers"] if i["state"] == "fixture")
+    n_un = n_ident - n_real - n_fixonly
+    print(f"\nIDENTIFIERS  {n_ident} total")
+    print(f"  real install {n_real:>3}  observed in a scenario's own output, on a machine "
+          f"where it was installed")
+    print(f"  fixture only {n_fixonly:>3}  matched a captured row: proves the matcher, not "
+          f"that the identifier is current")
+    print(f"  unexercised  {n_un:>3}  nothing matches it yet")
 
 
 if __name__ == "__main__":

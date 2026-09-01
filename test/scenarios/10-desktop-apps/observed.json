@@ -1,0 +1,95 @@
+{
+  "scenario": "10-desktop-apps",
+  "identifiers": [
+    {
+      "agent": "chatgpt-desktop",
+      "route": "bundle_ids",
+      "value": "com.openai.codex"
+    },
+    {
+      "agent": "chatgpt-desktop",
+      "route": "homebrew",
+      "value": "chatgpt"
+    },
+    {
+      "agent": "claude-desktop",
+      "route": "bundle_ids",
+      "value": "com.anthropic.claudefordesktop"
+    },
+    {
+      "agent": "claude-desktop",
+      "route": "homebrew",
+      "value": "claude"
+    },
+    {
+      "agent": "cursor",
+      "route": "bundle_ids",
+      "value": "com.todesktop.230313mzl4w4u92"
+    },
+    {
+      "agent": "cursor",
+      "route": "homebrew",
+      "value": "cursor"
+    },
+    {
+      "agent": "jan",
+      "route": "bundle_ids",
+      "value": "jan.ai.app"
+    },
+    {
+      "agent": "jan",
+      "route": "homebrew",
+      "value": "jan"
+    },
+    {
+      "agent": "lm-studio",
+      "route": "bundle_ids",
+      "value": "ai.elementlabs.lmstudio"
+    },
+    {
+      "agent": "lm-studio",
+      "route": "homebrew",
+      "value": "lm-studio"
+    },
+    {
+      "agent": "orion",
+      "route": "bundle_ids",
+      "value": "com.kagi.kagimacOS"
+    },
+    {
+      "agent": "orion",
+      "route": "homebrew",
+      "value": "orion"
+    },
+    {
+      "agent": "perplexity-comet",
+      "route": "bundle_ids",
+      "value": "ai.perplexity.comet"
+    },
+    {
+      "agent": "perplexity-comet",
+      "route": "homebrew",
+      "value": "comet"
+    },
+    {
+      "agent": "perplexity-desktop",
+      "route": "bundle_ids",
+      "value": "ai.perplexity.macv3"
+    },
+    {
+      "agent": "perplexity-desktop",
+      "route": "homebrew",
+      "value": "perplexity"
+    },
+    {
+      "agent": "windsurf",
+      "route": "bundle_ids",
+      "value": "com.exafunction.windsurf"
+    },
+    {
+      "agent": "windsurf",
+      "route": "homebrew",
+      "value": "devin-desktop"
+    }
+  ]
+}

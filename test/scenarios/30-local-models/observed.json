@@ -1,0 +1,35 @@
+{
+  "scenario": "30-local-models",
+  "identifiers": [
+    {
+      "agent": "llama-cpp",
+      "route": "homebrew",
+      "value": "llama.cpp"
+    },
+    {
+      "agent": "ollama",
+      "route": "bundle_ids",
+      "value": "com.electron.ollama"
+    },
+    {
+      "agent": "ollama",
+      "route": "homebrew",
+      "value": "ollama"
+    },
+    {
+      "agent": "ollama",
+      "route": "homebrew",
+      "value": "ollama-app"
+    },
+    {
+      "agent": "ollama",
+      "route": "npm",
+      "value": "ollama"
+    },
+    {
+      "agent": "ollama",
+      "route": "ports",
+      "value": "11434"
+    }
+  ]
+}

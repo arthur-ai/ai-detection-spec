@@ -127,6 +127,15 @@ EOF
   # without ever printing them.
   assert_counts "$ART/$s.json" "$dir/expected.json" || rc=1
   assert_classified "$ART/$s.json" "$dir/expected.json" "$HERE/.." || rc=1
+
+  # Record WHICH IDENTIFIERS this run actually matched, into a committed observed.json.
+  # test/artifacts/ is gitignored and per-machine, so the raw output cannot back a
+  # document anyone else can check. Without this, coverage could only ever be reported per
+  # AGENT -- and expected.json names the agent, never the identifier that found it, so an
+  # entry could read as verified while carrying identifiers nothing had exercised.
+  #
+  # Only on success: a failed run's matches are not evidence of anything.
+  [ "$rc" -eq 0 ] && python3 "$HERE/../tools/agent_status.py" --record "$ART/$s.json" "$dir"
   echo
   return $rc
 }
