@@ -135,7 +135,16 @@ EOF
   # entry could read as verified while carrying identifiers nothing had exercised.
   #
   # Only on success: a failed run's matches are not evidence of anything.
-  [ "$rc" -eq 0 ] && python3 "$HERE/../tools/agent_status.py" --record "$ART/$s.json" "$dir"
+  # The GUEST's OS and arch, not the host's. An identifier is a fact about one build on
+  # one platform, and a scenario is the subject rather than the platform -- so the platform
+  # travels with the observation instead of multiplying the scenario directories.
+  if [ "$rc" -eq 0 ]; then
+    local guest_os guest_arch
+    guest_os=$(vm_ssh "$vm" "sw_vers -productVersion" 2>/dev/null | tr -d '\r')
+    guest_arch=$(vm_ssh "$vm" "uname -m" 2>/dev/null | tr -d '\r')
+    python3 "$HERE/../tools/agent_status.py" --record "$ART/$s.json" "$dir" \
+      --os "$guest_os" --arch "$guest_arch"
+  fi
   echo
   return $rc
 }

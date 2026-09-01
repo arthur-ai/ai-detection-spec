@@ -7,6 +7,12 @@ are permitted to access.
 > **macOS only.** These queries target macOS and are tested against it. Nothing here works on
 > Linux or Windows today. That may change; claiming otherwise now would waste your time.
 
+### 📋 [What we detect, and what tests it →](docs/agents.md)
+
+Every agent, every identifier, and what proves each one — **generated and kept current by CI**,
+so it can never describe a catalog that has moved on without it. The numbers are counted from
+the tree at generation time, never written by hand.
+
 ## Why this exists
 
 Every team trying to inventory AI tooling rediscovers the same facts: that Cursor's bundle
@@ -100,19 +106,26 @@ trust. It is SQL. Read `dist/discovery.sql` in ten minutes and verify it yoursel
 This tool also **does nothing to the machine**. No blocking, no remediation, no network calls of
 its own. It reports; you decide.
 
-### What it looks for
+### 📋 What it looks for — [`docs/agents.md`](docs/agents.md)
 
-[`docs/agents.md`](docs/agents.md) lists every agent in the catalog, the identifiers each is
-matched on, and how strongly each one is evidenced — a **real install** in a VM scenario, a
-**fixture** row, or nothing yet. It is generated from the catalog and regenerated in CI, so
-it cannot describe a catalog that has moved on without it.
+**[Open the coverage report →](docs/agents.md)** Every agent in the catalog, every identifier
+each is matched on, and what actually proves it: a **real install** in a CI scenario, a **CI
+fixture**, or nothing yet.
+
+It is **generated and kept current by CI** — not a snapshot. `test/lint.sh` fails if it is
+stale, a workflow regenerates it on `main`, and each scenario run records which identifiers it
+really matched, with the agent version and the OS that produced them. So the page cannot
+describe a catalog that has moved on without it.
 
 ```console
-$ python3 tools/agent_status.py
+$ python3 tools/agent_status.py            # the same report, in the terminal
+$ python3 tools/agent_status.py --write    # regenerate docs/agents.md
 ```
 
-It reports what the test suite *cannot* prove alongside what it can, because a coverage
-summary that lists only its successes reads as complete when it is merely silent.
+It names what the suite *cannot* prove alongside what it can, and separates the two kinds of
+gap: identifiers **no test covers**, and identifiers a scenario installed the agent for that
+**did not appear**. A coverage summary that lists only its successes reads as complete when it
+is merely silent.
 
 ## What it cannot see
 

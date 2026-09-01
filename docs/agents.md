@@ -41,7 +41,7 @@ Mac. `aider` installs as `aider-chat` under `uv` and `pipx` while its state dire
 and neither survived contact with an actual install. Nothing short of installing the
 software catches that class of error.
 
-## 28/38 identifiers are covered by a CI test
+## 29/38 identifiers are covered by a CI test
 
 **Measured per identifier, and only counting tests CI actually runs.** Two things make
 that different from "has anyone tested this". An entry passes when a scenario finds it,
@@ -56,14 +56,14 @@ cannot drift apart again.
 
 | | identifiers | |
 |---|---:|---|
-| **CI: real install** | 24 | a scenario in the `scenarios.yml` matrix installs the software and asserts the classifier finds it |
-| **CI: fixture** | 4 | matched a captured row by `test_matcher.py`, which runs on **every pull request**. A weaker claim than a real install and a faster cadence — different axes |
+| **CI: real install** | 26 | a scenario in the `scenarios.yml` matrix installs the software and asserts the classifier finds it |
+| **CI: fixture** | 3 | matched a captured row by `test_matcher.py`, which runs on **every pull request**. A weaker claim than a real install and a faster cadence — different axes |
 | **local only** | 0 | proved only by a scenario CI does not run. Catches nothing on a pull request |
-| **did not appear** ⚠ | 10 | a CI scenario installed the agent and this identifier never showed up. Usually installed by another route |
+| **did not appear** ⚠ | 9 | a CI scenario installed the agent and this identifier never showed up. Usually installed by another route |
 | **no test** | 0 | nothing exercises it at all |
 | _retired alias_ | _4_ | _excluded from the count. Nothing installs these any more, so no scenario can cover one; the fixture row is the only evidence there is, and it proves the alias still resolves_ |
 
-> **This number is a floor.** `00-baseline`, `40-browser`, `50-autonomous`, `56-openclaw-legacy`, `60-persistence` run in CI and have recorded nothing yet, so identifiers they cover still count as *no test*. Absence of an observation is not absence of a test; the count corrects itself once each scenario has run.
+> **This number is a floor.** `00-baseline`, `40-browser`, `60-persistence` run in CI and have recorded nothing yet, so identifiers they cover still count as *no test*. Absence of an observation is not absence of a test; the count corrects itself once each scenario has run.
 
 `tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor
 carrying an `unverified` block, so an unverified signature cannot enter quietly.
@@ -89,7 +89,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 
 | name | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **OpenClaw** | real install | `ai.openclaw.mac`, ~~`bot.molt.mac`~~, openclaw ⚠, **`openclaw`**, ~~`clawdbot`~~, ~~`moltbot`~~, **`~/.openclaw`**, `ai.openclaw.`, ~~`bot.molt.`~~, 18789 ⚠ | 50-autonomous, 55-openclaw-npm, 56-openclaw-legacy, 60-persistence, 90-demo-fleet |
+| **OpenClaw** | real install | **`ai.openclaw.mac`**, ~~`bot.molt.mac`~~, **`openclaw`**, **`openclaw`**, ~~`clawdbot`~~, ~~`moltbot`~~, **`~/.openclaw`**, `ai.openclaw.`, ~~`bot.molt.`~~, 18789 ⚠ | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 60-persistence, 90-demo-fleet |
 
 ## AI browser
 
@@ -128,8 +128,7 @@ Every one is work, and the middle column says what kind. **did not appear** mean
 | Codex CLI | state dir | `~/.codex` | did not appear | 20-cli-agents |
 | GitHub Copilot CLI | homebrew | `copilot-cli` | did not appear | 20-cli-agents |
 | Gemini CLI | homebrew | `gemini-cli` | did not appear | 20-cli-agents |
-| OpenClaw | homebrew | `openclaw` | did not appear | 55-openclaw-npm |
-| OpenClaw | port | `18789` | did not appear | 55-openclaw-npm |
+| OpenClaw | port | `18789` | did not appear | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names |
 
 ## What osquery cannot see
 
@@ -189,10 +188,10 @@ Two further ids circulate for Anthropic-related extensions. Neither is in the ca
 
 The openclaw cask refuses to install below Sequoia. A Tart guest cannot be newer than the host, so this scenario is unrunnable on a Sonoma host and is skipped rather than failed.
 
-**56-openclaw-legacy -- known gap**
+**56-openclaw-retired-names -- known gap**
 
 This covers the retired NPM names only. bot.molt.mac (bundle id) and bot.molt. (launchd prefix) come from the old .app, and Homebrew keeps no versioned cask for it -- whether an old build is still downloadable is UNVERIFIED, not established either way.
 
-**56-openclaw-legacy -- known gap**
+**56-openclaw-retired-names -- known gap**
 
 It installs deliberately outdated software, which is safe only because the guest is disposable, unenrolled and holds no credentials. Never run this setup on a managed host.

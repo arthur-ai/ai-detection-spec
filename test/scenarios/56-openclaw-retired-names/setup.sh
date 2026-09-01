@@ -1,6 +1,10 @@
 #!/bin/zsh
 # THE RETIRED NAMES, INSTALLED FOR REAL.
 #
+# Named for its SUBJECT, not for a vintage. "legacy" says only that something is
+# old; `retired` is the word catalog/agents.yaml already uses for these identifiers,
+# so the scenario and the data it proves share a vocabulary.
+#
 # OpenClaw carries four identifiers from its Moltbot/Clawdbot lineage, kept because
 # machines that installed the earlier version still report them. They were treated as
 # untestable-by-construction -- nothing installs them any more, so no scenario can cover

@@ -12,11 +12,22 @@ on:
 
 jobs:
   scenario:
-    name: ${{ matrix.scenario }}
-    runs-on: macos-15
+    name: ${{ matrix.scenario }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        # THE OS IS AN AXIS, NOT PART OF A SCENARIO'S NAME. A scenario is a subject --
+        # what software, installed how -- and the platform it ran on travels with the
+        # OBSERVATION instead. Encoding it in directory names would mean one copy of every
+        # scenario per OS, edited in lockstep whenever a signature moves.
+        #
+        # Adding a label here fans the whole suite across both, and observed.json records
+        # which OS produced each identifier -- so a signature that appears on one macOS
+        # version and not another becomes visible rather than averaged away. Kept at one
+        # label until a second is confirmed available: an invented runner label fails the
+        # entire matrix rather than the one job that needed it.
+        os: [macos-15]
         scenario:
           - 00-baseline
           - 10-desktop-apps
@@ -26,7 +37,7 @@ jobs:
           - 45-claude-extension
           - 50-autonomous
           - 55-openclaw-npm
-          - 56-openclaw-legacy
+          - 56-openclaw-retired-names
           - 60-persistence
     steps:
       - uses: actions/checkout@v4
