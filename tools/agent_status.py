@@ -210,31 +210,15 @@ def record(artifact, scenario_dir, os_version="", arch=""):
             print("If the artifact is current and the loss is real, pass --allow-shrink.")
             sys.exit(1)
 
-    # Stamp the run -- but ONLY for a real scenario. record() is called directly by
-    # test/test_matcher.py against a TemporaryDirectory, and stamping unconditionally wrote
-    # entries like "tmp0bqmvd6q" into docs/last-verified.json. That made the report change
-    # every time the test suite ran, so lint's own --check started failing on a file its own
-    # earlier step had dirtied: a side effect on a shared file, triggered by a test.
+    # record() is called directly by test/test_matcher.py against a TemporaryDirectory, which
+    # is not a scenario and gets no merge with a committed record.
     scen = pathlib.Path(scenario_dir).resolve()
     if scen.parent != (ROOT / "test" / "scenarios").resolve():
         print(f"recorded {len(idents)} identifiers observed by {scen.name} "
-              f"(not stamped: not a scenario directory)")
+              f"(not a scenario directory)")
         out_path.write_text(json.dumps({"scenario": scen.name, "identifiers": idents},
                                        indent=2) + "\n")
         return
-
-    # `at` is a date, not a timestamp: a scenario that runs twice in one day should not
-    # produce two different files.
-    import datetime
-    seen = json.loads(VERIFIED.read_text()) if VERIFIED.exists() else {}
-    seen[scen.name] = {
-        "at": datetime.date.today().isoformat(),
-        "os": os_version or None,
-        "arch": arch or None,
-        "identifiers": len(idents),
-    }
-    VERIFIED.parent.mkdir(exist_ok=True)
-    VERIFIED.write_text(json.dumps(dict(sorted(seen.items())), indent=2) + "\n")
 
     out = out_path
     # Sorted and undated: this file is committed and compared, so it must change only
@@ -394,8 +378,7 @@ def collect():
     # data now; README points at this report.
     blind = yaml.safe_load((ROOT / "docs" / "blind-spots.yaml").read_text())["blind_spots"]
 
-    verified = json.loads(VERIFIED.read_text()) if VERIFIED.exists() else {}
-    return {"observed_os": sorted(observed_os), "verified": verified, "blind_spots": blind, "ci_unrecorded": unrecorded,
+    return {"observed_os": sorted(observed_os), "blind_spots": blind, "ci_unrecorded": unrecorded,
             "removed": catalog.get("removed", []),
             "classifications": catalog["classifications"],
             "not_agents": list(catalog.get("not_agents", ())),
@@ -417,17 +400,15 @@ ROUTE_LABEL = {"bundle_ids": "bundle id", "homebrew": "homebrew", "npm": "npm",
                "extension_ids": "extension id"}
 DOC = ROOT / "docs" / "agents.md"
 README = ROOT / "README.md"
-# WHEN each scenario last verified its identifiers, kept OUT of observed.json on purpose.
+# THERE IS NO "last verified" FILE ANY MORE, and the reason is worth keeping: it could not
+# work the way it was built. record() runs on each scenario's own runner and wrote the dates
+# there, but only observed-* is uploaded as an artifact -- so the collect job never saw them
+# and the committed file stayed frozen at whatever the commit that introduced it contained.
+# The rendered table named one scenario at one date forever, which read as "everything else
+# is unverified" when the whole suite runs on every push and nightly.
 #
-# observed.json holds WHAT a run matched, and it is deliberately churn-free: it changes only
-# when coverage does, so a diff on it means something. Putting a timestamp in it would
-# rewrite every file on every run and the collect job would commit daily noise -- and the
-# signal a reviewer wants ("coverage moved") would be buried in it.
-#
-# So the dates live in one small file that is EXPECTED to churn, and the report renders
-# absolute dates rather than "3 days ago": a relative age changes without a run, which would
-# make --check fail on an untouched repository every night.
-VERIFIED = ROOT / "docs" / "last-verified.json"
+# The question it meant to answer is answered better elsewhere: the workflow's own run
+# history says when a scenario last ran, and observed.json says what it proved.
 # The coverage badge is GENERATED, for the same reason the doc is: a number written by hand
 # in a README is a claim nothing checks, and this one sits at the top of the page where it is
 # read first and verified least.
@@ -574,25 +555,13 @@ def markdown(data):  # noqa: C901
          f"these any more, so no scenario can cover one; the fixture row is the only evidence "
          f"there is, and it proves the alias still resolves_ |"
          if n_st("alias") else None),
-        "",
-        # WHEN, beside WHAT. An identifier can read "covered by a CI test" on the strength of
-        # a run from months ago, and until now nothing said so. Absolute dates, because a
-        # relative age ("14 days ago") changes without a run and would make --check fail on
-        # an untouched repository every night.
-        *(["", "### When each scenario last verified", "",
-           "| scenario | last verified | platform | identifiers |", "|---|---|---|---:|"]
-          + [f"| `{k}` | {v['at']} | macOS {v.get('os') or '?'}"
-             f" {v.get('arch') or ''} | {v.get('identifiers', 0)} |"
-             for k, v in sorted(data.get("verified", {}).items())]
-          + ["",
-             "A date here is the last time a run *proved* those identifiers, not the last time "
-             "anyone looked at the catalog. Coverage does not expire on a schedule, but it does "
-             "go quietly out of date, and this is the only place that would show it."]
-          if data.get("verified") else []),
-        (("> **This number is a floor.** `" + "`, `".join(data["ci_unrecorded"]) + "` run in CI "
-          "and have recorded nothing yet, so identifiers they cover still count as *no test*. "
-          "Absence of an observation is not absence of a test; the count corrects itself once "
-          "each scenario has run.") if data.get("ci_unrecorded") else None),
+        # The floor note is optional, so it carries its OWN leading blank rather than being
+        # bracketed by two: dropped, it used to leave the pair behind as a triple newline.
+        *((["", "> **This number is a floor.** `" + "`, `".join(data["ci_unrecorded"])
+            + "` run in CI and have recorded nothing yet, so identifiers they cover still "
+              "count as *no test*. Absence of an observation is not absence of a test; the "
+              "count corrects itself once each scenario has run."])
+          if data.get("ci_unrecorded") else []),
         "",
         "`tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor",
         "carrying an `unverified` block, so an unverified signature cannot enter quietly.",
