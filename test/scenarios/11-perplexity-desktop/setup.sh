@@ -2,10 +2,10 @@
 # Perplexity Desktop, alone, BECAUSE OF ITS macOS FLOOR AND NOTHING ELSE.
 #
 # This is a split off 10-desktop-apps, not a new subject. `perplexity` declares
-# depends_on macos >= 15 while claude, cursor, chatgpt, comet, devin-desktop and orion
-# install on 13 or lower -- so one cask's floor was deciding whether the other six were
-# tested at all, and on macos-14 they simply were not. Read off the Homebrew API on
-# 2026-09-01:
+# depends_on macos >= 15 while every other cask in that scenario installs on 13 or lower,
+# so one cask's floor was deciding whether any of them were tested on macos-14, and they
+# were not. A DATED READING off the Homebrew API, 2026-09-01 -- a record of what was true
+# when the split was made, not a claim about today:
 #
 #   claude v1.40609.0        >= 12      comet v145.2.7632.4581   >= 12
 #   cursor v3.18.9           >= 12      orion v1.1.2,151         (no constraint)
@@ -13,9 +13,8 @@
 #   perplexity v26.34.0      >= 15   <- the only one, and the reason this file exists
 #
 # So the skip is now scoped to the cask that earns it: 10-desktop-apps lost its
-# requires.json and covers six casks on both runners, and this scenario carries the
-# min_macos 15 for the seventh. openclaw is the only other >= 15 cask in the repo and
-# already sits alone in 50-autonomous.
+# requires.json and runs on both runners, and this scenario carries the min_macos 15.
+# openclaw needs 15 too and already sits alone in 50-autonomous for its own reasons.
 #
 # WARN rather than exit, as in 10-desktop-apps: a cask download failing is a network fact,
 # and the assertion is where a missing app should be reported, because it names which one.

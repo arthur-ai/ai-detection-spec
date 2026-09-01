@@ -7,11 +7,13 @@ need_brew
 # Cask tokens verified against the Homebrew API before being added: `orion` and
 # `devin-desktop` (Windsurf's token, which is NOT `windsurf`).
 #
-# `perplexity` LEFT THIS LIST and now has its own scenario, 11-perplexity-desktop. It is
-# the only cask here that declares depends_on macos >= 15, so on macos-14 its floor
-# skipped this whole scenario and the other six -- which install on 13 or lower -- went
-# untested on that runner. The requires.json went with it: nothing left in this list has
-# a floor above 13, so this scenario now runs on both runners in the matrix.
+# `perplexity` LEFT THIS LIST and now has its own scenario, 11-perplexity-desktop. It
+# declared depends_on macos >= 15 while everything left here installs on 13 or lower, so
+# on macos-14 one cask's floor was skipping the whole scenario and every other cask with
+# it. The requires.json went with it, and this scenario now runs on both runners.
+#
+# KEEP IT THAT WAY: adding a cask with a floor above 13 silently costs macos-14 coverage
+# for every cask in the loop below. Check depends_on before adding one.
 #
 # lm-studio and jan were installed here and are not any more: they are model runners, and
 # the scope is agents. Worth remembering that lm-studio sat in this list for a long time
