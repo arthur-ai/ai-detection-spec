@@ -36,7 +36,10 @@ removed anyway, because counting it as an agent overstates what was found on a m
 | `mcp-sdk` | a library an agent is **built with** |
 | `litellm` | a gateway an agent **calls through** |
 | `docker` | a runtime: **how we look**, not what we look for |
-| `ollama`, `lm-studio`, `jan`, `llama-cpp` | model runners. They **serve** models; an agent drives one |
+| `ollama` | a model runner. It **serves** models; an agent drives one |
+| `lm-studio` | a model runner, and a desktop app for one |
+| `jan` | a model runner |
+| `llama-cpp` | a model runner, and the engine several others embed |
 
 Each keeps its fixture rows, with the assertion inverted to *must not match*. Deleting
 the evidence with the signature would leave nothing to tell *correctly not an agent*

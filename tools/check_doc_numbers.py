@@ -85,6 +85,23 @@ def main():
                                                                 facts["coverage"][1]):
                         bad.append(f"{name}:{n}: says {pair[0]}/{pair[1]} covered, the tree "
                                    f"has {facts['coverage'][0]}/{facts['coverage'][1]}.")
+    # README NAMES ONLY LIVE AGENTS. It used `ollama` as the example of a name the SQL never
+    # matches on, months after ollama stopped being detected -- which reads to a newcomer as
+    # though it still were. Other documents may name a removed entry, because explaining the
+    # removal is their job; the front page's job is to describe what the catalog has.
+    cat = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
+    readme = (ROOT / "README.md")
+    if readme.exists():
+        text = readme.read_text()
+        for r in cat.get("removed", []) or []:
+            for n, line in enumerate(text.splitlines(), 1):
+                if EXEMPT in line:
+                    continue
+                if re.search(rf"[`\"]{re.escape(r['id'])}[`\"]", line):
+                    bad.append(f"README.md:{n}: names `{r['id']}`, which was removed from the "
+                               f"catalog ({r['what_it_is']}). A reader takes it as detected. "
+                               f"Use a live agent, or mark the line {EXEMPT}.")
+
     if bad:
         print("doc-numbers: FAIL")
         for b in bad:

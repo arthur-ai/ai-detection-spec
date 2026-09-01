@@ -326,6 +326,7 @@ def collect():
     blind = yaml.safe_load((ROOT / "docs" / "blind-spots.yaml").read_text())["blind_spots"]
 
     return {"blind_spots": blind, "ci_unrecorded": unrecorded,
+            "removed": catalog.get("removed", []),
             "classifications": catalog["classifications"],
             "not_agents": list(catalog.get("not_agents", ())),
             "agents": agents, "limits": limits}
@@ -463,11 +464,7 @@ def markdown(data):  # noqa: C901
         "",
         "| removed | what it actually is |",
         "|---|---|",
-        "| `mcp-sdk` | a library an agent is **built with** |",
-        "| `litellm` | a gateway an agent **calls through** |",
-        "| `docker` | a runtime: **how we look**, not what we look for |",
-        "| `ollama`, `lm-studio`, `jan`, `llama-cpp` | model runners. They **serve** models; an "
-        "agent drives one |",
+        *(f"| `{r['id']}` | {r['what_it_is']} |" for r in data.get("removed", [])),
         "",
         "Each keeps its fixture rows, with the assertion inverted to *must not match*. Deleting",
         "the evidence with the signature would leave nothing to tell *correctly not an agent*",
