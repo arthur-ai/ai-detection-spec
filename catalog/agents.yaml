@@ -204,8 +204,17 @@ agents:
     name: aider
     classification: Coding agent
     homebrew: [aider]
-    npm: [aider]
-    pypi: [aider-chat]                 # the usual route; the npm name differs
+    # `npm: [aider]` WAS HERE AND IS REMOVED. npm's `aider` is "Lightweight website popular
+    # article component for static website", published by an unrelated maintainer -- not
+    # the AI pair programmer, which is a Python tool with no npm distribution at all. The
+    # comment beside it used to read "the usual route; the npm name differs", which is how
+    # a guess survives: it explained the discrepancy instead of questioning it.
+    #
+    # Found by the coverage report, not by review. It sat as DID NOT APPEAR -- a scenario
+    # installed aider and this identifier never showed up -- which is exactly the shape a
+    # wrong identifier makes: nothing can produce it, because it names something else.
+    # Same failure as npm `mcp`, which turned out to be Mintlify's package.
+    pypi: [aider-chat]
     state_dirs: ["~/.aider"]
     # Read off a real row: "paulgauthier/aider:latest", id cd375f1ecbd1. ENTRYPOINT is
     # /venv/bin/aider, which is the same package the pypi route above names.

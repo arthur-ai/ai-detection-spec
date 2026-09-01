@@ -174,6 +174,45 @@ Most routes offer nothing like it. A bundle id is a string in a plist that anyon
 an image tag is chosen by whoever ran `docker tag`, and a Homebrew token is a name in a
 repository. For those, a real install remains the bar.
 
+## What was actually built, and how it differs
+
+The design above is not a plan any more, and the differences are worth recording because
+each was a decision rather than a drift.
+
+| designed | built | why |
+|---|---|---|
+| `catalog/observations/<agent>.yaml` | `test/scenarios/<name>/observed.json` | the producer is a scenario RUN, so the file lives beside the thing that writes it. A run changes exactly one file, and a reviewer reads the diff next to the scenario that caused it |
+| one record per (identifier, environment, install route), collapsed to `first_seen`/`last_seen` | one record per (agent, route, value) with `agent_version`, `os`, `arch` | no history is kept yet. The collapse solves a growth problem that does not exist at 42 identifiers, and inventing `first_seen` from a single run would date evidence we do not have |
+| a **Fresh** gate warning on stale observations | **not implemented** | with no `first_seen`/`last_seen` there is no age to compare. An identifier can read *covered by CI* on the strength of a run from months ago, and nothing says so |
+
+Two things the implementation added that the design did not anticipate, both because the
+first version was wrong in a way only a real run exposed:
+
+**Credits are keyed by (route, value), never by value alone.** OpenClaw ships an npm package
+*and* a Homebrew cask both called `openclaw`, so a value-keyed credit let an npm-only scenario
+record the Homebrew token as observed — a real install that no row supported.
+
+**Coverage is counted against CI, not against "has anyone run this".** A scenario that passes
+only on a maintainer's machine catches nothing on a pull request, and one scenario sat in
+exactly that state: passing locally, absent from the matrix, indistinguishable from covered.
+
+## The state that does the most work
+
+`did not appear` — a CI scenario installed the agent and the identifier never showed up. It
+carries more information than any other state because it means one of three things:
+
+1. **the scenario installs by another route.** Fixable, and the fix is a separate scenario:
+   two routes claiming the same binary name cannot share a machine.
+2. **the artifact only exists once the agent runs.** A state directory is not created by
+   installing.
+3. **the identifier is wrong.** Nothing can produce it, because it names something else.
+
+The third case is why this state earns its place. Both catalog bugs found so far surfaced
+through it and neither survived a registry lookup: npm `mcp` is Mintlify's package, and npm
+`aider` is a static-site component by an unrelated maintainer. Each sat beside a comment
+explaining the discrepancy rather than questioning it — which is precisely how a guess
+survives review, and exactly what an evidence grade cannot catch on its own.
+
 ## Scale
 
 Three things grow, at very different rates, and only one of them is a problem.

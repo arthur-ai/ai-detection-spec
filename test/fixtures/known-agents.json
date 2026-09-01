@@ -182,5 +182,13 @@
     "loc": "/Users/alice/.local/share/uv/tools/mcp/",
     "extra": "",
     "perms": ""
+  },
+  {
+    "kind": "npm",
+    "id": "aider",
+    "ver": "1.0.1",
+    "loc": "/usr/local/lib/node_modules/aider",
+    "extra": "",
+    "perms": ""
   }
 ]

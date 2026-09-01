@@ -258,7 +258,15 @@ def collect():
                 # the report demand something impossible -- and, worse, invite someone to
                 # "fix" it by deleting the alias, which is the one thing that would break
                 # detection on the machines it exists for.
-                if str(value) in retired_of.get(aid, ()):
+                # COVERAGE WINS OVER THE ALIAS LABEL. `retired` says an identifier comes
+                # from an earlier release, not that it cannot be tested -- and
+                # 56-openclaw-retired-names disproved that by installing clawdbot and
+                # moltbot for real. Checking `retired` first excluded them from the
+                # denominator while a scenario was proving them, which understated the
+                # coverage and mislabelled the evidence.
+                if ci_scens:
+                    state = "ci-install"
+                elif str(value) in retired_of.get(aid, ()):
                     state = "alias"
                 elif ci_scens:
                     state = "ci-install"

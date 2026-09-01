@@ -79,6 +79,12 @@ check("carries the classification",
 # that a real probe hit during design.
 unmatched = {row["id"] for row in r["unmatched"]}
 check("libxdmcp is NOT claimed by the 'mcp' signature", "libxdmcp" in unmatched)
+# npm's `aider` is a static-site component by an unrelated maintainer, not the AI pair
+# programmer -- which ships on PyPI as aider-chat and has no npm distribution. It was
+# catalogued anyway, with a comment explaining the discrepancy rather than questioning it.
+check("npm's `aider` is NOT claimed as the coding agent",
+      "aider" in unmatched,
+      "the row must arrive and be declined; absent is also what a dropped kind looks like")
 check("ordinary software is left alone", {"cmake", "com.apple.Safari"} <= unmatched)
 
 # --- agent tooling is not an agent ------------------------------------------------

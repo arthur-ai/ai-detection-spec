@@ -32,6 +32,7 @@ jobs:
           - 00-baseline
           - 10-desktop-apps
           - 20-cli-agents
+          - 21-cli-agents-homebrew
           - 25-python-agents
           - 40-browser
           - 45-claude-extension

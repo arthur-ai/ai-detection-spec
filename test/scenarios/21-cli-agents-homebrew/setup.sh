@@ -1,0 +1,38 @@
+#!/bin/zsh
+# THE SAME AGENTS, INSTALLED THROUGH HOMEBREW.
+#
+# 20-cli-agents installs these from npm, which is their primary distribution and the route
+# most fleets use. Every one of them ALSO ships a formula or a cask, and those tokens sat
+# in the catalog reading DID NOT APPEAR -- a scenario had installed the agent and the
+# identifier never showed up, because it was installed the other way.
+#
+# SEPARATE from 20-cli-agents deliberately, not merged into it. Both routes put a binary of
+# the same name on PATH, and installing both on one machine has them fight: whichever lands
+# second wins, and the row for the loser is whatever the winner left behind. Two machines
+# is the only way to test two routes honestly.
+#
+# Tokens verified against the Homebrew API before being written here -- two are casks and
+# two are formulae, which is not guessable from the product name:
+#
+#     codex        cask        copilot-cli  cask
+#     aider        formula     gemini-cli   formula
+set -e
+source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest.sh"
+need_brew
+
+# WARN rather than exit: a download failing is a network fact, and the assertion is where a
+# missing agent should be reported, because it names WHICH one.
+for f in aider gemini-cli; do
+  brew install "$f" || echo "WARN: formula $f failed"
+done
+for c in codex copilot-cli; do
+  brew install --cask "$c" || echo "WARN: cask $c failed"
+done
+brew list --versions 2>/dev/null | sed 's/^/  /'
+
+# Claude Code's npm package, for the same reason: 20-cli-agents installs it through the
+# NATIVE installer -- a shim at ~/.local/bin/claude, no npm row -- so @anthropic-ai/
+# claude-code was catalogued and never produced. This machine has no native install to
+# collide with.
+need_node
+npm install -g @anthropic-ai/claude-code || echo "WARN: claude-code npm install failed"

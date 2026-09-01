@@ -20,3 +20,14 @@ npm install -g openclaw@latest --allow-scripts=openclaw \
   || npm install -g openclaw@latest \
   || { echo "FAIL: could not install openclaw from npm" >&2; exit 1; }
 npm ls -g --depth=0 2>/dev/null | sed 's/^/  /'
+
+# PORT 18789 IS THE LAST DID-NOT-APPEAR IDENTIFIER FOR THIS AGENT, and it needs the gateway
+# RUNNING, not merely installed. 50-autonomous uses `open -a`, which needs an Aqua session
+# SSH does not provide, so the listener never opens there either.
+#
+# The right invocation is not guessed here. Writing `openclaw gateway &` on the strength of
+# a plausible-sounding subcommand is how a test comes to assert something nobody checked --
+# the same move that put npm `aider` in the catalog. So this captures the CLI's own help
+# into the run log, and the invocation gets written once the output says what it is.
+echo "--- openclaw CLI surface, for wiring the gateway next ---"
+openclaw --help 2>&1 | head -40 | sed 's/^/  /' || true

@@ -9,7 +9,7 @@ strength of the evidence behind them.
 
 **A real install is the standard, and every entry meets it.** A VM scenario installs the real software and asserts the classifier finds it. Anything less would be an exception recorded in the catalog with a reason, an evidence grade and a date; there are none open.
 
-15 agents carrying 42 identifiers.
+15 agents carrying 41 identifiers.
 
 ## What counts as an agent
 
@@ -41,7 +41,7 @@ Mac. `aider` installs as `aider-chat` under `uv` and `pipx` while its state dire
 and neither survived contact with an actual install. Nothing short of installing the
 software catches that class of error.
 
-## 29/38 identifiers are covered by a CI test
+## 31/39 identifiers are covered by a CI test
 
 **Measured per identifier, and only counting tests CI actually runs.** Two things make
 that different from "has anyone tested this". An entry passes when a scenario finds it,
@@ -56,14 +56,14 @@ cannot drift apart again.
 
 | | identifiers | |
 |---|---:|---|
-| **CI: real install** | 26 | a scenario in the `scenarios.yml` matrix installs the software and asserts the classifier finds it |
+| **CI: real install** | 28 | a scenario in the `scenarios.yml` matrix installs the software and asserts the classifier finds it |
 | **CI: fixture** | 3 | matched a captured row by `test_matcher.py`, which runs on **every pull request**. A weaker claim than a real install and a faster cadence — different axes |
 | **local only** | 0 | proved only by a scenario CI does not run. Catches nothing on a pull request |
-| **did not appear** ⚠ | 9 | a CI scenario installed the agent and this identifier never showed up. Usually installed by another route |
+| **did not appear** ⚠ | 8 | a CI scenario installed the agent and this identifier never showed up. Usually installed by another route |
 | **no test** | 0 | nothing exercises it at all |
-| _retired alias_ | _4_ | _excluded from the count. Nothing installs these any more, so no scenario can cover one; the fixture row is the only evidence there is, and it proves the alias still resolves_ |
+| _retired alias_ | _2_ | _excluded from the count. Nothing installs these any more, so no scenario can cover one; the fixture row is the only evidence there is, and it proves the alias still resolves_ |
 
-> **This number is a floor.** `00-baseline`, `40-browser`, `60-persistence` run in CI and have recorded nothing yet, so identifiers they cover still count as *no test*. Absence of an observation is not absence of a test; the count corrects itself once each scenario has run.
+> **This number is a floor.** `00-baseline`, `21-cli-agents-homebrew`, `40-browser`, `60-persistence` run in CI and have recorded nothing yet, so identifiers they cover still count as *no test*. Absence of an observation is not absence of a test; the count corrects itself once each scenario has run.
 
 `tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor
 carrying an `unverified` block, so an unverified signature cannot enter quietly.
@@ -76,20 +76,20 @@ Software that acts on the user's behalf. This is what the catalog is for.
 
 | name | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **aider** | real install | aider ⚠, aider ⚠, **`aider-chat`**, ~/.aider ⚠, `paulgauthier/aider` | 25-python-agents |
-| **Claude Code** | real install | @anthropic-ai/claude-code ⚠, **`~/.local/bin/claude`**, **`~/.claude`** | 20-cli-agents, 90-demo-fleet |
+| **aider** | real install | aider ⚠, **`aider-chat`**, ~/.aider ⚠, `paulgauthier/aider` | 21-cli-agents-homebrew, 25-python-agents |
+| **Claude Code** | real install | @anthropic-ai/claude-code ⚠, **`~/.local/bin/claude`**, **`~/.claude`** | 20-cli-agents, 21-cli-agents-homebrew, 90-demo-fleet |
 | **Cline** | real install | **`cline`** | 20-cli-agents |
-| **Codex CLI** | real install | codex ⚠, **`@openai/codex`**, ~/.codex ⚠ | 20-cli-agents, 90-demo-fleet |
-| **GitHub Copilot CLI** | real install | copilot-cli ⚠, **`@github/copilot`** | 20-cli-agents |
+| **Codex CLI** | real install | codex ⚠, **`@openai/codex`**, ~/.codex ⚠ | 20-cli-agents, 21-cli-agents-homebrew, 90-demo-fleet |
+| **GitHub Copilot CLI** | real install | copilot-cli ⚠, **`@github/copilot`** | 20-cli-agents, 21-cli-agents-homebrew |
 | **Cursor** | real install | **`com.todesktop.230313mzl4w4u92`**, **`cursor`** | 10-desktop-apps, 90-demo-fleet |
-| **Gemini CLI** | real install | gemini-cli ⚠, **`@google/gemini-cli`** | 20-cli-agents |
+| **Gemini CLI** | real install | gemini-cli ⚠, **`@google/gemini-cli`** | 20-cli-agents, 21-cli-agents-homebrew |
 | **Windsurf** | real install | **`com.exafunction.windsurf`**, **`devin-desktop`** | 10-desktop-apps |
 
 ## Personal agent
 
 | name | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **OpenClaw** | real install | **`ai.openclaw.mac`**, ~~`bot.molt.mac`~~, **`openclaw`**, **`openclaw`**, ~~`clawdbot`~~, ~~`moltbot`~~, **`~/.openclaw`**, `ai.openclaw.`, ~~`bot.molt.`~~, 18789 ⚠ | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 60-persistence, 90-demo-fleet |
+| **OpenClaw** | real install | **`ai.openclaw.mac`**, ~~`bot.molt.mac`~~, **`openclaw`**, **`openclaw`**, **`clawdbot`**, **`moltbot`**, **`~/.openclaw`**, `ai.openclaw.`, ~~`bot.molt.`~~, 18789 ⚠ | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 60-persistence, 90-demo-fleet |
 
 ## AI browser
 
@@ -121,7 +121,6 @@ Every one is work, and the middle column says what kind. **did not appear** mean
 | agent | route | identifier | state | reached by |
 |---|---|---|---|---|
 | aider | homebrew | `aider` | did not appear | 25-python-agents |
-| aider | npm | `aider` | did not appear | 25-python-agents |
 | aider | state dir | `~/.aider` | did not appear | 25-python-agents |
 | Claude Code | npm | `@anthropic-ai/claude-code` | did not appear | 20-cli-agents |
 | Codex CLI | homebrew | `codex` | did not appear | 20-cli-agents |
@@ -167,6 +166,14 @@ These are paid or account-gated products in several cases. The install is unatte
 **20-cli-agents -- known gap**
 
 The Homebrew routes for gemini-cli (formula) and copilot-cli (cask) are NOT exercised. Both agents are installed from npm instead, because installing both ways would have the two packages fight over the same binary. The agents meet the standard; those two identifiers remain unexercised and docs/agents.md reports them as such.
+
+**21-cli-agents-homebrew -- known gap**
+
+Installing proves the token. It does not run any of these agents, so state directories that only appear on first invocation (~/.codex, ~/.aider) are still not exercised here.
+
+**21-cli-agents-homebrew -- known gap**
+
+codex and copilot-cli are casks: on a runner the app bundle lands but is never launched, so anything written at first launch is out of reach for the same reason.
 
 **45-claude-extension -- known gap**
 

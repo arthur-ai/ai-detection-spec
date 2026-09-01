@@ -32,3 +32,13 @@ npm install -g @openai/codex || echo "WARN: codex install failed"
 for pkg in @google/gemini-cli @github/copilot cline; do
   npm install -g "$pkg" || echo "WARN: $pkg install failed"
 done
+
+# INVOKED, NOT JUST INSTALLED. A state directory does not exist until the agent runs once,
+# which is why ~/.codex read DID NOT APPEAR while a scenario was installing Codex CLI on every run.
+# `--version` is the smallest invocation that is not a no-op and needs no credentials.
+#
+# NOT ASSERTED. Whether this particular agent writes its state directory on --version is
+# unmeasured, and asserting it before knowing would be a guess wearing a test's clothes.
+# The run records what actually appeared; if the directory shows up, coverage reports it,
+# and if it does not, the gap stays visible and honest.
+command -v codex >/dev/null 2>&1 && (codex --version >/dev/null 2>&1 || true)
