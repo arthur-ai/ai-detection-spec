@@ -213,6 +213,16 @@ def main():
                         f"not run in the fast loop, so this would surface as a red run "
                         f"minutes later instead of here.")
 
+    # A removed entry must not also be a live one, and must say what it is -- the table in
+    # the report is rendered straight from this.
+    live = {a.get("id") for a in doc["agents"]}
+    for r in doc.get("removed", []) or []:
+        if not {"id", "what_it_is"} <= set(r):
+            errors.append(f"removed entry {r!r} needs both `id` and `what_it_is`")
+        elif r["id"] in live:
+            errors.append(f"{r['id']} is listed under `removed:` and is also a live agent. "
+                          f"One of the two is wrong.")
+
     # `untested:` entries must be well-formed. tools/agent_status.py --gate decides whether
     # each one is still warranted; this only checks it can be read.
     for e in doc.get("untested", []) or []:

@@ -96,6 +96,29 @@ version: 1
 #             the kind=scan marker row: `ok`, `absent`, `unhealthy:<code>`, `timeout:<n>`
 #             distinguish "no Docker" from "Docker wedged", which a bundle id cannot.
 #
+# WHAT WAS REMOVED, AND WHAT IT ACTUALLY IS. As data, because three places were describing
+# this list in prose -- CLAUDE.md, CONTRIBUTING.md and the generated report -- and a fourth,
+# README, was still using `ollama` as an example of a name the SQL never matches on, which
+# reads to a newcomer as though it were still detected.
+#
+# tools/agent_status.py renders the table from here, and tools/check_doc_numbers.py fails if
+# README names any of these: the front page should describe what the catalog HAS.
+removed:
+  - id: mcp-sdk
+    what_it_is: a library an agent is **built with**
+  - id: litellm
+    what_it_is: a gateway an agent **calls through**
+  - id: docker
+    what_it_is: "a runtime: **how we look**, not what we look for"
+  - id: ollama
+    what_it_is: a model runner. It **serves** models; an agent drives one
+  - id: lm-studio
+    what_it_is: a model runner, and a desktop app for one
+  - id: jan
+    what_it_is: a model runner
+  - id: llama-cpp
+    what_it_is: a model runner, and the engine several others embed
+
 classifications:
   # --- acts on the user's behalf ---
   - Coding agent        # operates on a codebase, usually with shell access

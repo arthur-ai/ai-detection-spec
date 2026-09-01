@@ -45,7 +45,7 @@ touches is the local Docker one, and only when you ask for a container scan.
 
 | | | |
 |---|---|---|
-| 🗂 | **`dist/discovery.sql`** | One SQL file to run on the Mac. **No agent name appears in anything it matches on** — the queries look for shapes (an app bundle, an npm global, a state dotdir), never for "Cursor" or "ollama" — so you never edit it when a new agent appears. It returns the machine's whole AI-relevant inventory: about **760 rows** on a developer Mac, 17.9 KB gzipped |
+| 🗂 | **`dist/discovery.sql`** | One SQL file to run on the Mac. **No agent name appears in anything it matches on** — the queries look for shapes (an app bundle, an npm global, a state dotdir), never for "Cursor" or "OpenClaw" — so you never edit it when a new agent appears. It returns the machine's whole AI-relevant inventory: about **760 rows** on a developer Mac, 17.9 KB gzipped |
 | 🧭 | **`catalog/agents.yaml`** | The 15 agents and 40 identifiers those rows are matched **against**, off the machine. Add a signature here and it re-matches evidence you already collected — no going back to the fleet |
 | 🔎 | **`bin/classify`** | Does that matching, wherever you keep the output |
 | 🐳 | **`bin/container-scan`** | The container half, run separately and on a hard time bound, because a wedged Docker daemon blocks forever |
@@ -69,15 +69,29 @@ one.
 
 ## Requirements
 
-| | Minimum | Tested on |
-|---|---|---|
-| macOS | Apple Silicon or Intel. **No lower bound established** — see below | 15.7.7, on every CI run |
-| osquery | **5.10.0** — every query declares it in `min-osquery:` | 5.23.1 |
-| `bash` | 3.2 — macOS system `bash`, so `/bin/bash` is enough | 3.2.57 |
-| `python3` | **3.7** (`subprocess` `capture_output`) — for `bin/classify`, `bin/discover`'s writer, and `tools/` | 3.12 |
-| `curl` | System `curl`. Only used to health-probe the Docker socket | — |
-| PyYAML | Only for `bin/classify` and `tools/validate_catalog.py`, which read the catalog | — |
-| Docker | Optional, and only for container images | Docker Desktop 28.4.0 |
+| | Needs |
+|---|---|
+| macOS | Apple Silicon or Intel. **No lower bound established** — a floor would be a guess |
+| osquery | **5.10.0** — every query declares its own in `min-osquery:` |
+| `bash` | 3.2, which is the macOS system `bash`, so `/bin/bash` is enough |
+| `python3` | **3.7** (`subprocess` `capture_output`) — for `bin/classify`, `bin/discover`'s writer and `tools/` |
+| PyYAML | Only for the tools that read the catalog: `bin/classify` and `tools/validate_catalog.py` |
+
+**Which macOS versions has it actually run on?** [`docs/agents.md`](docs/agents.md) answers that
+per scenario, with the platform each run recorded — a generated table, not a claim maintained
+by hand here.
+
+**`curl` is deliberately not on that list either**, for the same reason and one more: it is
+used in exactly one place — the Docker socket health probe inside `bin/container-scan` — and
+`/usr/bin/curl` ships with macOS, so naming it as a prerequisite makes the list look longer
+than it is without telling anyone anything they can act on.
+
+**Docker is deliberately not on that list.** Nothing here needs it installed: if a Mac has no
+Docker, `bin/container-scan` finds no socket and reports `absent` — a stated outcome, not a
+failure. Docker is a property of the machine you are scanning, not a dependency of the scanner.
+What it buys you today is narrow and worth saying plainly: exactly **one** catalogued agent
+carries a container image (`aider`, as `paulgauthier/aider`), so `--deep` earns its place on
+fleets that run agents in containers and adds little elsewhere.
 
 Running the queries needs **osquery alone**. `python3` and PyYAML are for the classifier and
 the scheduled writer, not the endpoint's reporting path — which is a `cat`.
@@ -85,14 +99,9 @@ the scheduled writer, not the endpoint's reporting path — which is a `cat`.
 `sudo` is needed because some tables read other users' home directories. Without it you see
 only your own account.
 
-**Two cautions on the table above.** The macOS row says *no lower bound established* rather
-than naming one: a floor would be a guess. What the column reports is what the scenarios have
-actually run on and recorded — every `observed.json` carries the OS that produced it, so that
-figure is read from evidence rather than remembered. The VM harness also runs on macOS 26
-locally, and that is deliberately *not* claimed here: those runs are not recorded in the repo,
-and an untracked platform is not a tested one. And on a fleet, `/usr/bin/python3` is a **stub** until Command Line
-Tools are installed — on a Mac without them the scheduled writer produces nothing at all,
-which surfaces as `no-cache` rather than as an error.
+**One caution.** On a fleet, `/usr/bin/python3` is a **stub** until Command Line Tools are
+installed — on a Mac without them the scheduled writer produces nothing at all, which surfaces
+as `no-cache` rather than as an error.
 
 ## Quickstart
 

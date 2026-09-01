@@ -36,7 +36,10 @@ removed anyway, because counting it as an agent overstates what was found on a m
 | `mcp-sdk` | a library an agent is **built with** |
 | `litellm` | a gateway an agent **calls through** |
 | `docker` | a runtime: **how we look**, not what we look for |
-| `ollama`, `lm-studio`, `jan`, `llama-cpp` | model runners. They **serve** models; an agent drives one |
+| `ollama` | a model runner. It **serves** models; an agent drives one |
+| `lm-studio` | a model runner, and a desktop app for one |
+| `jan` | a model runner |
+| `llama-cpp` | a model runner, and the engine several others embed |
 
 Each keeps its fixture rows, with the assertion inverted to *must not match*. Deleting
 the evidence with the signature would leave nothing to tell *correctly not an agent*
@@ -77,6 +80,14 @@ cannot drift apart again.
 | **no test** | 0 | nothing exercises it at all |
 | _retired alias_ | _2_ | _excluded from the count. Nothing installs these any more, so no scenario can cover one; the fixture row is the only evidence there is, and it proves the alias still resolves_ |
 
+
+### When each scenario last verified
+
+| scenario | last verified | platform | identifiers |
+|---|---|---|---:|
+| `45-claude-extension` | 2026-09-01 | macOS 14.7.1 x86_64 | 1 |
+
+A date here is the last time a run *proved* those identifiers, not the last time anyone looked at the catalog. Coverage does not expire on a schedule, but it does go quietly out of date, and this is the only place that would show it.
 
 `tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor
 carrying an `unverified` block, so an unverified signature cannot enter quietly.
