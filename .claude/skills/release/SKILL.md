@@ -24,6 +24,43 @@ subjects:
 A changed *value* in the catalog is a patch. A changed *key* is major — a consumer parsing the
 YAML breaks. Check for both.
 
+**Check what was removed, not only what was added**, because a removal is the bump that gets
+under-called. Each kind below breaks a consumer in a way the six-column contract holding would
+not reveal:
+
+| removal | what breaks |
+|---|---|
+| an **entry** leaves the catalog | findings for it stop appearing. A consumer tracking counts sees a drop with no error |
+| a **classification** loses its last member | a consumer mapping classifications to a UI has a value vanish. `Container runtime`, `Framework` and `Local model` all went this way |
+| a **route key** stops being used | `ports` and `model_stores` are still *accepted* by `validate_catalog.py` while no entry carries either. Nothing errors; the route simply never fires |
+| a **row kind** stops being emitted | `kind='model'` left `dist/discovery.sql` with the model runners. A consumer branching on it now gets silence |
+
+```console
+$ python3 - <<'EOF'   # entry, key and classification diff across a tag
+import subprocess, yaml
+old = yaml.safe_load(subprocess.run(["git","show","<previous-tag>:catalog/agents.yaml"],
+                                    capture_output=True, text=True).stdout)
+new = yaml.safe_load(open("catalog/agents.yaml"))
+k = lambda a: set().union(*(set(e) for e in a))
+c = lambda a: {e.get("classification") for e in a}
+print("entries  ", len(old["agents"]), "->", len(new["agents"]))
+print("gone     ", sorted({e["id"] for e in old["agents"]} - {e["id"] for e in new["agents"]}))
+print("keys gone", sorted(k(old["agents"]) - k(new["agents"])))
+print("class gone", sorted(c(old["agents"]) - c(new["agents"])))
+EOF
+$ diff <(git show <previous-tag>:dist/discovery.sql | grep -oE "SELECT '[a-z]+'" | sort -u) \
+       <(grep -oE "SELECT '[a-z]+'" dist/discovery.sql | sort -u)
+```
+
+`catalog/agents.yaml`'s own `version:` key is a **separate** number and does not track the
+release. It saying `1` is not evidence the schema held.
+
+**Pre-1.0, the repository is not at the version its own rule implies.** The rule above was
+written for a stable tag and says major for a schema change; on `0.x` a breaking change
+conventionally rides the minor instead. Say which convention you are following in the notes and
+put the breaking changes first either way — but do not silently downgrade a break to a minor and
+leave the reader to find it.
+
 ## 2. Verify before you tag
 
 `release.yml` re-runs the static gates on publish and will refuse a stale `dist/`, but finding
@@ -31,16 +68,28 @@ that out from a failed workflow means a published release with no artifacts on i
 
 ```console
 $ git switch main && git pull
-$ test/lint.sh                        # six-column contract, dangling UNION ALL, kind coverage
-$ python3 tools/build.py --check      # dist/ matches queries/ — catches a stale artifact
-$ python3 tools/validate_catalog.py
-$ python3 tools/check_no_catalog.py   # no agent identifiers leaked back into the SQL
+$ tools/gates.sh                      # every fast gate, and a non-zero exit when one fails
 $ python3 tools/measure.py --check    # cost bands; needs osquery locally
 $ sudo python3 tools/check_pack.py    # every pack query actually returns rows
-$ sudo test/docker_states.sh          # every Docker state, guard, bound, catalog, ~35s
+$ sudo test/docker_states.sh          # every Docker state, guard, bound, catalog
 ```
 
-The last two exist because **four things ship and they are not the same query**.
+**Run `tools/gates.sh` rather than the gates by hand.** It exists because a hand-rolled loop
+reported `FAIL` for two gates and exited 0 anyway, and the commit that followed went in
+regardless — a checklist that cannot fail is a checklist nobody has to obey. It is also the only
+place the list of fast gates is maintained, so a gate added after this file was written still
+runs — which is why no list of them is repeated here. These are the ones whose failure mode is
+specifically a bad release:
+
+| gate | what it stops shipping |
+|---|---|
+| `build.py --check` | a `dist/` that does not match `queries/`. `release.yml` refuses one anyway, but from a failed workflow after publish |
+| `check_doc_numbers.py` | **a number in prose that is no longer true.** It exists because `CLAUDE.md` claimed 40/40 coverage after the figure became 38/38. Release notes are prose full of numbers; this is the gate that has your back |
+| `check_workflows.py` | a workflow step referencing a deleted file. A workflow that does not parse *disappears* from the checks list rather than going red, and `scenarios.yml` does not run per PR — that is how `measure_payload.py` was removed while CI stayed green |
+| `agent_status.py --check` | a stale `docs/agents.md`, which is where the notes' coverage and exception figures come from |
+
+The three that follow it are not in `gates.sh` because they need osquery, sudo or both. The last
+two of those exist because **four things ship and they are not the same query**.
 `dist/discovery.sql` is the composed `fast` and `slow` queries. `dist/ai-discovery.conf` is the
 pack, and it additionally carries `containers.sql`, which is `expensive`.
 `dist/discovery-deep.sql` composes the `expensive` queries on their own — a **supplement, not a
@@ -92,19 +141,67 @@ a fleet. Cover, when each applies:
   this is a stall waiting to happen.
 - **Detection changes** — new agents in the catalog, corrected identifiers, which install routes
   are covered. Say plainly whether a Mac must rescan, or whether reclassifying retained evidence
-  repairs history.
+  repairs history. **An agent removed on scope grounds is a detection change too**, and the
+  honest framing is that the previous release overstated the finding rather than that this one
+  detects less: `catalog/agents.yaml`'s `removed:` block says what each thing actually is, and
+  the notes should use its wording rather than invent another.
 - **Payload and cost**, if either moved, with the measured number and the machine it came from.
-- **Known gaps** carried forward, with the reason they are gaps. `npx`-invoked packages are the
-  standing one; check the foot of `queries/filesystem.sql` for the current wording.
+- **Known gaps** carried forward, with the reason they are gaps.
 - **Breaking changes** first, with the migration, if the bump is major.
 
-Quantities are facts read off the tree, not recalled: count the catalog entries and the scenarios
-rather than repeating a number from a previous release.
+### Where each fact comes from
+
+Every quantity is read off the tree, never recalled and never carried over from the previous
+release's notes. Each source below is the **only** copy of what it holds, so quoting a second
+one against it is how the notes and the docs come to disagree:
+
+| source | generated? | what to take from it |
+|---|---|---|
+| `python3 tools/agent_status.py` | yes, from the catalog and the scenarios | entry and identifier counts, per-identifier CI coverage, and the exception register. Its `did not appear` and `no test` states are the honest gaps |
+| `docs/agents.md` | yes, by `agent_status.py --write` | the page a reader will check the notes against. Take figures from the tool, not by re-counting this |
+| `docs/blind-spots.yaml` | no — hand-maintained data | the platform blind spots. It says of itself "the canonical list, and the only copy": it lived in the README too, and which copy a reader met depended on which page they opened |
+| `queries/COST.md` | no — measured and written down | costs per query, **and the machine they were taken on**. A cost without its machine is not a measurement |
+
+For a gap that is a property of one query rather than of the platform, the comment in that query
+is the wording to use — the `npx`/`bunx` cache is the standing case and lives at the foot of
+`queries/filesystem.sql`. **Do not restate a number `check_doc_numbers.py` guards** unless you
+are prepared for it to be checked; that gate runs inside `gates.sh` and will tell you which line
+is wrong.
 
 ## 4. Open it as a draft
 
 Never create a release straight to published. A draft creates no tag, sends no notifications, and
 can be deleted outright; publishing is one click once a human has read it.
+
+**First check whether a draft is already open**, because a draft can sit unpublished for days
+while `main` moves underneath it, and creating a second one leaves two plausible releases where a
+human has to work out which is live:
+
+```console
+$ gh release list --limit 5                       # a Draft row means stop and read it
+$ gh release view v<X.Y.Z> --json createdAt,targetCommitish,body --jq '{createdAt,targetCommitish}'
+$ git log --format='%h %ad %s' --date=iso --since='<the draft createdAt>' origin/main | cat
+```
+
+An unpublished draft carries no tag, so **the version it claims is not spent**. If the work since
+is a continuation, keep that version and rewrite the draft in place with `gh release edit`; a
+`--notes-file` replaces the body outright.
+
+**Rewrite the notes, do not append to them.** A draft's body is a claim about a tree that has
+since changed, and the parts most likely to be stale are the specific ones — a table of catalog
+routes, a coverage figure, a row count. Re-derive every quantity from the sources in step 3 and
+confirm each identifier the draft names is still in the catalog, rather than trusting a section
+that reads fine. A stale draft published as-is is exactly the failure this repo exists to avoid:
+a plausible, well-written, wrong answer.
+
+If you are not keeping the version, **delete the old draft** rather than leaving it. Two drafts
+is an ambiguity, and this one has no tag to preserve:
+
+```console
+$ gh release delete v<X.Y.Z> --yes
+```
+
+Otherwise, create it:
 
 ```console
 $ gh release create v<X.Y.Z> \
