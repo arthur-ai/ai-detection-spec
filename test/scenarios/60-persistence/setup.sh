@@ -1,7 +1,7 @@
 #!/bin/zsh
 # Carries the `daemon` and `port` branches for the whole suite.
 #
-# Both are first-GUI-launch side effects of OpenClaw and Ollama, and SSH has no Aqua
+# Both are first-GUI-launch side effects of OpenClaw, and SSH has no Aqua
 # session to trigger them. 50-autonomous additionally cannot run below Sequoia. Rather
 # than leave two branches permanently unverified - which is the exact state that made
 # this harness necessary - they are exercised here with inert fixtures.

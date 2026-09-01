@@ -32,26 +32,6 @@
       "value": "cursor"
     },
     {
-      "agent": "jan",
-      "route": "bundle_ids",
-      "value": "jan.ai.app"
-    },
-    {
-      "agent": "jan",
-      "route": "homebrew",
-      "value": "jan"
-    },
-    {
-      "agent": "lm-studio",
-      "route": "bundle_ids",
-      "value": "ai.elementlabs.lmstudio"
-    },
-    {
-      "agent": "lm-studio",
-      "route": "homebrew",
-      "value": "lm-studio"
-    },
-    {
       "agent": "orion",
       "route": "bundle_ids",
       "value": "com.kagi.kagimacOS"

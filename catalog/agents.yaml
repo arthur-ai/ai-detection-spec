@@ -62,6 +62,11 @@ version: 1
 # they arrive and are declined, which is the only way to tell "correctly not an agent" from
 # "route quietly broken".
 #
+#   ollama, lm-studio, jan, llama-cpp
+#             MODEL RUNNERS. They serve language models; an agent is what drives one.
+#             Removed when the scope was tightened to agents only. They are the strongest
+#             candidates to come back if that scope ever widens, and the `model` query
+#             branch went with them -- nothing consumed its rows.
 #   docker    Docker Desktop is INSTRUMENTATION, not a finding. What we detect inside a
 #             container is the agent IMAGE -- ollama/ollama, ghcr.io/ggml-org/llama.cpp,
 #             paulgauthier/aider -- and the runtime is how we look, not what we are looking
@@ -69,11 +74,6 @@ version: 1
 #             the kind=scan marker row: `ok`, `absent`, `unhealthy:<code>`, `timeout:<n>`
 #             distinguish "no Docker" from "Docker wedged", which a bundle id cannot.
 #
-# One classification remains that is not an agent. A MODEL RUNNER serves language models on
-# the machine -- it is the capability an agent runs AGAINST, rather than a library
-# describing one, and a fleet owner asking what can run inference locally wants it. It is
-# not itself a language model: the models are separate kind=model rows from model_stores.
-# `not_agents` below marks the classification, and the tooling counts it apart.
 classifications:
   # --- acts on the user's behalf ---
   - Coding agent        # operates on a codebase, usually with shell access
@@ -86,18 +86,7 @@ classifications:
                         # locally. Contested rather than settled, and overstating an agent
                         # is the safer error for an inventory than missing one
   # --- does not act on anyone's behalf; listed in not_agents below ---
-  - Model runner        # serves language models on this machine. NOT a language model
-                        # itself and not an agent: it is the runtime, something else
-                        # drives it, and the MODELS it holds are separate kind=model rows
-                        # from the model_stores route. Naming the app after the model
-                        # would blur two things this repo deliberately detects apart
 
-# Which of the above are NOT agents, as data rather than as a comment, so the tooling can
-# count them apart instead of every tool hardcoding its own opinion. Additive on purpose:
-# turning `classifications` into a mapping would have said the same thing but changed the
-# shape of the file, and a consumer parsing this YAML would break for a label.
-not_agents:
-  - Model runner
 
 agents:
   - id: claude-desktop
@@ -175,59 +164,9 @@ agents:
     bundle_ids: [com.todesktop.230313mzl4w4u92]
     homebrew: [cursor]
 
-  - id: ollama
-    name: Ollama
-    classification: Model runner
-    bundle_ids: [com.electron.ollama]
-    homebrew: [ollama, ollama-app]     # formula and cask are both real install routes
-    npm: [ollama]
-    launchd_prefixes: [com.ollama.]
-    ports: [11434]
-    model_stores: ["~/.ollama/models/manifests"]
-    # Read off a real row: "ollama/ollama:latest", id 8818bcd5de52. The image's own config
-    # corroborates the port already listed above -- ENTRYPOINT /bin/ollama, CMD serve,
-    # EXPOSE 11434/tcp, OLLAMA_HOST=0.0.0.0:11434.
-    images: [ollama/ollama]
 
-  - id: lm-studio
-    name: LM Studio
-    classification: Model runner
-    # A local model runs on the HOST or in a CONTAINER, and both are install paths. The
-    # host side is the cask below; this is the container side.
-    #
-    # `lmstudio/llmster-preview` is the vendor's own namespace on Docker Hub -- "Headless
-    # LM Studio Docker Image", 27k pulls -- and there is no `lmstudio/lmstudio`. Read off a
-    # REAL docker_images row, not off the registry: side-loaded as an OCI archive per
-    # CONTRIBUTING (8 layers, 0.39 GB, every blob's sha256 verified against the digest that
-    # named it), and the row renders exactly `lmstudio/llmster-preview:latest`. The image's
-    # own config corroborates it: entrypoint /app/daemon-run.sh, EXTS=llm-llama-cpu.
-    #
-    # It is a TECHNICAL PREVIEW and the name may well change. That is what the alias
-    # convention at the top of this file is for -- keep the old value, add the new one.
-    images: [lmstudio/llmster-preview]
-    bundle_ids: [ai.elementlabs.lmstudio]
-    homebrew: [lm-studio]
-    ports: [1234]
 
-  - id: jan
-    name: Jan
-    classification: Model runner
-    # NO CONTAINER PATH EXISTS, and this is a recorded finding rather than an omission.
-    # Checked before concluding: no image under any plausible name on Docker Hub, and
-    # NOTHING matching dockerfile or docker-compose anywhere in janhq/jan's tree (44k
-    # stars, active, full recursive tree, not truncated). Jan ships as a desktop app.
-    # If that changes, `images:` is the route to add.
-    bundle_ids: [jan.ai.app]
-    homebrew: [jan]
 
-  - id: llama-cpp
-    name: llama.cpp
-    classification: Model runner
-    homebrew: ["llama.cpp"]            # version is an opaque build number, not semver
-    ports: [8080]
-    # Read off a real pulled image: ghcr.io/ggml-org/llama.cpp:server. ggml-org, not
-    # ggerganov -- the org was renamed and the old path is not what ships today.
-    images: ["ghcr.io/ggml-org/llama.cpp"]
 
   - id: perplexity-comet
     name: Perplexity Comet

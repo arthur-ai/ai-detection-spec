@@ -407,7 +407,7 @@ def main():
     # Two top-level groups, not one list with a tag. A container runtime listed among
     # agents reads as an agent however it is labelled, and the count that matters to
     # someone asking "what AI is on this Mac" is the agent count.
-    for group, want_agent in (("AGENTS", True), ("MODEL RUNNERS (not agents)", False)):
+    for group, want_agent in (("AGENTS", True), ("NOT AGENTS", False)):
         classes = [c for c in data["classifications"]
                    if c in by_class and (c not in na) == want_agent]
         if not classes:

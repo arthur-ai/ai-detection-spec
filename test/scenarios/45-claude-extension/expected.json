@@ -8,8 +8,7 @@
     "file": ">=0",
     "npm": ">=0",
     "daemon": ">=0",
-    "port": ">=0",
-    "model": ">=0"
+    "port": ">=0"
   },
   "classified": {
     "must_find": [

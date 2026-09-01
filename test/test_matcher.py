@@ -44,9 +44,10 @@ check("finds it across all four of its routes",
       f"got {len(found.get('openclaw', {}).get('evidence', []))}")
 check("the retired bot.molt.mac alias still resolves to OpenClaw",
       any(e["id"] == "bot.molt.mac" for e in found.get("openclaw", {}).get("evidence", [])))
-check("finds Ollama as formula, cask and listening port",
-      len(found.get("ollama", {}).get("evidence", [])) == 3,
-      "port 11434 counts because the process holding it is ollama")
+check("an Ollama install is NOT an agent finding",
+      "ollama" not in found,
+      "a model runner serves language models; an agent is what drives one. Its rows stay "
+      "in the fixture so this asserts DECLINED rather than absent")
 check("an MCP SDK install is NOT an agent finding",
       not any(f["id"] == "mcp-sdk" for f in r["findings"])
       and "@modelcontextprotocol/sdk" in unmatched_ids(r),
@@ -140,26 +141,37 @@ check("a LiteLLM image is NOT claimed as an agent",
       "litellm" not in found and "ghcr.io/berriai/litellm:main-latest" in unmatched,
       f"got {sorted(found)}; a gateway image is not an agent, and it must be visibly "
       f"declined rather than dropped")
-check("the registry host is part of the identifier", "llama-cpp" in found,
-      "ghcr.io/ggml-org/llama.cpp, not ggerganov and not a bare llama.cpp")
-check("a docker.io/ prefix is stripped (docker.io/ollama/ollama -> ollama)",
-      "ollama" in found,
-      "Docker Hub is implicit in what a row reports, but a pull can name it explicitly")
+check("the registry host is still parsed, and the image is declined",
+      "llama-cpp" not in found and "ghcr.io/ggml-org/llama.cpp:server" in unmatched,
+      "a model runner is out of scope, and its image must be visibly unclaimed")
+# The images route now rests entirely on aider, so the normalisation rules need a live
+# subject. This row was captured from a real docker_images row after side-loading the
+# image, the same method the catalog header records.
+check("a two-segment Docker Hub image resolves (paulgauthier/aider -> aider)",
+      "aider" in found, f"got {sorted(found)}")
 
 # A multi-tag row is ONE row with the tags comma-joined -- measured, not assumed. THE ROW
 # MUST CARRY AN AGENT ON ONE OF ITS TAGS, or the assertion is vacuous: an earlier version
 # used alpine+localbuild, where neither tag is an agent, so a matcher that never split the
 # field passed it just as happily. Verified by mutation.
-MULTI = "ghcr.io/ggml-org/llama.cpp:probe,ghcr.io/ggml-org/llama.cpp:server"
+# THE AGENT IS THE SECOND TAG, deliberately. A matcher that compared the comma-joined
+# field whole would miss it, and every real multi-tag row in this fixture now carries no
+# catalogued agent -- so they pass whether the field is split or not, and only this row
+# can fail. Synthetic, like the fork and the lookalike beside it.
 check("a multi-tag row is split, and an agent on ANY tag is found",
-      "llama-cpp" in found and MULTI not in unmatched,
-      f"found {sorted(found)}; unsplit, this row matches nothing")
+      "aider" in found
+      and "localbuild-probe:latest,paulgauthier/aider:pinned" not in unmatched,
+      "unsplit, this row matches nothing")
+check("a multi-tag row of non-agents stays whole and unmatched",
+      "ghcr.io/ggml-org/llama.cpp:probe,ghcr.io/ggml-org/llama.cpp:server" in unmatched,
+      "declined, and reported by the id the row actually carried")
 check("a multi-tag row of non-agents stays unmatched",
       "alpine:3.20,localbuild-probe:latest" in unmatched)
 
 check("a fork is NOT claimed (myorg/ollama-fork)", "myorg/ollama-fork:latest" in unmatched,
       "exact on the normalised repository, never a substring")
 check("a lookalike is NOT claimed (not-ollama)", "not-ollama:latest" in unmatched)
+check("the LM Studio image is out of scope too", "lm-studio" not in found)
 check("ordinary infrastructure images are left alone",
       {"authzed/spicedb:latest",
        "public.ecr.aws/docker/library/python:3.12.8-slim-bookworm"} <= unmatched,
@@ -167,12 +179,8 @@ check("ordinary infrastructure images are left alone",
 # A local model runs on the HOST or in a CONTAINER and both are install paths. This row
 # was captured from a real docker_images row after side-loading the vendor's own image
 # (lmstudio namespace, "Headless LM Studio Docker Image"); there is no lmstudio/lmstudio.
-check("LM Studio's container path resolves (lmstudio/llmster-preview)",
-      "lm-studio" in found,
-      "the same product the 10-desktop-apps cask covers on the host")
-
-check("exactly three agents, no more", found == {"llama-cpp", "ollama", "lm-studio"},
-      f"got {sorted(found)}")
+check("exactly one agent, no more", found == {"aider"},
+      f"got {sorted(found)}; every model runner and gateway in this fixture must be declined")
 
 # --- scan rows: provenance, gaps, and staleness -----------------------------------
 # All pure bin/classify behaviour, so it lives in the fast suite. test/docker_states.sh

@@ -79,7 +79,10 @@ import time
 # must come back UNMATCHED, and a matcher that claimed them would be caught here.
 IMAGES = [
     {"Id": "sha256:846795f2a2b5787ce2155170fd33b9ae886fd925f26635424ee613d53ece2fa4",
-     "RepoTags": ["ghcr.io/berriai/litellm:main-latest"],
+     "RepoTags": ["paulgauthier/aider:latest"],
+     "Id": "sha256:cd375f1ecbd1e0ac6752bba40de5f69f3b36b75cd3d24b2c41fcca502d054ad3", "Created": 1735689600, "Size": 1390000000,
+     "Labels": None, "RepoDigests": []},
+    {"RepoTags": ["ghcr.io/berriai/litellm:main-latest"],
      "Created": 1788060176, "Size": 1663809740},
     {"Id": "sha256:c3728b9ba0c4c427770eec092fdb1bab1e86e811d578b27440771b8b3207f2c7",
      "RepoTags": ["ghcr.io/ggml-org/llama.cpp:server"],

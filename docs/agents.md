@@ -11,10 +11,10 @@ strength of the evidence behind them.
 
 | | agents | |
 |---|---:|---|
-| **standard** | 19 | a VM scenario installs the real software and asserts the classifier finds it |
+| **standard** | 15 | a VM scenario installs the real software and asserts the classifier finds it |
 | **exception** | 0 | recorded in the catalog with a reason, an evidence grade and the date it was raised |
 
-19 entries carrying 59 identifiers &mdash; **15 agents** and **4 supporting tools**.
+15 entries carrying 42 identifiers &mdash; **15 agents** and **0 supporting tools**.
 
 ## Not everything here is an agent
 
@@ -44,11 +44,11 @@ matched — so an entry could be verified while carrying identifiers nothing had
 exercised. Each scenario now records what it actually matched, in its own `observed.json`,
 and those are the numbers below.
 
-| identifiers | 59 | |
+| identifiers | 42 | |
 |---|---:|---|
-| **real install** | 31 | observed in a scenario's own output, on a machine where the software was installed |
-| **fixture only** | 10 | matched a captured row. Proves the *matcher*; says nothing about whether the identifier is current |
-| **unexercised** | 18 | nothing matches it yet |
+| **real install** | 21 | observed in a scenario's own output, on a machine where the software was installed |
+| **fixture only** | 8 | matched a captured row. Proves the *matcher*; says nothing about whether the identifier is current |
+| **unexercised** | 13 | nothing matches it yet |
 
 `tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor
 carrying an `unverified` block, so an unverified signature cannot enter quietly.
@@ -61,7 +61,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 
 | name | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **aider** | real install | aider, aider, aider-chat, `~/.aider`, paulgauthier/aider | 25-python-agents |
+| **aider** | real install | aider, aider, aider-chat, `~/.aider`, `paulgauthier/aider` | 25-python-agents |
 | **Claude Code** | real install | @anthropic-ai/claude-code, **`~/.local/bin/claude`**, **`~/.claude`** | 20-cli-agents, 90-demo-fleet |
 | **Cline** | real install | **`cline`** | 20-cli-agents |
 | **Codex CLI** | real install | codex, **`@openai/codex`**, ~/.codex | 20-cli-agents, 90-demo-fleet |
@@ -97,19 +97,6 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | **Claude Desktop** | real install | **`com.anthropic.claudefordesktop`**, **`claude`**, `com.anthropic.claude_browser_extension.json` | 10-desktop-apps, 90-demo-fleet |
 | **Perplexity** | real install | **`ai.perplexity.macv3`**, **`perplexity`** | 10-desktop-apps |
 
-# Model runners (4)
-
-**Not agents, and not language models either.** These serve models on the machine; an agent is what drives one. Counted separately so the agent number means what it says. The *models* they hold are a different thing again and appear as `kind=model` rows from the `model_stores` route.
-
-## Model runner
-
-| name | evidence | identifiers | scenarios |
-|---|---|---|---|
-| **Jan** | real install | **`jan.ai.app`**, **`jan`** | 10-desktop-apps |
-| **llama.cpp** | real install | **`llama.cpp`**, 8080, `ghcr.io/ggml-org/llama.cpp` | 30-local-models |
-| **LM Studio** | real install | **`ai.elementlabs.lmstudio`**, **`lm-studio`**, 1234, `lmstudio/llmster-preview` | 10-desktop-apps |
-| **Ollama** | real install | **`com.electron.ollama`**, **`ollama`**, **`ollama-app`**, **`ollama`**, com.ollama., **`11434`**, ~/.ollama/models/manifests, `ollama/ollama` | 30-local-models, 90-demo-fleet |
-
 > **`bold code`** = observed in a real install. `code` = matched by a fixture only. plain = unexercised.
 
 ## Unexercised identifiers
@@ -121,16 +108,11 @@ No test matches these. Each is a candidate for a fixture row or a scenario.
 | aider | homebrew | `aider` |
 | aider | npm | `aider` |
 | aider | PyPI | `aider-chat` |
-| aider | image | `paulgauthier/aider` |
 | Claude Code | npm | `@anthropic-ai/claude-code` |
 | Codex CLI | homebrew | `codex` |
 | Codex CLI | state dir | `~/.codex` |
 | GitHub Copilot CLI | homebrew | `copilot-cli` |
 | Gemini CLI | homebrew | `gemini-cli` |
-| llama.cpp | port | `8080` |
-| LM Studio | port | `1234` |
-| Ollama | launchd | `com.ollama.` |
-| Ollama | model store | `~/.ollama/models/manifests` |
 | OpenClaw | homebrew | `openclaw` |
 | OpenClaw | npm | `openclaw` |
 | OpenClaw | npm | `clawdbot` |
@@ -162,10 +144,6 @@ The Homebrew routes for gemini-cli (formula) and copilot-cli (cask) are NOT exer
 **20-cli-agents -- known gap**
 
 cline also ships as a VS Code extension, which is a different install path entirely and nothing here covers it. osquery has no table for VS Code extensions, so it is not merely untested but currently unreachable.
-
-**30-local-models -- known gap**
-
-llama.cpp is installed as a formula and its binary is asserted, but no model is loaded through it and its server is never started, so the ports route stays unexercised. Ollama is the only local model in this scenario whose listener is actually observed.
 
 **40-browser -- known gap**
 

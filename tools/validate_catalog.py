@@ -211,12 +211,14 @@ def main():
         sys.exit(1)
     n_exc = sum(1 for a in doc["agents"] if a.get("unverified"))
     n_real = len(doc["agents"]) - n_exc
+    # `not_agents` is empty now that the scope is agents only. The machinery stays,
+    # because the argument that produced it will be had again: something detectable and
+    # AI-adjacent will be proposed, and the question will be whether it ACTS on anyone's
+    # behalf. Print the split only when there is one.
     na = set(doc.get("not_agents", ()))
     n_tools = sum(1 for a in doc["agents"] if a.get("classification") in na)
-    # "entries", not "agents". An MCP SDK is a library and LiteLLM is a gateway; counting
-    # them as agents overstates what was found on a machine.
-    print(f"catalog: ok, {len(doc['agents'])} entries "
-          f"({len(doc['agents']) - n_tools} agents, {n_tools} model runners), "
+    split = f" ({len(doc['agents']) - n_tools} agents, {n_tools} not)" if n_tools else ""
+    print(f"catalog: ok, {len(doc['agents'])} agents{split}, "
           f"{len(seen_route_values)} identifiers, scenario references resolve")
     print(f"  real install: {n_real}/{len(doc['agents'])} entries. "
           f"{n_exc} recorded exception(s).")

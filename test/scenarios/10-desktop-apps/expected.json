@@ -2,23 +2,20 @@
   "description": "The desktop AI apps that make up the bulk of the demo table.",
   "demo_beat": "step 1 - the fleet-wide list",
   "counts": {
-    "app": ">=8",
-    "brew": ">=7",
+    "app": ">=6",
+    "brew": ">=5",
     "npm": ">=0",
     "file": ">=1",
     "ext": ">=0",
     "nmh": ">=0",
     "daemon": ">=0",
-    "port": ">=0",
-    "model": 0
+    "port": ">=0"
   },
   "classified": {
     "must_find": [
       "chatgpt-desktop",
       "claude-desktop",
       "cursor",
-      "jan",
-      "lm-studio",
       "orion",
       "perplexity-comet",
       "perplexity-desktop",
@@ -28,13 +25,12 @@
       "openclaw"
     ]
   },
-  "why": "The four bundle ids that used to be must_contain are now must_find on the classifier, which is the layer that actually knows them. com.openai.codex is ChatGPT Desktop, not Codex CLI -- the obvious guess, com.openai.chat, is wrong, and pinning it here is the only thing that would catch a catalog edit getting it backwards. lm-studio and jan are Model runner entries rather than agents, and are here because this is the scenario that installs casks -- the classification describes deployment shape, and their shape is a desktop app.",
+  "why": "The four bundle ids that used to be must_contain are now must_find on the classifier, which is the layer that actually knows them. com.openai.codex is ChatGPT Desktop, not Codex CLI -- the obvious guess, com.openai.chat, is wrong, and pinning it here is the only thing that would catch a catalog edit getting it backwards.",
   "must_contain": [
     "com.anthropic.claudefordesktop",
     "com.todesktop.230313mzl4w4u92",
     "com.openai.codex",
     "ai.perplexity.comet",
-    "ai.elementlabs.lmstudio",
     "com.kagi.kagimacOS"
   ],
   "known_gaps": [

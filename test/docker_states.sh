@@ -258,7 +258,7 @@ stop_fake
 
 echo "  the real image fixture classifies to the right agents"
 # The fixture is five REAL images captured from a real daemon (see test/lib/fake_docker.py).
-# ONE is a catalogued agent and four are not, and BOTH halves are assertions: a matcher that
+# ONE is a catalogued agent (aider) and five are not, and BOTH halves are assertions: a matcher that
 # claimed alpine, spicedb or an ECR python would be a confident wrong finding on a very large
 # share of developer Macs.
 #
@@ -271,7 +271,7 @@ start_fake healthy
 scan_out=$("$ROOT/bin/container-scan" --socket "$SOCK" 2>/dev/null)
 classified=$(printf '%s' "$scan_out" | "$ROOT/bin/classify" --json 2>/dev/null)
 unmatched=$(printf '%s' "$scan_out" | "$ROOT/bin/classify" --json --show-unmatched 2>/dev/null)
-for want in llama-cpp; do
+for want in aider; do
   check "finds $want" \
         "$(printf '%s' "$classified" | python3 -c "
 import json,sys
@@ -292,8 +292,8 @@ check "claims nothing else" \
       "$(printf '%s' "$classified" | python3 -c "
 import json,sys
 d = json.load(sys.stdin)
-print(1 if sorted(f['id'] for f in d['findings']) == ['llama-cpp'] else 0)" 2>/dev/null)" \
-      "alpine, spicedb, the ECR python image and the LiteLLM gateway must stay unmatched"
+print(1 if sorted(f['id'] for f in d['findings']) == ['aider'] else 0)" 2>/dev/null)" \
+      "alpine, spicedb, the ECR python image, the LiteLLM gateway and the llama.cpp model runner must all stay unmatched"
 # A multi-tagged image is one comma-joined row, and matching the field whole finds neither
 # tag. The fixture's alpine carries two tags precisely so this cannot regress unnoticed.
 check "a comma-joined multi-tag row is still parsed" \

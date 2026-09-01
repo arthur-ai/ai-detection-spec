@@ -8,15 +8,13 @@
     "ext": ">=0",
     "nmh": ">=0",
     "daemon": ">=0",
-    "port": ">=0",
-    "model": 0
+    "port": ">=0"
   },
   "classified": {
     "must_find": [],
     "forbid": [
       "openclaw",
-      "claude-code",
-      "ollama"
+      "claude-code"
     ]
   },
   "why": "The control. Under D20 this scenario changed job completely: the query enumerates, so a clean machine no longer returns zero rows -- it returns its whole inventory. What must still be zero is the CLASSIFIER's output. `forbid` is the real assertion and it is what caught the stock Apple native-messaging manifest reporting two phantom findings on every Mac in the fleet. model stays a hard 0: no dotdir on a clean machine has a models/manifests tree, so a nonzero there is an over-broad glob."

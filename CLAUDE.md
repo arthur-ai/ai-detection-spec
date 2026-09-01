@@ -32,19 +32,37 @@ the vendor's own Homebrew metadata and it matched nothing on any Mac; the real i
 `~/.aider`, so evidence and signature never met. Both were silent, and neither survived contact
 with an actual install.
 
-**The catalog detects agents.** Something that acts on a user's behalf. An MCP SDK is a
-library an agent is built with and LiteLLM is a gateway an agent calls through; both were
-catalogued, both were easy to detect, and both were removed, because counting them among
-"agents found on this Mac" overstates the finding. Their rows stay in the fixtures as negative
-controls, asserted to arrive and be declined — the only way to tell *correctly not an agent*
-from *route quietly broken*. Docker Desktop went the same way, and the reason
-generalises: what we detect inside a container is the agent **image** — the runtime is how we
-look, not what we look for — and whether Docker is present is already answered better by the
-`kind=scan` marker, which distinguishes *no Docker* from *Docker wedged* as a bundle id cannot.
-One non-agent classification remains, marked in `not_agents`: a **model runner** serves
-language models on the machine. It is not a language model either — the models themselves are
-separate `kind=model` rows from `model_stores` — and naming the app after the model would blur
-two things this repo detects apart.
+## The scope is agents, and only agents
+
+**An agent is something that acts on the user's behalf.** That is the whole test. It is not
+"is this AI software" and not "can we detect it" — everything removed below passed both and
+was removed anyway.
+
+| removed | what it actually is |
+|---|---|
+| `mcp-sdk` | a **library an agent is built with**. Detecting it says a developer imported a protocol |
+| `litellm` | a **gateway an agent calls through**. Detecting it says traffic may be proxied |
+| `docker` | a **runtime**: how we look, not what we look for. What we detect in a container is the agent *image* |
+| `ollama`, `lm-studio`, `jan`, `llama-cpp` | **model runners**. They serve language models; an agent is what drives one |
+
+Each was easy to detect and each belongs in *some* AI inventory, which is exactly why the
+reasoning is written into `catalog/agents.yaml`'s header rather than left to memory — the
+temptation to re-add them is obvious. **Counting them among "agents found on this Mac"
+overstates the finding**, and that is the one error this repo exists to avoid.
+
+Two consequences worth knowing before you extend anything:
+
+- **A removed entry keeps its fixture rows**, and the assertion inverts to *must not match*.
+  Deleting the evidence with the signature leaves nothing to tell *correctly not an agent*
+  from *route quietly broken* — which is the ambiguity the dropped `ext` kind hid behind for
+  months. `25-python-agents` still installs LiteLLM for exactly this reason.
+- **A query branch that no agent can be found through is payload nobody can read.** The
+  `model` branch went when the model runners did: it emitted a row per model manifest, and
+  `bin/classify` never had a `model` key in `KIND_ROUTES`, so every one of those rows was
+  *dropped* — the same failure as `ext`, undetected because the row counts were right.
+
+If the scope widens, the model runners are the strongest candidates to return, and the
+`model` branch with them.
 
 **A real install is the standard, and the catalog enforces it.** An agent is verified when a VM
 scenario installs the real software and asserts the classifier finds it. Anything less is an

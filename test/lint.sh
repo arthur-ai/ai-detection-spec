@@ -94,6 +94,11 @@ import glob, json, os, sys
 here = sys.argv[1]
 # DELIBERATELY INCOMPLETE, and two kinds are missing on purpose:
 #
+#   model  RETIRED WITH THE MODEL RUNNERS. The branch emitted one row per model manifest
+#          and nothing consumed them: 'model' was never a key in bin/classify's
+#          KIND_ROUTES, so every row was DROPPED -- the same failure kind='ext' had. The
+#          scope is agents now, no agent is found through a model store, and the branch
+#          was payload nobody could read.
 #   image  containers.sql, which is `expensive` and reaches nobody through
 #          dist/discovery.sql. No scenario runs Docker, so pinning it would fail the build.
 #   scan   the "we could not look" marker bin/container-scan prints when the daemon is
@@ -103,7 +108,7 @@ here = sys.argv[1]
 # Every kind in this set must be pinned by every scenario, which is what makes it a
 # coverage check rather than a spot check -- and is exactly why these two cannot join it.
 # test/docker_states.sh covers both instead. Do not "complete" this set.
-KINDS = {"app","npm","brew","daemon","port","ext","file","nmh","model"}
+KINDS = {"app","npm","brew","daemon","port","ext","file","nmh"}
 covered, bad = set(), False
 for f in sorted(glob.glob(os.path.join(here, "scenarios/*/expected.json"))):
     name = os.path.basename(os.path.dirname(f))
