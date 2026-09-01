@@ -88,6 +88,17 @@ check() {
   else printf "    FAIL  %s  %s\n" "$label" "$detail"; fail=1; fi
 }
 
+# How many images the fake daemon serves, read from the fake itself. Hardcoding it meant
+# adding an image to fake_docker.py silently broke this suite -- and because it needs sudo
+# it does not run in the fast loop, so the failure surfaced in CI minutes later rather than
+# on the machine that made the change. Adding paulgauthier/aider did exactly that.
+FAKE_IMAGE_COUNT=$(python3 -c "
+import importlib.util, importlib.machinery, sys
+s = importlib.util.spec_from_loader('fd', importlib.machinery.SourceFileLoader(
+    'fd', '$HERE/lib/fake_docker.py'))
+m = importlib.util.module_from_spec(s); s.loader.exec_module(m)
+print(len(m.IMAGES))")
+
 # want_guard: 1 if the guard should admit this state. want_rows: expected row count when
 # the guard admits. Only 'healthy' may ever produce rows.
 run_state() {
@@ -130,7 +141,7 @@ run_state absent  0 0
 run_state refuse  0 0
 run_state hang    0 0
 run_state error   0 0
-run_state healthy 1 5
+run_state healthy 1 "$FAKE_IMAGE_COUNT"
 
 # The guard's whole purpose: prove the unguarded query really does stall on 'hang', so
 # nobody concludes the guard is defending against nothing. Bounded, because it does not
