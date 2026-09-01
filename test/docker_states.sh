@@ -409,8 +409,19 @@ run_bounded 1 /dev/null python3 -c "$ignorer"; rc=$?
 elapsed=$(python3 -c "import time;print(f'{time.time()-$t0:.2f}')")
 check "a SIGTERM-proof process is still killed (124)" "$([ "$rc" = 124 ] && echo 1 || echo 0)" \
       "got $rc -- without the SIGKILL escalation this hangs, which is why the bound has one"
+# THE THRESHOLD MEASURES BEHAVIOUR, NOT LOAD. The mechanism is a 1s bound, then SIGTERM,
+# then a grace of 10 x 0.1s, then SIGKILL -- about 2s nominal. What it is guarding against
+# is the escalation being GONE, and this child sleeps 300s, so a run without SIGKILL takes
+# roughly 300 seconds. Anything under ten proves the escalation fired.
+#
+# It was 4, which is close enough to the nominal 2s that a loaded runner trips it: observed
+# at 2.41s locally, 3.21s in one CI run and 4.10s in the next, where it failed for no reason
+# but contention. A test that goes red on a busy machine teaches people to re-run it, and a
+# suite people re-run is a suite they stop reading. 10 is still 30x below the failure it
+# detects.
 check "and killed promptly (${elapsed}s)" \
-      "$(python3 -c "print(1 if $elapsed < 4 else 0)")" "took ${elapsed}s"
+      "$(python3 -c "print(1 if $elapsed < 10 else 0)")" \
+      "took ${elapsed}s; without the SIGKILL escalation this child sleeps for 300"
 
 echo "  the cache is replaced by rename, not written in place"
 # A torn read is a race and a race is a bad test. The inode is a deterministic proxy for the
