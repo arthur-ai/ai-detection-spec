@@ -60,9 +60,33 @@ jobs:
       - name: Install pyyaml
         run: pip3 install --quiet --break-system-packages pyyaml || pip3 install --quiet pyyaml
 
+      # A SCENARIO CAN BE UNRUNNABLE HERE RATHER THAN BROKEN, and until now only the VM
+      # harness knew that. test/run.sh has read requires.json since it was written -- CI
+      # never did, so adding a second macOS turned two honest "cannot run on this version"
+      # facts into two red jobs, which is how a suite teaches people to ignore it.
+      - name: Can this scenario run on this runner?
+        id: runnable
+        run: |
+          req="test/scenarios/${{ matrix.scenario }}/requires.json"
+          need=0
+          [ -f "$req" ] && need=$(python3 -c "import json;print(json.load(open('$req')).get('min_macos',0))")
+          have=$(sw_vers -productVersion | cut -d. -f1)
+          if [ "$have" -lt "$need" ]; then
+            echo "runnable=false" >> "$GITHUB_OUTPUT"
+            echo "SKIP: needs macOS >= $need, this runner is $have"
+            python3 -c "import json;print('  '+json.load(open('$req')).get('why',''))"
+            echo "### SKIPPED on macOS $have" >> "$GITHUB_STEP_SUMMARY"
+            echo "Needs macOS $need or newer. This is a fact about the runner, not a defect." \
+              >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "runnable=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Provision
+        if: steps.runnable.outputs.runnable == 'true'
         run: test/scenarios/${{ matrix.scenario }}/setup.sh
       - name: Query and assert
+        if: steps.runnable.outputs.runnable == 'true'
         run: |
           sudo -n /usr/local/bin/osqueryi --json < dist/discovery.sql > /tmp/out.json
           test/assert.sh /tmp/out.json test/scenarios/${{ matrix.scenario }}/expected.json
@@ -76,11 +100,13 @@ jobs:
       # race, and the loser's observation would be lost silently. The collect job below
       # merges them and commits once.
       - name: Record which identifiers this run matched
+        if: steps.runnable.outputs.runnable == 'true'
         run: |
           python3 tools/agent_status.py --record /tmp/out.json \
             test/scenarios/${{ matrix.scenario }} \
             --os "$(sw_vers -productVersion)" --arch "$(uname -m)"
       - name: Upload the observation
+        if: steps.runnable.outputs.runnable == 'true'
         uses: actions/upload-artifact@v4
         with:
           # THE OS IS IN THE NAME. Two jobs per scenario now, and upload-artifact@v4 fails
