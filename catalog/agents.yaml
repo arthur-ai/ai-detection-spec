@@ -230,6 +230,16 @@ agents:
     # wrong identifier makes: nothing can produce it, because it names something else.
     # Same failure as npm `mcp`, which turned out to be Mintlify's package.
     pypi: [aider-chat]
+    # ~/.aider NEEDS NO CREDENTIALS, contrary to the obvious assumption. `--version` exits
+    # before anything writes it, which is why a first attempt produced nothing and looked
+    # like an auth wall. aider's own source says otherwise: Path.home()/".aider" holds
+    # installs.json, analytics.json and oauth-keys.env, and installs.json is written by
+    # is_first_run_of_new_version() -- a VERSION CHECK, not a model call.
+    #
+    # So 25-python-agents runs `aider --just-check-update`, which triggers that check and
+    # exits without an API key, a network credential or a repository. Confirmed by the run,
+    # which now prints whether the directory appeared rather than leaving it to be inferred
+    # from a coverage number.
     state_dirs: ["~/.aider"]
     # Read off a real row: "paulgauthier/aider:latest", id cd375f1ecbd1. ENTRYPOINT is
     # /venv/bin/aider, which is the same package the pypi route above names.

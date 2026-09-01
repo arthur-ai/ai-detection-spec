@@ -75,6 +75,21 @@ EXCLUDED = {
     "90-demo-fleet": "a demo fleet, not a regression test: it installs the whole catalogue "
                      "to populate a walkthrough, and asserts breadth rather than a signature",
 }
+# The recording step must pass --os and --arch. Without them the step still succeeds and
+# still writes an observation -- just one that cannot say which platform produced it, which
+# is the entire reason the os matrix axis exists. That is exactly how it shipped: the edit
+# adding the flags aborted, the matrix edit landed, and eleven CI runs recorded no platform
+# at all while looking perfectly healthy.
+_sc = (root / "scenarios.yml").read_text()
+if "--record" in _sc:
+    _step = _sc[_sc.index("--record"):][:400]
+    for _flag in ("--os", "--arch"):
+        if _flag not in _step:
+            print(f"FAIL: scenarios.yml records observations without {_flag}. The step "
+                  f"succeeds and writes a record that cannot say which platform produced "
+                  f"it -- which is the whole point of the os matrix axis.")
+            failed = True
+
 _doc = yaml.safe_load((root / "scenarios.yml").read_text())
 _matrix = set(_doc["jobs"]["scenario"]["strategy"]["matrix"]["scenario"])
 _on_disk = {d.name for d in (repo / "test" / "scenarios").iterdir() if d.is_dir()}
