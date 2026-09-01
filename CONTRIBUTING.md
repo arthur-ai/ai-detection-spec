@@ -85,9 +85,15 @@ An SDK is a library an agent is *built with*; a gateway is something an agent ca
 Detecting either says a developer imported a protocol or proxied some traffic, not that
 anything is acting on anyone's behalf.
 
-Two exceptions are marked in `not_agents`, and they earn it in a way no library does: a
-**local model** server is what an agent runs *against*, and a **container runtime** changes
-what can be seen on the machine at all — `containers.sql` exists because agents hide there.
+One exception is marked in `not_agents`: a **local model** server is the inference capability
+an agent runs *against*, which is a fact about the machine rather than a library describing
+one.
+
+A **container runtime** is not an exception and was removed. `containers.sql` exists because
+agents hide in containers — so what belongs in the catalog is the agent **image**
+(`ollama/ollama`, `paulgauthier/aider`), not Docker. The runtime is instrumentation, and
+whether it is present is already reported by the `kind=scan` marker, which tells *no Docker*
+apart from *Docker wedged*. A bundle id cannot.
 
 If you remove an entry, **leave its rows in the fixtures** and assert they are declined.
 Deleting the evidence with the signature leaves nothing to distinguish *correctly not an

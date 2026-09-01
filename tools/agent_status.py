@@ -233,18 +233,30 @@ def markdown(data):  # noqa: C901
     for a in agents:
         by_class.setdefault(a["classification"], []).append(a)
 
-    for cls in data["classifications"]:
-        if cls not in by_class:
+    for group, want_agent, blurb in (
+            ("Agents", True,
+             "Software that acts on the user's behalf. This is what the catalog is for."),
+            ("Supporting tools", False,
+             "**Not agents.** Listed because they change what is possible on the machine, and "
+             "counted separately so the agent count means what it says. A local model server "
+             "is what an agent runs *against*; a container runtime changes what can be *seen* "
+             "at all, which is why `containers.sql` exists.")):
+        classes = [c for c in data["classifications"]
+                   if c in by_class and (c not in na) == want_agent]
+        if not classes:
             continue
-        out += [f"## {cls}" + ("  *(not an agent)*" if cls in na else ""), "",
-                "| agent | evidence | identifiers | scenarios |", "|---|---|---|---|"]
-        for a in sorted(by_class[cls], key=lambda x: x["id"]):
-            ids = ", ".join(f"`{i['value']}`" if i["fixture"] else f"{i['value']}"
-                            for i in a["identifiers"]) or "--"
-            mark = "real install" if grade(a) == "standard" else "**exception**"
-            out.append(f"| **{a['name']}** | {mark} | {ids} | "
-                       f"{', '.join(a['scenarios']) or '--'} |")
-        out.append("")
+        n = sum(len(by_class[c]) for c in classes)
+        out += [f"# {group} ({n})", "", blurb, ""]
+        for cls in classes:
+            out += [f"## {cls}", "",
+                    "| name | evidence | identifiers | scenarios |", "|---|---|---|---|"]
+            for a in sorted(by_class[cls], key=lambda x: x["id"]):
+                ids = ", ".join(f"`{i['value']}`" if i["fixture"] else f"{i['value']}"
+                                for i in a["identifiers"]) or "--"
+                mark = "real install" if grade(a) == "standard" else "**exception**"
+                out.append(f"| **{a['name']}** | {mark} | {ids} | "
+                           f"{', '.join(a['scenarios']) or '--'} |")
+            out.append("")
 
     out += ["> Identifiers in `code` are matched by a test fixture; the rest are unexercised.", ""]
 
@@ -320,25 +332,32 @@ def main():
     for a in agents:
         by_class[a["classification"]].append(a)
 
-    for cls in data["classifications"]:
-        if cls not in by_class:
+    # Two top-level groups, not one list with a tag. A container runtime listed among
+    # agents reads as an agent however it is labelled, and the count that matters to
+    # someone asking "what AI is on this Mac" is the agent count.
+    for group, want_agent in (("AGENTS", True), ("SUPPORTING TOOLS (not agents)", False)):
+        classes = [c for c in data["classifications"]
+                   if c in by_class and (c not in na) == want_agent]
+        if not classes:
             continue
-        print(f"\n{cls}" + ("  (not an agent)" if cls in na else ""))
-        for a in sorted(by_class[cls], key=lambda x: x["id"]):
-            std = grade(a) == "standard"
-            mark = "real install" if std else "EXCEPTION"
-            print(f"  {a['name']:<22} {mark:<13} {len(a['identifiers'])} identifiers"
-                  + (f"  [{', '.join(a['scenarios'])}]" if std else ""))
-            if not std:
-                exc = a["unverified"] or {}
-                print(f"      {exc.get('evidence','?')}: {exc.get('reason','?')}")
-                if exc.get("blocker"):
-                    print(f"      blocked: {exc['blocker']}")
-                if exc.get("belongs_in"):
-                    print(f"      belongs in: {exc['belongs_in']}")
-            for i in a["identifiers"]:
-                if not i["fixture"]:
-                    print(f"      no fixture row  {i['route']}: {i['value']}")
+        print(f"\n{'=' * 62}\n{group}\n{'=' * 62}")
+        for cls in classes:
+            print(f"\n  {cls}")
+            for a in sorted(by_class[cls], key=lambda x: x["id"]):
+                std = grade(a) == "standard"
+                mark = "real install" if std else "EXCEPTION"
+                print(f"    {a['name']:<22} {mark:<13} {len(a['identifiers'])} identifiers"
+                      + (f"  [{', '.join(a['scenarios'])}]" if std else ""))
+                if not std:
+                    exc = a["unverified"] or {}
+                    print(f"        {exc.get('evidence','?')}: {exc.get('reason','?')}")
+                    if exc.get("blocker"):
+                        print(f"        blocked: {exc['blocker']}")
+                    if exc.get("belongs_in"):
+                        print(f"        belongs in: {exc['belongs_in']}")
+                for i in a["identifiers"]:
+                    if not i["fixture"]:
+                        print(f"        no fixture row  {i['route']}: {i['value']}")
 
     n_exc = len(agents) - n_scen
     print(f"\n{len(agents)} entries: {len(agents) - n_tools} agents and {n_tools} "

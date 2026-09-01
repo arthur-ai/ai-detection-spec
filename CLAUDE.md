@@ -37,9 +37,12 @@ library an agent is built with and LiteLLM is a gateway an agent calls through; 
 catalogued, both were easy to detect, and both were removed, because counting them among
 "agents found on this Mac" overstates the finding. Their rows stay in the fixtures as negative
 controls, asserted to arrive and be declined — the only way to tell *correctly not an agent*
-from *route quietly broken*. Two non-agent classifications remain and are marked in
-`not_agents`: a local model server is what an agent runs against, and a container runtime
-changes what can be seen at all, which is why `containers.sql` exists.
+from *route quietly broken*. Docker Desktop went the same way, and the reason
+generalises: what we detect inside a container is the agent **image** — the runtime is how we
+look, not what we look for — and whether Docker is present is already answered better by the
+`kind=scan` marker, which distinguishes *no Docker* from *Docker wedged* as a bundle id cannot.
+One non-agent classification remains, marked in `not_agents`: a **local model** server is the
+inference capability an agent runs against, not a library describing one.
 
 **A real install is the standard, and the catalog enforces it.** An agent is verified when a VM
 scenario installs the real software and asserts the classifier finds it. Anything less is an

@@ -12,9 +12,9 @@ strength of the evidence behind them.
 | | agents | |
 |---|---:|---|
 | **standard** | 19 | a VM scenario installs the real software and asserts the classifier finds it |
-| **exception** | 1 | recorded in the catalog with a reason, an evidence grade and the date it was raised |
+| **exception** | 0 | recorded in the catalog with a reason, an evidence grade and the date it was raised |
 
-20 entries carrying 59 identifiers &mdash; **15 agents** and **5 supporting tools**.
+19 entries carrying 58 identifiers &mdash; **15 agents** and **4 supporting tools**.
 
 ## Not everything here is an agent
 
@@ -38,7 +38,7 @@ Mac. `aider` installs as `aider-chat` under `uv` and `pipx` while its state dire
 and neither survived contact with an actual install. Nothing short of installing the
 software catches that class of error.
 
-A **fixture** is not a weaker pass, it is a different claim: 17 of 59
+A **fixture** is not a weaker pass, it is a different claim: 17 of 58
 identifiers are matched by a captured row, which proves the *matcher* works and says
 nothing about whether the identifier is what the software ships today. Per-agent coverage
 comes from scenarios; per-identifier coverage comes from fixtures only, because a
@@ -48,9 +48,13 @@ found it.
 `tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor
 carrying an `unverified` block, so an unverified signature cannot enter quietly.
 
+# Agents (15)
+
+Software that acts on the user's behalf. This is what the catalog is for.
+
 ## Coding agent
 
-| agent | evidence | identifiers | scenarios |
+| name | evidence | identifiers | scenarios |
 |---|---|---|---|
 | **aider** | real install | aider, aider, aider-chat, `~/.aider`, paulgauthier/aider | 25-python-agents |
 | **Claude Code** | real install | @anthropic-ai/claude-code, `~/.local/bin/claude`, `~/.claude` | 20-cli-agents, 90-demo-fleet |
@@ -63,58 +67,45 @@ carrying an `unverified` block, so an unverified signature cannot enter quietly.
 
 ## Personal agent
 
-| agent | evidence | identifiers | scenarios |
+| name | evidence | identifiers | scenarios |
 |---|---|---|---|
 | **OpenClaw** | real install | `ai.openclaw.mac`, `bot.molt.mac`, openclaw, openclaw, clawdbot, moltbot, `~/.openclaw`, `ai.openclaw.`, `bot.molt.`, 18789 | 50-autonomous, 55-openclaw-npm, 60-persistence, 90-demo-fleet |
 
 ## AI browser
 
-| agent | evidence | identifiers | scenarios |
+| name | evidence | identifiers | scenarios |
 |---|---|---|---|
 | **Orion** | real install | com.kagi.kagimacOS, orion | 10-desktop-apps |
 | **Perplexity Comet** | real install | ai.perplexity.comet, comet | 10-desktop-apps, 90-demo-fleet |
 
 ## Browser agent
 
-| agent | evidence | identifiers | scenarios |
+| name | evidence | identifiers | scenarios |
 |---|---|---|---|
 | **Claude in Chrome** | real install | `fcoeoabgfenejglbffodgkkbkcdhcgfn` | 45-claude-extension |
 
 ## Desktop assistant
 
-| agent | evidence | identifiers | scenarios |
+| name | evidence | identifiers | scenarios |
 |---|---|---|---|
 | **ChatGPT Desktop** | real install | com.openai.codex, chatgpt | 10-desktop-apps, 90-demo-fleet |
 | **Claude Desktop** | real install | com.anthropic.claudefordesktop, claude, `com.anthropic.claude_browser_extension.json` | 10-desktop-apps, 90-demo-fleet |
 | **Perplexity** | real install | ai.perplexity.macv3, perplexity | 10-desktop-apps |
 
-## Local model  *(not an agent)*
+# Supporting tools (4)
 
-| agent | evidence | identifiers | scenarios |
+**Not agents.** Listed because they change what is possible on the machine, and counted separately so the agent count means what it says. A local model server is what an agent runs *against*; a container runtime changes what can be *seen* at all, which is why `containers.sql` exists.
+
+## Local model
+
+| name | evidence | identifiers | scenarios |
 |---|---|---|---|
 | **Jan** | real install | jan.ai.app, jan | 10-desktop-apps |
 | **llama.cpp** | real install | llama.cpp, 8080, `ghcr.io/ggml-org/llama.cpp` | 30-local-models |
 | **LM Studio** | real install | ai.elementlabs.lmstudio, lm-studio, 1234 | 10-desktop-apps |
 | **Ollama** | real install | com.electron.ollama, `ollama`, `ollama-app`, `ollama`, com.ollama., `11434`, ~/.ollama/models/manifests, `ollama/ollama` | 30-local-models, 90-demo-fleet |
 
-## Container runtime  *(not an agent)*
-
-| agent | evidence | identifiers | scenarios |
-|---|---|---|---|
-| **Docker Desktop** | **exception** | com.docker.docker | -- |
-
 > Identifiers in `code` are matched by a test fixture; the rest are unexercised.
-
-## The exception register
-
-Every agent not backed by a real install, and why. `belongs_in` names the
-scenario that should cover it, which makes this a work list rather than an
-excuse list. `blocker` appears only where something genuinely stands in the way
--- its absence means the only thing missing is the work.
-
-| agent | evidence held | reason | belongs in | blocker |
-|---|---|---|---|---|
-| **Docker Desktop** | vendor-documentation | test/docker_states.sh exercises every daemon state against a fake socket, which proves the guard and the bound but installs no Docker and so never sees this bundle id | -- | Docker Desktop needs nested virtualisation to RUN in a Tart guest, though installing the cask alone would register the bundle id |
 
 ## Unexercised identifiers
 
@@ -138,7 +129,6 @@ No test matches these. Each is a candidate for a fixture row or a scenario.
 | GitHub Copilot CLI | npm | `@github/copilot` |
 | Cursor | bundle id | `com.todesktop.230313mzl4w4u92` |
 | Cursor | homebrew | `cursor` |
-| Docker Desktop | bundle id | `com.docker.docker` |
 | Gemini CLI | homebrew | `gemini-cli` |
 | Gemini CLI | npm | `@google/gemini-cli` |
 | Jan | bundle id | `jan.ai.app` |

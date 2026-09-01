@@ -62,10 +62,17 @@ version: 1
 # they arrive and are declined, which is the only way to tell "correctly not an agent" from
 # "route quietly broken".
 #
-# Two classifications remain that are not agents, and they stay for a reason no library
-# has. A local model server is what an agent runs AGAINST, and a container runtime changes
-# what can be SEEN on the machine at all -- containers.sql exists because agents hide
-# there. `not_agents` below marks them, and the tooling counts them apart.
+#   docker    Docker Desktop is INSTRUMENTATION, not a finding. What we detect inside a
+#             container is the agent IMAGE -- ollama/ollama, ghcr.io/ggml-org/llama.cpp,
+#             paulgauthier/aider -- and the runtime is how we look, not what we are looking
+#             for. Whether Docker is present is already answered, and answered better, by
+#             the kind=scan marker row: `ok`, `absent`, `unhealthy:<code>`, `timeout:<n>`
+#             distinguish "no Docker" from "Docker wedged", which a bundle id cannot.
+#
+# One classification remains that is not an agent. A LOCAL MODEL server is what an agent
+# runs AGAINST -- it is the capability on the machine rather than a library describing one,
+# and a fleet owner asking what can run inference locally wants it. `not_agents` below
+# marks it, and the tooling counts it apart.
 classifications:
   # --- acts on the user's behalf ---
   - Coding agent        # operates on a codebase, usually with shell access
@@ -80,7 +87,6 @@ classifications:
   # --- does not act on anyone's behalf; listed in not_agents below ---
   - Local model         # inference served on the machine itself. A model server, not an
                         # agent: something else has to drive it
-  - Container runtime   # not an agent; presence changes what can be seen
 
 # Which of the above are NOT agents, as data rather than as a comment, so the tooling can
 # count them apart instead of every tool hardcoding its own opinion. Additive on purpose:
@@ -88,7 +94,6 @@ classifications:
 # shape of the file, and a consumer parsing this YAML would break for a label.
 not_agents:
   - Local model
-  - Container runtime
 
 agents:
   - id: claude-desktop
@@ -257,15 +262,3 @@ agents:
 
 
 
-  - id: docker
-    name: Docker Desktop
-    classification: Container runtime
-    # Not an agent. It is here because the container query returns zero rows whenever
-    # the daemon is stopped, which is indistinguishable from "no AI containers".
-    # Knowing Docker is INSTALLED lets a consumer tell "nothing there" from "could not look".
-    bundle_ids: [com.docker.docker]
-    unverified:
-      reason: "test/docker_states.sh exercises every daemon state against a fake socket, which proves the guard and the bound but installs no Docker and so never sees this bundle id"
-      evidence: vendor-documentation
-      blocker: "Docker Desktop needs nested virtualisation to RUN in a Tart guest, though installing the cask alone would register the bundle id"
-      raised: 2026-08-31
