@@ -100,6 +100,20 @@ trust. It is SQL. Read `dist/discovery.sql` in ten minutes and verify it yoursel
 This tool also **does nothing to the machine**. No blocking, no remediation, no network calls of
 its own. It reports; you decide.
 
+### What it looks for
+
+[`docs/agents.md`](docs/agents.md) lists every agent in the catalog, the identifiers each is
+matched on, and how strongly each one is evidenced — a **real install** in a VM scenario, a
+**fixture** row, or nothing yet. It is generated from the catalog and regenerated in CI, so
+it cannot describe a catalog that has moved on without it.
+
+```console
+$ python3 tools/agent_status.py
+```
+
+It reports what the test suite *cannot* prove alongside what it can, because a coverage
+summary that lists only its successes reads as complete when it is merely silent.
+
 ## What it cannot see
 
 Stated plainly, because a discovery tool that hides its blind spots is worse than none:
