@@ -19,7 +19,11 @@ An identifier with neither is not necessarily wrong. It is unexercised, which is
 different thing and is why it is named rather than hidden.
 """
 import collections
-import importlib.util
+import importlib.machinery      # NOT implied by importlib.util. Importing only .util
+import importlib.util              # left importlib.machinery resolvable on a developer Mac,
+                                   # where something else had already imported it, and
+                                   # AttributeError on a clean runner -- which is where it
+                                   # failed: every scenario job, in the recording step.
 import json
 import pathlib
 import re

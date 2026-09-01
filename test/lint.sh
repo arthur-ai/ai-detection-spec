@@ -190,6 +190,49 @@ python3 "$HERE/../tools/check_no_catalog.py" || fail=1
 # generated from queries/. Gated here so a contributor sees it locally in seconds rather
 # than finding out from a red PR -- and so the doc cannot quietly describe a catalog that
 # has moved on without it, which is the same failure this repo keeps having in other forms.
+# A SUBMODULE YOU DID NOT IMPORT. `import importlib.util` leaves importlib.machinery
+# resolvable on a developer Mac -- something in site-packages has already imported it -- and
+# raises AttributeError on a clean interpreter. Verified: `python3 -S -c "import
+# importlib.util; importlib.machinery.SourceFileLoader"` fails here, plain python3 does not.
+#
+# It cost every scenario job in one CI run, in the step that records coverage, and no gate
+# could have caught it because the local interpreter resolves the name perfectly.
+python3 - "$HERE/.." <<'PYEOF' || fail=1
+import ast, pathlib, sys
+
+# Submodules that are NOT loaded by importing the parent package. os.path is absent from
+# this list on purpose: it is bound as an attribute of os at interpreter start.
+LAZY = {"importlib": {"machinery", "util", "resources", "metadata", "abc"},
+        "concurrent": {"futures"},
+        "xml": {"etree", "dom", "sax"},
+        "collections": {"abc"}}
+bad = []
+for path in sorted(pathlib.Path(sys.argv[1]).glob("*/*.py")):
+    if ".git" in path.parts:
+        continue
+    tree = ast.parse(path.read_text())
+    imported = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for a in node.names:
+                imported.add(a.name)
+                imported.add(a.name.split(".")[0])
+    for node in ast.walk(tree):
+        # Match the shape `parent.child.something`, i.e. Attribute(Attribute(Name)).
+        if not (isinstance(node, ast.Attribute)
+                and isinstance(node.value, ast.Attribute)
+                and isinstance(node.value.value, ast.Name)):
+            continue
+        parent, child = node.value.value.id, node.value.attr
+        if child in LAZY.get(parent, ()) and f"{parent}.{child}" not in imported:
+            bad.append(f"{path}:{node.lineno}: uses {parent}.{child} but never "
+                       f"imports it. Resolvable here, AttributeError on a clean "
+                       f"interpreter -- add `import {parent}.{child}`.")
+for b in bad:
+    print("FAIL: " + b)
+sys.exit(1 if bad else 0)
+PYEOF
+
 python3 "$HERE/../tools/agent_status.py" --check || fail=1
 # --json separately, because it exercises a code path --check does not. An unquoted
 # YYYY-MM-DD in the catalog resolves to a datetime.date, which json.dumps cannot
