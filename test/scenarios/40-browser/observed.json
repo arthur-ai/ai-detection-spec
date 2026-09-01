@@ -1,0 +1,17 @@
+{
+  "scenario": "40-browser",
+  "identifiers": [
+    {
+      "agent": "claude-desktop",
+      "route": "bundle_ids",
+      "value": "com.anthropic.claudefordesktop",
+      "agent_version": "1.24012.9"
+    },
+    {
+      "agent": "claude-desktop",
+      "route": "homebrew",
+      "value": "claude",
+      "agent_version": "1.24012.9,03c61d06f8e01a4db2273b9514e225f21d2ba62e"
+    }
+  ]
+}

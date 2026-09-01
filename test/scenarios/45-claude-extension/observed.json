@@ -5,9 +5,7 @@
       "agent": "claude-in-chrome",
       "route": "extension_ids",
       "value": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
-      "agent_version": "1.0.90",
-      "os": "26.6.2",
-      "arch": "arm64"
+      "agent_version": "1.0.90"
     }
   ]
 }

@@ -5,41 +5,31 @@
       "agent": "aider",
       "route": "homebrew",
       "value": "aider",
-      "agent_version": "0.86.2",
-      "os": "26.6.2",
-      "arch": "arm64"
+      "agent_version": "0.86.2"
     },
     {
       "agent": "claude-code",
       "route": "npm",
       "value": "@anthropic-ai/claude-code",
-      "agent_version": "2.1.252",
-      "os": "26.6.2",
-      "arch": "arm64"
+      "agent_version": "2.1.252"
     },
     {
       "agent": "codex-cli",
       "route": "homebrew",
       "value": "codex",
-      "agent_version": "0.151.0",
-      "os": "26.6.2",
-      "arch": "arm64"
+      "agent_version": "0.145.0"
     },
     {
       "agent": "copilot-cli",
       "route": "homebrew",
       "value": "copilot-cli",
-      "agent_version": "1.0.82",
-      "os": "26.6.2",
-      "arch": "arm64"
+      "agent_version": "1.0.75"
     },
     {
       "agent": "gemini-cli",
       "route": "homebrew",
       "value": "gemini-cli",
-      "agent_version": "0.46.0",
-      "os": "26.6.2",
-      "arch": "arm64"
+      "agent_version": "0.46.0"
     }
   ]
 }

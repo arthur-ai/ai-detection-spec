@@ -4,9 +4,7 @@
     {
       "agent": "aider",
       "route": "pypi",
-      "value": "aider-chat",
-      "os": "26.6.2",
-      "arch": "arm64"
+      "value": "aider-chat"
     }
   ]
 }
