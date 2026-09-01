@@ -234,10 +234,6 @@ agents:
     bundle_ids: [com.todesktop.230313mzl4w4u92]
     homebrew: [cursor]
 
-
-
-
-
   - id: perplexity-comet
     name: Perplexity Comet
     classification: AI browser
