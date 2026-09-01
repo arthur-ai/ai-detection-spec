@@ -11,10 +11,24 @@ strength of the evidence behind them.
 
 | | agents | |
 |---|---:|---|
-| **standard** | 10 | a VM scenario installs the real software and asserts the classifier finds it |
-| **exception** | 12 | recorded in the catalog with a reason, an evidence grade and the date it was raised |
+| **standard** | 19 | a VM scenario installs the real software and asserts the classifier finds it |
+| **exception** | 1 | recorded in the catalog with a reason, an evidence grade and the date it was raised |
 
-22 agents, 65 identifiers.
+20 entries carrying 59 identifiers &mdash; **15 agents** and **5 supporting tools**.
+
+## Not everything here is an agent
+
+An MCP SDK is a library an agent is built with. LiteLLM is a gateway an agent calls
+through. Neither acts on anyone's behalf, and counting them as agents overstates what
+was found on a machine. They are catalogued for the same reason Docker is: a fleet
+owner asking what AI software is on a Mac wants them, and their presence changes what
+is possible there. `not_agents` in the catalog records which classifications are which,
+as data rather than as a comment, so no tool has to hold its own opinion.
+
+One boundary is contested rather than settled. **Desktop assistant** is counted as an
+agent here: the old definition read *no autonomous execution*, which stopped being true
+when these clients gained MCP and began running tools locally. Overstating an agent is
+the safer error for an inventory than missing one, but it is a judgement, not a fact.
 
 ## Why a real install is the bar
 
@@ -24,7 +38,7 @@ Mac. `aider` installs as `aider-chat` under `uv` and `pipx` while its state dire
 and neither survived contact with an actual install. Nothing short of installing the
 software catches that class of error.
 
-A **fixture** is not a weaker pass, it is a different claim: 19 of 65
+A **fixture** is not a weaker pass, it is a different claim: 17 of 59
 identifiers are matched by a captured row, which proves the *matcher* works and says
 nothing about whether the identifier is what the software ships today. Per-agent coverage
 comes from scenarios; per-identifier coverage comes from fixtures only, because a
@@ -40,12 +54,12 @@ carrying an `unverified` block, so an unverified signature cannot enter quietly.
 |---|---|---|---|
 | **aider** | real install | aider, aider, aider-chat, `~/.aider`, paulgauthier/aider | 25-python-agents |
 | **Claude Code** | real install | @anthropic-ai/claude-code, `~/.local/bin/claude`, `~/.claude` | 20-cli-agents, 90-demo-fleet |
-| **Cline** | **exception** | cline | -- |
+| **Cline** | real install | cline | 20-cli-agents |
 | **Codex CLI** | real install | codex, `@openai/codex`, ~/.codex | 20-cli-agents, 90-demo-fleet |
-| **GitHub Copilot CLI** | **exception** | copilot-cli, @github/copilot | -- |
+| **GitHub Copilot CLI** | real install | copilot-cli, @github/copilot | 20-cli-agents |
 | **Cursor** | real install | com.todesktop.230313mzl4w4u92, cursor | 10-desktop-apps, 90-demo-fleet |
-| **Gemini CLI** | **exception** | gemini-cli, @google/gemini-cli | -- |
-| **Windsurf** | **exception** | com.exafunction.windsurf, devin-desktop | -- |
+| **Gemini CLI** | real install | gemini-cli, @google/gemini-cli | 20-cli-agents |
+| **Windsurf** | real install | com.exafunction.windsurf, devin-desktop | 10-desktop-apps |
 
 ## Personal agent
 
@@ -53,36 +67,12 @@ carrying an `unverified` block, so an unverified signature cannot enter quietly.
 |---|---|---|---|
 | **OpenClaw** | real install | `ai.openclaw.mac`, `bot.molt.mac`, openclaw, openclaw, clawdbot, moltbot, `~/.openclaw`, `ai.openclaw.`, `bot.molt.`, 18789 | 50-autonomous, 55-openclaw-npm, 60-persistence, 90-demo-fleet |
 
-## Desktop assistant
-
-| agent | evidence | identifiers | scenarios |
-|---|---|---|---|
-| **ChatGPT Desktop** | real install | com.openai.codex, chatgpt | 10-desktop-apps, 90-demo-fleet |
-| **Claude Desktop** | real install | com.anthropic.claudefordesktop, claude, `com.anthropic.claude_browser_extension.json` | 10-desktop-apps, 90-demo-fleet |
-| **Perplexity** | **exception** | ai.perplexity.macv3, perplexity | -- |
-
-## Local model
-
-| agent | evidence | identifiers | scenarios |
-|---|---|---|---|
-| **Jan** | **exception** | jan.ai.app, jan | -- |
-| **llama.cpp** | **exception** | llama.cpp, 8080, `ghcr.io/ggml-org/llama.cpp` | -- |
-| **LM Studio** | **exception** | ai.elementlabs.lmstudio, lm-studio, 1234 | -- |
-| **Ollama** | real install | com.electron.ollama, `ollama`, `ollama-app`, `ollama`, com.ollama., `11434`, ~/.ollama/models/manifests, `ollama/ollama` | 30-local-models, 90-demo-fleet |
-
 ## AI browser
 
 | agent | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **Orion** | **exception** | com.kagi.kagimacOS, orion | -- |
+| **Orion** | real install | com.kagi.kagimacOS, orion | 10-desktop-apps |
 | **Perplexity Comet** | real install | ai.perplexity.comet, comet | 10-desktop-apps, 90-demo-fleet |
-
-## Framework
-
-| agent | evidence | identifiers | scenarios |
-|---|---|---|---|
-| **LiteLLM** | **exception** | litellm, litellm, `ghcr.io/berriai/litellm` | -- |
-| **MCP SDK** | **exception** | mcp, `@modelcontextprotocol/*`, mcp | -- |
 
 ## Browser agent
 
@@ -90,7 +80,24 @@ carrying an `unverified` block, so an unverified signature cannot enter quietly.
 |---|---|---|---|
 | **Claude in Chrome** | real install | `fcoeoabgfenejglbffodgkkbkcdhcgfn` | 45-claude-extension |
 
-## Container runtime
+## Desktop assistant
+
+| agent | evidence | identifiers | scenarios |
+|---|---|---|---|
+| **ChatGPT Desktop** | real install | com.openai.codex, chatgpt | 10-desktop-apps, 90-demo-fleet |
+| **Claude Desktop** | real install | com.anthropic.claudefordesktop, claude, `com.anthropic.claude_browser_extension.json` | 10-desktop-apps, 90-demo-fleet |
+| **Perplexity** | real install | ai.perplexity.macv3, perplexity | 10-desktop-apps |
+
+## Local model  *(not an agent)*
+
+| agent | evidence | identifiers | scenarios |
+|---|---|---|---|
+| **Jan** | real install | jan.ai.app, jan | 10-desktop-apps |
+| **llama.cpp** | real install | llama.cpp, 8080, `ghcr.io/ggml-org/llama.cpp` | 30-local-models |
+| **LM Studio** | real install | ai.elementlabs.lmstudio, lm-studio, 1234 | 10-desktop-apps |
+| **Ollama** | real install | com.electron.ollama, `ollama`, `ollama-app`, `ollama`, com.ollama., `11434`, ~/.ollama/models/manifests, `ollama/ollama` | 30-local-models, 90-demo-fleet |
+
+## Container runtime  *(not an agent)*
 
 | agent | evidence | identifiers | scenarios |
 |---|---|---|---|
@@ -107,18 +114,7 @@ excuse list. `blocker` appears only where something genuinely stands in the way
 
 | agent | evidence held | reason | belongs in | blocker |
 |---|---|---|---|---|
-| **Cline** | registry-manifest | `cline` is published on npm; no scenario installs it yet, and the VS Code extension it ships as is a separate install path nothing here covers | 20-cli-agents | -- |
-| **GitHub Copilot CLI** | registry-manifest | both the `copilot-cli` cask and `@github/copilot` on npm resolve; no scenario installs either yet | 20-cli-agents | -- |
 | **Docker Desktop** | vendor-documentation | test/docker_states.sh exercises every daemon state against a fake socket, which proves the guard and the bound but installs no Docker and so never sees this bundle id | -- | Docker Desktop needs nested virtualisation to RUN in a Tart guest, though installing the cask alone would register the bundle id |
-| **Gemini CLI** | registry-manifest | both the `gemini-cli` formula and `@google/gemini-cli` on npm resolve; no scenario installs either yet | 20-cli-agents | -- |
-| **Jan** | vendor-documentation | the `jan` Homebrew cask resolves, so an unattended install exists; no scenario installs it yet | 30-local-models | -- |
-| **LiteLLM** | registry-manifest | the images route was read off real docker_images rows, and `litellm` resolves on both npm and PyPI; no scenario installs the package | 25-python-agents | -- |
-| **llama.cpp** | registry-manifest | the `llama.cpp` formula resolves and the images route was read off real docker_images rows; no scenario installs it | 30-local-models | -- |
-| **LM Studio** | vendor-documentation | the `lm-studio` Homebrew cask resolves, so an unattended install exists; no scenario installs it yet | 30-local-models | -- |
-| **MCP SDK** | registry-manifest | `mcp` resolves on both npm and PyPI, and the @modelcontextprotocol/* wildcard is fixture-covered; no scenario installs the SDK itself | 20-cli-agents | -- |
-| **Orion** | vendor-documentation | the `orion` Homebrew cask resolves, so an unattended install exists; no scenario installs it yet | 10-desktop-apps | -- |
-| **Perplexity** | vendor-documentation | the `perplexity` Homebrew cask resolves, so an unattended install exists; no scenario installs it yet | 10-desktop-apps | -- |
-| **Windsurf** | vendor-documentation | the `devin-desktop` Homebrew cask resolves, so an unattended install exists; no scenario installs it yet | 10-desktop-apps | -- |
 
 ## Unexercised identifiers
 
@@ -147,15 +143,11 @@ No test matches these. Each is a candidate for a fixture row or a scenario.
 | Gemini CLI | npm | `@google/gemini-cli` |
 | Jan | bundle id | `jan.ai.app` |
 | Jan | homebrew | `jan` |
-| LiteLLM | npm | `litellm` |
-| LiteLLM | PyPI | `litellm` |
 | llama.cpp | homebrew | `llama.cpp` |
 | llama.cpp | port | `8080` |
 | LM Studio | bundle id | `ai.elementlabs.lmstudio` |
 | LM Studio | homebrew | `lm-studio` |
 | LM Studio | port | `1234` |
-| MCP SDK | npm | `mcp` |
-| MCP SDK | PyPI | `mcp` |
 | Ollama | bundle id | `com.electron.ollama` |
 | Ollama | launchd | `com.ollama.` |
 | Ollama | model store | `~/.ollama/models/manifests` |
@@ -178,6 +170,30 @@ No test matches these. Each is a candidate for a fixture row or a scenario.
 Carried alongside what it can. A coverage report that lists only its successes
 fails the same way an empty scan result does -- it reads as complete when it is
 merely silent.
+
+**10-desktop-apps -- known gap**
+
+Windsurf's Homebrew token is `devin-desktop`, not `windsurf`. Read off the Homebrew API; a scenario written from the product name would install nothing and the WARN would scroll past.
+
+**10-desktop-apps -- known gap**
+
+Installing a cask proves the bundle id is right. It does not launch the app, so no scenario here observes a launchd job, a listening port or a state directory that only appears on first GUI launch -- `open -a` needs an Aqua session and there is none over SSH.
+
+**10-desktop-apps -- known gap**
+
+These are paid or account-gated products in several cases. The install is unattended and the SIGN-IN is not, so nothing here exercises behaviour that only appears once a user is authenticated.
+
+**20-cli-agents -- known gap**
+
+The Homebrew routes for gemini-cli (formula) and copilot-cli (cask) are NOT exercised. Both agents are installed from npm instead, because installing both ways would have the two packages fight over the same binary. The agents meet the standard; those two identifiers remain unexercised and docs/agents.md reports them as such.
+
+**20-cli-agents -- known gap**
+
+cline also ships as a VS Code extension, which is a different install path entirely and nothing here covers it. osquery has no table for VS Code extensions, so it is not merely untested but currently unreachable.
+
+**30-local-models -- known gap**
+
+llama.cpp is installed as a formula and its binary is asserted, but no model is loaded through it and its server is never started, so the ports route stays unexercised. Ollama is the only local model in this scenario whose listener is actually observed.
 
 **40-browser -- known gap**
 

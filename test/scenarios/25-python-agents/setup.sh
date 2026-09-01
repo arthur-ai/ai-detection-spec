@@ -19,6 +19,10 @@ brew install uv
 # missing OpenBLAS. A real user on 3.14 hits exactly this, so pinning keeps the scenario
 # deterministic rather than hostage to whichever interpreter the image ships.
 uv tool install --python 3.12 aider-chat || { echo "FAIL: aider-chat install failed" >&2; exit 1; }
+# litellm is installed DELIBERATELY and is NOT expected to be found: an LLM gateway an
+# agent calls through is not an agent, and it was removed from the catalog for that. It
+# stays here as a live negative control -- a real uv tool install that must produce a row
+# and no finding. Remove it and nothing proves the classifier still declines it.
 uv tool install litellm                  || { echo "FAIL: litellm install failed" >&2; exit 1; }
 uv tool list 2>/dev/null | sed 's/^/  /'
 ls -d "$HOME/.local/share/uv/tools/"*/ 2>/dev/null | sed 's/^/  dir: /'

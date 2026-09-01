@@ -156,7 +156,7 @@ so without it a wedged daemon and a Mac with no containers produce the same valu
 
 Image names resolve through the `images:` catalog route — exact match on the repository, tag
 stripped, `docker.io/` and Docker Hub's implicit `library/` removed, registry host kept for
-everything else. Four agents carry one: `ollama`, `litellm`, `llama-cpp`, `aider`. **An image
+everything else. Three carry one: `ollama`, `llama-cpp`, `aider`. **An image
 name is chosen by whoever tagged it**, which no other route here is true of: `docker tag
 alpine ollama/ollama` produces an Ollama finding and nothing can tell it from the real image.
 Read an image row as weaker evidence than a bundle id.

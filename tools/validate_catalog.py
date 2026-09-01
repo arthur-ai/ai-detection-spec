@@ -49,7 +49,15 @@ UNVERIFIED_OPTIONAL = {"blocker", "belongs_in"}
 def main():
     doc = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
     known = set(doc["classifications"])
-    errors, seen_ids, seen_route_values = [], set(), {}
+
+    # not_agents names classifications, so a typo here would silently count an agent as a
+    # supporting tool or the reverse -- a wrong headline number with nothing to notice it.
+    unknown_na = set(doc.get("not_agents", ())) - known
+    errors = []
+    if unknown_na:
+        errors.append(f"not_agents names {sorted(unknown_na)}, which are not "
+                      f"classifications")
+    seen_ids, seen_route_values = set(), {}
 
     for agent in doc["agents"]:
         aid = agent.get("id", "<missing id>")
@@ -185,9 +193,14 @@ def main():
         sys.exit(1)
     n_exc = sum(1 for a in doc["agents"] if a.get("unverified"))
     n_real = len(doc["agents"]) - n_exc
-    print(f"catalog: ok, {len(doc['agents'])} agents, {len(seen_route_values)} identifiers, "
-          f"scenario references resolve")
-    print(f"  real install: {n_real}/{len(doc['agents'])} agents. "
+    na = set(doc.get("not_agents", ()))
+    n_tools = sum(1 for a in doc["agents"] if a.get("classification") in na)
+    # "entries", not "agents". An MCP SDK is a library and LiteLLM is a gateway; counting
+    # them as agents overstates what was found on a machine.
+    print(f"catalog: ok, {len(doc['agents'])} entries "
+          f"({len(doc['agents']) - n_tools} agents, {n_tools} supporting tools), "
+          f"{len(seen_route_values)} identifiers, scenario references resolve")
+    print(f"  real install: {n_real}/{len(doc['agents'])} entries. "
           f"{n_exc} recorded exception(s).")
 
 

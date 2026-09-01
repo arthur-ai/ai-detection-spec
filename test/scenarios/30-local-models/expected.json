@@ -14,6 +14,7 @@
   },
   "classified": {
     "must_find": [
+      "llama-cpp",
       "ollama"
     ],
     "forbid": [
@@ -24,5 +25,8 @@
   "must_contain": [
     "com.electron.ollama",
     "11434"
+  ],
+  "known_gaps": [
+    "llama.cpp is installed as a formula and its binary is asserted, but no model is loaded through it and its server is never started, so the ports route stays unexercised. Ollama is the only local model in this scenario whose listener is actually observed."
   ]
 }

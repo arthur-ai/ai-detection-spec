@@ -77,6 +77,22 @@ claimed by two agents means one is wrong and both will fire.
 `classification` describes **deployment shape**, not risk. See the vocabulary at the top of
 the file.
 
+### What belongs in the catalog
+
+**Agents.** Something that acts on the user's behalf. The test is not "is this AI software"
+and not "can we detect it" — both `mcp-sdk` and `litellm` passed those and were still removed.
+An SDK is a library an agent is *built with*; a gateway is something an agent calls *through*.
+Detecting either says a developer imported a protocol or proxied some traffic, not that
+anything is acting on anyone's behalf.
+
+Two exceptions are marked in `not_agents`, and they earn it in a way no library does: a
+**local model** server is what an agent runs *against*, and a **container runtime** changes
+what can be seen on the machine at all — `containers.sql` exists because agents hide there.
+
+If you remove an entry, **leave its rows in the fixtures** and assert they are declined.
+Deleting the evidence with the signature leaves nothing to distinguish *correctly not an
+agent* from *route quietly broken*.
+
 ### A real install is the standard
 
 An agent is verified when a **VM scenario installs the real software** and asserts the

@@ -116,7 +116,17 @@ EOF
   [ "$elapsed" -le 10 ] || { echo "FAIL: runtime ${elapsed}s exceeds the 10s EA budget" >&2; rc=1; }
   [ "$bytes" -le 30000 ] || { echo "FAIL: payload ${bytes} exceeds the 30000 byte EA budget" >&2; rc=1; }
 
+  # BOTH layers, the same two test/assert.sh runs in CI. run.sh called only assert_counts,
+  # so the VM path -- the one that installs real software, and the only reason the VM
+  # exists -- never asked the classifier anything. Counts prove each BRANCH still returns
+  # rows; whether that evidence resolves to the right agent is a different question, and
+  # `classified.must_find` is where it is asked. A scenario could add an agent to
+  # must_find, pass here, and have verified nothing.
+  #
+  # Found by adding five agents to must_find and noticing the run reported ALL PASS
+  # without ever printing them.
   assert_counts "$ART/$s.json" "$dir/expected.json" || rc=1
+  assert_classified "$ART/$s.json" "$dir/expected.json" "$HERE/.." || rc=1
   echo
   return $rc
 }

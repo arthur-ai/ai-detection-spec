@@ -23,6 +23,11 @@ def run(fixture):
     return json.loads(out)
 
 
+def unmatched_ids(result):
+    """Ids the classifier looked at and declined. Distinct from ids it never saw."""
+    return {row["id"] for row in result["unmatched"]}
+
+
 def check(label, condition, detail=""):
     print(f"  {'ok  ' if condition else 'FAIL'}  {label}{'' if condition else '  ' + detail}")
     if not condition:
@@ -42,7 +47,11 @@ check("the retired bot.molt.mac alias still resolves to OpenClaw",
 check("finds Ollama as formula, cask and listening port",
       len(found.get("ollama", {}).get("evidence", [])) == 3,
       "port 11434 counts because the process holding it is ollama")
-check("a wildcard npm scope matches (@modelcontextprotocol/sdk)", "mcp-sdk" in found)
+check("an MCP SDK install is NOT an agent finding",
+      not any(f["id"] == "mcp-sdk" for f in r["findings"])
+      and "@modelcontextprotocol/sdk" in unmatched_ids(r),
+      "the SDK is a library an agent is built with. Detecting it says a developer "
+      "imported a protocol, not that anything is acting on a user's behalf")
 
 # --- PyPI agents installed through pipx or uv -----------------------------------
 # The endpoint cannot query python_packages (15.6s, no WHERE push-down), so it globs
@@ -53,7 +62,9 @@ check("a wildcard npm scope matches (@modelcontextprotocol/sdk)", "mcp-sdk" in f
 check("a uv tool directory resolves by package name (aider-chat -> aider)",
       "aider" in found,
       "the tool dir names the package, which is the only identifier in the path")
-check("a pipx venv directory resolves the same way (litellm)", "litellm" in found)
+check("a LiteLLM install is NOT an agent finding",
+      not any(f["id"] == "litellm" for f in r["findings"]),
+      "an LLM gateway an agent calls THROUGH. Detecting it says traffic may be proxied")
 check("a non-AI tool in the same directory is NOT claimed",
       not any("ruff" in json.dumps(f) for f in r["findings"]),
       "ruff installs through uv like anything else; matching the location must not "
@@ -68,6 +79,23 @@ check("carries the classification",
 unmatched = {row["id"] for row in r["unmatched"]}
 check("libxdmcp is NOT claimed by the 'mcp' signature", "libxdmcp" in unmatched)
 check("ordinary software is left alone", {"cmake", "com.apple.Safari"} <= unmatched)
+
+# --- agent tooling is not an agent ------------------------------------------------
+# `mcp` was catalogued and is not any more, and the fixture rows STAY. Deleting them would
+# have removed the evidence along with the signature, leaving nothing to distinguish "we
+# correctly decided this is not an agent" from "the npm route silently stopped working".
+#
+# Two things were also learned while checking it, and both are recorded here because they
+# outlived the entry. npm's `mcp` is Mintlify's package -- no repository, unrelated to the
+# protocol SDK -- while PyPI's `mcp` is the official one from "Model Context Protocol a
+# Series of LF Projects". Same token, different software, different registries. And
+# kind='npm' was mapped to the pypi route as well, so a PyPI signature claimed npm rows
+# regardless of what the npm route said; a kind='npm' row comes from npm_packages and is a
+# node package by construction, so that mapping had nothing to legitimately match.
+u = unmatched_ids(r)
+check("npm `mcp` is not claimed", "mcp" in u)
+check("a uv tool directory named mcp is not claimed",
+      not any("uv/tools/mcp" in json.dumps(f) for f in r["findings"]))
 
 # --- browser extensions ----------------------------------------------------------
 # kind='ext' was emitted by browser.sql from the beginning and consumed by nothing, so
@@ -108,8 +136,10 @@ r = run("container-images.json")
 found = {f["id"] for f in r["findings"]}
 unmatched = {row["id"] for row in r["unmatched"]}
 
-check("a ghcr.io image resolves (ghcr.io/berriai/litellm -> litellm)", "litellm" in found,
-      f"got {sorted(found)}")
+check("a LiteLLM image is NOT claimed as an agent",
+      "litellm" not in found and "ghcr.io/berriai/litellm:main-latest" in unmatched,
+      f"got {sorted(found)}; a gateway image is not an agent, and it must be visibly "
+      f"declined rather than dropped")
 check("the registry host is part of the identifier", "llama-cpp" in found,
       "ghcr.io/ggml-org/llama.cpp, not ggerganov and not a bare llama.cpp")
 check("a docker.io/ prefix is stripped (docker.io/ollama/ollama -> ollama)",
@@ -134,7 +164,7 @@ check("ordinary infrastructure images are left alone",
       {"authzed/spicedb:latest",
        "public.ecr.aws/docker/library/python:3.12.8-slim-bookworm"} <= unmatched,
       "the ECR path contains 'library/', which must NOT be stripped the way Docker Hub's is")
-check("exactly three agents, no more", found == {"litellm", "llama-cpp", "ollama"},
+check("exactly two agents, no more", found == {"llama-cpp", "ollama"},
       f"got {sorted(found)}")
 
 # --- scan rows: provenance, gaps, and staleness -----------------------------------

@@ -47,15 +47,48 @@
 
 version: 1
 
+# THIS CATALOG DETECTS AGENTS. Two entries were REMOVED for failing that test, and the
+# reason is recorded here because the temptation to re-add them is obvious -- both show up
+# in an AI inventory and both were easy to detect:
+#
+#   mcp-sdk   the Model Context Protocol SDK is a LIBRARY an agent is built with. Agent
+#             tooling, not an agent. Detecting it says a developer imported a protocol.
+#   litellm   an LLM gateway an agent calls THROUGH. Detecting it says traffic may be
+#             proxied, not that anything is acting on a user's behalf.
+#
+# Neither acts on anyone's behalf, and counting them among "agents found on this Mac"
+# overstates the finding -- the kind of confident overstatement this repo exists to avoid.
+# Their rows are kept in the FIXTURES as negative controls: test/test_matcher.py asserts
+# they arrive and are declined, which is the only way to tell "correctly not an agent" from
+# "route quietly broken".
+#
+# Two classifications remain that are not agents, and they stay for a reason no library
+# has. A local model server is what an agent runs AGAINST, and a container runtime changes
+# what can be SEEN on the machine at all -- containers.sql exists because agents hide
+# there. `not_agents` below marks them, and the tooling counts them apart.
 classifications:
+  # --- acts on the user's behalf ---
   - Coding agent        # operates on a codebase, usually with shell access
   - Personal agent      # general-purpose, often bridged to messaging
-  - Desktop assistant   # chat client, no autonomous execution
-  - Local model         # inference served on the machine itself
   - AI browser          # a browser whose AI features are the product
-  - Framework           # library or SDK an agent is built with
   - Browser agent       # an extension that acts inside the browser on the user's behalf
+  - Desktop assistant   # chat client. Kept on THIS side of the line deliberately: the old
+                        # definition read "no autonomous execution", which stopped being
+                        # true when these clients gained MCP and began running tools
+                        # locally. Contested rather than settled, and overstating an agent
+                        # is the safer error for an inventory than missing one
+  # --- does not act on anyone's behalf; listed in not_agents below ---
+  - Local model         # inference served on the machine itself. A model server, not an
+                        # agent: something else has to drive it
   - Container runtime   # not an agent; presence changes what can be seen
+
+# Which of the above are NOT agents, as data rather than as a comment, so the tooling can
+# count them apart instead of every tool hardcoding its own opinion. Additive on purpose:
+# turning `classifications` into a mapping would have said the same thing but changed the
+# shape of the file, and a consumer parsing this YAML would break for a label.
+not_agents:
+  - Local model
+  - Container runtime
 
 agents:
   - id: claude-desktop
@@ -150,22 +183,12 @@ agents:
     bundle_ids: [ai.elementlabs.lmstudio]
     homebrew: [lm-studio]
     ports: [1234]
-    unverified:
-      reason: "the `lm-studio` Homebrew cask resolves, so an unattended install exists; no scenario installs it yet"
-      evidence: vendor-documentation
-      belongs_in: 30-local-models
-      raised: 2026-08-31
 
   - id: jan
     name: Jan
     classification: Local model
     bundle_ids: [jan.ai.app]
     homebrew: [jan]
-    unverified:
-      reason: "the `jan` Homebrew cask resolves, so an unattended install exists; no scenario installs it yet"
-      evidence: vendor-documentation
-      belongs_in: 30-local-models
-      raised: 2026-08-31
 
   - id: llama-cpp
     name: llama.cpp
@@ -175,11 +198,6 @@ agents:
     # Read off a real pulled image: ghcr.io/ggml-org/llama.cpp:server. ggml-org, not
     # ggerganov -- the org was renamed and the old path is not what ships today.
     images: ["ghcr.io/ggml-org/llama.cpp"]
-    unverified:
-      reason: "the `llama.cpp` formula resolves and the images route was read off real docker_images rows; no scenario installs it"
-      evidence: registry-manifest
-      belongs_in: 30-local-models
-      raised: 2026-08-31
 
   - id: perplexity-comet
     name: Perplexity Comet
@@ -193,33 +211,18 @@ agents:
     classification: Desktop assistant
     bundle_ids: [ai.perplexity.macv3]  # a separate product from Comet; do not conflate
     homebrew: [perplexity]
-    unverified:
-      reason: "the `perplexity` Homebrew cask resolves, so an unattended install exists; no scenario installs it yet"
-      evidence: vendor-documentation
-      belongs_in: 10-desktop-apps
-      raised: 2026-08-31
 
   - id: windsurf
     name: Windsurf
     classification: Coding agent
     bundle_ids: [com.exafunction.windsurf]
     homebrew: [devin-desktop]          # cask renamed from `windsurf`
-    unverified:
-      reason: "the `devin-desktop` Homebrew cask resolves, so an unattended install exists; no scenario installs it yet"
-      evidence: vendor-documentation
-      belongs_in: 10-desktop-apps
-      raised: 2026-08-31
 
   - id: orion
     name: Orion
     classification: AI browser
     bundle_ids: [com.kagi.kagimacOS]
     homebrew: [orion]
-    unverified:
-      reason: "the `orion` Homebrew cask resolves, so an unattended install exists; no scenario installs it yet"
-      evidence: vendor-documentation
-      belongs_in: 10-desktop-apps
-      raised: 2026-08-31
 
   - id: aider
     name: aider
@@ -237,58 +240,19 @@ agents:
     classification: Coding agent
     homebrew: [gemini-cli]
     npm: ["@google/gemini-cli"]        # a vendor scope, missed by @anthropic-ai/@openai globs
-    unverified:
-      reason: "both the `gemini-cli` formula and `@google/gemini-cli` on npm resolve; no scenario installs either yet"
-      evidence: registry-manifest
-      belongs_in: 20-cli-agents
-      raised: 2026-08-31
 
   - id: copilot-cli
     name: GitHub Copilot CLI
     classification: Coding agent
     homebrew: [copilot-cli]
     npm: ["@github/copilot"]
-    unverified:
-      reason: "both the `copilot-cli` cask and `@github/copilot` on npm resolve; no scenario installs either yet"
-      evidence: registry-manifest
-      belongs_in: 20-cli-agents
-      raised: 2026-08-31
 
   - id: cline
     name: Cline
     classification: Coding agent
     npm: [cline]
-    unverified:
-      reason: "`cline` is published on npm; no scenario installs it yet, and the VS Code extension it ships as is a separate install path nothing here covers"
-      evidence: registry-manifest
-      belongs_in: 20-cli-agents
-      raised: 2026-08-31
 
-  - id: litellm
-    name: LiteLLM
-    classification: Framework
-    npm: [litellm]
-    pypi: [litellm]
-    # Read off a real pulled image. The published tag is main-latest, not latest, and the
-    # repository is ghcr.io/berriai -- BerriAI is the org, and the registry host is part
-    # of the identifier for anything not on Docker Hub.
-    images: ["ghcr.io/berriai/litellm"]
-    unverified:
-      reason: "the images route was read off real docker_images rows, and `litellm` resolves on both npm and PyPI; no scenario installs the package"
-      evidence: registry-manifest
-      belongs_in: 25-python-agents
-      raised: 2026-08-31
 
-  - id: mcp-sdk
-    name: MCP SDK
-    classification: Framework
-    npm: [mcp, "@modelcontextprotocol/*"]
-    pypi: [mcp]
-    unverified:
-      reason: "`mcp` resolves on both npm and PyPI, and the @modelcontextprotocol/* wildcard is fixture-covered; no scenario installs the SDK itself"
-      evidence: registry-manifest
-      belongs_in: 20-cli-agents
-      raised: 2026-08-31
 
   - id: docker
     name: Docker Desktop

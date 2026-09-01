@@ -10,6 +10,11 @@ need_brew
 brew install --cask ollama-app
 brew install ollama || true          # may warn about the shared `ollama` symlink
 
+# llama.cpp is a FORMULA, and the catalog names it `llama.cpp` with the dot -- not
+# `llama-cpp`, which is the catalog id and would install nothing. Verified against the
+# Homebrew API before being added here.
+brew install llama.cpp || echo "WARN: llama.cpp failed"
+
 # `open -a` needs an Aqua session and there isn't one over SSH, so start the server
 # directly. This opens the listener on 11434 and creates ~/.ollama. The launchd job is
 # a first-GUI-launch side effect and is therefore NOT asserted by this scenario.

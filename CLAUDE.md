@@ -32,6 +32,15 @@ the vendor's own Homebrew metadata and it matched nothing on any Mac; the real i
 `~/.aider`, so evidence and signature never met. Both were silent, and neither survived contact
 with an actual install.
 
+**The catalog detects agents.** Something that acts on a user's behalf. An MCP SDK is a
+library an agent is built with and LiteLLM is a gateway an agent calls through; both were
+catalogued, both were easy to detect, and both were removed, because counting them among
+"agents found on this Mac" overstates the finding. Their rows stay in the fixtures as negative
+controls, asserted to arrive and be declined — the only way to tell *correctly not an agent*
+from *route quietly broken*. Two non-agent classifications remain and are marked in
+`not_agents`: a local model server is what an agent runs against, and a container runtime
+changes what can be seen at all, which is why `containers.sql` exists.
+
 **A real install is the standard, and the catalog enforces it.** An agent is verified when a VM
 scenario installs the real software and asserts the classifier finds it. Anything less is an
 exception carrying a `reason`, an `evidence` grade and the date it was raised;

@@ -131,7 +131,18 @@ def _corroborates(agent, row):
 KIND_ROUTES = {
     "app": ["bundle_ids"],
     "brew": ["homebrew"],
-    "npm": ["npm", "pypi"],
+    # npm ONLY. `pypi` used to be listed here too, and it let a PyPI-only signature claim
+    # an npm package of the same name -- npm's `mcp` (Mintlify's, unrelated to the SDK)
+    # was reported as the MCP SDK on the strength of the catalog's PyPI entry, and removing
+    # the npm identifier did not stop it. A kind='npm' row comes from npm_packages via
+    # packages.sql and is a node package by construction, so there is nothing for the PyPI
+    # route to legitimately match here.
+    #
+    # PyPI evidence does not arrive as kind='npm' at all: python_packages is too slow to
+    # ship (15.6s, no WHERE push-down), so filesystem.sql globs the pipx and uv tool
+    # directories instead and those rows arrive as kind='file'. The TOOL_DIR branch below
+    # checks both routes for them, which is where a package name legitimately means either.
+    "npm": ["npm"],
     "port": ["ports"],
     "daemon": ["launchd_prefixes"],
     "nmh": ["nmh"],
