@@ -18,13 +18,28 @@ Which coding agents, chat clients, AI browsers and browser extensions are instal
 
 </div>
 
-> **macOS only.** These queries target macOS and are tested against it. Nothing here works on
-> Linux or Windows today. That may change; claiming otherwise now would waste your time.
+Every team inventorying AI tooling rediscovers the same handful of facts the hard way: that
+Cursor's bundle id is an opaque ToDesktop string, that ChatGPT's desktop app is
+`com.openai.codex` and not `com.openai.chat`, that one agent ships as a Homebrew cask *and* an
+npm global *and* a curl installer. **This is that knowledge, written down and kept true** — as
+queries you can read in ten minutes and a catalog you can check line by line.
 
-> **Agents only.** Something that acts on the user's behalf. An SDK is a library an agent is
-> *built with*, a gateway is something it *calls through*, a model runner *serves* models and a
-> container runtime is *how we look* — all four were catalogued once, and all four were removed.
-> Counting them as agents overstates what was found on a machine.
+Take all of it, take one query, or take just the catalog and match it your own way. MIT, no
+runtime dependencies beyond osquery, and no network calls of its own — the only socket it
+touches is the local Docker one, and only when you ask for a container scan.
+
+### Why you might like it
+
+- **🔍 Nothing hidden.** It is SQL. Read `dist/discovery.sql` and you know exactly what it
+  collects: names, paths, versions and declared permissions, and nothing else.
+- **✅ Every signature tested against a real install.** Not against documentation — which is how
+  this repo once shipped an identifier that matched nothing on any Mac. **38 of 38** identifiers
+  are covered by a test that runs in CI, and [the report](docs/agents.md) is generated, so it
+  cannot flatter itself.
+- **🧩 Add an agent without touching the endpoint.** The queries carry no product names, so a new
+  signature re-matches evidence you already collected — nothing to redeploy to the fleet.
+- **🗺 Blind spots stated up front.** [Thirteen of them](docs/agents.md), in writing, because a
+  discovery tool that hides them is worse than none.
 
 ## What you get
 
@@ -41,14 +56,16 @@ scanner that knows the agent names has to be redeployed to the whole fleet every
 changes, and can only ever find what it already knew to look for. This one collects the
 evidence once and answers new questions about it later.
 
-## Why this exists
+## Scope, so you know what you are getting
 
-Every team trying to inventory AI tooling rediscovers the same facts: that Cursor's bundle
-identifier is an opaque ToDesktop string, that ChatGPT's desktop app is `com.openai.codex` and
-not `com.openai.chat`, that a single agent ships through a Homebrew cask *and* npm *and* a curl
-installer. None of it is written down anywhere.
+**macOS.** Built for it and tested on it; nothing here runs on Linux or Windows today. Claiming
+otherwise would waste your afternoon.
 
-This is that knowledge, as queries you can run and a catalog you can read.
+**Agents — things that act on your behalf.** A protocol SDK is a library an agent is *built
+with*, a gateway is something it *calls through*, a model runner *serves* models, and a
+container runtime is *how we look*. All four were catalogued once and all four were removed:
+counting them as agents overstates what was found on a machine. A tighter list is a more useful
+one.
 
 ## Requirements
 
@@ -251,20 +268,27 @@ consumer and would rot in a public repo:
   is on this Mac". For a fleet, collect the rows and match them where the catalog lives, so
   that adding a signature re-matches evidence you already hold instead of requiring a re-scan.
 
-## Contributing
+## Contributing — genuinely, please do
 
-New AI tools appear weekly and identifiers change under you. Corrections and additions are the
-most useful thing you can send.
+New AI tools appear weekly and identifiers change underneath you, so **a correction is worth as
+much as a new agent.** Found an id that has moved? Know a route we are missing? That is the most
+useful thing anyone can send, and it does not have to be a big change: one line in
+`catalog/agents.yaml` plus a test is a complete contribution.
 
-**A signature contribution needs a passing test scenario, not a plausible-looking identifier.**
-We shipped `bot.molt.mac` for OpenClaw once. It came from the vendor's own Homebrew metadata, it
-looked entirely right, and it matched nothing on any Mac. The real identifier is
-`ai.openclaw.mac`, and only installing the thing revealed it.
+**The one thing we ask is a passing test rather than a plausible-looking identifier**, and it is
+asked because of a mistake we made rather than a hoop we invented. We shipped `bot.molt.mac` for
+OpenClaw once. It came from the vendor's own Homebrew metadata, it looked entirely right, and it
+matched nothing on any Mac. The real id is `ai.openclaw.mac`, and only installing the thing
+revealed it. The scenario harness exists so you do not have to take that risk on trust either.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). First response within five working days.
+[CONTRIBUTING.md](CONTRIBUTING.md) has the details, and `tools/gates.sh` runs every check in
+about five seconds, so you can see a green result before you open anything. **First response
+within five working days.**
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+**MIT** — use it, fork it, vendor it into your own tooling, ship it inside a product. No
+attribution theatre required. See [LICENSE](LICENSE).
 
-Maintained by the Arthur Unify team.
+Maintained by the Arthur Unify team, and built on [osquery](https://osquery.io), which does all
+the hard parts.
