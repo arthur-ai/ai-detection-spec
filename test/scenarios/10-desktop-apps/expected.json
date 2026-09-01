@@ -37,9 +37,6 @@
     "com.kagi.kagimacOS"
   ],
   "known_gaps": [
-    "Windsurf's Homebrew token is `devin-desktop`, not `windsurf`. Read off the Homebrew API; a scenario written from the product name would install nothing and the WARN would scroll past.",
-    "These are paid or account-gated products in several cases. The install is unattended and the SIGN-IN is not, so nothing here exercises behaviour that only appears once a user is authenticated.",
-    "The seventh cask, `perplexity`, is not installed here. It declares depends_on macos >= 15 and lives in 11-perplexity-desktop; splitting it out is what lets these six be tested on macos-14.",
-    "The macos-14 runner's Homebrew metadata is old enough to install a pre-rename ChatGPT. That is a fact about the runner, not about the product, and it will stop being true when the image updates -- at which point com.openai.chat survives only as the retired alias it is now recorded as, covered by a fixture rather than by this scenario."
+    "Paid or account-gated in several cases. The install is unattended and the sign-in is not, so nothing exercises behaviour that only appears once a user is signed in."
   ]
 }

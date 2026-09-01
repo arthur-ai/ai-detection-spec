@@ -29,8 +29,5 @@
     "@openai/codex",
     "@google/gemini-cli",
     "@github/copilot"
-  ],
-  "known_gaps": [
-    "The Homebrew routes for gemini-cli (formula) and copilot-cli (cask) are NOT exercised. Both agents are installed from npm instead, because installing both ways would have the two packages fight over the same binary. The agents meet the standard; those two identifiers remain unexercised and docs/agents.md reports them as such."
   ]
 }

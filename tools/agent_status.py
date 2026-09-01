@@ -385,7 +385,8 @@ def collect():
         for gap in doc.get("known_gaps", []):
             limits.append({"scenario": name, "kind": "gap", "text": gap})
         if path.name == "requires.json" and doc.get("why"):
-            limits.append({"scenario": name, "kind": "skip", "text": doc["why"]})
+            limits.append({"scenario": name, "kind": "skip", "text": doc["why"],
+                           "min_macos": doc.get("min_macos")})
 
     # THE GENERAL LIMITS LIVE IN ONE FILE, docs/blind-spots.yaml. They used to live in
     # README and be parsed back out of it, which meant the same thirteen rows existed in two
@@ -693,14 +694,45 @@ def markdown(data):  # noqa: C901
         out += [f"| {b['spot']} | {b['why']} |" for b in data["blind_spots"]]
         out.append("")
 
-    if data["limits"]:
-        out += ["## 🧩 What individual scenarios do not cover", "",
-                "Specific to one scenario and fixable by work, unlike the table above. A coverage",
-                "report that lists only its successes fails the same way an empty scan result does",
-                "-- it reads as complete when it is merely silent.", ""]
-        for lim in data["limits"]:
-            head = "cannot run here" if lim["kind"] == "skip" else "known gap"
-            out += [f"**{lim['scenario']} -- {head}**", "", lim["text"], ""]
+    # ONE ROW PER GAP, and only for a gap. This section used to render every known_gaps
+    # entry as a bold heading and a paragraph, sixteen of them, and most were not coverage
+    # gaps at all: a solved trap already commented in setup.sh, a correction to an earlier
+    # version of this file, a safety warning about a script, a cross-reference to the
+    # scenario that does cover the thing. Those belong next to the code they describe, and
+    # that is where they went. What is left is the claim this section can actually make --
+    # the software installed and the identifier matched, and something about HOW it was
+    # installed or exercised still falls short of the real thing. That claim is worth
+    # keeping: no table catches it, and a report of successes alone reads as complete when
+    # it is merely silent.
+    gaps = [l for l in data["limits"] if l["kind"] == "gap"]
+    skips = [l for l in data["limits"] if l["kind"] == "skip"]
+    if gaps or skips:
+        out += ["## 🧩 What the scenarios do not prove", "",
+                "The install succeeded and the identifier matched. These are the ways it still "
+                "falls short of the real thing -- each one fixable by work, none of them "
+                "catchable by a table of counts.", ""]
+    if gaps:
+        # GROUPED BY TEXT, not by scenario. Two scenarios install account-gated software and
+        # hit the identical wall; printing it once under both names says so, and printing it
+        # twice made the section look twice as long as the problem is.
+        grouped = {}
+        for l in gaps:
+            grouped.setdefault(l["text"], []).append(l["scenario"])
+        out += ["| scenario | not proven |", "|---|---|"]
+        out += [f"| {', '.join(scens)} | {text.replace('|', chr(92) + '|')} |"
+                for text, scens in grouped.items()]
+        out.append("")
+    if skips:
+        # ONE LINE. The full reason lives in each requires.json, which is the file that
+        # enforces it; repeating it here made two runner facts look like two defects.
+        by_ver = {}
+        for l in skips:
+            by_ver.setdefault(l.get("min_macos"), []).append(l["scenario"])
+        for ver, scens in sorted(by_ver.items(), key=lambda kv: (kv[0] is None, kv[0])):
+            need = f"macOS {ver} or newer" if ver else "a newer runner"
+            out += [f"{', '.join('`' + s + '`' for s in scens)} need {need}, so CI skips "
+                    f"them on older runners rather than failing them. Each scenario's "
+                    f"`requires.json` carries the reason.", ""]
 
     return "\n".join(x for x in out if x is not None).rstrip() + "\n"
 

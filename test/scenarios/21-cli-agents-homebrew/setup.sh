@@ -30,6 +30,11 @@ for c in codex copilot-cli; do
 done
 brew list --versions 2>/dev/null | sed 's/^/  /'
 
+# NOTHING HERE IS RUN, only installed -- which is the whole claim: a Homebrew token is
+# proven by the install alone. The state directories that appear on first invocation are
+# therefore absent from this run, and that is not a hole in the suite: ~/.codex comes from
+# 20-cli-agents and ~/.aider from 25-python-agents, both recorded.
+#
 # Claude Code's npm package, for the same reason: 20-cli-agents installs it through the
 # NATIVE installer -- a shim at ~/.local/bin/claude, no npm row -- so @anthropic-ai/
 # claude-code was catalogued and never produced. This machine has no native install to

@@ -21,7 +21,6 @@
     "moltbot"
   ],
   "known_gaps": [
-    "This covers the retired NPM names only. bot.molt.mac (bundle id) and bot.molt. (launchd prefix) come from the old .app, and Homebrew keeps no versioned cask for it -- whether an old build is still downloadable is UNVERIFIED, not established either way.",
-    "It installs deliberately outdated software, which is safe only because the guest is disposable, unenrolled and holds no credentials. Never run this setup on a managed host."
+    "The retired npm names only. bot.molt.mac (bundle id) and bot.molt. (launchd prefix) come from the old .app, and Homebrew keeps no versioned cask for it -- whether an old build is still downloadable is UNVERIFIED."
   ]
 }

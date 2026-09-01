@@ -24,9 +24,5 @@
     "aider",
     "gemini-cli",
     "@anthropic-ai/claude-code"
-  ],
-  "known_gaps": [
-    "Installing proves the token. It does not run any of these agents, so state directories that only appear on first invocation (~/.codex, ~/.aider) are still not exercised here.",
-    "codex and copilot-cli are casks: on a runner the app bundle lands but is never launched, so anything written at first launch is out of reach for the same reason."
   ]
 }

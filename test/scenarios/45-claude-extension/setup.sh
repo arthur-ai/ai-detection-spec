@@ -1,6 +1,10 @@
 #!/bin/zsh
 # 45-claude-extension -- the Claude browser extension, matched by id.
 #
+# STILL OPEN: two further ids circulate for Anthropic-related extensions and neither is in
+# the catalog. Nothing here is blocked on them -- the method below needs only a Web Store
+# id, so either one is minutes of work once somebody confirms it is real.
+#
 # THIS SCENARIO PREVIOUSLY CLAIMED IT COULD NOT BE TESTED WITHOUT MDM. That was wrong,
 # and the correction is the interesting part.
 #
