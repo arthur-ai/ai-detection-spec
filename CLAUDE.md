@@ -65,7 +65,7 @@ If the scope widens, the model runners are the strongest candidates to return, a
 `model` branch with them.
 
 **NOTHING SHIPS IN THE CATALOG WITHOUT A REAL TEST**, and `tools/agent_status.py --gate`
-enforces it in lint — currently **40/40**. An identifier that no test produces is
+enforces it in lint; `docs/agents.md` carries the current figure, counted rather than typed. An identifier that no test produces is
 not a signature, it is a guess with a comment beside it — and the two are indistinguishable
 until something tries to install it. Both catalog bugs found this way had one: npm `mcp` was
 Mintlify's package, and npm `aider` is *"Lightweight website popular article component for

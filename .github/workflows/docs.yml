@@ -22,6 +22,7 @@ on:
       - 'test/scenarios/*/observed.json'
       - 'bin/classify'
       - 'tools/agent_status.py'
+      - 'tools/check_doc_numbers.py'
       # The blind spots are data now, and the report renders them.
       - 'docs/blind-spots.yaml'
       # README still carries the generated coverage badge.

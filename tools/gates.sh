@@ -27,6 +27,7 @@ run python3 tools/agent_status.py --check
 run python3 tools/agent_status.py --json
 run python3 test/test_matcher.py
 run python3 tools/check_no_catalog.py
+run python3 tools/check_doc_numbers.py
 run python3 tools/check_workflows.py
 [ "$fail" -eq 0 ] && echo "gates: PASS" || echo "gates: FAIL"
 exit "$fail"

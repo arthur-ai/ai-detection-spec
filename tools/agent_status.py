@@ -278,7 +278,12 @@ def collect():
                     state = "ci-fixture"
                 elif scens:
                     state = "local-only"
-                elif asserted_by.get(aid) - set(unrecorded):
+                # .get() on a defaultdict does NOT create the default, so a brand-new
+                # agent that no scenario asserts yet returned None and crashed the whole
+                # report -- adding one entry to the catalog broke the page that describes
+                # the catalog. Found by simulating exactly the change this tooling exists
+                # to survive.
+                elif asserted_by[aid] - set(unrecorded):
                     # A scenario installed this agent and this identifier never showed up.
                     state = "tested-absent"
                 else:
@@ -286,7 +291,7 @@ def collect():
                 idents.append({"route": route, "value": value,
                                "fixture": proven, "real": bool(scens),
                                "scenarios": scens, "ci_scenarios": ci_scens,
-                               "reached_by": sorted(asserted_by.get(aid, ()) - set(unrecorded)),
+                               "reached_by": sorted(asserted_by[aid] - set(unrecorded)),
                                "state": state, "precision": precision})
         agents.append({
             "id": aid, "name": agent["name"], "classification": agent["classification"],
