@@ -7,28 +7,31 @@
 Every AI agent this repo detects on macOS, the identifiers each is matched on, and the
 strength of the evidence behind them.
 
-**A real install is the standard. Everything else is an exception, and every exception is recorded.**
+**A real install is the standard, and every entry meets it.** A VM scenario installs the real software and asserts the classifier finds it. Anything less would be an exception recorded in the catalog with a reason, an evidence grade and a date; there are none open.
 
-| | agents | |
-|---|---:|---|
-| **standard** | 15 | a VM scenario installs the real software and asserts the classifier finds it |
-| **exception** | 0 | recorded in the catalog with a reason, an evidence grade and the date it was raised |
+15 agents carrying 42 identifiers.
 
-15 entries carrying 42 identifiers &mdash; **15 agents** and **0 supporting tools**.
+## What counts as an agent
 
-## Not everything here is an agent
+**Something that acts on the user's behalf.** That is the whole test. It is not *is this
+AI software* and not *can we detect it* &mdash; everything below passed both and was
+removed anyway, because counting it as an agent overstates what was found on a machine.
 
-An MCP SDK is a library an agent is built with. LiteLLM is a gateway an agent calls
-through. Neither acts on anyone's behalf, and counting them as agents overstates what
-was found on a machine. They are catalogued for the same reason Docker is: a fleet
-owner asking what AI software is on a Mac wants them, and their presence changes what
-is possible there. `not_agents` in the catalog records which classifications are which,
-as data rather than as a comment, so no tool has to hold its own opinion.
+| removed | what it actually is |
+|---|---|
+| `mcp-sdk` | a library an agent is **built with** |
+| `litellm` | a gateway an agent **calls through** |
+| `docker` | a runtime: **how we look**, not what we look for |
+| `ollama`, `lm-studio`, `jan`, `llama-cpp` | model runners. They **serve** models; an agent drives one |
+
+Each keeps its fixture rows, with the assertion inverted to *must not match*. Deleting
+the evidence with the signature would leave nothing to tell *correctly not an agent*
+from *route quietly broken*.
 
 One boundary is contested rather than settled. **Desktop assistant** is counted as an
-agent here: the old definition read *no autonomous execution*, which stopped being true
-when these clients gained MCP and began running tools locally. Overstating an agent is
-the safer error for an inventory than missing one, but it is a judgement, not a fact.
+agent: the old definition read *no autonomous execution*, which stopped being true when
+these clients gained MCP and began running tools locally. Overstating an agent is the
+safer error for an inventory than missing one, but it is a judgement, not a fact.
 
 ## Why a real install is the bar
 

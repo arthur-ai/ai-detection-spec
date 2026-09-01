@@ -259,32 +259,51 @@ def markdown(data):  # noqa: C901
         "Every AI agent this repo detects on macOS, the identifiers each is matched on, and the",
         "strength of the evidence behind them.",
         "",
-        f"**A real install is the standard. Everything else is an exception, and every "
-        f"exception is recorded.**",
+        # One line, not two. The policy and the current state were being stated separately
+        # and adjacently, which read as emphasis rather than as information.
+        ("**A real install is the standard, and every entry meets it.** A VM scenario installs "
+         "the real software and asserts the classifier finds it. Anything less would be an "
+         "exception recorded in the catalog with a reason, an evidence grade and a date; there "
+         "are none open."
+         if not (len(agents) - n_scen) else
+         "**A real install is the standard. Everything else is an exception, and every "
+         "exception is recorded.**"),
         "",
-        f"| | agents | |",
-        f"|---|---:|---|",
-        f"| **standard** | {n_scen} | a VM scenario installs the real software and asserts the "
-        f"classifier finds it |",
-        f"| **exception** | {len(agents) - n_scen} | recorded in the catalog with a reason, an "
-        f"evidence grade and the date it was raised |",
+        (f"| | entries | |\n|---|---:|---|\n"
+         f"| **standard** | {n_scen} | a VM scenario installs the real software and asserts "
+         f"the classifier finds it |\n"
+         f"| **exception** | {len(agents) - n_scen} | recorded in the catalog with a reason, an "
+         f"evidence grade and the date it was raised |"
+         if len(agents) - n_scen else None),
+        # Only describe a split when there IS one. "15 entries, 15 of them agents" says the
+        # same thing twice, and reads as though something is being held back.
+        (f"{len(agents)} agents carrying {n_ident} identifiers."
+         if not n_tools else
+         f"{len(agents)} entries carrying {n_ident} identifiers &mdash; "
+         f"**{len(agents) - n_tools} agents** and **{n_tools} not**."),
         "",
-        f"{len(agents)} entries carrying {n_ident} identifiers &mdash; "
-        f"**{len(agents) - n_tools} agents** and **{n_tools} supporting tools**.",
+        "## What counts as an agent",
         "",
-        "## Not everything here is an agent",
+        "**Something that acts on the user's behalf.** That is the whole test. It is not *is this",
+        "AI software* and not *can we detect it* &mdash; everything below passed both and was",
+        "removed anyway, because counting it as an agent overstates what was found on a machine.",
         "",
-        "An MCP SDK is a library an agent is built with. LiteLLM is a gateway an agent calls",
-        "through. Neither acts on anyone's behalf, and counting them as agents overstates what",
-        "was found on a machine. They are catalogued for the same reason Docker is: a fleet",
-        "owner asking what AI software is on a Mac wants them, and their presence changes what",
-        "is possible there. `not_agents` in the catalog records which classifications are which,",
-        "as data rather than as a comment, so no tool has to hold its own opinion.",
+        "| removed | what it actually is |",
+        "|---|---|",
+        "| `mcp-sdk` | a library an agent is **built with** |",
+        "| `litellm` | a gateway an agent **calls through** |",
+        "| `docker` | a runtime: **how we look**, not what we look for |",
+        "| `ollama`, `lm-studio`, `jan`, `llama-cpp` | model runners. They **serve** models; an "
+        "agent drives one |",
+        "",
+        "Each keeps its fixture rows, with the assertion inverted to *must not match*. Deleting",
+        "the evidence with the signature would leave nothing to tell *correctly not an agent*",
+        "from *route quietly broken*.",
         "",
         "One boundary is contested rather than settled. **Desktop assistant** is counted as an",
-        "agent here: the old definition read *no autonomous execution*, which stopped being true",
-        "when these clients gained MCP and began running tools locally. Overstating an agent is",
-        "the safer error for an inventory than missing one, but it is a judgement, not a fact.",
+        "agent: the old definition read *no autonomous execution*, which stopped being true when",
+        "these clients gained MCP and began running tools locally. Overstating an agent is the",
+        "safer error for an inventory than missing one, but it is a judgement, not a fact.",
         "",
         "## Why a real install is the bar",
         "",
@@ -388,7 +407,7 @@ def markdown(data):  # noqa: C901
             head = "cannot run here" if lim["kind"] == "skip" else "known gap"
             out += [f"**{lim['scenario']} -- {head}**", "", lim["text"], ""]
 
-    return "\n".join(out).rstrip() + "\n"
+    return "\n".join(x for x in out if x is not None).rstrip() + "\n"
 
 
 def main():
