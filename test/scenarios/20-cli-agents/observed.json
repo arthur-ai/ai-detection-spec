@@ -4,32 +4,48 @@
     {
       "agent": "claude-code",
       "route": "binaries",
-      "value": "~/.local/bin/claude"
+      "value": "~/.local/bin/claude",
+      "os": "26.6.2",
+      "arch": "arm64"
     },
     {
       "agent": "claude-code",
       "route": "state_dirs",
-      "value": "~/.claude"
+      "value": "~/.claude",
+      "os": "26.6.2",
+      "arch": "arm64"
     },
     {
       "agent": "cline",
       "route": "npm",
-      "value": "cline"
+      "value": "cline",
+      "agent_version": "3.0.60",
+      "os": "26.6.2",
+      "arch": "arm64"
     },
     {
       "agent": "codex-cli",
       "route": "npm",
-      "value": "@openai/codex"
+      "value": "@openai/codex",
+      "agent_version": "0.152.0",
+      "os": "26.6.2",
+      "arch": "arm64"
     },
     {
       "agent": "copilot-cli",
       "route": "npm",
-      "value": "@github/copilot"
+      "value": "@github/copilot",
+      "agent_version": "1.0.82",
+      "os": "26.6.2",
+      "arch": "arm64"
     },
     {
       "agent": "gemini-cli",
       "route": "npm",
-      "value": "@google/gemini-cli"
+      "value": "@google/gemini-cli",
+      "agent_version": "0.57.0",
+      "os": "26.6.2",
+      "arch": "arm64"
     }
   ]
 }

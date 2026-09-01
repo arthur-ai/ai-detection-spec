@@ -26,6 +26,7 @@ jobs:
           - 45-claude-extension
           - 50-autonomous
           - 55-openclaw-npm
+          - 56-openclaw-legacy
           - 60-persistence
     steps:
       - uses: actions/checkout@v4

@@ -66,6 +66,12 @@ def replay(paths, catalog):
     """
     values = collections.defaultdict(set)
     routes = collections.defaultdict(set)
+    # THE VERSION THAT PRODUCED THE IDENTIFIER. Rows already carry it and the recorder was
+    # discarding it, which is what made "does this identifier still exist in the current
+    # release" unanswerable from the record -- the exact question a catalog of evolving
+    # agents has to answer. OpenClaw is why: moltbot -> clawdbot -> openclaw, three names
+    # across three versions, all still catalogued.
+    seen_ver = {}
     by_id = {a["id"]: a for a in catalog["agents"]}
     def agent_of(aid):
         return by_id.get(aid, {})
@@ -77,15 +83,20 @@ def replay(paths, catalog):
             for _meta, ev in matched:
                 kind, ident = ev.get("kind"), ev.get("id", "")
                 if kind in EXACT_KINDS:
-                    values[aid].add(ident)
+                    values[aid].add((EXACT_KINDS[kind], ident))
+                    seen_ver[(aid, EXACT_KINDS[kind], ident)] = ev.get("ver", "")
                     routes[aid].add(EXACT_KINDS[kind])
                 elif kind == "image":
                     for repo in classify_mod.image_repos(ident):
-                        values[aid].add(repo)
+                        values[aid].add(("images", repo))
+                        seen_ver[(aid, "images", repo)] = ev.get("ver", "")
                     routes[aid].add("images")
                 elif kind == "npm":
-                    values[aid].add(ident)
-                    routes[aid].update(("npm", "pypi"))
+                    # kind='npm' comes from npm_packages and is a node package by
+                    # construction, so it credits the npm route and nothing else.
+                    values[aid].add(("npm", ident))
+                    seen_ver[(aid, "npm", ident)] = ev.get("ver", "")
+                    routes[aid].add("npm")
                 elif kind == "file":
                     # RESOLVE WHICH GLOB MATCHED. Crediting the whole route group here was
                     # a false positive with a very plausible face: 25-python-agents matched
@@ -102,7 +113,7 @@ def replay(paths, catalog):
                         for value in agent.get(route, []):
                             pat = re.compile(r"^/Users/[^/]+/" + re.escape(str(value)[2:]))
                             if pat.match(ident) or pat.match(loc):
-                                values[aid].add(str(value))
+                                values[aid].add((route, str(value)))
                                 routes[aid].add(route)
                     # A pipx/uv tool directory names its PACKAGE, which is why classify
                     # checks the npm and pypi routes for it and not the path globs.
@@ -111,17 +122,17 @@ def replay(paths, catalog):
                         name = tool.group(1)
                         for route in ("pypi", "npm"):
                             if name in [str(v) for v in agent.get(route, [])]:
-                                values[aid].add(name)
+                                values[aid].add((route, name))
                                 routes[aid].add(route)
                 elif kind == "daemon":
                     for value in agent_of(aid).get("launchd_prefixes", []):
                         if ident.startswith(str(value)):
-                            values[aid].add(str(value))
+                            values[aid].add(("launchd_prefixes", str(value)))
                     routes[aid].add("launchd_prefixes")
-    return values, routes
+    return values, routes, seen_ver
 
 
-def record(artifact, scenario_dir):
+def record(artifact, scenario_dir, os_version="", arch=""):
     """Write scenario/observed.json: which identifiers a REAL run actually matched.
 
     test/artifacts/ is gitignored and per-machine, so the raw output cannot back a
@@ -129,7 +140,7 @@ def record(artifact, scenario_dir):
     observations layer of docs/signature-lifecycle.md, at its smallest useful size.
     """
     catalog = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
-    values, routes = replay([pathlib.Path(artifact)], catalog)
+    values, routes, seen_ver = replay([pathlib.Path(artifact)], catalog)
     idents = []
     for agent in catalog["agents"]:
         aid = agent["id"]
@@ -137,12 +148,27 @@ def record(artifact, scenario_dir):
             for value in agent.get(route, []):
                 value = str(value)
                 if route in GLOB_ROUTES or value.endswith("*"):
-                    proven = route in routes[aid]
+                    proven = (route, value) in values[aid]
                 else:
                     key = classify_mod.image_repo(value) if route == "images" else value
-                    proven = key in values[aid]
+                    proven = (route, key) in values[aid]
                 if proven:
-                    idents.append({"agent": aid, "route": route, "value": value})
+                    rec = {"agent": aid, "route": route, "value": value}
+                    # Version, OS and arch: an identifier is a fact about ONE build on ONE
+                    # platform, and a record that omits which cannot answer whether the
+                    # current release still emits it. Only recorded where the row actually
+                    # carries a version -- a path glob names no version, and inventing one
+                    # would be worse than leaving it out.
+                    ver = seen_ver.get((aid, route, value)) or seen_ver.get(
+                        (aid, route,
+                         classify_mod.image_repo(value) if route == "images" else value))
+                    if ver:
+                        rec["agent_version"] = ver
+                    if os_version:
+                        rec["os"] = os_version
+                    if arch:
+                        rec["arch"] = arch
+                    idents.append(rec)
     out = pathlib.Path(scenario_dir) / "observed.json"
     # Sorted and undated: this file is committed and compared, so it must change only
     # when what the run OBSERVED changes.
@@ -179,7 +205,7 @@ def collect():
     # Fixtures prove the MATCHER. A scenario's own output proves the IDENTIFIER, because
     # those rows came off a machine where the software was really installed. Same replay,
     # two sources, and the stronger one wins per identifier.
-    values, routes = replay(sorted((ROOT / "test" / "fixtures").glob("*.json")), catalog)
+    values, routes, _ = replay(sorted((ROOT / "test" / "fixtures").glob("*.json")), catalog)
     # Keyed by scenario, so an identifier proved only outside CI can be told apart from
     # one a pull request would catch.
     seen_in = collections.defaultdict(set)      # (agent, route, value) -> {scenario}
@@ -188,6 +214,16 @@ def collect():
         for rec in doc.get("identifiers", []):
             seen_in[(rec["agent"], rec["route"], rec["value"])].add(doc["scenario"])
     in_ci = ci_scenarios()
+    # Which agents each CI scenario claims to install, from its own expectations. An
+    # identifier of such an agent that the run did NOT produce was reached by the suite and
+    # failed to appear -- worth naming separately from one nothing has ever tried.
+    asserted_by = collections.defaultdict(set)      # agent id -> {scenario}
+    for path in sorted((ROOT / "test" / "scenarios").glob("*/expected.json")):
+        name = path.parent.name
+        if name not in in_ci:
+            continue
+        for aid in json.loads(path.read_text()).get("classified", {}).get("must_find", []):
+            asserted_by[aid].add(name)
     # A CI scenario that has never RECORDED contributes nothing to the numbers below, so
     # the count is pessimistic until each has run once. Absence of an observation is not
     # absence of a test, and reporting the total without saying which scenarios are
@@ -208,7 +244,7 @@ def collect():
                     precision = "route"
                 else:
                     key = classify_mod.image_repo(value) if route == "images" else value
-                    proven = key in values[aid]
+                    proven = (route, key) in values[aid]
                     precision = "exact"
                 scens = sorted(seen_in.get((aid, route, value), ()))
                 ci_scens = [s for s in scens if s in in_ci]
@@ -230,11 +266,15 @@ def collect():
                     state = "ci-fixture"
                 elif scens:
                     state = "local-only"
+                elif asserted_by.get(aid) - set(unrecorded):
+                    # A scenario installed this agent and this identifier never showed up.
+                    state = "tested-absent"
                 else:
                     state = "none"
                 idents.append({"route": route, "value": value,
                                "fixture": proven, "real": bool(scens),
                                "scenarios": scens, "ci_scenarios": ci_scens,
+                               "reached_by": sorted(asserted_by.get(aid, ()) - set(unrecorded)),
                                "state": state, "precision": precision})
         agents.append({
             "id": aid, "name": agent["name"], "classification": agent["classification"],
@@ -289,6 +329,7 @@ STATE_LABEL = {
     "ci-install": "CI: real install",
     "ci-fixture": "CI: fixture",
     "alias": "alias (fixture)",
+    "tested-absent": "DID NOT APPEAR",
     "local-only": "LOCAL ONLY",
     "none": "NO TEST",
 }
@@ -516,7 +557,9 @@ def main():
     data = collect()
     if "--record" in sys.argv:
         i = sys.argv.index("--record")
-        record(sys.argv[i + 1], sys.argv[i + 2])
+        def opt(flag):
+            return sys.argv[sys.argv.index(flag) + 1] if flag in sys.argv else ""
+        record(sys.argv[i + 1], sys.argv[i + 2], opt("--os"), opt("--arch"))
         return
     if "--json" in sys.argv:
         print(json.dumps(data, indent=2))
@@ -596,6 +639,8 @@ def main():
           f"that the\n{'':>21}  identifier is current")
     print(f"  LOCAL ONLY       {n('local-only'):>3}  proved only by a scenario CI does not "
           f"run. Catches nothing\n{'':>21}  on a pull request")
+    print(f"  DID NOT APPEAR   {n('tested-absent'):>3}  a CI scenario installed the agent and "
+          f"this identifier\n{'':>21}  never showed up -- usually installed by another route")
     print(f"  NO TEST          {n('none'):>3}  nothing exercises it")
     if n("alias"):
         print(f"\n  {n('alias')} retired alias(es) are excluded: nothing installs them any "

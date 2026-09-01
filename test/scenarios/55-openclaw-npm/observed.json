@@ -3,18 +3,18 @@
   "identifiers": [
     {
       "agent": "openclaw",
-      "route": "homebrew",
-      "value": "openclaw"
-    },
-    {
-      "agent": "openclaw",
       "route": "npm",
-      "value": "openclaw"
+      "value": "openclaw",
+      "agent_version": "2026.8.1",
+      "os": "26.6.2",
+      "arch": "arm64"
     },
     {
       "agent": "openclaw",
       "route": "state_dirs",
-      "value": "~/.openclaw"
+      "value": "~/.openclaw",
+      "os": "26.6.2",
+      "arch": "arm64"
     }
   ]
 }
