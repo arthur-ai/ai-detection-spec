@@ -44,6 +44,20 @@ check("finds it across all four of its routes",
       f"got {len(found.get('openclaw', {}).get('evidence', []))}")
 check("the retired bot.molt.mac alias still resolves to OpenClaw",
       any(e["id"] == "bot.molt.mac" for e in found.get("openclaw", {}).get("evidence", [])))
+# THE ONLY EVIDENCE THAT CAN EXIST FOR THIS ONE. com.openai.chat is what ChatGPT Desktop
+# carried before the Codex rename, and no fresh install produces it any more -- every
+# variation of the current cask serves one 26.x build. A real install found it exactly
+# once, on the macos-14 runner of 33511815638, whose Homebrew was stale enough to still
+# resolve 1.2026.160; that is not repeatable and will stop happening when the image
+# updates. So the fixture row is the standing proof, and it is here to stop a tidy-up
+# dropping the alias that machines in the field still depend on.
+check("the retired com.openai.chat alias still resolves to ChatGPT Desktop",
+      any(e["id"] == "com.openai.chat"
+          for e in found.get("chatgpt-desktop", {}).get("evidence", [])))
+check("com.openai.chat is NOT claimed by Codex CLI",
+      not any(e["id"] == "com.openai.chat"
+              for e in found.get("codex-cli", {}).get("evidence", [])),
+      "one vendor prefix, two products -- the confusion this catalog documents")
 check("an Ollama install is NOT an agent finding",
       "ollama" not in found,
       "a model runner serves language models; an agent is what drives one. Its rows stay "

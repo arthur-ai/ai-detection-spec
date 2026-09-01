@@ -16,6 +16,14 @@
     "perms": ""
   },
   {
+    "kind": "app",
+    "id": "com.openai.chat",
+    "ver": "1.2026.160",
+    "loc": "/Applications/ChatGPT.app",
+    "extra": "",
+    "perms": ""
+  },
+  {
     "kind": "npm",
     "id": "@openai/codex",
     "ver": "0.150.1",

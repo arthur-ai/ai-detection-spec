@@ -10,7 +10,7 @@ Every AI agent this repo finds on macOS, every identifier it is matched on,
 and the CI test behind each one.
 
 ![agents](https://img.shields.io/badge/agents-15-1D4E89)
-![identifiers](https://img.shields.io/badge/identifiers-40-1D4E89)
+![identifiers](https://img.shields.io/badge/identifiers-41-1D4E89)
 ![covered](https://img.shields.io/badge/covered_by_a_CI_test-38%2F38-2E7D57)
 ![real install](https://img.shields.io/badge/by_real_install-36-2E7D57)
 
@@ -23,7 +23,7 @@ and the CI test behind each one.
 
 **A real install is the standard, and every entry meets it.** A VM scenario installs the real software and asserts the classifier finds it. Anything less would be an exception recorded in the catalog with a reason, an evidence grade and a date; there are none open.
 
-15 agents carrying 40 identifiers.
+15 agents carrying 41 identifiers.
 
 ## 🎯 What counts as an agent
 
@@ -78,7 +78,7 @@ cannot drift apart again.
 | **local only** | 0 | proved only by a scenario CI does not run. Catches nothing on a pull request |
 | **did not appear** ⚠ | 0 | a CI scenario installed the agent and this identifier never showed up. Usually installed by another route |
 | **no test** | 0 | nothing exercises it at all |
-| _retired alias_ | _2_ | _excluded from the count. Nothing installs these any more, so no scenario can cover one; the fixture row is the only evidence there is, and it proves the alias still resolves_ |
+| _retired alias_ | _3_ | _excluded from the count. Nothing installs these any more, so no scenario can cover one; the fixture row is the only evidence there is, and it proves the alias still resolves_ |
 
 
 ### When each scenario last verified
@@ -132,7 +132,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 
 | name | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **ChatGPT Desktop** | real install | **`com.openai.codex`**, **`chatgpt`** | 10-desktop-apps, 90-demo-fleet |
+| **ChatGPT Desktop** | real install | **`com.openai.codex`**, ~~`com.openai.chat`~~, **`chatgpt`** | 10-desktop-apps, 90-demo-fleet |
 | **Claude Desktop** | real install | **`com.anthropic.claudefordesktop`**, **`claude`**, `com.anthropic.claude_browser_extension.json` | 10-desktop-apps, 90-demo-fleet |
 | **Perplexity** | real install | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
 
@@ -176,6 +176,10 @@ These are paid or account-gated products in several cases. The install is unatte
 **10-desktop-apps -- known gap**
 
 The seventh cask, `perplexity`, is not installed here. It declares depends_on macos >= 15 and lives in 11-perplexity-desktop; splitting it out is what lets these six be tested on macos-14.
+
+**10-desktop-apps -- known gap**
+
+The macos-14 runner's Homebrew metadata is old enough to install a pre-rename ChatGPT. That is a fact about the runner, not about the product, and it will stop being true when the image updates -- at which point com.openai.chat survives only as the retired alias it is now recorded as, covered by a fixture rather than by this scenario.
 
 **11-perplexity-desktop -- known gap**
 
