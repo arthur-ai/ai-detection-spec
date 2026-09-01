@@ -196,7 +196,7 @@ jobs:
       - name: Regenerate the doc and commit if anything moved
         run: |
           python3 tools/agent_status.py --write
-          git add test/scenarios/*/observed.json docs/agents.md docs/last-verified.json README.md
+          git add test/scenarios/*/observed.json docs/agents.md README.md
           if git diff --cached --quiet; then
             echo "Coverage unchanged. Nothing to commit."
             exit 0
