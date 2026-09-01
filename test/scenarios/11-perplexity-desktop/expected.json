@@ -25,6 +25,6 @@
     "perplexity"
   ],
   "known_gaps": [
-    "Perplexity is account-gated. The install is unattended and the SIGN-IN is not, so nothing here exercises behaviour that only appears once a user is authenticated."
+    "Paid or account-gated in several cases. The install is unattended and the sign-in is not, so nothing exercises behaviour that only appears once a user is signed in."
   ]
 }

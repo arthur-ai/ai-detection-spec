@@ -20,7 +20,8 @@ Which coding agents, chat clients, AI browsers and browser extensions are instal
 
 Every team inventorying AI tooling rediscovers the same handful of facts the hard way: that
 Cursor's bundle id is an opaque ToDesktop string, that ChatGPT's desktop app is
-`com.openai.codex` and not `com.openai.chat`, that one agent ships as a Homebrew cask *and* an
+`com.openai.codex` on current builds and `com.openai.chat` on everything before the Codex
+rename, so a fleet needs both, that one agent ships as a Homebrew cask *and* an
 npm global *and* a curl installer. **This is that knowledge, written down and kept true** — as
 queries you can read in ten minutes and a catalog you can check line by line.
 
@@ -46,7 +47,7 @@ touches is the local Docker one, and only when you ask for a container scan.
 | | | |
 |---|---|---|
 | 🗂 | **`dist/discovery.sql`** | One SQL file to run on the Mac. **No agent name appears in anything it matches on** — the queries look for shapes (an app bundle, an npm global, a state dotdir), never for "Cursor" or "OpenClaw" — so you never edit it when a new agent appears. It returns the machine's whole AI-relevant inventory: about **760 rows** on a developer Mac, 17.9 KB gzipped |
-| 🧭 | **`catalog/agents.yaml`** | The 15 agents and 40 identifiers those rows are matched **against**, off the machine. Add a signature here and it re-matches evidence you already collected — no going back to the fleet |
+| 🧭 | **`catalog/agents.yaml`** | The 15 agents and 41 identifiers those rows are matched **against**, off the machine. Add a signature here and it re-matches evidence you already collected — no going back to the fleet |
 | 🔎 | **`bin/classify`** | Does that matching, wherever you keep the output |
 | 🐳 | **`bin/container-scan`** | The container half, run separately and on a hard time bound, because a wedged Docker daemon blocks forever |
 | 📋 | **[`docs/agents.md`](docs/agents.md)** | Every identifier and the CI test that proves it. Generated — the numbers are counted, never typed |

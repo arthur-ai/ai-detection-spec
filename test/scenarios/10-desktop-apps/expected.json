@@ -25,17 +25,18 @@
       "perplexity-desktop"
     ]
   },
-  "why": "The four bundle ids that used to be must_contain are now must_find on the classifier, which is the layer that actually knows them. com.openai.codex is ChatGPT Desktop, not Codex CLI -- the obvious guess, com.openai.chat, is wrong, and pinning it here is the only thing that would catch a catalog edit getting it backwards. perplexity-desktop moved to 11-perplexity-desktop for its macOS >= 15 floor and is FORBIDDEN here rather than dropped: an assertion that merely stopped naming it could not tell 'no longer installed' from 'route quietly broken'.",
+  "why": "The four bundle ids that used to be must_contain are now must_find on the classifier, which is the layer that actually knows them. ChatGPT's id is a LIST because run 33511815638 showed the same cask resolving to two builds -- 26.721.41059 with com.openai.codex on macos-15, 1.2026.160 with com.openai.chat on macos-14 -- and both are real. It stays a raw probe rather than being dropped for the classifier: `chatgpt` matches on the brew route too, so must_find would still pass with every bundle id in the catalog broken, and this is the only assertion that reads the row. perplexity-desktop moved to 11-perplexity-desktop for its macOS >= 15 floor and is FORBIDDEN here rather than dropped: an assertion that merely stopped naming it could not tell 'no longer installed' from 'route quietly broken'.",
   "must_contain": [
     "com.anthropic.claudefordesktop",
     "com.todesktop.230313mzl4w4u92",
-    "com.openai.codex",
+    [
+      "com.openai.codex",
+      "com.openai.chat"
+    ],
     "ai.perplexity.comet",
     "com.kagi.kagimacOS"
   ],
   "known_gaps": [
-    "Windsurf's Homebrew token is `devin-desktop`, not `windsurf`. Read off the Homebrew API; a scenario written from the product name would install nothing and the WARN would scroll past.",
-    "These are paid or account-gated products in several cases. The install is unattended and the SIGN-IN is not, so nothing here exercises behaviour that only appears once a user is authenticated.",
-    "The seventh cask, `perplexity`, is not installed here. It declares depends_on macos >= 15 and lives in 11-perplexity-desktop; splitting it out is what lets these six be tested on macos-14."
+    "Paid or account-gated in several cases. The install is unattended and the sign-in is not, so nothing exercises behaviour that only appears once a user is signed in."
   ]
 }

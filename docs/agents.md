@@ -10,7 +10,7 @@ Every AI agent this repo finds on macOS, every identifier it is matched on,
 and the CI test behind each one.
 
 ![agents](https://img.shields.io/badge/agents-15-1D4E89)
-![identifiers](https://img.shields.io/badge/identifiers-40-1D4E89)
+![identifiers](https://img.shields.io/badge/identifiers-41-1D4E89)
 ![covered](https://img.shields.io/badge/covered_by_a_CI_test-38%2F38-2E7D57)
 ![real install](https://img.shields.io/badge/by_real_install-36-2E7D57)
 
@@ -23,7 +23,7 @@ and the CI test behind each one.
 
 **A real install is the standard, and every entry meets it.** A VM scenario installs the real software and asserts the classifier finds it. Anything less would be an exception recorded in the catalog with a reason, an evidence grade and a date; there are none open.
 
-15 agents carrying 40 identifiers.
+15 agents carrying 41 identifiers.
 
 ## 🎯 What counts as an agent
 
@@ -78,7 +78,7 @@ cannot drift apart again.
 | **local only** | 0 | proved only by a scenario CI does not run. Catches nothing on a pull request |
 | **did not appear** ⚠ | 0 | a CI scenario installed the agent and this identifier never showed up. Usually installed by another route |
 | **no test** | 0 | nothing exercises it at all |
-| _retired alias_ | _2_ | _excluded from the count. Nothing installs these any more, so no scenario can cover one; the fixture row is the only evidence there is, and it proves the alias still resolves_ |
+| _retired alias_ | _3_ | _excluded from the count. Nothing installs these any more, so no scenario can cover one; the fixture row is the only evidence there is, and it proves the alias still resolves_ |
 
 
 ### When each scenario last verified
@@ -132,7 +132,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 
 | name | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **ChatGPT Desktop** | real install | **`com.openai.codex`**, **`chatgpt`** | 10-desktop-apps, 90-demo-fleet |
+| **ChatGPT Desktop** | real install | **`com.openai.codex`**, ~~`com.openai.chat`~~, **`chatgpt`** | 10-desktop-apps, 90-demo-fleet |
 | **Claude Desktop** | real install | **`com.anthropic.claudefordesktop`**, **`claude`**, `com.anthropic.claude_browser_extension.json` | 10-desktop-apps, 90-demo-fleet |
 | **Perplexity** | real install | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
 
@@ -159,72 +159,15 @@ they are stated once. No amount of test coverage moves them.
 | VS Code extensions | osquery has no table for them at all. An agent shipping as one is invisible on that route, whatever else it also installs |
 | Behaviour that only appears after launch or sign-in | Installing proves the bundle id. Nothing here launches an app — `open -a` needs an Aqua session and SSH has none — so first-launch launchd jobs, listening ports and state directories go unobserved, and account-gated products are never signed in to |
 
-## 🧩 What individual scenarios do not cover
+## 🧩 What the scenarios do not prove
 
-Specific to one scenario and fixable by work, unlike the table above. A coverage
-report that lists only its successes fails the same way an empty scan result does
--- it reads as complete when it is merely silent.
+The install succeeded and the identifier matched. These are the ways it still falls short of the real thing -- each one fixable by work, none of them catchable by a table of counts.
 
-**10-desktop-apps -- known gap**
+| scenario | not proven |
+|---|---|
+| 10-desktop-apps, 11-perplexity-desktop | Paid or account-gated in several cases. The install is unattended and the sign-in is not, so nothing exercises behaviour that only appears once a user is signed in. |
+| 45-claude-extension | The CRX is unpacked into a real profile rather than installed by Chrome, so the identifier is genuine but the browser's install, update and enterprise-policy paths are all untested. Whether ExtensionInstallForcelist needs an MDM-delivered profile on macOS is UNVERIFIED. |
+| 55-openclaw-npm | The gateway runs with --allow-unconfigured --auth none, which is not how a real deployment runs it: enough to open the listener this scenario asserts, with no channel connected and no model reachable. |
+| 56-openclaw-retired-names | The retired npm names only. bot.molt.mac (bundle id) and bot.molt. (launchd prefix) come from the old .app, and Homebrew keeps no versioned cask for it -- whether an old build is still downloadable is UNVERIFIED. |
 
-Windsurf's Homebrew token is `devin-desktop`, not `windsurf`. Read off the Homebrew API; a scenario written from the product name would install nothing and the WARN would scroll past.
-
-**10-desktop-apps -- known gap**
-
-These are paid or account-gated products in several cases. The install is unattended and the SIGN-IN is not, so nothing here exercises behaviour that only appears once a user is authenticated.
-
-**10-desktop-apps -- known gap**
-
-The seventh cask, `perplexity`, is not installed here. It declares depends_on macos >= 15 and lives in 11-perplexity-desktop; splitting it out is what lets these six be tested on macos-14.
-
-**11-perplexity-desktop -- known gap**
-
-Perplexity is account-gated. The install is unattended and the SIGN-IN is not, so nothing here exercises behaviour that only appears once a user is authenticated.
-
-**11-perplexity-desktop -- cannot run here**
-
-The `perplexity` cask declares depends_on macos >= 15, read off the Homebrew API on 2026-09-01 (v26.34.0). Below Sequoia it cannot install and perplexity-desktop cannot be found, so this is a fact about the runner rather than a defect. It is the ONLY cask in this scenario, which is the entire point of the split: this floor used to sit in 10-desktop-apps and suppress six other casks that install on 13 or lower.
-
-**20-cli-agents -- known gap**
-
-The Homebrew routes for gemini-cli (formula) and copilot-cli (cask) are NOT exercised. Both agents are installed from npm instead, because installing both ways would have the two packages fight over the same binary. The agents meet the standard; those two identifiers remain unexercised and docs/agents.md reports them as such.
-
-**21-cli-agents-homebrew -- known gap**
-
-Installing proves the token. It does not run any of these agents, so state directories that only appear on first invocation (~/.codex, ~/.aider) are still not exercised here.
-
-**21-cli-agents-homebrew -- known gap**
-
-codex and copilot-cli are casks: on a runner the app bundle lands but is never launched, so anything written at first launch is out of reach for the same reason.
-
-**45-claude-extension -- known gap**
-
-The extension is installed by unpacking the Web Store's signed CRX into a real Chrome profile, NOT by the browser's own install flow. The bytes and the manifest key are the publisher's and the id osquery reports is derived from that key, so the identifier claim is genuine -- but nothing here exercises Chrome's install path, its update path, or its enterprise policy handling.
-
-**45-claude-extension -- known gap**
-
-An EARLIER VERSION OF THIS FILE CLAIMED THE EXTENSION COULD NOT BE TESTED WITHOUT MDM. That was wrong on two counts: Chrome had never been launched, so no profile existed for osquery to read, and going through the browser's install flow was never necessary. Recorded rather than quietly deleted, because the wrong version was written with more confidence than the evidence supported.
-
-**45-claude-extension -- known gap**
-
-Chrome's ExtensionInstallForcelist path remains untested. Whether it needs an MDM-delivered profile on macOS is UNVERIFIED -- the one attempt that failed proves nothing, because it failed for a different reason.
-
-**45-claude-extension -- known gap**
-
-Two further ids circulate for Anthropic-related extensions. Neither is in the catalog. This method would verify one in minutes if an id were confirmed, since it needs only a Web Store id.
-
-**50-autonomous -- cannot run here**
-
-The openclaw cask refuses to install below Sequoia. A Tart guest cannot be newer than the host, so this scenario is unrunnable on a Sonoma host and is skipped rather than failed.
-
-**55-openclaw-npm -- known gap**
-
-The gateway is started with --allow-unconfigured and --auth none, which is not how a real deployment runs it. That is enough to open the listener this scenario asserts and nothing more: no channel is connected, no model is reachable, and nothing here exercises what the gateway DOES once configured.
-
-**56-openclaw-retired-names -- known gap**
-
-This covers the retired NPM names only. bot.molt.mac (bundle id) and bot.molt. (launchd prefix) come from the old .app, and Homebrew keeps no versioned cask for it -- whether an old build is still downloadable is UNVERIFIED, not established either way.
-
-**56-openclaw-retired-names -- known gap**
-
-It installs deliberately outdated software, which is safe only because the guest is disposable, unenrolled and holds no credentials. Never run this setup on a managed host.
+`11-perplexity-desktop`, `50-autonomous` need macOS 15 or newer, so CI skips them on older runners rather than failing them. Each scenario's `requires.json` carries the reason.

@@ -17,6 +17,11 @@
 # software nobody should be running, and that is the point -- the fleet it exists for is
 # the one that installed it before the rename and never upgraded.
 #
+# NEVER RUN THIS SETUP ON A MANAGED HOST. It installs deliberately outdated software, and
+# that is safe only because the guest is disposable, unenrolled and holds no credentials.
+# This line used to live in expected.json's known_gaps and so was rendered into the coverage
+# report, which is the one place nobody reads before running a script.
+#
 # SEPARATE from 55-openclaw-npm on purpose. All three packages provide an `openclaw`-ish
 # binary and npm would have them fight over the same global bin, so the current name and
 # the retired ones cannot share a machine without one masking the other.

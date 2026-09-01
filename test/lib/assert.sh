@@ -37,9 +37,22 @@ for kind in sorted(set(want) | set(got)):
         ok = g == w
     print(f"{kind:10} {str(w):>8} {g:>8}  {'ok' if ok else 'FAIL'}")
     fail |= not ok
+# A LIST ELEMENT MEANS "ANY OF THESE", and it exists because the OS axis produced the
+# first identifier that legitimately differs by platform. The `chatgpt` cask resolved to
+# 26.721.41059 on macos-15 and to 1.2026.160 on macos-14 in run 33511815638, and those two
+# builds carry DIFFERENT bundle ids -- com.openai.codex and com.openai.chat. Both are real.
+#
+# The alternative was to drop the bundle-id probe and lean on the classifier, and that is
+# the wrong trade: `chatgpt` matches on the brew route too, so must_find still passes with
+# every bundle id in the catalog broken. This probe is the only thing that reads the raw
+# row, which is exactly why it must be able to say "one of these two" instead of being
+# weakened to nothing.
+blobs = [json.dumps(r) for r in actual]
 for probe in expected.get("must_contain", []):
-    hit = any(probe in json.dumps(r) for r in actual)
-    print(f"  must_contain {probe!r}: {'ok' if hit else 'FAIL'}")
+    alts = probe if isinstance(probe, list) else [probe]
+    hit = any(any(p in blob for p in alts) for blob in blobs)
+    label = " | ".join(alts)
+    print(f"  must_contain {label!r}: {'ok' if hit else 'FAIL'}")
     fail |= not hit
 sys.exit(1 if fail else 0)
 PY

@@ -197,9 +197,28 @@ agents:
   - id: chatgpt-desktop
     name: ChatGPT Desktop
     classification: Desktop assistant
-    # com.openai.codex, not com.openai.chat. The obvious guess is wrong.
-    bundle_ids: [com.openai.codex]
+    # BOTH IDS ARE REAL, and for a long time this catalog said one of them was a mistake.
+    # com.openai.codex is what a current build carries -- the app and Codex converged, and
+    # the version scheme went with it. com.openai.chat is what every build BEFORE that
+    # carries, and the note here used to call it "the obvious guess, and it is wrong".
+    #
+    # It was not wrong, it was old. Run 33511815638 installed the same `chatgpt` cask on two
+    # runners and got two builds: 26.721.41059 -> com.openai.codex on macos-15, and
+    # 1.2026.160 -> com.openai.chat on macos-14, whose Homebrew metadata was stale enough to
+    # still resolve the pre-rename release. A real install, read off a real Mac, of an
+    # identifier this catalog had written off.
+    #
+    # THE FLEET CONSEQUENCE IS THE POINT. A Mac that has not updated ChatGPT still reports
+    # com.openai.chat, and until now the brew route was the only thing that would have found
+    # it -- so a direct download, which is how most people install this app, was invisible.
+    bundle_ids: [com.openai.codex, com.openai.chat]
     homebrew: [chatgpt]
+    # Retired for the same reason as OpenClaw's aliases: it belongs to an earlier release
+    # and a fresh install cannot produce it today -- every variation of the current cask
+    # serves one 26.x URL. Listed so that the day the runner image catches up and the id
+    # stops appearing, it is recorded as "kept for machines that still carry it" rather
+    # than quietly failing coverage and inviting someone to delete it.
+    retired: [com.openai.chat]
 
   - id: codex-cli
     name: Codex CLI
@@ -214,10 +233,6 @@ agents:
     # An opaque ToDesktop identifier. Unguessable; it must be pinned.
     bundle_ids: [com.todesktop.230313mzl4w4u92]
     homebrew: [cursor]
-
-
-
-
 
   - id: perplexity-comet
     name: Perplexity Comet

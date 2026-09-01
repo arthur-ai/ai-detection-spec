@@ -22,9 +22,11 @@ npm install -g @openai/codex || echo "WARN: codex install failed"
 #
 # npm is chosen over Homebrew for gemini-cli and copilot-cli deliberately. Both also
 # ship a formula/cask, and installing both ways would have them fight over the same
-# binary; npm is the primary distribution. The Homebrew identifiers stay unexercised
-# and docs/agents.md says so per-identifier -- the AGENT meets the standard, one of
-# its routes is verified, and the report does not pretend otherwise.
+# binary; npm is the primary distribution. The Homebrew identifiers are NOT unexercised
+# -- 21-cli-agents-homebrew exists to install exactly those, on a machine with no npm
+# copy to collide with, and both `gemini-cli` and `copilot-cli` are recorded from it.
+# This comment used to end "the Homebrew identifiers stay unexercised", which was true
+# when it was written and stopped being true the day that scenario landed.
 #
 # `|| echo WARN` so a network failure does not abort the whole scenario. It still
 # FAILS, in the assertion, where the reason is visible: a missing must_find names the
