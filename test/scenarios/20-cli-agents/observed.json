@@ -5,6 +5,13 @@
       "agent": "claude-code",
       "route": "binaries",
       "value": "~/.local/bin/claude",
+      "os": "14.8.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "claude-code",
+      "route": "binaries",
+      "value": "~/.local/bin/claude",
       "os": "15.7.7",
       "arch": "arm64"
     },
@@ -12,7 +19,22 @@
       "agent": "claude-code",
       "route": "state_dirs",
       "value": "~/.claude",
+      "os": "14.8.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "claude-code",
+      "route": "state_dirs",
+      "value": "~/.claude",
       "os": "15.7.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "cline",
+      "route": "npm",
+      "value": "cline",
+      "agent_version": "3.0.60",
+      "os": "14.8.7",
       "arch": "arm64"
     },
     {
@@ -28,7 +50,22 @@
       "route": "npm",
       "value": "@openai/codex",
       "agent_version": "0.152.0",
+      "os": "14.8.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "codex-cli",
+      "route": "npm",
+      "value": "@openai/codex",
+      "agent_version": "0.152.0",
       "os": "15.7.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "codex-cli",
+      "route": "state_dirs",
+      "value": "~/.codex",
+      "os": "14.8.7",
       "arch": "arm64"
     },
     {
@@ -43,7 +80,23 @@
       "route": "npm",
       "value": "@github/copilot",
       "agent_version": "1.0.82",
+      "os": "14.8.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "copilot-cli",
+      "route": "npm",
+      "value": "@github/copilot",
+      "agent_version": "1.0.82",
       "os": "15.7.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "gemini-cli",
+      "route": "npm",
+      "value": "@google/gemini-cli",
+      "agent_version": "0.57.0",
+      "os": "14.8.7",
       "arch": "arm64"
     },
     {

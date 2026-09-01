@@ -5,7 +5,21 @@
       "agent": "aider",
       "route": "pypi",
       "value": "aider-chat",
+      "os": "14.8.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "aider",
+      "route": "pypi",
+      "value": "aider-chat",
       "os": "15.7.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "aider",
+      "route": "state_dirs",
+      "value": "~/.aider",
+      "os": "14.8.7",
       "arch": "arm64"
     },
     {
