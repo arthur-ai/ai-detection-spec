@@ -537,25 +537,6 @@ def markdown(data):  # noqa: C901
          f"{len(agents)} entries carrying {n_ident} identifiers &mdash; "
          f"**{len(agents) - n_tools} agents** and **{n_tools} not**."),
         "",
-        "## 🎯 What counts as an agent",
-        "",
-        "**Something that acts on the user's behalf.** That is the whole test. It is not *is this",
-        "AI software* and not *can we detect it* &mdash; everything below passed both and was",
-        "removed anyway, because counting it as an agent overstates what was found on a machine.",
-        "",
-        "| removed | what it actually is |",
-        "|---|---|",
-        *(f"| `{r['id']}` | {r['what_it_is']} |" for r in data.get("removed", [])),
-        "",
-        "Each keeps its fixture rows, with the assertion inverted to *must not match*. Deleting",
-        "the evidence with the signature would leave nothing to tell *correctly not an agent*",
-        "from *route quietly broken*.",
-        "",
-        "One boundary is contested rather than settled. **Desktop assistant** is counted as an",
-        "agent: the old definition read *no autonomous execution*, which stopped being true when",
-        "these clients gained MCP and began running tools locally. Overstating an agent is the",
-        "safer error for an inventory than missing one, but it is a judgement, not a fact.",
-        "",
         "## 🧪 Why a real install is the bar",
         "",
         "`bot.molt.mac` was read off OpenClaw's own Homebrew metadata and matched nothing on any",
@@ -695,8 +676,8 @@ def markdown(data):  # noqa: C901
         out.append("")
 
     # ONE ROW PER GAP, and only for a gap. This section used to render every known_gaps
-    # entry as a bold heading and a paragraph, sixteen of them, and most were not coverage
-    # gaps at all: a solved trap already commented in setup.sh, a correction to an earlier
+    # entry as its own bold heading and paragraph, and most of them were not coverage gaps
+    # at all: a solved trap already commented in setup.sh, a correction to an earlier
     # version of this file, a safety warning about a script, a cross-reference to the
     # scenario that does cover the thing. Those belong next to the code they describe, and
     # that is where they went. What is left is the claim this section can actually make --
@@ -712,9 +693,9 @@ def markdown(data):  # noqa: C901
                 "falls short of the real thing -- each one fixable by work, none of them "
                 "catchable by a table of counts.", ""]
     if gaps:
-        # GROUPED BY TEXT, not by scenario. Two scenarios install account-gated software and
-        # hit the identical wall; printing it once under both names says so, and printing it
-        # twice made the section look twice as long as the problem is.
+        # GROUPED BY TEXT, not by scenario. Scenarios that install account-gated software
+        # hit one identical wall; printing it once under all their names says so, and
+        # printing it per scenario made the section look longer than the problem is.
         grouped = {}
         for l in gaps:
             grouped.setdefault(l["text"], []).append(l["scenario"])
@@ -733,6 +714,28 @@ def markdown(data):  # noqa: C901
             out += [f"{', '.join('`' + s + '`' for s in scens)} need {need}, so CI skips "
                     f"them on older runners rather than failing them. Each scenario's "
                     f"`requires.json` carries the reason.", ""]
+
+    # LAST, NOT FIRST. This is the scope rule, and it reads better as the thing you check a
+    # surprising row against than as a preamble to be got through: a reader arrives wanting
+    # the table, and meets the boundary argument once they have seen what is in it.
+    out += ["## 🎯 What counts as an agent", "",
+            "**An agent acts on the user's behalf.** That is the only test.", "",
+            "Two easier questions are deliberately not the test: *is this AI software?* and "
+            "*can we detect it?* Everything in the table below answers yes to both, which is "
+            "why the pull to include it is real. None of it acts for the user, so none of it "
+            "is counted: a model server or a client library sitting on a Mac is not an "
+            "agent running there, and reporting it as one inflates the finding.", "",
+            "| removed | what it actually is |", "|---|---|",
+            *(f"| `{r['id']}` | {r['what_it_is']} |" for r in data.get("removed", [])),
+            "",
+            "Each keeps its fixture rows, with the assertion inverted to *must not match*. "
+            "Deleting the evidence with the signature would leave nothing to tell *correctly "
+            "not an agent* from *route quietly broken*.", "",
+            "One boundary is contested rather than settled. **Desktop assistant** is counted "
+            "as an agent: the old definition read *no autonomous execution*, which stopped "
+            "being true when these clients gained MCP and began running tools locally. "
+            "Overstating an agent is the safer error for an inventory than missing one, but "
+            "it is a judgement, not a fact.", ""]
 
     return "\n".join(x for x in out if x is not None).rstrip() + "\n"
 

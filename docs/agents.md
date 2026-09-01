@@ -25,31 +25,6 @@ and the CI test behind each one.
 
 15 agents carrying 41 identifiers.
 
-## 🎯 What counts as an agent
-
-**Something that acts on the user's behalf.** That is the whole test. It is not *is this
-AI software* and not *can we detect it* &mdash; everything below passed both and was
-removed anyway, because counting it as an agent overstates what was found on a machine.
-
-| removed | what it actually is |
-|---|---|
-| `mcp-sdk` | a library an agent is **built with** |
-| `litellm` | a gateway an agent **calls through** |
-| `docker` | a runtime: **how we look**, not what we look for |
-| `ollama` | a model runner. It **serves** models; an agent drives one |
-| `lm-studio` | a model runner, and a desktop app for one |
-| `jan` | a model runner |
-| `llama-cpp` | a model runner, and the engine several others embed |
-
-Each keeps its fixture rows, with the assertion inverted to *must not match*. Deleting
-the evidence with the signature would leave nothing to tell *correctly not an agent*
-from *route quietly broken*.
-
-One boundary is contested rather than settled. **Desktop assistant** is counted as an
-agent: the old definition read *no autonomous execution*, which stopped being true when
-these clients gained MCP and began running tools locally. Overstating an agent is the
-safer error for an inventory than missing one, but it is a judgement, not a fact.
-
 ## 🧪 Why a real install is the bar
 
 `bot.molt.mac` was read off OpenClaw's own Homebrew metadata and matched nothing on any
@@ -171,3 +146,23 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 56-openclaw-retired-names | The retired npm names only. bot.molt.mac (bundle id) and bot.molt. (launchd prefix) come from the old .app, and Homebrew keeps no versioned cask for it -- whether an old build is still downloadable is UNVERIFIED. |
 
 `11-perplexity-desktop`, `50-autonomous` need macOS 15 or newer, so CI skips them on older runners rather than failing them. Each scenario's `requires.json` carries the reason.
+
+## 🎯 What counts as an agent
+
+**An agent acts on the user's behalf.** That is the only test.
+
+Two easier questions are deliberately not the test: *is this AI software?* and *can we detect it?* Everything in the table below answers yes to both, which is why the pull to include it is real. None of it acts for the user, so none of it is counted: a model server or a client library sitting on a Mac is not an agent running there, and reporting it as one inflates the finding.
+
+| removed | what it actually is |
+|---|---|
+| `mcp-sdk` | a library an agent is **built with** |
+| `litellm` | a gateway an agent **calls through** |
+| `docker` | a runtime: **how we look**, not what we look for |
+| `ollama` | a model runner. It **serves** models; an agent drives one |
+| `lm-studio` | a model runner, and a desktop app for one |
+| `jan` | a model runner |
+| `llama-cpp` | a model runner, and the engine several others embed |
+
+Each keeps its fixture rows, with the assertion inverted to *must not match*. Deleting the evidence with the signature would leave nothing to tell *correctly not an agent* from *route quietly broken*.
+
+One boundary is contested rather than settled. **Desktop assistant** is counted as an agent: the old definition read *no autonomous execution*, which stopped being true when these clients gained MCP and began running tools locally. Overstating an agent is the safer error for an inventory than missing one, but it is a judgement, not a fact.
