@@ -121,14 +121,14 @@ they are stated once. No amount of test coverage moves them.
 | blind spot | why |
 |---|---|
 | Anything inside a VM | The queries see the host filesystem, not a guest's |
-| What is *running* in a container | `--deep` lists container **images**, and an image named `ollama/ollama` is evidence. What a running container is doing is not: `docker_containers` needs a per-container inspect document osquery reads strictly, and a hand-built one it merely accepts is worse than none |
+| What is *running* in a container | `--deep` lists container **images**, and an image named `paulgauthier/aider` is evidence. What a running container is doing is not: `docker_containers` needs a per-container inspect document osquery reads strictly, and a hand-built one it merely accepts is worse than none |
 | Containers outside Docker Desktop | Colima, Rancher Desktop and Podman keep their sockets elsewhere, and `docker_images` does not read containerd or Podman image stores at all. On those Macs `--deep` says "did not scan" rather than "none" |
 | An untagged (dangling) image | Whether `docker_images` reports one is untested — no dangling image could be produced on the machine this was measured on. Treat it as unknown, not as covered |
 | Agents on a cloud dev box or Codespace | Same reason. The scanner sees the machine it runs on |
 | Which filesystem roots an MCP server exposes | Requires parsing arbitrary JSON config; osquery has no table for it |
 | Outbound destinations by hostname | `process_open_sockets` returns an IP, not a name |
 | A cloned-but-never-run source checkout | Nothing has been created on disk yet |
-| Which agent holds a port, when it runs under an interpreter | A port is only attributed to an agent when the process holding it names that agent — otherwise 8080-held-by-java would be reported as llama.cpp. An agent run through `node` or `python` reports the interpreter's path, so the `ports` route is nearly inert for it. Measured on a real OpenClaw gateway: the listener opened, the row was collected, and the classifier correctly declined it |
+| Which agent holds a listening port | Nothing is detected by port number, and the `ports` route was **retired** for it. A port can only be attributed when the process holding it already names the agent — otherwise 8080-held-by-java reads as llama.cpp — so it never identifies anything on its own. Ports are still collected as raw evidence; they are simply never a signature |
 | What an agent *does* | Every route here reports presence and declared capability. `permissions` says an extension **may** read every page, never that it did. No osquery table carries use |
 | The identity of a sideloaded extension | osquery derives `identifier` from the manifest `key`, which unpacked and sideloaded extensions do not carry — so they report an **empty** one. The Web Store's signed CRX does carry it |
 | VS Code extensions | osquery has no table for them at all. An agent shipping as one is invisible on that route, whatever else it also installs |

@@ -1,17 +1,42 @@
-# osquery-ai-discovery
+<div align="center">
 
-**osquery queries that find AI agents on a Mac.** Which desktop apps, CLI tools, browser
-extensions and local models are installed, how each one got there, and what browser extensions
-are permitted to access.
+# 🔎 osquery-ai-discovery
+
+**Find the AI agents on a Mac — with SQL you can read.**
+
+Which coding agents, chat clients, AI browsers and browser extensions are installed,
+*which route each one arrived by*, and what those extensions are permitted to access.
+
+[![CI](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/ci.yml/badge.svg)](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/ci.yml)
+[![Scenarios](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/scenarios.yml/badge.svg)](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/scenarios.yml)
+[![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-40%2F40-2E7D57)](docs/agents.md)
+[![osquery](https://img.shields.io/badge/osquery-5.23.1-1D4E89)](https://osquery.io)
+[![macOS only](https://img.shields.io/badge/macOS-only-6B7480)](#requirements)
+[![License](https://img.shields.io/badge/license-MIT-6B7480)](LICENSE)
+
+**[What we detect, and what tests it →](docs/agents.md)**
+
+</div>
 
 > **macOS only.** These queries target macOS and are tested against it. Nothing here works on
 > Linux or Windows today. That may change; claiming otherwise now would waste your time.
 
-### 📋 [What we detect, and what tests it →](docs/agents.md)
+> **Agents only.** Something that acts on the user's behalf. An SDK is a library an agent is
+> *built with*, a gateway is something it *calls through*, a model runner *serves* models and a
+> container runtime is *how we look* — all four were catalogued once, and all four were removed.
+> Counting them as agents overstates what was found on a machine.
 
-Every agent, every identifier, and what proves each one — **generated and kept current by CI**,
-so it can never describe a catalog that has moved on without it. The numbers are counted from
-the tree at generation time, never written by hand.
+## What you get
+
+| | |
+|---|---|
+| 🗂 **`dist/discovery.sql`** | one file, ~760 rows on a developer Mac, no agent names anywhere in it |
+| 🧭 **`catalog/agents.yaml`** | 15 agents, 40 identifiers — matching happens **off** the machine |
+| 🐳 **`bin/container-scan`** | the deep artifact, bounded, because a wedged Docker daemon blocks forever |
+| 📋 **[`docs/agents.md`](docs/agents.md)** | what each identifier is, and which CI test proves it |
+
+The endpoint **enumerates**; it holds no catalog and does no filtering. That is what lets a new
+signature re-match evidence you already collected, without going back to the fleet.
 
 ## Why this exists
 
@@ -67,7 +92,7 @@ OpenClaw  [Personal agent]
     app     ai.openclaw.mac  2026.7.1
             /Applications/OpenClaw.app
     daemon  ai.openclaw.gateway
-    port    18789
+    npm     openclaw  2026.8.1
 ```
 
 `bin/classify` joins the query output to `catalog/agents.yaml`. Run the query alone for raw
@@ -81,7 +106,7 @@ Sample output from a developer Mac:
   {"kind":"app",  "id":"ai.openclaw.mac",              "ver":"2026.7.1", "loc":"/Applications/OpenClaw.app"},
   {"kind":"npm",  "id":"@openai/codex",                "ver":"0.150.1"},
   {"kind":"file", "id":"/Users/dana/.local/bin/claude"},
-  {"kind":"port", "id":"11434",                        "loc":"/Applications/Ollama.app/…/ollama"},
+  {"kind":"port", "id":"18789",                        "loc":"/opt/homebrew/…/bin/node"},
   {"kind":"ext",  "id":"kbhkmjgjmpbaeoinipbngmmpjppjlkmm","perms":"tabs,cookies,nativeMessaging,<all_urls>"}
 ]
 ```
@@ -134,14 +159,14 @@ Stated plainly, because a discovery tool that hides its blind spots is worse tha
 | Blind spot | Why |
 |---|---|
 | Anything inside a VM | The queries see the host filesystem, not a guest's |
-| What is *running* in a container | `--deep` lists container **images**, and an image named `ollama/ollama` is evidence. What a running container is doing is not: `docker_containers` needs a per-container inspect document osquery reads strictly, and a hand-built one it merely accepts is worse than none |
+| What is *running* in a container | `--deep` lists container **images**, and an image named `paulgauthier/aider` is evidence. What a running container is doing is not: `docker_containers` needs a per-container inspect document osquery reads strictly, and a hand-built one it merely accepts is worse than none |
 | Containers outside Docker Desktop | Colima, Rancher Desktop and Podman keep their sockets elsewhere, and `docker_images` does not read containerd or Podman image stores at all. On those Macs `--deep` says "did not scan" rather than "none" |
 | An untagged (dangling) image | Whether `docker_images` reports one is untested — no dangling image could be produced on the machine this was measured on. Treat it as unknown, not as covered |
 | Agents on a cloud dev box or Codespace | Same reason. The scanner sees the machine it runs on |
 | Which filesystem roots an MCP server exposes | Requires parsing arbitrary JSON config; osquery has no table for it |
 | Outbound destinations by hostname | `process_open_sockets` returns an IP, not a name |
 | A cloned-but-never-run source checkout | Nothing has been created on disk yet |
-| Which agent holds a port, when it runs under an interpreter | A port is only attributed to an agent when the process holding it names that agent — otherwise 8080-held-by-java would be reported as llama.cpp. An agent run through `node` or `python` reports the interpreter's path, so the `ports` route is nearly inert for it. Measured on a real OpenClaw gateway: the listener opened, the row was collected, and the classifier correctly declined it |
+| Which agent holds a listening port | Nothing is detected by port number, and the `ports` route was **retired** for it. A port can only be attributed when the process holding it already names the agent — otherwise 8080-held-by-java reads as llama.cpp — so it never identifies anything on its own. Ports are still collected as raw evidence; they are simply never a signature |
 | What an agent *does* | Every route here reports presence and declared capability. `permissions` says an extension **may** read every page, never that it did. No osquery table carries use |
 | The identity of a sideloaded extension | osquery derives `identifier` from the manifest `key`, which unpacked and sideloaded extensions do not carry — so they report an **empty** one. The Web Store's signed CRX does carry it |
 | VS Code extensions | osquery has no table for them at all. An agent shipping as one is invisible on that route, whatever else it also installs |
@@ -174,9 +199,9 @@ so without it a wedged daemon and a Mac with no containers produce the same valu
 
 Image names resolve through the `images:` catalog route — exact match on the repository, tag
 stripped, `docker.io/` and Docker Hub's implicit `library/` removed, registry host kept for
-everything else. Three carry one: `ollama`, `llama-cpp`, `aider`. **An image
-name is chosen by whoever tagged it**, which no other route here is true of: `docker tag
-alpine ollama/ollama` produces an Ollama finding and nothing can tell it from the real image.
+everything else. One carries one: `aider`, as `paulgauthier/aider`. **An image name is chosen
+by whoever tagged it**, which no other route here is true of: `docker tag alpine
+paulgauthier/aider` produces an aider finding and nothing can tell it from the real image.
 Read an image row as weaker evidence than a bundle id.
 
 ## Running it on a fleet

@@ -351,6 +351,27 @@ ROUTE_LABEL = {"bundle_ids": "bundle id", "homebrew": "homebrew", "npm": "npm",
                "native_messaging_hosts": "native msg", "images": "image",
                "extension_ids": "extension id"}
 DOC = ROOT / "docs" / "agents.md"
+README = ROOT / "README.md"
+# The coverage badge is GENERATED, for the same reason the doc is: a number written by hand
+# in a README is a claim nothing checks, and this one sits at the top of the page where it is
+# read first and verified least.
+BADGE = re.compile(r"(identifiers_covered_by_a_CI_test-)(\d+)(%2F)(\d+)(-)([0-9A-Fa-f]{6})")
+
+
+def badge_for(data):
+    """The badge line's numbers and colour, from the same states the report counts."""
+    n = sum(len(a["identifiers"]) for a in data["agents"])
+    covered = sum(1 for a in data["agents"] for i in a["identifiers"]
+                  if i["state"] in ("ci-install", "ci-fixture", "alias"))
+    # Green only at complete. Anything less is amber -- a badge that reads green at 90%
+    # trains the reader to stop looking at the number beside it.
+    colour = "2E7D57" if covered == n else "A26A16"
+    return covered, n, colour
+
+
+def rewrite_badge(data, text):
+    covered, n, colour = badge_for(data)
+    return BADGE.sub(lambda m: f"{m.group(1)}{covered}{m.group(3)}{n}{m.group(5)}{colour}", text)
 
 
 def grade(agent):
@@ -590,7 +611,14 @@ def main():
     if "--write" in sys.argv:
         DOC.parent.mkdir(exist_ok=True)
         DOC.write_text(markdown(data))
-        print(f"wrote {DOC.relative_to(ROOT)}")
+        out = [str(DOC.relative_to(ROOT))]
+        if README.exists():
+            before = README.read_text()
+            after = rewrite_badge(data, before)
+            if after != before:
+                README.write_text(after)
+                out.append("README.md badge")
+        print("wrote " + ", ".join(out))
         return
     if "--gate" in sys.argv:
         # NOTHING SHIPS IN THE CATALOG WITHOUT A REAL TEST. Fails on any identifier no CI
@@ -631,6 +659,12 @@ def main():
     if "--check" in sys.argv:
         want = markdown(data)
         have = DOC.read_text() if DOC.exists() else ""
+        if README.exists() and rewrite_badge(data, README.read_text()) != README.read_text():
+            c, n, _ = badge_for(data)
+            print(f"agent-status: FAIL -- README's coverage badge is stale. It should read "
+                  f"{c}/{n}.")
+            print("  Fix: python3 tools/agent_status.py --write")
+            sys.exit(1)
         if want != have:
             print("agent-status: FAIL -- docs/agents.md is stale.")
             print("  The catalog or its test coverage changed and the doc was not regenerated.")

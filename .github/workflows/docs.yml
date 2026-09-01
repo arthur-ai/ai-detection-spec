@@ -52,8 +52,8 @@ jobs:
           # Stage FIRST, then ask --cached. A plain `git diff` reports nothing for a file
           # git is not yet tracking, so on the one run where the doc is newly added this
           # would report "nothing to commit" and silently skip the thing it exists to do.
-          git add docs/agents.md
-          if git diff --cached --quiet -- docs/agents.md; then
+          git add docs/agents.md README.md
+          if git diff --cached --quiet -- docs/agents.md README.md; then
             echo "docs/agents.md already matches the catalog. Nothing to commit."
             exit 0
           fi
