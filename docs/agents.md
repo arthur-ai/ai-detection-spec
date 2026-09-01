@@ -173,6 +173,10 @@ Windsurf's Homebrew token is `devin-desktop`, not `windsurf`. Read off the Homeb
 
 These are paid or account-gated products in several cases. The install is unattended and the SIGN-IN is not, so nothing here exercises behaviour that only appears once a user is authenticated.
 
+**10-desktop-apps -- cannot run here**
+
+The `perplexity` cask declares depends_on macos >= 15, so on macOS 14 it cannot install and perplexity-desktop cannot be found. Read off the Homebrew API: openclaw and perplexity are the only two casks in this repo that require 15; claude, cursor, chatgpt, comet and devin-desktop all install on 12 or 13. NOBODY KNEW THIS until a second runner was added to the matrix -- which is what the OS axis is for. Splitting perplexity into its own scenario would recover macOS 14 coverage for the other six casks, and is worth doing.
+
 **20-cli-agents -- known gap**
 
 The Homebrew routes for gemini-cli (formula) and copilot-cli (cask) are NOT exercised. Both agents are installed from npm instead, because installing both ways would have the two packages fight over the same binary. The agents meet the standard; those two identifiers remain unexercised and docs/agents.md reports them as such.

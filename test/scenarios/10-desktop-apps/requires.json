@@ -1,0 +1,4 @@
+{
+  "min_macos": 15,
+  "why": "The `perplexity` cask declares depends_on macos >= 15, so on macOS 14 it cannot install and perplexity-desktop cannot be found. Read off the Homebrew API: openclaw and perplexity are the only two casks in this repo that require 15; claude, cursor, chatgpt, comet and devin-desktop all install on 12 or 13. NOBODY KNEW THIS until a second runner was added to the matrix -- which is what the OS axis is for. Splitting perplexity into its own scenario would recover macOS 14 coverage for the other six casks, and is worth doing."
+}
