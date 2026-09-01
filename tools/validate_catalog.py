@@ -213,6 +213,17 @@ def main():
                         f"not run in the fast loop, so this would surface as a red run "
                         f"minutes later instead of here.")
 
+    # `untested:` entries must be well-formed. tools/agent_status.py --gate decides whether
+    # each one is still warranted; this only checks it can be read.
+    for e in doc.get("untested", []) or []:
+        missing = {"agent", "route", "value", "reason", "raised"} - set(e)
+        if missing:
+            errors.append(f"untested entry {e!r} missing {sorted(missing)}")
+        elif not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(e["raised"])):
+            errors.append(f"untested {e['value']!r}: raised must be YYYY-MM-DD")
+        elif len(str(e["reason"])) < 20:
+            errors.append(f"untested {e['value']!r}: reason too short to be a reason")
+
     if errors:
         print("catalog: FAIL")
         for e in errors:

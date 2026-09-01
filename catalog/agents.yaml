@@ -32,6 +32,28 @@
 # `classification` describes DEPLOYMENT SHAPE, not risk or quality. Whether an agent is
 # acceptable is the reader's judgement about their fleet, not ours about a vendor.
 #
+# A LISTENING PORT IS NOT AN IDENTIFIER, and the `ports` route is retired. It looked like
+# one -- 18789 is OpenClaw's gateway -- and it cannot be, for a reason the code already
+# encoded in two places before anyone said it out loud:
+#
+#   * bin/classify refuses a port unless the process holding it NAMES the agent
+#     (`if route == "ports" and not _corroborates(...)`). That guard is right: it is what
+#     stops 8080-held-by-java reading as llama.cpp. But it means the port only ever fires
+#     when something else has ALREADY identified the agent, so it adds no identifying
+#     power -- it is a second opinion from the same witness.
+#   * validate_catalog.py exempts ports from the duplicate-identifier check, because
+#     "8080 is legitimately shared". A value that two agents may both claim is not an
+#     identifier; that exemption was the admission.
+#
+# Measured, rather than argued: the gateway was started for real, the listener opened, the
+# row was collected, and the classifier declined it -- because OpenClaw runs under node and
+# the row reads /opt/homebrew/Cellar/node/26.8.1/bin/node. It has never produced a finding
+# in any run.
+#
+# What a port CAN tell you is that an agent is RUNNING rather than merely installed. That is
+# liveness, not identity, and if it is ever wanted it should be built as that and named as
+# that.
+
 # Old identifiers are kept as aliases rather than removed: machines that installed an
 # earlier version still carry them.
 
@@ -148,22 +170,6 @@ agents:
     # place: it proves the alias still resolves to this agent, so a later tidy-up of the
     # catalog or a refactor of the matcher cannot drop them silently.
     retired: [bot.molt.mac, bot.molt., clawdbot, moltbot]
-    # 18789 IS THE GATEWAY'S PORT AND IS NEARLY INERT IN PRACTICE. Measured: the gateway
-    # was started for real (`openclaw gateway run --allow-unconfigured`), the listener
-    # opened, and osquery collected the row -- and the classifier DECLINED it, correctly.
-    #
-    # A port only counts when the process holding it corroborates the agent, which is what
-    # stops 8080-held-by-java being reported as llama.cpp. OpenClaw installed from npm runs
-    # under node, so the row reads
-    #     loc=/opt/homebrew/Cellar/node/26.8.1/bin/node  extra=127.0.0.1
-    # and nothing in it names OpenClaw. The same is true of any agent that runs under an
-    # interpreter, which is most of them.
-    #
-    # Kept rather than deleted: it still corroborates if a row ever arrives whose process
-    # path names the agent, and it costs nothing when it does not. But it is not evidence
-    # this catalog can rely on, and the coverage report shows it as did-not-appear for that
-    # reason rather than for a missing test.
-    ports: [18789]
 
   - id: chatgpt-desktop
     name: ChatGPT Desktop
