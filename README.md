@@ -9,7 +9,7 @@ Which coding agents, chat clients, AI browsers and browser extensions are instal
 
 [![CI](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/ci.yml/badge.svg)](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/ci.yml)
 [![Scenarios](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/scenarios.yml/badge.svg)](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/scenarios.yml)
-[![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-38%2F38-2E7D57)](docs/agents.md)
+[![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-39%2F39-2E7D57)](docs/agents.md)
 [![osquery](https://img.shields.io/badge/osquery-5.23.1-1D4E89)](https://osquery.io)
 [![macOS only](https://img.shields.io/badge/macOS-only-6B7480)](#requirements)
 [![License](https://img.shields.io/badge/license-MIT-6B7480)](LICENSE)

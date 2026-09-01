@@ -11,8 +11,8 @@ and the CI test behind each one.
 
 ![agents](https://img.shields.io/badge/agents-15-1D4E89)
 ![identifiers](https://img.shields.io/badge/identifiers-41-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-38%2F38-2E7D57)
-![real install](https://img.shields.io/badge/by_real_install-36-2E7D57)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-39%2F39-2E7D57)
+![real install](https://img.shields.io/badge/by_real_install-37-2E7D57)
 
 </div>
 
@@ -58,7 +58,7 @@ Mac. `aider` installs as `aider-chat` under `uv` and `pipx` while its state dire
 and neither survived contact with an actual install. Nothing short of installing the
 software catches that class of error.
 
-## 📊 38/38 identifiers are covered by a CI test
+## 📊 39/39 identifiers are covered by a CI test
 
 **Measured per identifier, and only counting tests CI actually runs.** Two things make
 that different from "has anyone tested this". An entry passes when a scenario finds it,
@@ -73,12 +73,12 @@ cannot drift apart again.
 
 | | identifiers | |
 |---|---:|---|
-| **CI: real install** | 36 | a scenario in the `scenarios.yml` matrix installs the software and asserts the classifier finds it |
+| **CI: real install** | 37 | a scenario in the `scenarios.yml` matrix installs the software and asserts the classifier finds it |
 | **CI: fixture** | 2 | matched a captured row by `test_matcher.py`, which runs on **every pull request**. A weaker claim than a real install and a faster cadence — different axes |
 | **local only** | 0 | proved only by a scenario CI does not run. Catches nothing on a pull request |
 | **did not appear** ⚠ | 0 | a CI scenario installed the agent and this identifier never showed up. Usually installed by another route |
 | **no test** | 0 | nothing exercises it at all |
-| _retired alias_ | _3_ | _excluded from the count. Nothing installs these any more, so no scenario can cover one; the fixture row is the only evidence there is, and it proves the alias still resolves_ |
+| _retired alias_ | _2_ | _excluded from the count. Nothing installs these any more, so no scenario can cover one; the fixture row is the only evidence there is, and it proves the alias still resolves_ |
 
 
 ### When each scenario last verified
@@ -132,7 +132,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 
 | name | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **ChatGPT Desktop** | real install | **`com.openai.codex`**, ~~`com.openai.chat`~~, **`chatgpt`** | 10-desktop-apps, 90-demo-fleet |
+| **ChatGPT Desktop** | real install | **`com.openai.codex`**, **`com.openai.chat`**, **`chatgpt`** | 10-desktop-apps, 90-demo-fleet |
 | **Claude Desktop** | real install | **`com.anthropic.claudefordesktop`**, **`claude`**, `com.anthropic.claude_browser_extension.json` | 10-desktop-apps, 90-demo-fleet |
 | **Perplexity** | real install | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
 

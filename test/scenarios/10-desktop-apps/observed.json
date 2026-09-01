@@ -4,9 +4,25 @@
     {
       "agent": "chatgpt-desktop",
       "route": "bundle_ids",
+      "value": "com.openai.chat",
+      "agent_version": "1.2026.160",
+      "os": "14.8.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "chatgpt-desktop",
+      "route": "bundle_ids",
       "value": "com.openai.codex",
       "agent_version": "26.721.41059",
       "os": "15.7.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "chatgpt-desktop",
+      "route": "homebrew",
+      "value": "chatgpt",
+      "agent_version": "1.2026.160,1781312926",
+      "os": "14.8.7",
       "arch": "arm64"
     },
     {
@@ -21,8 +37,24 @@
       "agent": "claude-desktop",
       "route": "bundle_ids",
       "value": "com.anthropic.claudefordesktop",
+      "agent_version": "1.15962.1",
+      "os": "14.8.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "claude-desktop",
+      "route": "bundle_ids",
+      "value": "com.anthropic.claudefordesktop",
       "agent_version": "1.24012.9",
       "os": "15.7.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "claude-desktop",
+      "route": "homebrew",
+      "value": "claude",
+      "agent_version": "1.15962.1,1e236d9fa9efd21a5a0a66a7b70c028f48848604",
+      "os": "14.8.7",
       "arch": "arm64"
     },
     {
@@ -37,8 +69,24 @@
       "agent": "cursor",
       "route": "bundle_ids",
       "value": "com.todesktop.230313mzl4w4u92",
+      "agent_version": "3.9.16",
+      "os": "14.8.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "cursor",
+      "route": "bundle_ids",
+      "value": "com.todesktop.230313mzl4w4u92",
       "agent_version": "3.13.10",
       "os": "15.7.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "cursor",
+      "route": "homebrew",
+      "value": "cursor",
+      "agent_version": "3.9.16,042b3c1a4c53f2c3808067f519fbfc67b72cad8b",
+      "os": "14.8.7",
       "arch": "arm64"
     },
     {
@@ -54,7 +102,23 @@
       "route": "bundle_ids",
       "value": "com.kagi.kagimacOS",
       "agent_version": "1.1.1",
+      "os": "14.8.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "orion",
+      "route": "bundle_ids",
+      "value": "com.kagi.kagimacOS",
+      "agent_version": "1.1.1",
       "os": "15.7.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "orion",
+      "route": "homebrew",
+      "value": "orion",
+      "agent_version": "1.1.1,149",
+      "os": "14.8.7",
       "arch": "arm64"
     },
     {
@@ -70,7 +134,23 @@
       "route": "bundle_ids",
       "value": "ai.perplexity.comet",
       "agent_version": "151.0.7922.247",
+      "os": "14.8.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "perplexity-comet",
+      "route": "bundle_ids",
+      "value": "ai.perplexity.comet",
+      "agent_version": "151.0.7922.247",
       "os": "15.7.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "perplexity-comet",
+      "route": "homebrew",
+      "value": "comet",
+      "agent_version": "145.2.7632.4581",
+      "os": "14.8.7",
       "arch": "arm64"
     },
     {
@@ -85,8 +165,24 @@
       "agent": "windsurf",
       "route": "bundle_ids",
       "value": "com.exafunction.windsurf",
+      "agent_version": "3.3.18",
+      "os": "14.8.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "windsurf",
+      "route": "bundle_ids",
+      "value": "com.exafunction.windsurf",
       "agent_version": "3.5.17",
       "os": "15.7.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "windsurf",
+      "route": "homebrew",
+      "value": "devin-desktop",
+      "agent_version": "3.3.18,16737566f57f3b53bde136375fe0544eca12fac4",
+      "os": "14.8.7",
       "arch": "arm64"
     },
     {
