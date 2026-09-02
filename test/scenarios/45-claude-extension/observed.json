@@ -16,6 +16,14 @@
       "agent_version": "1.0.90",
       "os": "15.7.7",
       "arch": "arm64"
+    },
+    {
+      "agent": "claude-in-chrome",
+      "route": "extension_ids",
+      "value": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
+      "agent_version": "1.0.90",
+      "os": "15.7.9",
+      "arch": "arm64"
     }
   ]
 }
