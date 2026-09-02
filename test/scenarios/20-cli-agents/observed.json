@@ -41,7 +41,7 @@
       "agent": "cline",
       "route": "npm",
       "value": "cline",
-      "agent_version": "3.0.60",
+      "agent_version": "3.0.61",
       "os": "15.7.7",
       "arch": "arm64"
     },
@@ -57,7 +57,7 @@
       "agent": "codex-cli",
       "route": "npm",
       "value": "@openai/codex",
-      "agent_version": "0.152.0",
+      "agent_version": "0.152.1",
       "os": "15.7.7",
       "arch": "arm64"
     },
