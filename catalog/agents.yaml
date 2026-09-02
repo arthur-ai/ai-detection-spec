@@ -1,4 +1,9 @@
-# Detection catalog for AI agents on macOS.
+# Detection catalog for AI agents.
+#
+# Every route here is macOS-shaped today -- `bundle_ids`, `homebrew`, `launchd_prefixes`.
+# Windows and Linux are coming and will need routes of their own; adding one means adding
+# it to tools/validate_catalog.py's ROUTES and bin/classify's KIND_ROUTES, or the rows are
+# dropped rather than unmatched -- see the `ext` failure that hid for months.
 #
 # One entry per tool, carrying EVERY route it ships through. A single agent commonly
 # arrives as a Homebrew cask, an npm global and a curl installer that wraps npm, and
