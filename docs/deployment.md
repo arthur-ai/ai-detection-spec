@@ -1,7 +1,7 @@
 # Running it on a fleet
 
 Everything here is about deploying the queries across machines you manage. The README
-covers running them on one Mac; this page is the part that only matters at fleet scale.
+covers running them on one machine; this page is the part that only matters at fleet scale.
 
 ## Do not put these queries on a synchronous reporting path
 

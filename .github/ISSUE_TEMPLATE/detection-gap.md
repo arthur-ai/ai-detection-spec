@@ -23,4 +23,4 @@ Which row, with which `kind` and `id`.
 
 **Environment**
 
-macOS version, Apple Silicon or Intel, osquery version.
+OS and version, architecture, osquery version.

@@ -6,7 +6,7 @@
 
 # 🔎 What we detect, and what proves it
 
-Every AI agent this repo finds on macOS, every identifier it is matched on,
+Every AI agent this repo finds, every identifier it is matched on,
 and the CI test behind each one.
 
 ![agents](https://img.shields.io/badge/agents-16-1D4E89)

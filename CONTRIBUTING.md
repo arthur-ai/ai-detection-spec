@@ -305,6 +305,7 @@ If you know of an agent this misses, open an issue with the tool, how you instal
 
 ## Scope
 
-macOS only. The catalog describes **what software is present**, not whether it is good, safe or
-permitted. Classifications like `Personal agent` describe deployment shape. Whether a given agent
-is acceptable is your judgement about your fleet, not ours about a vendor.
+macOS today; Windows and Linux are coming. The catalog describes **what software is
+present**, not whether it is good, safe or permitted. Classifications like `Personal agent`
+describe deployment shape. Whether a given agent is acceptable is your judgement about your
+fleet, not ours about a vendor.

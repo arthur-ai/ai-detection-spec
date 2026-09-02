@@ -2,7 +2,7 @@
 
 # 🔎 osquery-ai-discovery
 
-**Find the AI agents on a Mac — with SQL you can read.**
+**Find the AI agents on your fleet — with SQL you can read.**
 
 Which coding agents, chat clients, AI browsers and browser extensions are installed,
 *which route each one arrived by*, and what those extensions are permitted to access.
@@ -11,7 +11,8 @@ Which coding agents, chat clients, AI browsers and browser extensions are instal
 [![Scenarios](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/scenarios.yml/badge.svg)](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/scenarios.yml)
 [![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-43%2F43-2E7D57)](docs/agents.md)
 [![osquery](https://img.shields.io/badge/osquery-5.23.1-1D4E89)](https://osquery.io)
-[![macOS only](https://img.shields.io/badge/macOS-only-6B7480)](#requirements)
+[![macOS](https://img.shields.io/badge/macOS-shipping-2E7D57)](#requirements)
+[![Windows and Linux](https://img.shields.io/badge/Windows_%26_Linux-planned-6B7480)](#scope-so-you-know-what-you-are-getting)
 [![License](https://img.shields.io/badge/license-MIT-6B7480)](LICENSE)
 
 **[What we detect, and what tests it →](docs/agents.md)**
@@ -46,7 +47,7 @@ touches is the local Docker one, and only when you ask for a container scan.
 
 | | | |
 |---|---|---|
-| 🗂 | **`dist/discovery.sql`** | One SQL file to run on the Mac. **No agent name appears in anything it matches on** — the queries look for shapes (an app bundle, an npm global, a state dotdir), never for "Cursor" or "OpenClaw" — so you never edit it when a new agent appears. It returns the machine's whole AI-relevant inventory: about **760 rows** on a developer Mac, 17.9 KB gzipped |
+| 🗂 | **`dist/discovery.sql`** | One SQL file to run on the endpoint. **No agent name appears in anything it matches on** — the queries look for shapes (an app bundle, an npm global, a state dotdir), never for "Cursor" or "OpenClaw" — so you never edit it when a new agent appears. It returns the machine's whole AI-relevant inventory: about **760 rows** on a developer Mac, 17.9 KB gzipped |
 | 🧭 | **`catalog/agents.yaml`** | The 16 agents and 45 identifiers those rows are matched **against**, off the machine. Add a signature here and it re-matches evidence you already collected — no going back to the fleet |
 | 🔎 | **`bin/classify`** | Does that matching, wherever you keep the output |
 | 🐳 | **`bin/container-scan`** | The container half, run separately and on a hard time bound, because a wedged Docker daemon blocks forever |
@@ -59,8 +60,11 @@ evidence once and answers new questions about it later.
 
 ## Scope, so you know what you are getting
 
-**macOS.** Built for it and tested on it; nothing here runs on Linux or Windows today. Claiming
-otherwise would waste your afternoon.
+**macOS is what ships.** Every query declares `platform: darwin`, and CI installs the real
+software on macOS runners, so what you can run today runs there. **Windows and Linux are
+coming** — no code yet, and no date, because a date this repo cannot enforce is the kind of
+claim it exists to avoid. Until then, read every path, table and identifier here as a macOS
+one.
 
 **Agents — things that act on your behalf.** A protocol SDK is a library an agent is *built
 with*, a gateway is something it *calls through*, a model runner *serves* models, and a
