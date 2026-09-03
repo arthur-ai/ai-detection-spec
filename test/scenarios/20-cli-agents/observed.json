@@ -87,7 +87,7 @@
       "agent": "codex-cli",
       "route": "npm",
       "value": "@openai/codex",
-      "agent_version": "0.152.1",
+      "agent_version": "0.153.0",
       "os": "15.7.7",
       "arch": "arm64"
     },
