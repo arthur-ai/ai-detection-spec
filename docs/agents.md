@@ -32,7 +32,7 @@ Coverage is counted **per identifier**, from what each scenario recorded in its 
 `observed.json`, and only from scenarios in the CI matrix — an agent can pass while
 carrying an identifier nothing exercised.
 
-**The remaining 1 is `paulgauthier/aider`**, whose recorded evidence is a captured row rather than a live install -- `test/docker_states.sh` serves real images through a fake socket and asserts the real runner and matcher claim the catalogued one and decline the rest. A CI scenario that installs it for real has not recorded an observation yet.
+**The remaining 1 is `paulgauthier/aider`**, whose recorded evidence is a captured row rather than a live install -- `test/docker_states.sh` serves real images through a fake socket and asserts the real runner and matcher claim the catalogued one and decline the rest. No CI run has recorded a real install of it. Note that observations are committed only on `main`: a pull request asserts and uploads without moving recorded coverage, so a scenario added in one counts here after it merges.
 
 `tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor
 carrying an `unverified` block, so an unverified signature cannot enter quietly.

@@ -731,11 +731,19 @@ def markdown(data):  # noqa: C901
         # bin/discover --deep. A generated page is the wrong place for a standing excuse:
         # this names the identifier and where its evidence comes from, and the sentence
         # disappears on its own when a real install records one.
+        # NAME THE MECHANISM, not just the state. This used to end "has not recorded an
+        # observation yet", which is true and invites the obvious question when the
+        # scenario that installs it is visibly green on the pull request. Observations are
+        # committed by the main-only `collect` job -- a PR asserts and uploads without
+        # moving recorded coverage -- so a newly added scenario reads as uncovered here
+        # until it merges. Saying which of the two it is costs one clause.
         *([f"**The remaining {n_st('ci-fixture')} {_fx_is} {_fx_names}**, whose recorded "
            f"evidence is a captured row rather than a live install -- "
            f"`test/docker_states.sh` serves real images through a fake socket and asserts "
            f"the real runner and matcher claim the catalogued one and decline the rest. "
-           f"A CI scenario that installs it for real has not recorded an observation yet.",
+           f"No CI run has recorded a real install of it. Note that observations are "
+           f"committed only on `main`: a pull request asserts and uploads without moving "
+           f"recorded coverage, so a scenario added in one counts here after it merges.",
            ""]
           if n_st("ci-fixture") else []),
         # The floor note names scenarios in CI that have recorded nothing yet -- but only
