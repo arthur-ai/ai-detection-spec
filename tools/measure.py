@@ -169,7 +169,7 @@ def main():
         if secs > DEEP_BOUND:
             failures.append(f"dist/discovery-deep.sql: {secs:.2f}s exceeds the {DEEP_BOUND}s "
                             f"wall clock bin/container-scan allows it, with no daemon to "
-                            f"answer -- so it would time out on every Mac")
+                            f"answer -- so it would time out on every endpoint")
 
     # STDERR, NOT STDOUT. `--json` output is piped into tools/check_output.py, so
     # anything else on stdout corrupts it -- this line went to stdout first and broke the

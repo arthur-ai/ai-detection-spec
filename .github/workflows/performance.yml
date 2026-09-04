@@ -11,7 +11,7 @@ on:
 
 jobs:
   budgets:
-    name: Cost bands
+    name: Cost bands on macOS
     # Pinned: image reissues change the baseline, and that drift should be caught
     # rather than silently absorbed.
     runs-on: macos-15
@@ -62,7 +62,7 @@ jobs:
   # row count is unmeasured, and this job is what produces it. If it is large, the filter
   # decision gets made against evidence rather than by analogy.
   linux:
-    name: Measured cost on Linux
+    name: Cost bands on Linux
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4

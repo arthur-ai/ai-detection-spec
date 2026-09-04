@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Scan this Mac for container images, or say why it could not.
+# Scan this machine for container images, or say why it could not. macOS and Linux both.
 #
 #     bin/container-scan              # JSON rows on stdout, or a stated reason on stderr
 #     bin/container-scan --pretty
@@ -37,7 +37,7 @@
 # inventory channels work -- sees only what was printed. So every non-success outcome also prints ONE row in the
 # six-column contract -- kind=scan, id=containers, extra=absent|unhealthy:<code>|timeout:<n>
 # -- and without it the EA value for a wedged daemon would be the empty array, byte for
-# byte what a Mac with no containers reports. That is this project's recurring bug arriving
+# byte what a machine with no containers reports. That is this project's recurring bug arriving
 # at the last hop, after the guard and the bound have both worked correctly. --no-marker
 # turns it off for a human reading the output.
 #
@@ -53,7 +53,7 @@ TIMEOUT="${DOCKER_PING_TIMEOUT:-1}"
 # Whole seconds of wall clock for the query itself, against a ~10s budget on a synchronous
 # reporting path: ~1s guard + ~0.5s osqueryi startup + 6s here is ~7.5s worst case, and
 # the healthy path finishes in about half a second regardless. Raise it for an interactive
-# scan of a Mac with hundreds of images; do not raise it inside an EA.
+# scan of a machine with hundreds of images; do not raise it inside an EA.
 SCAN_TIMEOUT="${CONTAINER_SCAN_TIMEOUT:-6}"
 PRETTY=0
 SOCKET=""
@@ -94,7 +94,7 @@ osqueryi_path() {
 #
 # DOCKER DESKTOP ONLY. Colima (~/.colima/*/docker.sock), Rancher Desktop (~/.rd/docker.sock)
 # and Podman (/var/run/podman/podman.sock) are not looked for, and docker_images does not
-# read containerd or Podman image stores anyway. On those Macs this reports "did not scan",
+# read containerd or Podman image stores anyway. On those hosts this reports "did not scan",
 # which is the honest answer and is recorded as a blind spot in README.md.
 # EVERY VARIABLE HERE IS GUARDED, and the two that were not produced a wrong answer rather
 # than an error. Under `set -u`, `$HOME` and `${DOCKER_HOST#unix://}` are fatal when unset --
@@ -177,7 +177,7 @@ docker_state() {
 # THE KILL DECIDES, NOT THE CHILD, and that is the whole reason this is not a one-liner.
 # Measured against a hung daemon on osquery 5.23.1: SIGTERM stops osqueryi in 0.35s and it
 # exits **0** having printed "[\n\n]\n" -- a valid, parseable, EMPTY JSON array. A wrapper
-# that read the child's exit code and stdout would therefore report "this Mac has no
+# that read the child's exit code and stdout would therefore report "this machine has no
 # containers" about a daemon that never answered a single byte. That is the silent
 # zero-rows lie this file exists to prevent, so the output is thrown away on the strength
 # of us having fired the kill and on nothing else.
@@ -225,7 +225,7 @@ run_bounded() {
 # One row saying why there are no rows. extra carries a closed vocabulary so a smart group
 # can match a substring without parsing JSON: absent | unhealthy:<http-code> | timeout:<n>.
 # Built with python3 rather than printf because a socket path is input and a quote in one
-# would emit malformed JSON -- which a collector reads as "this Mac reported nothing", the
+# would emit malformed JSON -- which a collector reads as "this machine reported nothing", the
 # exact outcome the row exists to prevent.
 marker() {
   [ "$MARKER" = 1 ] || return 0
@@ -266,7 +266,7 @@ cache_write() {
   tmp="$(mktemp "${CACHE}.XXXXXX")" || return 1
   printf '%s\n' "$rows" > "$tmp" || { rm -f "$tmp"; return 1; }
   # Rename, never write in place. A `cat` that caught a half-written file would yield
-  # truncated JSON, which a collector reads as "this Mac reported nothing" -- the exact
+  # truncated JSON, which a collector reads as "this machine reported nothing" -- the exact
   # failure every guard in this file exists to prevent, reintroduced by the cache.
   mv -f "$tmp" "$CACHE" || { rm -f "$tmp"; return 1; }
   chmod 644 "$CACHE" 2>/dev/null
@@ -319,7 +319,7 @@ container_scan() {
   if [ "$rc" = 124 ]; then
     echo "container-scan: the daemon answered /_ping and then stalled on the query." >&2
     echo "  Gave up at ${SCAN_TIMEOUT}s and discarded the output. osqueryi exits 0 with an" >&2
-    echo "  empty JSON array when it is interrupted, so those rows would have read as a Mac" >&2
+    echo "  empty JSON array when it is interrupted, so those rows would have read as a host" >&2
     echo "  with no containers." >&2
     marker "timeout:${SCAN_TIMEOUT}" "$sock"
     return 3
@@ -328,7 +328,7 @@ container_scan() {
     echo "container-scan: osqueryi failed (exit $rc)" >&2; return 1; }
 
   # Cheap, and it costs nothing to be sure: a truncated array parses as a collector error,
-  # and a collector error reads as "this Mac reported nothing". The bound discards its own
+  # and a collector error reads as "this machine reported nothing". The bound discards its own
   # output, so this only catches an osqueryi that died mid-write of something else.
   case "$BOUNDED_OUT" in
     \[*\]) : ;;
@@ -349,7 +349,7 @@ for r in rows:
 
   # Every payload dates itself, success included -- see cache_write. Appended by parsing
   # both documents rather than splicing brackets: a malformed array reads to a collector as
-  # a Mac that reported nothing.
+  # a machine that reported nothing.
   CS_ROWS="$BOUNDED_OUT" CS_STAMP="$(marker ok "$sock")" python3 -c '
 import json, os, sys
 rows = json.loads(os.environ["CS_ROWS"])
@@ -366,7 +366,7 @@ scan_and_cache() {
   local rc out
   out="$(container_scan)"; rc=$?
   # Exit 1 is "could not run at all" -- no osqueryi, no artifact, bad argument. That says
-  # nothing about this Mac's containers, so it must NOT overwrite a good cache with a
+  # nothing about this machine's containers, so it must NOT overwrite a good cache with a
   # verdict it did not earn.
   if [ "$rc" = 1 ]; then
     printf '%s\n' "$out"
