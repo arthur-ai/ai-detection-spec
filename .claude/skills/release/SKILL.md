@@ -161,9 +161,11 @@ State the change, then its consequence for someone running this on a fleet. Cove
 - **Payload and cost** if either moved, with the measured number and the machine it came from.
   `queries/COST.md` must say so as well — and if enumeration is pushing the payload toward the
   self-imposed 30KB budget, that number belongs in the notes, not only in the file.
-- **Which platform a claim is about.** "Coverage is 47/47" is true and says nothing about where:
-  `docs/agents.md`'s per-platform table is the figure to quote, because a portable identifier
-  proved on macOS is not evidence about Linux. Say the split, not the total.
+- **Which platform a claim is about.** The coverage figure is all-or-nothing and says nothing
+  about where — `docs/agents.md` has no per-platform fraction, deliberately: three figures that
+  looked like they should agree were unreadable, and a fraction invites "91% done" when the
+  real meaning is "the build would be red". For a platform claim, name the SCENARIOS that
+  proved it; the Linux ones say so in their names.
 - **A cold cost, where one is recorded.** `measure.py` reports the floor of three warm runs; the
   composed Linux artifact measured 1.12s that way and 8–14s cold under `sudo` on a loaded
   runner. The cold number is what an endpoint's first scheduled scan pays, so that is the one a
