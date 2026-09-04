@@ -230,8 +230,8 @@ def record(artifact, scenario_dir, os_version="", arch="", platform=""):
     # stopped being produced) so this is refusable rather than forbidden -- but it has to be
     # said out loud, because the silent version costs coverage nobody notices losing.
     if out_path.exists() and "--allow-shrink" not in sys.argv:
-        was = {(r["agent"], r["route"], r["value"])
-               for r in json.loads(out_path.read_text()).get("identifiers", [])
+        committed = json.loads(out_path.read_text()).get("identifiers", [])
+        was = {(r["agent"], r["route"], r["value"]) for r in committed
                if (r.get("platform"), r.get("os"), r.get("arch")) == plat}
         now = {(r["agent"], r["route"], r["value"]) for r in idents}
         lost = sorted(was - now)
@@ -240,6 +240,16 @@ def record(artifact, scenario_dir, os_version="", arch="", platform=""):
                   f"{len(lost)} fewer identifier(s) than the committed record:")
             for a, r, v in lost:
                 print(f"  lost  {a} {r}:{v}")
+            # NAME THE KEY IT COMPARED ON. The message used to say WHAT was lost and not
+            # WHICH platform's record it was compared against -- and the comparison is
+            # per (platform, os, arch), so "lost" from a run on a different architecture
+            # would be a bug in the guard rather than a real loss. Working out which cost
+            # a long detour with a CI log that could not answer it.
+            keys = sorted({(r.get("platform"), r.get("os"), r.get("arch"))
+                           for r in committed})
+            print(f"  compared on (platform, os, arch) = {plat}, against "
+                  f"{len(was)} of {len(committed)} committed record(s)")
+            print(f"  keys in the committed file: {keys}")
             print("If the artifact is current and the loss is real, pass --allow-shrink.")
             sys.exit(1)
 

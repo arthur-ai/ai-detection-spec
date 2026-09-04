@@ -91,7 +91,17 @@ as_user() {
   local home
   home="$(getent passwd "$SCENARIO_USER" | cut -d: -f6)"
   [ -n "$home" ] || { echo "as_user: no home for $SCENARIO_USER" >&2; return 1; }
-  printf '%s\n' "$*" | sudo_maybe su "$SCENARIO_USER" -s /bin/bash -c \
+  # cd TO THE USER'S HOME FIRST, which is the other thing dropping `-` cost. A login
+  # shell does it; `su` without `-` leaves the caller's cwd in place, which on CI is the
+  # repo checkout under /home/runner/work -- a directory the scenario user cannot read.
+  #
+  # aider is what found this: `aider --just-check-update` died with GitPython's
+  # NoSuchPathError, because it looks for a git repository in the CURRENT directory and
+  # could not stat it. It never got as far as writing ~/.aider, so the run proved one
+  # fewer identifier and the coverage shrink guard refused to record it -- which is the
+  # guard working, on a cause three steps upstream of itself.
+  { printf 'cd %s || exit 1\n' "$home"; printf '%s\n' "$*"; } \
+    | sudo_maybe su "$SCENARIO_USER" -s /bin/bash -c \
     "env -i HOME='$home' USER='$SCENARIO_USER' LOGNAME='$SCENARIO_USER' \
        SHELL=/bin/bash TERM=dumb \
        PATH='$home/.local/bin:$home/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' \
