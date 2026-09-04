@@ -29,7 +29,7 @@
       "agent": "claude-in-chrome",
       "route": "extension_ids",
       "value": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
-      "agent_version": "1.0.90",
+      "agent_version": "1.0.91",
       "os": "15.7.9",
       "arch": "arm64"
     }

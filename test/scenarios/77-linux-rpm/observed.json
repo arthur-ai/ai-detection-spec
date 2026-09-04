@@ -11,12 +11,29 @@
     },
     {
       "agent": "cursor",
+      "route": "desktop_ids",
+      "value": "cursor.desktop",
+      "platform": "linux",
+      "os": "41",
+      "arch": "x86_64"
+    },
+    {
+      "agent": "cursor",
       "route": "rpm_packages",
       "value": "cursor",
       "agent_version": "3.19.7",
       "platform": "linux",
       "os": "41",
       "arch": "aarch64"
+    },
+    {
+      "agent": "cursor",
+      "route": "rpm_packages",
+      "value": "cursor",
+      "agent_version": "3.19.7",
+      "platform": "linux",
+      "os": "41",
+      "arch": "x86_64"
     }
   ]
 }

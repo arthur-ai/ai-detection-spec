@@ -11,11 +11,27 @@
     },
     {
       "agent": "aider",
+      "route": "pypi",
+      "value": "aider-chat",
+      "platform": "linux",
+      "os": "24.04",
+      "arch": "x86_64"
+    },
+    {
+      "agent": "aider",
       "route": "state_dirs",
       "value": "~/.aider",
       "platform": "linux",
       "os": "24.04",
       "arch": "aarch64"
+    },
+    {
+      "agent": "aider",
+      "route": "state_dirs",
+      "value": "~/.aider",
+      "platform": "linux",
+      "os": "24.04",
+      "arch": "x86_64"
     },
     {
       "agent": "hermes",
@@ -27,8 +43,32 @@
     },
     {
       "agent": "hermes",
+      "route": "binaries",
+      "value": "~/.local/bin/hermes",
+      "platform": "linux",
+      "os": "24.04",
+      "arch": "x86_64"
+    },
+    {
+      "agent": "hermes",
       "route": "pypi",
       "value": "hermes-agent",
+      "platform": "linux",
+      "os": "24.04",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "hermes",
+      "route": "pypi",
+      "value": "hermes-agent",
+      "platform": "linux",
+      "os": "24.04",
+      "arch": "x86_64"
+    },
+    {
+      "agent": "hermes",
+      "route": "state_dirs",
+      "value": "~/.hermes",
       "platform": "linux",
       "os": "24.04",
       "arch": "aarch64"
@@ -39,7 +79,7 @@
       "value": "~/.hermes",
       "platform": "linux",
       "os": "24.04",
-      "arch": "aarch64"
+      "arch": "x86_64"
     }
   ]
 }

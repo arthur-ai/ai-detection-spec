@@ -27,6 +27,14 @@
     },
     {
       "agent": "chatgpt-desktop",
+      "route": "bundle_ids",
+      "value": "com.openai.codex",
+      "agent_version": "26.825.32147",
+      "os": "15.7.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "chatgpt-desktop",
       "route": "homebrew",
       "value": "chatgpt",
       "agent_version": "1.2026.160,1781312926",
@@ -47,6 +55,14 @@
       "value": "chatgpt",
       "agent_version": "26.721.41059",
       "os": "15.7.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "chatgpt-desktop",
+      "route": "homebrew",
+      "value": "chatgpt",
+      "agent_version": "26.825.32147",
+      "os": "15.7.9",
       "arch": "arm64"
     },
     {
@@ -75,6 +91,14 @@
     },
     {
       "agent": "claude-desktop",
+      "route": "bundle_ids",
+      "value": "com.anthropic.claudefordesktop",
+      "agent_version": "1.40609.0",
+      "os": "15.7.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "claude-desktop",
       "route": "homebrew",
       "value": "claude",
       "agent_version": "1.15962.1,1e236d9fa9efd21a5a0a66a7b70c028f48848604",
@@ -95,6 +119,14 @@
       "value": "claude",
       "agent_version": "1.24012.9,03c61d06f8e01a4db2273b9514e225f21d2ba62e",
       "os": "15.7.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "claude-desktop",
+      "route": "homebrew",
+      "value": "claude",
+      "agent_version": "1.40609.0,f65e386db0db64c8f8b39950e25adb11f5f5e3f3",
+      "os": "15.7.9",
       "arch": "arm64"
     },
     {
@@ -123,6 +155,14 @@
     },
     {
       "agent": "cursor",
+      "route": "bundle_ids",
+      "value": "com.todesktop.230313mzl4w4u92",
+      "agent_version": "3.17.21",
+      "os": "15.7.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "cursor",
       "route": "homebrew",
       "value": "cursor",
       "agent_version": "3.9.16,042b3c1a4c53f2c3808067f519fbfc67b72cad8b",
@@ -143,6 +183,14 @@
       "value": "cursor",
       "agent_version": "3.13.10,4f02290ccd9304f0e6bf8ee85f6e9106f02ac1f7",
       "os": "15.7.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "cursor",
+      "route": "homebrew",
+      "value": "cursor",
+      "agent_version": "3.17.21,8f2a112cb2845a97b75fd932ea5c470579ca4063",
+      "os": "15.7.9",
       "arch": "arm64"
     },
     {
@@ -171,6 +219,14 @@
     },
     {
       "agent": "orion",
+      "route": "bundle_ids",
+      "value": "com.kagi.kagimacOS",
+      "agent_version": "1.1.2",
+      "os": "15.7.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "orion",
       "route": "homebrew",
       "value": "orion",
       "agent_version": "1.1.1,149",
@@ -194,6 +250,14 @@
       "arch": "arm64"
     },
     {
+      "agent": "orion",
+      "route": "homebrew",
+      "value": "orion",
+      "agent_version": "1.1.2,151",
+      "os": "15.7.9",
+      "arch": "arm64"
+    },
+    {
       "agent": "perplexity-comet",
       "route": "bundle_ids",
       "value": "ai.perplexity.comet",
@@ -219,6 +283,14 @@
     },
     {
       "agent": "perplexity-comet",
+      "route": "bundle_ids",
+      "value": "ai.perplexity.comet",
+      "agent_version": "151.0.7922.247",
+      "os": "15.7.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "perplexity-comet",
       "route": "homebrew",
       "value": "comet",
       "agent_version": "145.2.7632.4581",
@@ -239,6 +311,14 @@
       "value": "comet",
       "agent_version": "145.2.7632.4581",
       "os": "15.7.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "perplexity-comet",
+      "route": "homebrew",
+      "value": "comet",
+      "agent_version": "145.2.7632.4581",
+      "os": "15.7.9",
       "arch": "arm64"
     },
     {
@@ -267,6 +347,14 @@
     },
     {
       "agent": "windsurf",
+      "route": "bundle_ids",
+      "value": "com.exafunction.windsurf",
+      "agent_version": "3.8.20",
+      "os": "15.7.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "windsurf",
       "route": "homebrew",
       "value": "devin-desktop",
       "agent_version": "3.3.18,16737566f57f3b53bde136375fe0544eca12fac4",
@@ -287,6 +375,14 @@
       "value": "devin-desktop",
       "agent_version": "3.5.17,2c489dfc762456657db8662309c0d5e76e886397",
       "os": "15.7.7",
+      "arch": "arm64"
+    },
+    {
+      "agent": "windsurf",
+      "route": "homebrew",
+      "value": "devin-desktop",
+      "agent_version": "3.8.20,2d9020110aa91587b3c3b0fcf7d1faaf601fc7b8",
+      "os": "15.7.9",
       "arch": "arm64"
     }
   ]
