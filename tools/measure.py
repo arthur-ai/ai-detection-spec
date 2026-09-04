@@ -171,8 +171,12 @@ def main():
                             f"wall clock bin/container-scan allows it, with no daemon to "
                             f"answer -- so it would time out on every Mac")
 
+    # STDERR, NOT STDOUT. `--json` output is piped into tools/check_output.py, so
+    # anything else on stdout corrupts it -- this line went to stdout first and broke the
+    # macOS performance job with "Expecting value: line 1 column 3", which reads like a
+    # query returning nothing rather than like a note printed in front of the JSON.
     if skipped:
-        print(f"  skipped (other platform): {', '.join(skipped)}")
+        print(f"  skipped (other platform): {', '.join(skipped)}", file=sys.stderr)
     if args.json:
         print(json.dumps(results, indent=2))
     else:

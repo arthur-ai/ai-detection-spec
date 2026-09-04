@@ -30,43 +30,63 @@ So the gate stays as a convention: 10s keeps collection brisk, and the real requ
 that nothing on a synchronous reporting path can block forever. The better answer is not to
 run a blocking query on that path at all — see the scheduled writer below.
 
-## Linux, and what has NOT been measured
+## Linux baseline
 
-**No Linux numbers are recorded here yet, and this section exists to say so rather than to
-leave the absence to be inferred.** `.github/workflows/performance.yml` gained an
-`ubuntu-24.04` job that runs `tools/measure.py --check` against
-`dist/discovery-linux.sql`; the first scheduled run is what fills this in.
+GitHub-hosted `ubuntu-24.04`, image **Ubuntu 24.04.4 LTS x86_64**, osquery 5.23.1. A runner
+carries **1212 deb packages, 438 systemd units and 12 desktop entries**, which makes it a
+usefully loaded machine for everything except the agent routes — it has no agents on it, so
+every row count below is the empty case for those.
 
-What the bands claim in the meantime, and how much confidence each deserves:
+| query | band | seconds | rows |
+|---|---|---|---|
+| `browser.sql` | fast | 0.05 | 0 |
+| `desktop-linux.sql` | fast | 0.22 | 13 |
+| `filesystem-linux.sql` | fast | 0.22 | 10 |
+| `native-messaging-linux.sql` | fast | 0.22 | 0 |
+| `packages-linux.sql` | fast | 0.26 | 1211 |
+| `packages.sql` | fast | 0.26 | 13 |
+| `ports.sql` | fast | 0.24 | 0 |
+| `runtime-linux.sql` | fast | **1.03** | **478** |
+| `vscode.sql` | fast | 0.23 | 0 |
+| `containers.sql` | expensive | 0.22 | 0 |
+| `dist/discovery-linux.sql` | composed | 1.12 | 1726 |
+| `dist/discovery-deep.sql` | deep | 0.22 | 0 |
 
-| query | band | basis |
-|---|---|---|
-| `packages-linux.sql` | fast | `deb_packages` and `rpm_packages` are both `cacheable` and read a local database. Measured informally in a container at well under a second for 164 rows |
-| `filesystem-linux.sql` | fast | the same `file`-glob shape as the macOS twin, which measures 0.25s |
-| `desktop-linux.sql` | fast | one `file` glob over four directories |
-| `native-messaging-linux.sql` | fast | as above |
-| `runtime-linux.sql` | fast | **the one genuinely unknown number.** See below |
-| `vscode.sql` | fast | measured on macOS at part of a 0.5s composed run with 9 extension rows |
+### `runtime-linux.sql` is the one to read carefully
 
-**`runtime-linux.sql` enumerates every systemd unit and the row count is unmeasured.** macOS
-drops `com.apple.%` and goes from 937 launchd jobs to 47; Linux has no equivalent, because the
-distro's own units are named `sshd.service` and `cron.service` with nothing structural to key
-on. `fragment_path` looks like the discriminator — `/etc/systemd/system` for locally installed
-units, `/usr/lib/systemd/system` for packaged ones — but a vendor's own `.deb` writes to
-`/usr/lib` too, so filtering on it would drop exactly the packaged agent the branch exists to
-find.
+This section previously said no Linux numbers existed and that this branch's band was "an
+expectation, not a measurement". It is measured now, and the expectation was optimistic in two
+different ways.
 
-So the branch enumerates everything, the band is a declaration rather than a measurement, and
-the comment in the query says which. **There was no systemd host to measure on:** a container
-has no system bus, which is the state the branch's `kind=scan` marker exists to report. If the
-CI number is large, the filter decision gets made then, against evidence.
+**It is over its declared band.** 1.03s against a `fast` ceiling of 1s — reported as *over
+declared band, within tolerance*, so the 2x gate passes it. **The band is not being changed on
+one sample**, and that is the same judgement `apps.sql` already earned: it measured 0.81s and
+1.14s on consecutive runs of the same commit on the same runner, which is why the gate fires at
+2x and not at the band. 1.03s is inside that noise. A second and third run either settle it
+below 1s or make the case for `slow` on evidence rather than on one reading.
 
-**The 30KB payload budget is a macOS convention carried over, not a Linux limit.** It comes
-from a Jamf Extension Attribute value cap, and Jamf does not document it either — it is
-self-imposed on both platforms. Linux has no equivalent channel at all. `test/run-linux.sh` and
-the Linux CI job keep the same budget anyway, because a payload small enough to move is worth
-having regardless, but nothing about Linux requires it and no one should restate it as though
-something did.
+**478 rows is 28% of the whole Linux payload**, and the `systemd_prefixes` route carries **no
+catalog values at all** — so every one of those rows is evidence that can never match anything
+today. That is not automatically wrong: the macOS `daemon` branch keeps all 47 third-party
+launchd jobs on the same argument, that an unrecognised job running unattended is the point. But
+the ratio is very different. macOS drops 937 launchd jobs to 47 with `com.apple.%`; Linux has no
+equivalent, because the distro's units are named `sshd.service` and `cron.service` with nothing
+in the NAME to key on.
+
+`fragment_path` is the only structural discriminator — `/etc/systemd/system` for locally
+installed units against `/usr/lib/systemd/system` for packaged ones — and it is still the wrong
+filter for the reason recorded in the query: a vendor's own `.deb` writes to `/usr/lib` too, so
+it would drop exactly the packaged agent the branch exists to find. **The decision is therefore
+deferred rather than taken**, and now it is deferred with a number attached instead of without
+one. It becomes urgent if either half of the ratio moves: a fleet payload nearing the framing
+budget, or a real agent unit landing in the catalog and making the branch earn its rows.
+
+**The 30KB payload budget is a macOS convention carried over, not a Linux limit.** It comes from
+a Jamf Extension Attribute value cap, and Jamf does not document that either — it is self-imposed
+on both platforms. Linux has no equivalent channel at all. `test/run-linux.sh` and the Linux CI
+job keep the same budget anyway, because a payload small enough to move is worth having
+regardless, but nothing about Linux requires it and no one should restate it as though something
+did.
 
 ## CI baseline
 
