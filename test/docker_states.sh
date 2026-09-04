@@ -252,7 +252,7 @@ check "returns well inside the bound (${elapsed}s)" \
 
 echo "  inlining the branch is silent, which is why the split exists"
 # THE EVIDENCE FOR THE ARCHITECTURE, and the reason nobody should fold containers back into
-# dist/discovery.sql. Composed into one statement and killed, osqueryi does NOT lose the
+# the composed artifact. Composed into one statement and killed, osqueryi does NOT lose the
 # other branches' rows -- it returns them and exits 0, so the answer looks complete while
 # the container half was never read. That is strictly worse than an error, and it is the
 # thing a wall-clock bound on the COMPOSED file would buy you.
@@ -262,7 +262,7 @@ echo "  inlining the branch is silent, which is why the split exists"
 # blocked (it had to be killed), that it exits 0, and that the output looks complete.
 start_fake wedge
 inline="$(mktemp "${TMPDIR:-/tmp}/inline.XXXXXX")"
-{ sed 's/;$//' "$ROOT/dist/discovery.sql"; printf '\nUNION ALL\n\n'
+{ sed 's/;$//' "$ROOT/dist/discovery-darwin.sql"; printf '\nUNION ALL\n\n'
   awk '/^SELECT/,0' "$ROOT/queries/containers.sql"; echo ';'; } > "$inline"
 naive="$(mktemp "${TMPDIR:-/tmp}/naive.XXXXXX")"
 "$OSQI" --docker_socket="$SOCK" --json < "$inline" > "$naive" 2>/dev/null &
@@ -492,9 +492,15 @@ PACKDIR="$(mktemp -d "${TMPDIR:-/tmp}/pack.XXXXXX")"
 python3 - "$ROOT/dist/ai-discovery.conf" "$PACKDIR/pack.conf" <<'MKPACK'
 import json, sys
 full = json.load(open(sys.argv[1]))
-# Three branches, not all six: two good ones plus a broken one prove the claim, and the
-# other four would add three seconds of re-measuring what the suite already measures.
-pack = {"queries": {k: full["queries"][k] for k in ("apps", "packages")}}
+# Three branches, not all of them: two good ones plus a broken one prove the claim, and
+# the rest would add seconds of re-measuring what the suite already measures.
+#
+# `homebrew` RATHER THAN `packages`, and the swap is the point. This used to take
+# ("apps", "packages") and assert both `app` and `brew` came back -- true when packages.sql
+# carried the Homebrew branch. It is `posix` now and carries only npm, because
+# homebrew_packages is a darwin-only table and could not stay in a file a Linux artifact
+# composes. The assertion below still names `brew`, so it needs the file that now emits it.
+pack = {"queries": {k: full["queries"][k] for k in ("apps", "homebrew")}}
 # A table that cannot exist, which is what an older osquery presents for a real one.
 pack["queries"]["broken"] = {
     "query": "SELECT 1 AS kind, 2 AS id, 3 AS ver, 4 AS loc, 5 AS extra, 6 AS perms "

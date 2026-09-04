@@ -1,0 +1,14 @@
+{
+  "scenario": "78-linux-vscode",
+  "identifiers": [
+    {
+      "agent": "cline",
+      "route": "vscode_extensions",
+      "value": "saoudrizwan.claude-dev",
+      "agent_version": "4.1.17",
+      "platform": "linux",
+      "os": "24.04",
+      "arch": "aarch64"
+    }
+  ]
+}

@@ -10,7 +10,7 @@ A catalog that changes often makes this the normal case rather than an accident,
 numbers in prose are checked against the tree on every run.
 
 NUMBERS THAT ARE NOT CLAIMS ABOUT TODAY are exempt and must say so. Two kinds occur here:
-a past MEASUREMENT ("growing the catalog from 21 agents to 221 left dist/discovery.sql
+a past MEASUREMENT ("growing the catalog from 21 agents to 221 left the composed artifact
 byte-identical") and a hypothetical PROJECTION ("at 500 agents that is a few hundred regexes
 per row"). Rewriting either would destroy the point it makes. Mark the line
 <!--fixed-number--> and it is skipped -- deliberately verbose, so exempting is a decision

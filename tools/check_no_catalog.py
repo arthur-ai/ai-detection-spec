@@ -58,7 +58,11 @@ def offenders(path):
 
 def main():
     root = pathlib.Path(__file__).resolve().parent.parent
-    targets = sorted((root / "queries").glob("*.sql")) + [root / "dist" / "discovery.sql"]
+    # EVERY composed artifact, discovered rather than named. There is one per platform
+    # now, and a hardcoded filename would have quietly stopped checking the moment the
+    # name changed -- leaving the D20 rule enforced on the source and not on what ships.
+    targets = (sorted((root / "queries").glob("*.sql"))
+               + sorted((root / "dist").glob("discovery-*.sql")))
     failed = False
     for path in targets:
         if not path.exists():

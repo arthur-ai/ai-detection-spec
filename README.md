@@ -9,7 +9,7 @@ Which coding agents, chat clients, AI browsers and browser extensions are instal
 
 [![CI](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/ci.yml/badge.svg)](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/ci.yml)
 [![Scenarios](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/scenarios.yml/badge.svg)](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/scenarios.yml)
-[![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-43%2F43-2E7D57)](docs/agents.md)
+[![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-47%2F47-2E7D57)](docs/agents.md)
 [![osquery](https://img.shields.io/badge/osquery-5.23.1-1D4E89)](https://osquery.io)
 [![macOS](https://img.shields.io/badge/macOS-shipping-2E7D57)](#requirements)
 [![Windows and Linux](https://img.shields.io/badge/Windows_%26_Linux-planned-6B7480)](#scope-so-you-know-what-you-are-getting)
@@ -32,8 +32,9 @@ touches is the local Docker one, and only when you ask for a container scan.
 
 ### Why you might like it
 
-- **🔍 Nothing hidden.** It is SQL. Read `dist/discovery.sql` and you know exactly what it
-  collects: names, paths, versions and declared permissions, and nothing else.
+- **🔍 Nothing hidden.** It is SQL. Read `dist/discovery-darwin.sql` (or
+  `dist/discovery-linux.sql`) and you know exactly what it collects: names, paths, versions
+  and declared permissions, and nothing else.
 - **✅ Every signature tested against a real install.** Not against documentation — which is how
   this repo once shipped an identifier that matched nothing on any Mac. **Every identifier** is
   covered by a test that runs in CI — lint fails on one that is not — and
@@ -47,8 +48,9 @@ touches is the local Docker one, and only when you ask for a container scan.
 
 | | | |
 |---|---|---|
-| 🗂 | **`dist/discovery.sql`** | One SQL file to run on the endpoint. **No agent name appears in anything it matches on** — the queries look for shapes (an app bundle, an npm global, a state dotdir), never for "Cursor" or "OpenClaw" — so you never edit it when a new agent appears. It returns the machine's whole AI-relevant inventory: about **760 rows** on a developer Mac, 17.9 KB gzipped |
-| 🧭 | **`catalog/agents.yaml`** | The 16 agents and 45 identifiers those rows are matched **against**, off the machine. Add a signature here and it re-matches evidence you already collected — no going back to the fleet |
+| 🗂 | **`dist/discovery-darwin.sql`**<br>**`dist/discovery-linux.sql`** | One SQL file to run on the endpoint, per platform — the tables are disjoint, so there is no single file that runs on both, and no unqualified name pretending otherwise. **No agent name appears in anything they match on** — the queries look for shapes (an app bundle, a deb, an npm global, a state dotdir), never for "Cursor" or "OpenClaw" — so you never edit them when a new agent appears. About **760 rows** on a developer Mac, 17.9 KB gzipped |
+| 🧭 | **`catalog/agents.yaml`** | The 16 agents and 49 identifiers those rows are matched **against**, off the machine. Add a signature here and it re-matches evidence you already collected — no going back to the fleet |
+| 🧱 | **`catalog/routes.yaml`** | The route registry: every way an identifier can arrive, which platform it exists on and how it is matched. The matcher, the validator, the coverage report and lint all derive from this one file |
 | 🔎 | **`bin/classify`** | Does that matching, wherever you keep the output |
 | 🐳 | **`bin/container-scan`** | The container half, run separately and on a hard time bound, because a wedged Docker daemon blocks forever |
 | 📋 | **[`docs/agents.md`](docs/agents.md)** | Every identifier and the CI test that proves it. Generated — the numbers are counted, never typed |
@@ -60,11 +62,25 @@ evidence once and answers new questions about it later.
 
 ## Scope, so you know what you are getting
 
-**macOS is what ships.** Every query declares `platform: darwin`, and CI installs the real
-software on macOS runners, so what you can run today runs there. **Windows and Linux are
-coming** — no code yet, and no date, because a date this repo cannot enforce is the kind of
-claim it exists to avoid. Until then, read every path, table and identifier here as a macOS
-one.
+**macOS and Linux ship. Windows does not.** CI installs the real software on macOS runners and
+on `ubuntu-24.04`, plus a `fedora:41` container for the rpm family, so both platforms are held
+to the same standard: a signature is verified when a scenario installs the actual software and
+asserts the classifier finds it.
+
+The two are **not equally covered**, and [the report](docs/agents.md) prints the split per
+platform rather than averaging it into one number. Read it before assuming an identifier works
+where you need it.
+
+**Linux needed fewer new signatures than you might expect.** The `npm`, `pypi`, `images` and
+`~/`-rooted path routes were always platform-independent, so nine of the sixteen agents are
+found on Linux through identifiers the catalog already had — what was missing was queries that
+look under `/home` and `/root` and a matcher that resolves them. Only Cursor needed genuinely
+new identifiers, and Cline gained one when osquery 5.11.0 made VS Code extensions visible at
+all.
+
+**Windows has no code and no date**, because a date this repo cannot enforce is the kind of
+claim it exists to avoid. `catalog/routes.yaml` can express a Windows route; none is defined,
+and the validator refuses to let an agent claim a platform nothing can find it on.
 
 **Agents — things that act on your behalf.** A protocol SDK is a library an agent is *built
 with*, a gateway is something it *calls through*, a model runner *serves* models, and a
@@ -77,7 +93,8 @@ one.
 | | Needs |
 |---|---|
 | macOS | Apple Silicon or Intel. **No lower bound established** — a floor would be a guess |
-| osquery | **5.10.0** — every query declares its own in `min-osquery:` |
+| Linux | Any distro with dpkg or rpm. One artifact serves both: on Debian `rpm_packages` returns no rows and exits 0, and on Fedora `deb_packages` does the same — measured, not assumed |
+| osquery | **5.10.0** — every query declares its own in `min-osquery:`, and `queries/vscode.sql` declares **5.11.0**, which is when `vscode_extensions` arrived |
 | `bash` | 3.2, which is the macOS system `bash`, so `/bin/bash` is enough |
 | `python3` | **3.7** (`subprocess` `capture_output`) — for `bin/classify`, `bin/discover`'s writer and `tools/` |
 | PyYAML | Only for the tools that read the catalog: `bin/classify` and `tools/validate_catalog.py` |
@@ -97,8 +114,13 @@ only your own account.
 
 ```console
 $ brew install --cask osquery          # or https://osquery.io/downloads
-$ sudo osqueryi --json < dist/discovery.sql | bin/classify
+$ sudo osqueryi --json < dist/discovery-darwin.sql | bin/classify
 $ sudo bin/discover --deep | bin/classify     # the same, plus container images
+
+# On Linux, the same thing. bin/discover picks the artifact by `uname -s`, so the
+# second form needs no change at all.
+$ sudo apt install ./osquery_5.23.1-1.linux_amd64.deb
+$ sudo osqueryi --json < dist/discovery-linux.sql | bin/classify
 ```
 
 For a fleet, do not run either of those on a synchronous reporting path — schedule
@@ -142,7 +164,7 @@ They **never**:
 - execute a discovered binary to ask it anything
 
 The strength of shipping queries rather than an agent is that you do not have to take that on
-trust. It is SQL. Read `dist/discovery.sql` in ten minutes and verify it yourself.
+trust. It is SQL. Read `dist/discovery-darwin.sql` in ten minutes and verify it yourself.
 
 This tool also **does nothing to the machine**. No blocking, no remediation, no network calls of
 its own. It reports; you decide.
@@ -159,10 +181,16 @@ what the suite *cannot* prove alongside what it can.
 ## What it cannot see
 
 A discovery tool that hides its blind spots is worse than none, so they are written down and
-counted: **13 blind spots**, from "anything inside a VM" to "what an agent *does*, as opposed
+counted: **19 blind spots**, from "anything inside a VM" to "what an agent *does*, as opposed
 to what it is permitted to do". They are properties of the platform and the osquery tables
 rather than gaps in the test suite — no amount of coverage moves them. They live in one
 place, [`docs/blind-spots.yaml`](docs/blind-spots.yaml), and are rendered into the report.
+
+Six of those are Linux, and one **stopped** being a blind spot: VS Code extensions were
+invisible to osquery until 5.11.0 and are not any more, so that entry became a version floor
+instead of a missing table. The widest Linux gap is Homebrew — `homebrew_packages` is a
+darwin-only osquery table, and twelve of the sixteen agents carry a `homebrew` identifier that
+a `/home/linuxbrew` install would match if anything could see it.
 
 **[Read them in context →](docs/agents.md#what-osquery-cannot-see)**
 

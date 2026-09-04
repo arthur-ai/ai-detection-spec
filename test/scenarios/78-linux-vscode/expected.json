@@ -1,0 +1,36 @@
+{
+  "description": "Cline as a VS Code extension, which osquery could not see at all before 5.11.0.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=0",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "port": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=2"
+  },
+  "classified": {
+    "must_find": [
+      "cline"
+    ],
+    "forbid": [
+      "cursor",
+      "windsurf",
+      "claude-code"
+    ]
+  },
+  "why": "This retires a blind spot rather than adding coverage: docs/blind-spots.yaml said VS Code extensions were invisible, which was true at osquery 5.10.0 and false from 5.11.0. Cline ships as an extension FIRST, so its primary route was unwatched while the catalog listed it under npm. Continue is installed alongside and is deliberately NOT catalogued -- it must appear unmatched rather than be claimed by Cline's signature, which is what tells `not catalogued yet` from `route quietly broken`. `cursor` and `windsurf` are forbidden because vscode_edition names them as editions, and an extension found in VS Code must not be read as those products being installed.",
+  "must_contain": [
+    "saoudrizwan.claude-dev",
+    "continue.continue",
+    "vscode"
+  ],
+  "known_gaps": [
+    "min-osquery for this branch is 5.11.0, above the 5.10.0 the rest of the repo declares. On a 5.10.x endpoint the query returns [] and exits 1, which is why it is its own pack entry and its own composed branch."
+  ]
+}

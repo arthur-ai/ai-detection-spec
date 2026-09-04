@@ -1,9 +1,16 @@
 -- name: runtime
--- description: Non-Apple launchd jobs, and every process holding a listening port
--- tables: launchd, listening_ports, processes
+-- description: Non-Apple launchd jobs
+-- tables: launchd
 -- min-osquery: 5.10.0
 -- cost: fast
 -- platform: darwin
+--
+-- THE LISTENING-PORT BRANCH MOVED OUT to queries/ports.sql, which is `posix`. It was
+-- always portable -- listening_ports and processes exist on every platform -- and leaving
+-- it here would have meant a second copy in the Linux file. launchd is what is
+-- macOS-only: it is in osquery's specs/darwin, and its Linux counterpart is a different
+-- table with different columns and a different failure mode, so that lives in
+-- queries/runtime-linux.sql rather than in a widened version of this.
 --
 -- Emits the six-column contract: kind, id, ver, loc, extra, perms.
 -- Branches within this file are joined with UNION ALL, and the build joins files
@@ -23,15 +30,3 @@
 SELECT 'daemon' AS kind, label AS id, '' AS ver, path AS loc, '' AS extra, '' AS perms
   FROM launchd
   WHERE label NOT LIKE 'com.apple.%'
-UNION ALL
--- Previously an IN list of four inference ports. A local model server on any other port
--- was invisible, and picking the port list on the device means a new runtime is missed
--- until every Mac is redeployed.
---
--- `port > 0` is structural, not selective: listening_ports rows with port 0 are unix
--- domain sockets and non-listening entries, 176 rows down to 34 on the reference Mac.
--- The bind address travels in `extra`, because 0.0.0.0 is a sharply higher-risk finding
--- than loopback and only the collector can weigh that.
-SELECT 'port', CAST(lp.port AS TEXT), '', p.path, lp.address, ''
-  FROM listening_ports lp JOIN processes p USING (pid)
-  WHERE lp.port > 0

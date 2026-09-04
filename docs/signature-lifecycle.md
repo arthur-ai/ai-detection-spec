@@ -219,7 +219,7 @@ Three things grow, at very different rates, and only one of them is a problem.
 
 **Identifiers: free, and measured.** The queries hold no identifiers, so the catalog does not
 reach an endpoint and adding agents costs nothing on the wire. Verified rather than assumed:
-growing `agents.yaml` from 21 agents to **221** left `dist/discovery.sql` byte-identical and the <!--fixed-number-->
+growing `agents.yaml` from 21 agents to **221** left the composed artifact byte-identical and the <!--fixed-number-->
 framed payload unchanged at 17,868 bytes. Whatever limits this design, it is not how many agents
 we can name.
 

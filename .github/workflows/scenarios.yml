@@ -89,7 +89,7 @@ jobs:
       - name: Query and assert
         if: steps.runnable.outputs.runnable == 'true'
         run: |
-          sudo -n /usr/local/bin/osqueryi --json < dist/discovery.sql > /tmp/out.json
+          sudo -n /usr/local/bin/osqueryi --json < dist/discovery-darwin.sql > /tmp/out.json
           test/assert.sh /tmp/out.json test/scenarios/${{ matrix.scenario }}/expected.json
 
       # These runners install the REAL software, so this job's output is real-install
@@ -141,9 +141,162 @@ jobs:
           path: /tmp/out.json
 
   # One job after the matrix, so the commit happens once rather than eleven times.
+  # --- LINUX ---------------------------------------------------------------------------
+  #
+  # A SECOND JOB RATHER THAN A THIRD LABEL IN THE MATRIX ABOVE. The OS is an axis, but it
+  # is a SPARSE one: a scenario that installs Homebrew casks cannot run on Ubuntu and a
+  # scenario that installs a .deb cannot run on a Mac, so a full cross-product would be
+  # mostly jobs that exist to be skipped. Each scenario declares its platform in
+  # expected.json and appears under the job that can run it -- and
+  # tools/check_workflows.py asserts that pairing in both directions, so a Linux scenario
+  # listed only here cannot silently stop being run, and one listed nowhere fails the build.
+  #
+  # NO VM LAYER. The macOS scenarios run directly on the hosted runner too -- Tart is only
+  # the local path, test/run.sh -- so Linux needs nothing new: a hosted ubuntu-24.04 has
+  # systemd as PID 1, which is what 76-linux-systemd needs and what a container cannot give.
+  scenario-linux:
+    name: ${{ matrix.scenario }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04]
+        scenario:
+          - 70-linux-baseline
+          - 71-linux-cli-agents
+          - 72-linux-python-agents
+          - 73-linux-deb
+          - 74-linux-dpkg-removed
+          - 75-linux-browser
+          - 76-linux-systemd
+          - 78-linux-vscode
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install osquery
+        run: |
+          # The deb, not the pkg. Both the deb and the rpm install osqueryi to
+          # /usr/bin/osqueryi -- verified on Ubuntu 24.04 and Fedora 41 -- which is the
+          # path bin/container-scan's osqueryi_path() now looks for.
+          curl -fsSL -o /tmp/osquery.deb \
+            https://pkg.osquery.io/deb/osquery_5.23.1-1.linux_amd64.deb
+          sudo dpkg -i /tmp/osquery.deb
+          osqueryi --version
+      - name: Install pyyaml
+        run: pip3 install --quiet --break-system-packages pyyaml || pip3 install --quiet pyyaml
+
+      # A scenario can be unrunnable here rather than broken, exactly as on macOS. The
+      # Linux axis is `min_kernel` where it is used at all -- most of these skip on a
+      # FACT ABOUT THE RUNNER instead, by exiting 3 from setup.sh, because the things that
+      # stop them (no Chrome for arm64, no system dbus in a container) cannot be known
+      # before the script runs.
+      - name: Provision
+        id: provision
+        run: |
+          set +e
+          test/scenarios/${{ matrix.scenario }}/setup.sh
+          rc=$?
+          set -e
+          # EXIT 3 IS SKIP, and it is the same contract test/run.sh has used since it was
+          # written. A scenario that fails where nobody can act on it trains people to
+          # ignore a red suite.
+          if [ "$rc" = 3 ]; then
+            echo "runnable=false" >> "$GITHUB_OUTPUT"
+            echo "### SKIPPED: the scenario reported this runner cannot host it" \
+              >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$rc" != 0 ]; then
+            exit "$rc"
+          else
+            echo "runnable=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Query and assert
+        if: steps.provision.outputs.runnable == 'true'
+        run: |
+          sudo -n /usr/bin/osqueryi --json < dist/discovery-linux.sql > /tmp/out.json
+          test/assert.sh /tmp/out.json test/scenarios/${{ matrix.scenario }}/expected.json
+      - name: Record which identifiers this run matched
+        if: steps.provision.outputs.runnable == 'true'
+        run: |
+          # --platform, alongside --os and --arch. `os` alone holds "24.04", which names a
+          # distro release and not a platform family, so coverage could not be counted per
+          # platform without it.
+          python3 tools/agent_status.py --record /tmp/out.json \
+            test/scenarios/${{ matrix.scenario }} \
+            --platform linux --os "$(. /etc/os-release && echo "$VERSION_ID")" \
+            --arch "$(uname -m)"
+      - name: Upload the observation
+        if: steps.provision.outputs.runnable == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: observed-${{ matrix.scenario }}--${{ matrix.os }}
+          path: test/scenarios/${{ matrix.scenario }}/observed.json
+          if-no-files-found: error
+
+  # The RPM family, in a container on the same runner, because GitHub offers no
+  # RPM-distro runner. It is a separate job rather than a matrix entry because
+  # `container:` applies to the whole job.
+  #
+  # WHAT IT REALLY GUARDS is that ONE dist/discovery-linux.sql serves both families: the
+  # artifact names deb_packages and rpm_packages, and the absent one has to return no rows
+  # rather than error the statement. A genuinely missing table does the opposite --
+  # snap_packages returns [] and exits 1 -- so this is the run that keeps the difference
+  # honest.
+  scenario-linux-rpm:
+    name: ${{ matrix.scenario }} on fedora
+    runs-on: ubuntu-24.04
+    container: fedora:41
+    strategy:
+      fail-fast: false
+      matrix:
+        scenario:
+          - 77-linux-rpm
+    steps:
+      - name: Install prerequisites
+        run: dnf -q -y install git curl tar python3 python3-pip findutils
+      - uses: actions/checkout@v4
+      - name: Install osquery
+        run: |
+          curl -fsSL -o /tmp/osquery.rpm \
+            https://pkg.osquery.io/rpm/osquery-5.23.1-1.linux.x86_64.rpm
+          rpm -i --nodeps /tmp/osquery.rpm
+          osqueryi --version
+      - name: Install pyyaml
+        run: pip3 install --quiet pyyaml || dnf -q -y install python3-pyyaml
+      - name: Provision
+        id: provision
+        run: |
+          set +e
+          test/scenarios/${{ matrix.scenario }}/setup.sh
+          rc=$?
+          set -e
+          if [ "$rc" = 3 ]; then
+            echo "runnable=false" >> "$GITHUB_OUTPUT"
+          elif [ "$rc" != 0 ]; then exit "$rc"
+          else echo "runnable=true" >> "$GITHUB_OUTPUT"; fi
+      - name: Query and assert
+        if: steps.provision.outputs.runnable == 'true'
+        run: |
+          # No sudo in the container -- it runs as root, which is also why
+          # test/lib/guest-linux.sh's sudo_maybe exists rather than assuming one shape.
+          /usr/bin/osqueryi --json < dist/discovery-linux.sql > /tmp/out.json
+          test/assert.sh /tmp/out.json test/scenarios/${{ matrix.scenario }}/expected.json
+      - name: Record which identifiers this run matched
+        if: steps.provision.outputs.runnable == 'true'
+        run: |
+          python3 tools/agent_status.py --record /tmp/out.json \
+            test/scenarios/${{ matrix.scenario }} \
+            --platform linux --os "$(. /etc/os-release && echo "$VERSION_ID")" \
+            --arch "$(uname -m)"
+      - name: Upload the observation
+        if: steps.provision.outputs.runnable == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: observed-${{ matrix.scenario }}--fedora
+          path: test/scenarios/${{ matrix.scenario }}/observed.json
+          if-no-files-found: error
+
   collect:
     name: Commit observations
-    needs: scenario
+    needs: [scenario, scenario-linux, scenario-linux-rpm]
     # always() so a green scenario's observation still lands when a DIFFERENT scenario
     # failed. Each observation is independent evidence, and discarding all of them because
     # one scenario broke would throw away the runs that worked.

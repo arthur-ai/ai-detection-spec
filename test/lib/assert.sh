@@ -54,6 +54,22 @@ for probe in expected.get("must_contain", []):
     label = " | ".join(alts)
     print(f"  must_contain {label!r}: {'ok' if hit else 'FAIL'}")
     fail |= not hit
+
+# forbid_rows: NO ROW MAY MATCH ALL THE NAMED FIELDS. Exact per field, never a substring,
+# because what is being asserted is that a QUERY excluded something -- and a substring
+# probe would be satisfied or defeated by whatever else happened to be installed.
+#
+# This exists for queries/packages-linux.sql's dpkg status filter. A package removed
+# without --purge stays in dpkg's database as `deinstall ok config-files`, WITH ITS
+# VERSION, so an unfiltered query reports software nobody has as installed. Asserting the
+# absence of {kind: deb, id: nano} is the only way to see that the filter works: row
+# counts, must_find and the classifier all look identical either way.
+for spec in expected.get("forbid_rows", []):
+    hits = [r for r in actual if all(str(r.get(k, "")) == str(v) for k, v in spec.items())]
+    label = ", ".join(f"{k}={v}" for k, v in spec.items())
+    print(f"  forbid_rows {label}: {'FAIL' if hits else 'ok'}"
+          + (f"  found {len(hits)}" if hits else ""))
+    fail |= bool(hits)
 sys.exit(1 if fail else 0)
 PY
 }
@@ -69,7 +85,13 @@ doc = json.load(open(sys.argv[1]))
 rows = doc["findings"] if isinstance(doc, dict) else doc
 got = collections.Counter(r["kind"] for r in rows)
 line = re.sub(r"</?result>", "", sys.argv[2])
-pairs = re.findall(r"\b(app|npm|brew|daemon|port|ext|nmh|file|model)=(\d+)", line)
+# THIS HELPER IS NOT CALLED by run.sh, test/assert.sh or any CI job, and the kind list
+# below is a hand-written copy that still names the retired `model`. Left in place rather
+# than half-fixed: deriving the list from catalog/routes.yaml for a function nothing
+# invokes would spend the effort in the wrong place. If it is ever wired up, derive it --
+# a hardcoded kind list is the exact drift catalog/routes.yaml exists to end.
+pairs = re.findall(r"\b(app|npm|brew|daemon|port|ext|nmh|file|deb|rpm|desktop|unit"
+                   r"|vscodeext|model)=(\d+)", line)
 if not pairs:
     print("  FAIL: summary carried no counts to check"); sys.exit(1)
 bad = False
@@ -123,6 +145,20 @@ for agent in want.get("forbid", []):
     ok = agent not in found
     print("  classified forbid    %r: %s" % (agent, "ok" if ok else "FAIL - over-matched"))
     fail |= not ok
+# forbid_evidence: A STRING THAT MUST NOT APPEAR IN ANY FINDING'S EVIDENCE.
+#
+# `forbid` above asks whether an AGENT was claimed, which cannot express the assertion
+# Linux needs most: a stock Ubuntu ships libxcursor1 and libwayland-cursor0, both real
+# deb packages whose names contain `cursor`. Those rows are legitimately in the payload,
+# so a raw must_not_contain would always fail; what must be true is that neither is
+# EVIDENCE FOR Cursor. Same shape as `libxdmcp` versus `mcp`, and the same reason: without
+# it, "correctly declined" and "the route never ran" are indistinguishable.
+for probe in want.get("forbid_evidence", []):
+    claimed = [(f["id"], json.dumps(e)) for f in result["findings"]
+               for e in f.get("evidence", []) if probe in json.dumps(e)]
+    print("  forbid_evidence %r: %s" % (probe, "ok" if not claimed
+          else "FAIL - claimed by " + ", ".join(sorted({c[0] for c in claimed}))))
+    fail |= bool(claimed)
 if "unmatched_max" in want:
     n = len(result["unmatched"])
     ok = n <= want["unmatched_max"]

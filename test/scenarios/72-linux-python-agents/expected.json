@@ -1,0 +1,41 @@
+{
+  "description": "PyPI-installed agents under uv on Linux, plus LiteLLM as a negative control.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=3",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "port": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "aider",
+      "hermes"
+    ],
+    "forbid": [
+      "openclaw",
+      "claude-code",
+      "codex-cli",
+      "cursor"
+    ],
+    "forbid_evidence": [
+      "litellm"
+    ]
+  },
+  "why": "Two assertions in one. The positive: bin/classify's TOOL_DIR bridge turns /home/dana/.local/share/uv/tools/aider-chat/ back into a package name, which is the only thing that makes `pypi: aider-chat` and `state_dirs: ~/.aider` the same agent -- and it has to work under a Linux home root, not just /Users. The negative: LiteLLM is installed for real and must be claimed by NOBODY -- forbid_evidence rather than forbid, because litellm is a `removed:` entry and not an agent id, so no finding could ever carry its name. What could go wrong is another agent's signature claiming its rows, and that is what is asserted. It was removed from the catalog as a gateway rather than an agent, and its evidence was kept precisely so `correctly not an agent` stays distinguishable from `route quietly broken`.",
+  "must_contain": [
+    "aider-chat",
+    "hermes-agent",
+    "litellm"
+  ],
+  "known_gaps": [
+    "Whether ~/.hermes appears depends on the install route: the vendor's curl installer creates it, a uv install does not until the agent runs. The run records what appeared rather than asserting it."
+  ]
+}

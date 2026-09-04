@@ -1,9 +1,12 @@
 # What these queries CANNOT see. The canonical list, and the only copy.
 #
 # It lived in README, and tools/agent_status.py parsed it back out to render
-# docs/agents.md -- so the same twelve rows existed in two places, and the one a
-# reader met first was whichever page they opened. Now the data is here, the report
-# renders it, and README points at the report.
+# docs/agents.md -- so the same rows existed in two places, and the one a reader met
+# first was whichever page they opened. Now the data is here, the report renders it,
+# and README points at the report.
+#
+# No count in this comment. It said "twelve" while the file held thirteen, and two other
+# files disagreed with both -- a number nothing enforces goes stale by default.
 #
 # These are properties of the platform and the osquery tables, not of any one
 # scenario. No amount of test coverage moves them, which is exactly why they are
@@ -13,10 +16,22 @@ blind_spots:
     why: "The queries see the host filesystem, not a guest's"
   - spot: "What is *running* in a container"
     why: "`--deep` lists container **images**, and an image named `paulgauthier/aider` is evidence. What a running container is doing is not: `docker_containers` needs a per-container inspect document osquery reads strictly, and a hand-built one it merely accepts is worse than none"
-  - spot: "Containers outside Docker Desktop"
-    why: "Colima, Rancher Desktop and Podman keep their sockets elsewhere, and `docker_images` does not read containerd or Podman image stores at all. On those Macs `--deep` says \"did not scan\" rather than \"none\""
+  - spot: "Containers outside Docker Desktop, and Podman anywhere"
+    why: "Colima, Rancher Desktop and Podman keep their sockets elsewhere, and `docker_images` does not read containerd or Podman image stores at all -- so `--deep` says \"did not scan\" rather than \"none\". **This costs more on Linux, where Podman is often the default.** Its socket is deliberately NOT probed: `/run/podman/podman.sock` would pass the health guard and then return zero images, which is a manufactured \"we looked\" rather than a gap"
   - spot: "An untagged (dangling) image"
     why: "Whether `docker_images` reports one is untested \u2014 no dangling image could be produced on the machine this was measured on. Treat it as unknown, not as covered"
+  - spot: "Homebrew on Linux"
+    why: "`homebrew_packages` is a **darwin-only** osquery table -- it is in `specs/darwin` and nowhere else -- so a `/home/linuxbrew` install is invisible on that route even though every formula name in this catalog would match it. Twelve of the sixteen agents declare a `homebrew` identifier, so this is the widest single Linux gap"
+  - spot: "Snap and Flatpak packages"
+    why: "**osquery has no `snap_packages` or `flatpak_packages` table at any version** -- checked against the source tree at 5.10.0 and 5.23.1, and confirmed live: `SELECT * FROM snap_packages` returns `[]` and exits 1. A snap- or flatpak-installed agent is invisible on every package route. An earlier plan listed both as Linux routes, which is exactly the shape of the `bot.molt.mac` mistake"
+  - spot: "AppImage and tarball installs on Linux"
+    why: "Neither leaves a package record of any kind, and Cursor's primary Linux download is an AppImage. `desktop_ids` is the only route that can see one, and only if the install writes a `.desktop` entry -- an AppImage run straight from a download directory writes nothing"
+  - spot: "Which agent installed a systemd unit"
+    why: "`unit` rows are collected as evidence and **no unit name is a signature**. The obvious entry -- a `systemd_prefixes` value mirroring the macOS launchd prefix -- would be a guess: those launchd labels were read off a live install and no Linux unit name has been. So the route is registered (which keeps the rows unmatched rather than dropped) and carries no values, and `76-linux-systemd` asserts that nothing is identified from a unit name. The day a real install produces a vendor-named unit, the value goes in and that assertion inverts"
+  - spot: "systemd user units"
+    why: "`systemd_units` reads the **system** bus, so units under `systemctl --user` do not appear -- and a per-user agent gateway is exactly the thing that would be one. Worse, the table FAILS SOFT: with no reachable bus it logs to stderr, returns zero rows and lets the statement exit 0. `queries/runtime-linux.sql` pairs it with a `kind=scan` marker for that reason, so an unreadable unit list reports \"could not look\" instead of \"no units\""
+  - spot: "Windows, entirely"
+    why: "No queries, no routes, no runner. `catalog/routes.yaml` can express a Windows route and none is defined, so an agent that runs there declares only the platforms it can actually be found on -- the validator refuses a platform with no route behind it. Windows is a parallel PowerShell implementation rather than a port: `bin/` is bash and every scenario is a shell script"
   - spot: "Agents on a cloud dev box or Codespace"
     why: "Same reason. The scanner sees the machine it runs on"
   - spot: "Which filesystem roots an MCP server exposes"
@@ -31,7 +46,7 @@ blind_spots:
     why: "Every route here reports presence and declared capability. `permissions` says an extension **may** read every page, never that it did. No osquery table carries use"
   - spot: "The identity of a sideloaded extension"
     why: "osquery derives `identifier` from the manifest `key`, which unpacked and sideloaded extensions do not carry \u2014 so they report an **empty** one. The Web Store's signed CRX does carry it"
-  - spot: "VS Code extensions"
-    why: "osquery has no table for them at all. An agent shipping as one is invisible on that route, whatever else it also installs"
+  - spot: "VS Code extensions on osquery below 5.11.0"
+    why: "**This used to read \"osquery has no table for them at all\", and that is no longer true.** `vscode_extensions` arrived in osquery **5.11.0** -- verified against the source tree at both tags -- so `queries/vscode.sql` covers this route now and Cline is found through it. What remains is a VERSION floor, not a missing table: that one query declares `min-osquery: 5.11.0`, above the 5.10.0 the rest of the repo needs, and on an older endpoint it returns `[]` and exits 1. The `vscode_edition` column that tells VS Code from Cursor, Windsurf and VSCodium came later still, in 5.15.0"
   - spot: "Behaviour that only appears after launch or sign-in"
     why: "Installing proves the bundle id. Nothing here launches an app \u2014 `open -a` needs an Aqua session and SSH has none \u2014 so first-launch launchd jobs, listening ports and state directories go unobserved, and account-gated products are never signed in to"

@@ -1,5 +1,6 @@
 {
   "description": "OpenClaw's retired npm names, installed for real so the alias route is not untestable by assumption.",
+  "platform": "darwin",
   "counts": {
     "npm": ">=2",
     "app": ">=0",
@@ -8,7 +9,8 @@
     "ext": ">=0",
     "nmh": ">=0",
     "daemon": ">=0",
-    "port": ">=0"
+    "port": ">=0",
+    "vscodeext": ">=0"
   },
   "classified": {
     "must_find": [

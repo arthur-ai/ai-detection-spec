@@ -3,8 +3,8 @@
 -- Columns, in order: kind, id, ver, loc, extra, perms
 --
 -- SUPPLEMENT, NOT A SUPERSET. This file holds the `expensive` queries and nothing else.
--- Union its rows with dist/discovery.sql downstream; run it alone and you have described
--- a Mac with no applications on it.
+-- Union its rows with dist/discovery-<platform>.sql downstream; run it alone and you have
+-- described a machine with no applications on it.
 --
 -- EVERY QUERY IN HERE CAN BLOCK FOREVER. `docker_images` against a daemon that accepts
 -- the connection and never answers does not return -- Docker Desktop mid-startup, or
@@ -12,8 +12,8 @@
 -- wall-clock kill on this process. Run it behind a health guard AND that kill:
 -- `bin/discover --deep` does both, and bin/container-scan is the guard.
 --
--- DO NOT PASTE THESE BRANCHES INTO dist/discovery.sql. A kill is per process, and that
--- file is one process over one statement. Bounding it there was MEASURED, and the result is
+-- DO NOT PASTE THESE BRANCHES INTO dist/discovery-<platform>.sql. A kill is per process,
+-- and that file is one process over one statement. Bounding it there was MEASURED, and the result is
 -- worse than losing rows: all 757 other rows come back and osqueryi exits 0, so the answer
 -- looks complete while the container half was never read -- and 6 of an Extension
 -- Attribute's 10 seconds went to a daemon that answered nothing. Unbounded, the whole

@@ -21,8 +21,15 @@ repo has shipped was a wrong answer that looked like a right one:
   reported via its native-messaging bridge, so nothing looked wrong.
 
 So: every failure carries a reason. That is what `kind=scan` marker rows are for, and their
-vocabulary — `ok`, `absent`, `unhealthy:<code>`, `timeout:<n>`, `error`, `no-cache`,
-`stale:<n>` — is a contract, not a log format.
+vocabulary — `ok`, `absent`, `unhealthy:<code>`, `timeout:<n>`, `error`, `no-cache` — is a
+contract, not a log format.
+
+**`stale:<n>` was in that list and is now retired**, because nothing ever emitted it. It was
+documented here, in `docs/deployment.md` and accepted by `ci.yml`'s vocabulary check, while no
+writer produced it — a contract term with no producer, which is the same class of claim as an
+identifier no test can generate. Staleness is already carried better: every marker row's `ver`
+holds the unix time of the scan, and `bin/classify` computes the age from it. That way the
+reader's threshold is the reader's, rather than one the writer had to guess at.
 
 ## Facts, not documentation
 
@@ -113,27 +120,61 @@ an agent identifier leaks back into the SQL.
 
 Every row is the **six-column contract**: `kind, id, ver, loc, extra, perms`.
 
-**Four things ship and they are not the same query.**
+**`catalog/routes.yaml` is the route registry, and adding a route there is the whole edit.** The
+vocabulary used to live in five hardcoded lists that had to agree — `validate_catalog`'s
+`ROUTES`, `classify`'s `KIND_ROUTES`, `agent_status`'s `EXACT_KINDS`/`GLOB_ROUTES`/`ALL_ROUTES`,
+and `lint.sh`'s `KINDS` — and `ext` was missing from one of them from the beginning. All four
+derive from the file now. It carries **no field nothing reads**: `purl` and version-semantics
+were both left out for that reason, and its header says so.
+
+**The composed artifact is per platform, and there is no unqualified one.**
 
 | artifact | what it is |
 |---|---|
-| `dist/discovery.sql` | the composed `fast` + `slow` queries |
-| `dist/discovery-deep.sql` | the `expensive` queries — a **supplement, not a superset** |
-| `dist/ai-discovery.conf` | the pack; additionally carries `containers.sql` |
+| `dist/discovery-darwin.sql` | the composed `fast` + `slow` queries for macOS |
+| `dist/discovery-linux.sql` | the same for Linux. **Not a superset of anything** — a different set of tables |
+| `dist/discovery-deep.sql` | the `expensive` queries — a **supplement, not a superset**. One file, because every expensive query is `posix`; `build.py` fails loudly if one stops being |
+| `dist/ai-discovery.conf` | the pack, carrying every platform's queries with osqueryd's own per-query `platform` field |
 | `bin/container-scan` | not a query. The only supported way to run the deep artifact, because that artifact can block forever and the bound lives in the runner |
 
-`dist/` is **generated**. Edit `queries/`, then `python3 tools/build.py`; `--check` gates it.
+**`dist/discovery.sql` is gone.** It named one platform while claiming none, and fed to the wrong
+`osqueryi` it returns `[\n\n]` — five bytes of valid, empty, plausible JSON. It does at least
+exit 1, which is the only reason that state is recoverable; `bin/discover` picks by `uname -s`.
+
+A query declares `-- platform: darwin | linux | posix`, where `posix` means both and is
+osqueryd's own word for it. The value is **checked** against `catalog/routes.yaml` now: it never
+was, so `-- platform: macos` built clean and shipped a pack query osqueryd silently never
+scheduled.
+
+`dist/` is **generated**. Edit `queries/`, then `python3 tools/build.py`; `--check` gates it,
+in both directions — a stale artifact and an artifact nothing generates are the same drift.
 
 ## Traps that have already cost a day
 
 - **`UNION ALL` takes its column names from the first arm only.** An unaliased first arm inherits
-  whatever precedes it — which is `apps.sql` inside `dist/discovery.sql`, and nothing standalone.
+  whatever precedes it, and composition is per platform now — so which file leads an artifact
+  depends on the platform, and a file can lead one artifact and sit mid-way through another.
   This shipped: the pack's browser query returned columns named `'ext'` and
   `permissions || CASE WHEN…`. `check_pack.py` counted rows and passed it; `lint.sh` counted
   columns and passed it. Both now check names. **Alias every first arm.**
 - **`CROSS JOIN` is mandatory** for user-scoped tables. A plain `JOIN … USING (uid)` returns zero
   rows, silently — osquery needs the uid constraint pushed in.
 - **A single `%` matches one path component.** `Application Support/Google/Chrome/…` is two.
+- **`/root` is not under `/home`,** so a Linux path glob needs its own branch for it. A
+  `%`-component cannot reach it, and an agent installed from a root shell is exactly what that
+  silence would hide.
+- **Some tables fail SOFT, which is worse than failing.** `systemd_units` with no reachable
+  system bus logs to stderr, returns **zero rows**, and lets the statement exit 0 with every
+  other row intact. Nothing downstream reads stderr, so a container or a locked-down host
+  reports "no agent units" in the shape a clean host does. `queries/runtime-linux.sql` pairs it
+  with a `kind=scan` marker computed in SQL, and the marker reasons from the unit **count** —
+  socket presence alone reports `ok` against a bound-but-dead socket, which is Docker's `wedge`
+  state again.
+- **`deb_packages` reports packages nobody has installed.** dpkg keeps a `deinstall ok
+  config-files` record, with the version, for anything removed without `--purge`. Filter on
+  `status LIKE '%ok installed'` or an uninstalled agent reads as an installed one. Test it with
+  a package that has conffiles: `cowsay` has none, so its record vanishes on remove and a broken
+  query looks correct.
 - **Bash 3.2** is what a managed Mac has. No `timeout(1)`, and an empty array under `set -u` is an
   unbound-variable error: append with `+=` and expand as `${a[@]+"${a[@]}"}`.
 - **`identifier` is derived from the manifest `key`.** That is why a planted or unpacked

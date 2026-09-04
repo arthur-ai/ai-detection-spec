@@ -3,7 +3,12 @@
 -- tables: docker_images
 -- min-osquery: 5.10.0
 -- cost: expensive
--- platform: darwin
+-- platform: posix
+--
+-- POSIX, not darwin: docker_images lives in osquery's specs/posix, so it exists on Linux
+-- too and the composed deep artifact is one file for both platforms. The RUNNER is what
+-- carries the platform-specific part -- bin/container-scan's socket candidates -- not the
+-- SQL. Verified: the table is registered on Ubuntu 24.04 and Fedora 41.
 --
 -- Emits the six-column contract: kind, id, ver, loc, extra, perms.
 --
@@ -23,7 +28,7 @@
 -- Homebrew entry, no npm global, no dotdir on the host. This is the only branch that
 -- sees it.
 --
--- MARKED expensive, SO IT IS NOT IN dist/discovery.sql. The build composes it into
+-- MARKED expensive, SO IT IS NOT IN THE COMPOSED ARTIFACTS. The build composes it into
 -- dist/discovery-deep.sql, which bin/container-scan runs in a process of its own, behind a
 -- round-trip health check and a wall-clock kill. bin/discover --deep is that plus the base
 -- inventory. The reason is that this table's cost is not bounded by anything we control:
@@ -49,7 +54,7 @@
 -- osqueryd's schedule), and the only bound that exists on the machines this runs on is a
 -- kill on the process.
 --
--- THIS FILE IS STILL `expensive` AND STILL MUST NOT REACH dist/discovery.sql. A kill
+-- THIS FILE IS STILL `expensive` AND STILL MUST NOT REACH A COMPOSED ARTIFACT. A kill
 -- belongs to a process, and there is no process to bound when this SQL is one arm of a
 -- UNION ALL inside somebody else's query: bounding it there discards the 750-odd rows the
 -- other branches have already produced. Re-declaring it `slow` would fold it into the

@@ -10,20 +10,29 @@ Every AI agent this repo finds, every identifier it is matched on,
 and the CI test behind each one.
 
 ![agents](https://img.shields.io/badge/agents-16-1D4E89)
-![identifiers](https://img.shields.io/badge/identifiers-45-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-43%2F43-2E7D57)
-![real install](https://img.shields.io/badge/by_real_install-41-2E7D57)
+![identifiers](https://img.shields.io/badge/identifiers-49-1D4E89)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-47%2F47-2E7D57)
+![real install](https://img.shields.io/badge/by_real_install-45-2E7D57)
 
 </div>
 
 > **This page is generated.** `tools/agent_status.py` counts it from
-> `catalog/agents.yaml`, the test fixtures, and what each CI scenario actually
-> matched. Lint fails when it drifts, so it cannot describe a catalog that has
-> moved on without it. Nothing here is typed by hand.
+> `catalog/agents.yaml`, `catalog/routes.yaml`, the test fixtures, and what each
+> CI scenario actually matched. Lint fails when it drifts, so it cannot describe
+> a catalog that has moved on without it. Nothing here is typed by hand.
 
-**A real install is the standard, and every entry meets it.** A VM scenario installs the real software and asserts the classifier finds it. Anything less would be an exception recorded in the catalog with a reason, an evidence grade and a date; there are none open.
+### Coverage per platform
 
-16 agents carrying 45 identifiers.
+A route's platform is where an identifier can be observed. This table counts where one **actually was** -- so a portable identifier proved on one platform does not count for the other, because the route being portable is not evidence that the software is.
+
+| platform | covered | coverable | CI runs it |
+|---|---|---|---|
+| `darwin` | 41 | 44 | yes |
+| `linux` | 16 | 24 | yes |
+
+**A real install is the standard, and every entry meets it.** A CI scenario installs the real software and asserts the classifier finds it. Anything less would be an exception recorded in the catalog with a reason, an evidence grade and a date; there are none open.
+
+16 agents carrying 49 identifiers.
 
 ## 🧪 Why a real install is the bar
 
@@ -33,7 +42,7 @@ Mac. `aider` installs as `aider-chat` under `uv` and `pipx` while its state dire
 and neither survived contact with an actual install. Nothing short of installing the
 software catches that class of error.
 
-## 📊 43/43 identifiers are covered by a CI test
+## 📊 47/47 identifiers are covered by a CI test
 
 **Measured per identifier, and only counting tests CI actually runs.** Two things make
 that different from "has anyone tested this". An entry passes when a scenario finds it,
@@ -48,12 +57,14 @@ cannot drift apart again.
 
 | | identifiers | |
 |---|---:|---|
-| **CI: real install** | 41 | a scenario in the `scenarios.yml` matrix installs the software and asserts the classifier finds it |
+| **CI: real install** | 45 | a scenario in the `scenarios.yml` matrix installs the software and asserts the classifier finds it |
 | **CI: fixture** | 2 | matched a captured row by `test_matcher.py`, which runs on **every pull request**. A weaker claim than a real install and a faster cadence — different axes |
 | **local only** | 0 | proved only by a scenario CI does not run. Catches nothing on a pull request |
 | **did not appear** ⚠ | 0 | a CI scenario installed the agent and this identifier never showed up. Usually installed by another route |
 | **no test** | 0 | nothing exercises it at all |
 | _retired alias_ | _2_ | _excluded from the count. Nothing installs these any more, so no scenario can cover one; the fixture row is the only evidence there is, and it proves the alias still resolves_ |
+
+> **This number is a floor.** `75-linux-browser`, `76-linux-systemd` run in CI and have recorded nothing yet, so identifiers they cover still count as *no test*. Absence of an observation is not absence of a test; the count corrects itself once each scenario has run.
 
 `tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor
 carrying an `unverified` block, so an unverified signature cannot enter quietly.
@@ -66,21 +77,21 @@ Software that acts on the user's behalf. This is what the catalog is for.
 
 | name | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **aider** | real install | **`aider`**, **`aider-chat`**, **`~/.aider`**, `paulgauthier/aider` | 21-cli-agents-homebrew, 25-python-agents |
-| **Claude Code** | real install | **`@anthropic-ai/claude-code`**, **`~/.local/bin/claude`**, **`~/.claude`** | 20-cli-agents, 21-cli-agents-homebrew, 90-demo-fleet |
-| **Cline** | real install | **`cline`** | 20-cli-agents |
-| **Codex CLI** | real install | **`codex`**, **`@openai/codex`**, **`~/.codex`** | 20-cli-agents, 21-cli-agents-homebrew, 90-demo-fleet |
-| **GitHub Copilot CLI** | real install | **`copilot-cli`**, **`@github/copilot`** | 20-cli-agents, 21-cli-agents-homebrew |
-| **Cursor** | real install | **`com.todesktop.230313mzl4w4u92`**, **`cursor`** | 10-desktop-apps, 90-demo-fleet |
-| **Gemini CLI** | real install | **`gemini-cli`**, **`@google/gemini-cli`** | 20-cli-agents, 21-cli-agents-homebrew |
+| **aider** | real install | **`aider`**, **`aider-chat`**, `paulgauthier/aider`, **`~/.aider`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents |
+| **Claude Code** | real install | **`@anthropic-ai/claude-code`**, **`~/.claude`**, **`~/.local/bin/claude`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 90-demo-fleet |
+| **Cline** | real install | **`cline`**, **`saoudrizwan.claude-dev`** | 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode |
+| **Codex CLI** | real install | **`codex`**, **`@openai/codex`**, **`~/.codex`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 90-demo-fleet |
+| **GitHub Copilot CLI** | real install | **`copilot-cli`**, **`@github/copilot`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents |
+| **Cursor** | real install | **`com.todesktop.230313mzl4w4u92`**, **`cursor`**, **`cursor`**, **`cursor`**, **`cursor.desktop`** | 10-desktop-apps, 73-linux-deb, 77-linux-rpm, 90-demo-fleet |
+| **Gemini CLI** | real install | **`gemini-cli`**, **`@google/gemini-cli`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents |
 | **Windsurf** | real install | **`com.exafunction.windsurf`**, **`devin-desktop`** | 10-desktop-apps |
 
 ## Personal agent
 
 | name | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **Hermes Agent** | real install | **`hermes-agent`**, **`hermes-agent`**, **`~/.local/bin/hermes`**, **`~/.hermes`** | 21-cli-agents-homebrew, 25-python-agents |
-| **OpenClaw** | real install | **`ai.openclaw.mac`**, ~~`bot.molt.mac`~~, **`openclaw`**, **`openclaw`**, **`clawdbot`**, **`moltbot`**, **`~/.openclaw`**, **`ai.openclaw.`**, ~~`bot.molt.`~~ | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 60-persistence, 90-demo-fleet |
+| **Hermes Agent** | real install | **`hermes-agent`**, **`hermes-agent`**, **`~/.hermes`**, **`~/.local/bin/hermes`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents |
+| **OpenClaw** | real install | **`ai.openclaw.mac`**, ~~`bot.molt.mac`~~, **`openclaw`**, **`ai.openclaw.`**, ~~`bot.molt.`~~, **`openclaw`**, **`clawdbot`**, **`moltbot`**, **`~/.openclaw`** | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 60-persistence, 90-demo-fleet |
 
 ## AI browser
 
@@ -114,8 +125,14 @@ they are stated once. No amount of test coverage moves them.
 |---|---|
 | Anything inside a VM | The queries see the host filesystem, not a guest's |
 | What is *running* in a container | `--deep` lists container **images**, and an image named `paulgauthier/aider` is evidence. What a running container is doing is not: `docker_containers` needs a per-container inspect document osquery reads strictly, and a hand-built one it merely accepts is worse than none |
-| Containers outside Docker Desktop | Colima, Rancher Desktop and Podman keep their sockets elsewhere, and `docker_images` does not read containerd or Podman image stores at all. On those Macs `--deep` says "did not scan" rather than "none" |
+| Containers outside Docker Desktop, and Podman anywhere | Colima, Rancher Desktop and Podman keep their sockets elsewhere, and `docker_images` does not read containerd or Podman image stores at all -- so `--deep` says "did not scan" rather than "none". **This costs more on Linux, where Podman is often the default.** Its socket is deliberately NOT probed: `/run/podman/podman.sock` would pass the health guard and then return zero images, which is a manufactured "we looked" rather than a gap |
 | An untagged (dangling) image | Whether `docker_images` reports one is untested — no dangling image could be produced on the machine this was measured on. Treat it as unknown, not as covered |
+| Homebrew on Linux | `homebrew_packages` is a **darwin-only** osquery table -- it is in `specs/darwin` and nowhere else -- so a `/home/linuxbrew` install is invisible on that route even though every formula name in this catalog would match it. Twelve of the sixteen agents declare a `homebrew` identifier, so this is the widest single Linux gap |
+| Snap and Flatpak packages | **osquery has no `snap_packages` or `flatpak_packages` table at any version** -- checked against the source tree at 5.10.0 and 5.23.1, and confirmed live: `SELECT * FROM snap_packages` returns `[]` and exits 1. A snap- or flatpak-installed agent is invisible on every package route. An earlier plan listed both as Linux routes, which is exactly the shape of the `bot.molt.mac` mistake |
+| AppImage and tarball installs on Linux | Neither leaves a package record of any kind, and Cursor's primary Linux download is an AppImage. `desktop_ids` is the only route that can see one, and only if the install writes a `.desktop` entry -- an AppImage run straight from a download directory writes nothing |
+| Which agent installed a systemd unit | `unit` rows are collected as evidence and **no unit name is a signature**. The obvious entry -- a `systemd_prefixes` value mirroring the macOS launchd prefix -- would be a guess: those launchd labels were read off a live install and no Linux unit name has been. So the route is registered (which keeps the rows unmatched rather than dropped) and carries no values, and `76-linux-systemd` asserts that nothing is identified from a unit name. The day a real install produces a vendor-named unit, the value goes in and that assertion inverts |
+| systemd user units | `systemd_units` reads the **system** bus, so units under `systemctl --user` do not appear -- and a per-user agent gateway is exactly the thing that would be one. Worse, the table FAILS SOFT: with no reachable bus it logs to stderr, returns zero rows and lets the statement exit 0. `queries/runtime-linux.sql` pairs it with a `kind=scan` marker for that reason, so an unreadable unit list reports "could not look" instead of "no units" |
+| Windows, entirely | No queries, no routes, no runner. `catalog/routes.yaml` can express a Windows route and none is defined, so an agent that runs there declares only the platforms it can actually be found on -- the validator refuses a platform with no route behind it. Windows is a parallel PowerShell implementation rather than a port: `bin/` is bash and every scenario is a shell script |
 | Agents on a cloud dev box or Codespace | Same reason. The scanner sees the machine it runs on |
 | Which filesystem roots an MCP server exposes | Requires parsing arbitrary JSON config; osquery has no table for it |
 | Outbound destinations by hostname | `process_open_sockets` returns an IP, not a name |
@@ -123,7 +140,7 @@ they are stated once. No amount of test coverage moves them.
 | Which agent holds a listening port | Nothing is detected by port number, and the `ports` route was **retired** for it. A port can only be attributed when the process holding it already names the agent — otherwise 8080-held-by-java reads as llama.cpp — so it never identifies anything on its own. Ports are still collected as raw evidence; they are simply never a signature |
 | What an agent *does* | Every route here reports presence and declared capability. `permissions` says an extension **may** read every page, never that it did. No osquery table carries use |
 | The identity of a sideloaded extension | osquery derives `identifier` from the manifest `key`, which unpacked and sideloaded extensions do not carry — so they report an **empty** one. The Web Store's signed CRX does carry it |
-| VS Code extensions | osquery has no table for them at all. An agent shipping as one is invisible on that route, whatever else it also installs |
+| VS Code extensions on osquery below 5.11.0 | **This used to read "osquery has no table for them at all", and that is no longer true.** `vscode_extensions` arrived in osquery **5.11.0** -- verified against the source tree at both tags -- so `queries/vscode.sql` covers this route now and Cline is found through it. What remains is a VERSION floor, not a missing table: that one query declares `min-osquery: 5.11.0`, above the 5.10.0 the rest of the repo needs, and on an older endpoint it returns `[]` and exits 1. The `vscode_edition` column that tells VS Code from Cursor, Windsurf and VSCodium came later still, in 5.15.0 |
 | Behaviour that only appears after launch or sign-in | Installing proves the bundle id. Nothing here launches an app — `open -a` needs an Aqua session and SSH has none — so first-launch launchd jobs, listening ports and state directories go unobserved, and account-gated products are never signed in to |
 
 ## 🧩 What the scenarios do not prove
@@ -136,6 +153,18 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 45-claude-extension | The CRX is unpacked into a real profile rather than installed by Chrome, so the identifier is genuine but the browser's install, update and enterprise-policy paths are all untested. Whether ExtensionInstallForcelist needs an MDM-delivered profile on macOS is UNVERIFIED. |
 | 55-openclaw-npm | The gateway runs with --allow-unconfigured --auth none, which is not how a real deployment runs it: enough to open the listener this scenario asserts, with no channel connected and no model reachable. |
 | 56-openclaw-retired-names | The retired npm names only. bot.molt.mac (bundle id) and bot.molt. (launchd prefix) come from the old .app, and Homebrew keeps no versioned cask for it -- whether an old build is still downloadable is UNVERIFIED. |
+| 70-linux-baseline | Runs on whatever base image the job uses, so it proves nothing about a loaded desktop. 00-baseline has the same limitation on macOS. |
+| 71-linux-cli-agents | Claude Code's npm identifier is not exercised here -- the native installer is its primary route and the two would fight over the same binary name. 21-cli-agents-homebrew makes the same argument on macOS. |
+| 72-linux-python-agents | Whether ~/.hermes appears depends on the install route: the vendor's curl installer creates it, a uv install does not until the agent runs. The run records what appeared rather than asserting it. |
+| 73-linux-deb | The AppImage, which is Cursor's primary Linux download, is not installed here. desktop_ids is the route that would catch it, and this scenario exercises that route through the .deb's own entry instead. |
+| 74-linux-dpkg-removed | Asserts on a pair of ordinary packages rather than on an agent, because no catalogued agent's deb can be installed and removed without also removing the evidence this checks for. |
+| 75-linux-browser | No real extension identifier. 45-claude-extension gets one on macOS by unpacking the Web Store's signed CRX, which does carry the key; the same route would work here and is not yet built. |
+| 75-linux-browser | Google ships no Linux arm64 Chrome, so this skips on arm64 runners. |
+| 76-linux-systemd | Skips wherever there is no system dbus -- a container has none, which is what the kind=scan marker in queries/runtime-linux.sql exists to report. It runs for real on a GitHub ubuntu runner, where systemd is PID 1. |
+| 76-linux-systemd | No agent's systemd unit name has been read off a real install, so this proves the query and the matcher and not any vendor's naming. The route is registered and carries no values for exactly that reason. |
+| 76-linux-systemd | systemd user units (systemctl --user) are not visible to the table at all, and a per-user agent gateway is exactly the thing that would be one. |
+| 77-linux-rpm | Runs in a fedora container on an ubuntu runner, because GitHub offers no RPM-distro runner. A container has no systemd, so `unit` is 0 here and the systemd marker reports absent -- correctly. |
+| 78-linux-vscode | min-osquery for this branch is 5.11.0, above the 5.10.0 the rest of the repo declares. On a 5.10.x endpoint the query returns [] and exits 1, which is why it is its own pack entry and its own composed branch. |
 
 `11-perplexity-desktop`, `50-autonomous` need macOS 15 or newer, so CI skips them on older runners rather than failing them. Each scenario's `requires.json` carries the reason.
 

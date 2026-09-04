@@ -12,7 +12,7 @@ Every query branch emits **six columns, in this order**:
 
 | # | Column | Meaning |
 |---|---|---|
-| 1 | `kind` | Row type: `app`, `npm`, `brew`, `daemon`, `port`, `ext`, `file`, `nmh`, `model`, `image` |
+| 1 | `kind` | Row type — the closed set below, declared in `catalog/routes.yaml` |
 | 2 | `id` | The identifier: bundle id, package name, port, path |
 | 3 | `ver` | Version if statically readable, else `''` |
 | 4 | `loc` | Where it lives on disk |
@@ -25,12 +25,46 @@ query. `test/lint.sh` catches it in about a second. Run it first.
 Use `''` rather than `NULL` for a column a branch has nothing for. `NULL` propagates through
 string concatenation and silently empties whole rows.
 
-`image` is the one kind that is **not** in `dist/discovery.sql`. `containers.sql` is declared
-`expensive`, so the build puts it in `dist/ai-discovery.conf` only, and the scenario matrix does
-not exercise it — `KINDS` in `test/lint.sh` is the set every scenario must pin, and `image` is
-deliberately absent from it. `test/docker_states.sh` covers that branch instead, against a fake
-socket in every daemon state. Add a kind to both places when it belongs in the composed query;
-add it here only when it does not.
+**The kinds, and which route each one carries.** This table is derived from
+`catalog/routes.yaml` — that file is the registry, and adding a route there is the only edit
+needed: the matcher, the validator, the coverage report and lint all read it. This used to be
+five hardcoded lists that had to agree, and `ext` was missing from one of them from the
+beginning, so every browser-extension row was **dropped rather than unmatched** — invisible
+even under `--show-unmatched`, for months, while the row counts stayed right.
+
+| `kind` | route(s) | platform |
+|---|---|---|
+| `app` | `bundle_ids` | darwin |
+| `brew` | `homebrew` | darwin |
+| `daemon` | `launchd_prefixes` | darwin |
+| `deb` | `deb_packages` | linux |
+| `desktop` | `desktop_ids` | linux |
+| `ext` | `extension_ids` | posix |
+| `file` | `binaries`, `model_stores`, `pypi`, `state_dirs` | posix |
+| `image` | `images` | posix |
+| `nmh` | `native_messaging_hosts` | posix |
+| `npm` | `npm` | posix |
+| `port` | `ports` | posix |
+| `rpm` | `rpm_packages` | linux |
+| `unit` | `systemd_prefixes` | linux |
+| `vscodeext` | `vscode_extensions` | posix |
+| `scan` | — a marker, not a route: it says a branch could **not** look | linux |
+
+`posix` means darwin **and** linux, and it is osqueryd's own word for it in the pack format, so
+a query's `-- platform:` and a route's `platform:` come from one vocabulary.
+
+Two kinds are not demanded of a scenario, and `test/lint.sh` derives that rather than listing
+it — a scenario must pin the kinds **its own platform's queries actually emit**:
+
+- **`image`** is a registry kind no composed artifact carries. `containers.sql` is `expensive`,
+  so it ships in `dist/ai-discovery.conf` and the deep artifact only. No scenario runs Docker;
+  `test/docker_states.sh` covers that branch instead, against a fake socket in every daemon
+  state.
+- **`scan`** is not a route kind at all. `queries/runtime-linux.sql` emits one on every run
+  because `systemd_units` **fails soft** — no system bus means zero rows, exit 0, and every
+  other row returned — so the marker is the only thing separating "no agent units" from "we
+  could not read the unit list". Linux scenarios pin it, and that is worth doing: it asserts
+  the marker is there rather than assuming it.
 
 ## Adding a signature
 
@@ -245,7 +279,7 @@ Two ways this hides:
   Docker Desktop spends real time in the state where its API answers and its engine does not
   serve. A probe narrows that window; only a wall-clock bound on the process closes it. If the
   table you are adding has no timeout of its own and osquery offers no flag to give it one —
-  check, because `docker_images` has neither — then it cannot go in `dist/discovery.sql` at any
+  check, because `docker_images` has neither — then it cannot go in a composed artifact at any
   band. It goes in `dist/discovery-deep.sql`, behind a runner that can kill it.
 
 If your query touches a daemon, socket or external service, test it **stopped and mid-startup**,
@@ -292,7 +326,7 @@ Releases are [semantic](https://semver.org), with repository-specific meaning:
 Releases are cut whenever signatures change, at most weekly. What changed in each one is on the
 [Releases page](https://github.com/arthur-ai/osquery-ai-discovery/releases) rather than in a file
 in the tree; there is no `CHANGELOG.md`. Publishing a release triggers
-[`release.yml`](.github/workflows/release.yml), which rebuilds `dist/discovery.sql` and
+[`release.yml`](.github/workflows/release.yml), which rebuilds the composed artifacts and
 `dist/ai-discovery.conf` from the tagged `queries/` and attaches them — so a deployment can pin
 a tag instead of tracking `main`, and what it downloads is derived from the tag rather than
 uploaded by hand.

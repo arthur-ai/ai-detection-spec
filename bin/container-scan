@@ -5,7 +5,7 @@
 #     bin/container-scan --pretty
 #     bin/container-scan --socket /tmp/arthur-fake-docker.sock
 #
-# containers.sql is declared `expensive`, so the build keeps it out of dist/discovery.sql
+# containers.sql is declared `expensive`, so the build keeps it out of the composed artifacts
 # and composes it into dist/discovery-deep.sql instead. This is that file's entry point,
 # and bin/discover --deep is the same thing joined to the base inventory.
 #
@@ -23,7 +23,7 @@
 # bound. osquery has no flag for it (5.23.1: --docker_socket is the only docker flag,
 # --alarm_timeout is shutdown-only with a 10s floor, --schedule_timeout is osqueryd's
 # schedule), so the bound is a kill on the process, and that is why this branch runs in a
-# process of its own rather than inside dist/discovery.sql.
+# process of its own rather than inside a composed artifact.
 #
 # Exit codes carry the distinction, and a caller that ignores them has thrown away the
 # only thing this script is for:
@@ -75,10 +75,14 @@ need_arg() {
 }
 
 # Every candidate osqueryi, in the order tools/measure.py looks.
+#
+# /usr/bin/osqueryi is where the Linux deb and rpm both put it, verified on Ubuntu 24.04
+# and Fedora 41. The macOS paths stay first so a Mac's answer does not change.
 osqueryi_path() {
   local c
   for c in "${OSQI:-}" /usr/local/bin/osqueryi \
-           /opt/osquery/lib/osquery.app/Contents/MacOS/osqueryi; do
+           /opt/osquery/lib/osquery.app/Contents/MacOS/osqueryi \
+           /usr/bin/osqueryi; do
     [ -n "$c" ] && [ -x "$c" ] && { printf '%s\n' "$c"; return 0; }
   done
   command -v osqueryi 2>/dev/null && return 0
@@ -106,9 +110,25 @@ osqueryi_path() {
 docker_socket_path() {
   local c host="${DOCKER_HOST:-}"
   host="${host#unix://}"
+  # /var/run/docker.sock is the common case on both platforms and the ONLY one on a
+  # normal Linux host -- Docker Engine has no per-user socket, so the two Desktop-shaped
+  # candidates below are macOS-shaped and simply never hit there.
+  #
+  # ${HOME:-...} keeps its fallback because an unguarded $HOME under `set -u` crashed this
+  # probe once and it reported containers=absent on a Mac with a healthy daemon -- a
+  # plausible answer manufactured by a crash. /var/root is macOS root's home and /root is
+  # Linux's, so both are listed rather than one standing in for the other.
+  #
+  # PODMAN IS DELIBERATELY ABSENT, and on Linux that costs more than it does on a Mac
+  # because Podman is often the default there. /run/podman/podman.sock would pass the
+  # health guard and then return zero images, because docker_images does not read
+  # Podman's store at all -- a manufactured "we looked". An honest gap in
+  # docs/blind-spots.yaml beats a probe that answers confidently about the wrong daemon.
   for c in "${DOCKER_SOCKET:-}" "$host" /var/run/docker.sock \
            "${HOME:-/var/root}/.docker/run/docker.sock" \
-           ${SUDO_USER:+"/Users/$SUDO_USER/.docker/run/docker.sock"}; do
+           "${HOME:-/root}/.docker/run/docker.sock" \
+           ${SUDO_USER:+"/Users/$SUDO_USER/.docker/run/docker.sock"} \
+           ${SUDO_USER:+"/home/$SUDO_USER/.docker/run/docker.sock"}; do
     [ -n "$c" ] && [ -S "$c" ] && { printf '%s\n' "$c"; return 0; }
   done
   return 1
@@ -258,7 +278,7 @@ cache_write() {
 #
 # ON STDIN, NOT AS AN ARGUMENT. The artifact opens with a `--` banner, and osqueryi reads
 # an argv query starting with `--` as a command-line flag: it prints "unknown command line
-# flag" and exits 0 with no rows. Same reason the quickstart redirects dist/discovery.sql.
+# flag" and exits 0 with no rows. Same reason the quickstart redirects the artifact.
 #
 # test/lint.sh holds this file to one expensive query, because the guard below is
 # docker-specific. A second expensive branch that is not docker-shaped needs its own

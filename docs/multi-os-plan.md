@@ -1,5 +1,31 @@
 # Multi-OS catalog schema + an importable classify module
 
+> **SUPERSEDED FOR LINUX, AND TWO OF ITS FACTS WERE WRONG.** Steps 1-5 of this plan shipped,
+> with corrections; the query-layer work it puts out of scope shipped alongside them. What
+> remains open is Step 6 (the `aidiscovery` package) and Step 7 (`schema_version: 2`).
+>
+> The corrections matter more than the status, because this document's own closing section
+> asked for them:
+>
+> - **`snap_packages` and `flatpak_packages` do not exist as osquery tables at any version.**
+>   Checked against the source tree at 5.10.0 and 5.23.1 and confirmed live -- `SELECT * FROM
+>   snap_packages` returns `[]` and exits 1. Both were listed here as Linux routes. That is
+>   precisely the `bot.molt.mac` shape this plan warned about in *What this plan has NOT
+>   verified*, and it is why that section was right to exist. `deb_packages`, `rpm_packages`
+>   and `systemd_units` are all real and all present at 5.10.0.
+> - **`home_pattern(value, platform)` cannot take a platform.** `bin/classify` reads payloads a
+>   fleet collector may have merged from many hosts, so there is no single platform to pass; it
+>   matches every platform's home roots at once, as one alternation.
+> - **The `$` anchor is per route, not blanket.** Anchoring `state_dirs` fixes
+>   `~/.claude` matching `.claudefoo`; anchoring `binaries` would break
+>   `~/.local/bin/hermes` matching `hermes-acp` and `hermes-agent`, which
+>   `catalog/agents.yaml` records as deliberate.
+> - **`vscode_extensions` exists** from osquery 5.11.0, which retired a blind spot rather than
+>   adding one. Its identifier is the `name` column alone: `publisher_id` is a GUID, so the
+>   obvious `publisher_id || '.' || name` yields something that matches nothing.
+>
+> `docs/blind-spots.yaml`, `catalog/routes.yaml` and `queries/*.sql` carry the current facts.
+
 ## Context
 
 `osquery-ai-discovery` ships macOS-only. Every query declares `-- platform: darwin`, every

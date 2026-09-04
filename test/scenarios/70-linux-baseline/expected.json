@@ -1,0 +1,33 @@
+{
+  "description": "A Linux box with nothing installed. The control: the suite must be able to say no.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=0",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "port": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [],
+    "forbid": [
+      "openclaw",
+      "claude-code",
+      "cursor",
+      "aider",
+      "cline",
+      "hermes",
+      "codex-cli"
+    ]
+  },
+  "why": "A suite that only asserts must_find cannot tell a working matcher from one that claims everything, and on Linux the lookalikes arrive for free: a stock Ubuntu ships libxcursor1 and libwayland-cursor0, whose names contain `cursor`. This is where an over-broad Linux route fails. `deb >= 1` because a Linux box always has packages -- a zero there would mean the branch did not run rather than that the machine is clean. `scan >= 1` for the systemd marker, which is emitted on every run precisely so an unreadable unit list cannot look like a clean one.",
+  "known_gaps": [
+    "Runs on whatever base image the job uses, so it proves nothing about a loaded desktop. 00-baseline has the same limitation on macOS."
+  ]
+}

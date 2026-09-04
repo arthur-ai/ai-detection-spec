@@ -60,7 +60,7 @@ done
 #
 # A UNION ALL takes its column NAMES from its first arm alone. So an unaliased first arm
 # silently inherits names from whatever happens to precede it -- apps.sql, inside
-# dist/discovery.sql, because it sorts first -- and gets nothing at all when the file runs
+# a composed artifact, because it sorts first -- and gets nothing at all when the file runs
 # on its own. browser.sql shipped that way: the pack's browser query returned 74 rows keyed
 # 'ext', identifier, browser_type and "permissions || CASE WHEN manifest_json LIKE ...",
 # which no consumer of the six-column contract can read. Row counts were correct throughout,
@@ -82,7 +82,7 @@ for path in sorted(glob.glob(os.path.join(sys.argv[1], "*.sql"))):
     if found[:6] != COLS:
         print(f"FAIL: {name}: first arm must alias all six columns in order "
               f"(kind, id, ver, loc, extra, perms); found {found[:6] or 'none'}. "
-              f"Without it the file is only well-formed inside dist/discovery.sql.")
+              f"Without it the file is only well-formed inside a composed artifact.")
         bad = True
 if bad:
     sys.exit(1)
@@ -90,63 +90,171 @@ print("first-arm aliases: ok, every query names its own columns")
 ALIASES
 
 python3 - "$HERE" <<'PY' || fail=1
-import glob, json, os, sys
+import glob, json, os, re, sys
 here = sys.argv[1]
-# DELIBERATELY INCOMPLETE, and two kinds are missing on purpose:
+root = os.path.dirname(here)
+
+# THE KIND VOCABULARY IS DERIVED FROM catalog/routes.yaml, not written out here.
 #
-#   model  RETIRED WITH THE MODEL RUNNERS. The branch emitted one row per model manifest
-#          and nothing consumed them: 'model' was never a key in bin/classify's
-#          KIND_ROUTES, so every row was DROPPED -- the same failure kind='ext' had. The
-#          scope is agents now, no agent is found through a model store, and the branch
-#          was payload nobody could read.
-#   image  containers.sql, which is `expensive` and reaches nobody through
-#          dist/discovery.sql. No scenario runs Docker, so pinning it would fail the build.
-#   scan   the "we could not look" marker bin/container-scan prints when the daemon is
-#          absent, not serving, or wedged. It is emitted INSTEAD of rows, so a scenario
-#          that pinned it would be pinning its own failure.
+# It used to be a hardcoded set, and it was one of five copies that had to agree -- the
+# same drift that let kind='ext' go missing from bin/classify for months, dropping every
+# browser-extension row in silence. Deriving it means adding a route to the registry is
+# the whole edit.
 #
-# Every kind in this set must be pinned by every scenario, which is what makes it a
-# coverage check rather than a spot check -- and is exactly why these two cannot join it.
-# test/docker_states.sh covers both instead. Do not "complete" this set.
-KINDS = {"app","npm","brew","daemon","port","ext","file","nmh"}
+# AND IT IS SCOPED BY PLATFORM, which is what stops a Linux route breaking every macOS
+# scenario. A scenario pins the kinds its own platform can produce: `deb` is meaningless
+# on a Mac, and demanding it there would have forced a `"deb": 0` line into all thirteen
+# macOS scenarios to say nothing.
+reg = open(os.path.join(root, "catalog", "routes.yaml")).read()
+_plats = re.search(r"^platforms:\s*\[(.+?)\]\s*$", reg, re.M).group(1)
+PLATFORMS = [x.strip() for x in _plats.split(",")]
+_groups = dict(re.findall(r"^  ([a-z]+):\s*\[(.+?)\]\s*$",
+                          reg.split("platform_groups:", 1)[-1], re.M))
+GROUPS = {g: [x.strip() for x in v.split(",")] for g, v in _groups.items()}
+ROUTE_KIND, ROUTE_PLAT = {}, {}
+for block in re.finditer(r"^  ([a-z_]+):\s*$", reg, re.M):
+    name = block.group(1)
+    tail = reg[block.end():]
+    nxt = re.search(r"^  [a-z_]+:\s*$", tail, re.M)
+    body = tail[:nxt.start()] if nxt else tail
+    kind = re.search(r"^    kind:\s*(\S+)", body, re.M)
+    plat = re.search(r"^    platform:\s*(\S+)", body, re.M)
+    if kind and plat:
+        ROUTE_KIND[name] = kind.group(1)
+        ROUTE_PLAT[name] = GROUPS.get(plat.group(1), [plat.group(1)])
+
+# WHAT A SCENARIO MUST PIN IS WHAT ITS PLATFORM'S QUERIES ACTUALLY EMIT, read off the
+# query files rather than off the registry alone. The registry says which kinds a route
+# can be reached through; the queries say which kinds a composed artifact will contain,
+# and a scenario asserts on the artifact.
+#
+# The two differ in both directions, and each direction is a real check:
+#
+#   * `image` is a registry kind that no composed artifact carries. containers.sql is
+#     `expensive`, so it reaches nobody through dist/discovery-<platform>.sql. Demanding
+#     it of a scenario would fail the build on every runner, because no scenario runs
+#     Docker. test/docker_states.sh covers it instead.
+#   * `scan` is emitted by a QUERY and is not a route kind at all. queries/runtime-linux.sql
+#     emits one on every run, because systemd_units fails soft -- zero rows, exit 0 -- and
+#     the marker is the only thing that separates "no agent units" from "we could not read
+#     the unit list". A Linux scenario pins it, and pinning it is worth doing: it asserts
+#     the marker is present rather than assuming it.
+#
+# `scan` was previously excluded on the grounds that a scenario pinning it would be
+# "pinning its own failure". That was right about the CONTAINER marker, which
+# bin/container-scan emits INSTEAD of rows. It is not right about a marker emitted
+# alongside rows on every run, and the distinction is the reason this is derived now
+# rather than listed.
+bad_registry = False
+QUERY_DIR = os.path.join(root, "queries")
+EMITTED = {}          # platform -> kinds its fast/slow queries emit
+PRODUCERS = {}        # kind -> set of query files emitting it
+for q in sorted(glob.glob(os.path.join(QUERY_DIR, "*.sql"))):
+    text = open(q).read()
+    head = []
+    for line in text.splitlines():
+        if line.strip() and not line.lstrip().startswith("--"):
+            break
+        head.append(line)
+    fm = dict(re.findall(r"^--\s*([a-z-]+):\s*(.+?)\s*$", "\n".join(head), re.M))
+    if fm.get("cost") == "expensive":
+        continue
+    body = "\n".join(l for l in text.splitlines() if not l.lstrip().startswith("--"))
+    kinds = set(re.findall(r"SELECT\s+'(\w+)'", body, re.I))
+    for plat in GROUPS.get(fm["platform"], [fm["platform"]]):
+        EMITTED.setdefault(plat, set()).update(kinds)
+    for k in kinds:
+        PRODUCERS.setdefault(k, set()).add(os.path.basename(q))
+
+# EVERY ROUTE'S KIND MUST HAVE A PRODUCER, on every platform the route claims. This is
+# the direction that fails silently: a route in the registry whose kind no query emits is
+# a signature nothing can ever feed, and it reads as coverage on the generated page.
+for r, k in sorted(ROUTE_KIND.items()):
+    for plat in ROUTE_PLAT[r]:
+        if plat not in EMITTED:            # no queries for that platform at all yet
+            continue
+        if k not in EMITTED[plat] and k != "image":
+            print(f"FAIL: route {r!r} needs kind {k!r} on {plat}, and no {plat} query "
+                  f"emits it -- the route could never match")
+            bad_registry = True
+
+def kinds_for(platform):
+    return set(EMITTED.get(platform, set()))
+
+
 covered, bad = set(), False
+bad = bad or bool(globals().get("bad_registry"))
+seen_platforms = set()
 for f in sorted(glob.glob(os.path.join(here, "scenarios/*/expected.json"))):
     name = os.path.basename(os.path.dirname(f))
     d = json.load(open(f))
+    # REQUIRED, and it lives in expected.json rather than requires.json because every
+    # scenario already has one of these. An absent platform is the same ambiguity the
+    # catalog refuses for agents: "macOS" or "nobody said" are different claims.
+    platform = d.get("platform")
+    if platform not in PLATFORMS:
+        print(f"FAIL: {name} declares platform {platform!r}, want one of {PLATFORMS}")
+        bad = True
+        continue
+    seen_platforms.add(platform)
+    want = kinds_for(platform)
     counts = d.get("counts", {})
-    missing = KINDS - set(counts)
+    missing = want - set(counts)
     if missing:
-        print(f"FAIL: {name} does not pin {sorted(missing)}"); bad = True
+        print(f"FAIL: {name} ({platform}) does not pin {sorted(missing)}")
+        bad = True
     for k, v in counts.items():
-        if k not in KINDS:
-            print(f"FAIL: {name} pins unknown kind {k!r}"); bad = True
+        if k not in want:
+            print(f"FAIL: {name} ({platform}) pins {k!r}, which no {platform} route "
+                  f"produces"); bad = True
         if isinstance(v, str) and not v.startswith(">="):
             print(f"FAIL: {name}.{k} = {v!r}, want an int or '>=N'"); bad = True
-        if (isinstance(v, int) and v > 0) or isinstance(v, str):
+        # A FLOOR OF ZERO IS NOT EVIDENCE. `">=0"` used to count a kind as exercised,
+        # so a kind pinned `>=0` by every scenario satisfied the "every kind is
+        # exercised somewhere" check while nothing installed anything that produces it
+        # -- the check read as coverage and was a tautology. Only a positive floor
+        # counts now.
+        floor = v if isinstance(v, int) else int(v[2:] or 0)
+        if floor > 0:
             covered.add(k)
     if not os.access(os.path.join(os.path.dirname(f), "setup.sh"), os.X_OK):
         print(f"FAIL: {name}/setup.sh is not executable"); bad = True
 
-# Every kind must be exercised somewhere, or a branch ships untested — which is the exact
-# state four of these were in before this harness existed.
-never = KINDS - covered
+# Every kind must be exercised somewhere, or a branch ships untested -- which is the exact
+# state four of these were in before this harness existed. Only kinds belonging to a
+# platform some scenario actually covers are demanded: a Windows kind cannot be exercised
+# by a suite that has no Windows scenario, and failing for that would be noise.
+demanded = set().union(*(kinds_for(p) for p in seen_platforms)) if seen_platforms else set()
+never = demanded - covered
 if never:
     print(f"FAIL: no scenario exercises {sorted(never)}"); bad = True
 if bad: sys.exit(1)
-print(f"ok: {len(KINDS)} kinds, every one exercised by at least one scenario")
+print(f"ok: {len(demanded)} kinds across {len(seen_platforms)} platform(s) "
+      f"({', '.join(sorted(seen_platforms))}), every one exercised")
 PY
 
-# The scenario scripts are zsh because that is macOS's default shell and they only
-# ever run there. The linter itself runs anywhere, so require zsh explicitly rather
-# than letting every check dissolve into "command not found" and still look like a
-# syntax error in the scripts.
+# THE CHECKER IS CHOSEN BY THE SHEBANG, not by one rule for every scenario.
+#
+# The macOS scenarios are zsh because that is macOS's default shell; the Linux ones are
+# bash because that is what a Linux runner and a container both have. Checking a bash
+# script with `zsh -n` mostly works, which is the problem -- it would pass until someone
+# used a bash-only construct, and then report a syntax error in the wrong dialect.
+#
+# zsh is still REQUIRED rather than skipped when missing: letting the check dissolve into
+# "command not found" would leave every macOS scenario unchecked while the suite stayed
+# green. The linter runs on ubuntu in CI, which is why ci.yml apt-installs zsh.
 if ! command -v zsh >/dev/null; then
-  echo "FAIL: zsh not found. It is needed to syntax-check the scenario scripts."
+  echo "FAIL: zsh not found. It is needed to syntax-check the macOS scenario scripts."
   echo "      macOS ships it; on Debian/Ubuntu: sudo apt-get install -y zsh"
   fail=1
 else
-  for f in "$HERE"/scenarios/*/setup.sh "$HERE"/lib/guest.sh; do
-    zsh -n "$f" || { echo "FAIL: zsh syntax in $f"; fail=1; }
+  for f in "$HERE"/scenarios/*/setup.sh "$HERE"/lib/guest.sh "$HERE"/lib/guest-linux.sh; do
+    case "$(head -1 "$f")" in
+      *zsh*)  zsh -n  "$f" || { echo "FAIL: zsh syntax in $f";  fail=1; } ;;
+      *bash*) bash -n "$f" || { echo "FAIL: bash syntax in $f"; fail=1; } ;;
+      *) echo "FAIL: $f has no zsh or bash shebang, so nothing can syntax-check it"
+         fail=1 ;;
+    esac
   done
 fi
 for f in "$HERE"/run.sh "$HERE"/lib/vm.sh "$HERE"/lib/assert.sh \
