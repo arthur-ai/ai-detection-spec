@@ -1,0 +1,13 @@
+{
+  "scenario": "79-linux-image",
+  "identifiers": [
+    {
+      "agent": "aider",
+      "route": "images",
+      "value": "paulgauthier/aider",
+      "platform": "linux",
+      "os": "24.04",
+      "arch": "x86_64"
+    }
+  ]
+}

@@ -12,14 +12,14 @@ and the CI test behind each one.
 ![agents](https://img.shields.io/badge/agents-17-1D4E89)
 ![identifiers](https://img.shields.io/badge/identifiers-50-1D4E89)
 ![covered](https://img.shields.io/badge/covered_by_a_CI_test-48%2F48-2E7D57)
-![real install](https://img.shields.io/badge/by_real_install-47-2E7D57)
+![real install](https://img.shields.io/badge/by_real_install-48-2E7D57)
 
 </div>
 
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is covered by a CI test** — 48 of 48, 47 of them by a real install. 2 retired alias(es) are excluded: nothing installs them any more. Anything below complete is a red build, so there is no partial number to read here.
+**Every identifier is proved by a real install in CI** — 48 of 48. 2 retired alias(es) are excluded: nothing installs them any more. Anything below complete is a red build, so there is no partial number to read here.
 
 ## 🧪 Why a real install is the bar
 
@@ -32,8 +32,6 @@ Coverage is counted **per identifier**, from what each scenario recorded in its 
 `observed.json`, and only from scenarios in the CI matrix — an agent can pass while
 carrying an identifier nothing exercised.
 
-**The remaining 1 is `paulgauthier/aider`**, whose recorded evidence is a captured row rather than a live install -- `test/docker_states.sh` serves real images through a fake socket and asserts the real runner and matcher claim the catalogued one and decline the rest. A CI scenario that installs it for real has not recorded an observation yet.
-
 `tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor
 carrying an `unverified` block, so an unverified signature cannot enter quietly.
 
@@ -45,7 +43,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 
 | name | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **aider** | real install | **`aider`**, **`aider-chat`**, `paulgauthier/aider`, **`~/.aider`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
+| **aider** | real install | **`aider`**, **`aider-chat`**, **`paulgauthier/aider`**, **`~/.aider`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
 | **Claude Code** | real install | **`@anthropic-ai/claude-code`**, **`~/.claude`**, **`~/.local/bin/claude`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 90-demo-fleet |
 | **Cline** | real install | **`cline`**, **`saoudrizwan.claude-dev`** | 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode |
 | **Codex CLI** | real install | **`codex`**, **`@openai/codex`**, **`~/.codex`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 90-demo-fleet |
