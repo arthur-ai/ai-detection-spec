@@ -526,6 +526,83 @@ check("recording does NOT credit a state dir the run never produced",
       "~/.aider appears in no row here; crediting it would report the strongest evidence "
       "for a path no machine produced")
 
+# --- the coverage shrink guard is scoped per (platform, os, arch) -----------------
+#
+# THIS TEST EXISTS BECAUSE I MISREAD THE GUARD AND BLAMED IT. A CI job refused to record
+# with `lost aider state_dirs:~/.aider` against a committed file whose records were all
+# `arch=aarch64`, on a runner reporting `x86_64` -- so the filtered set looked like it had
+# to be empty and the guard looked wrong.
+#
+# It was right. A `pull_request` job checks out the MERGE of the branch into main, not the
+# branch, and MAIN's copy of that file already carried x86_64 records from an earlier run
+# on main. The guard filtered to x86_64, found them, and correctly reported that the run
+# proved one fewer. What was wrong was the forensics: comparing against `git show
+# <branch>:...` when CI never read that file.
+#
+# The semantics are asserted here rather than reasoned about, because reasoning about them
+# is exactly what failed. Both directions, and the two-key file is the real shape that
+# caused the confusion.
+import contextlib as _ctx, io as _io, shutil as _sh
+
+def _observed(*recs):
+    return {"scenario": "zz-fixture",
+            "identifiers": [{"agent": a, "route": r, "value": v,
+                             "platform": "linux", "os": "24.04", "arch": ar}
+                            for a, r, v, ar in recs]}
+
+# A payload that proves aider's pypi route and NOTHING else -- no ~/.aider.
+_pypi_only = [{"kind": "file", "id": "/home/dana/.local/share/uv/tools/aider-chat/",
+               "ver": "", "loc": "/home/dana/.local/share/uv/tools/aider-chat/",
+               "extra": "", "perms": ""}]
+
+def _try_record(arch, committed):
+    """Run record() against a committed file, in a fake scenarios root."""
+    tmp = pathlib.Path(_tf2.mkdtemp())
+    try:
+        scen = tmp / "scenarios" / "zz-fixture"
+        scen.mkdir(parents=True)
+        (scen / "observed.json").write_text(json.dumps(committed))
+        art = tmp / "art.json"
+        art.write_text(json.dumps(_pypi_only))
+        old_root, _st.SCENARIOS = _st.SCENARIOS, tmp / "scenarios"
+        out, rc = _io.StringIO(), 0
+        try:
+            with _ctx.redirect_stdout(out):
+                _st.record(str(art), str(scen), "24.04", arch, "linux")
+        except SystemExit as e:
+            rc = e.code or 0
+        finally:
+            _st.SCENARIOS = old_root
+        after = json.loads((scen / "observed.json").read_text())["identifiers"]
+        return rc, out.getvalue(), after
+    finally:
+        _sh.rmtree(tmp, ignore_errors=True)
+
+# The two-key file: the same identifiers proved on two architectures.
+_two_key = _observed(
+    ("aider", "pypi", "aider-chat", "aarch64"),
+    ("aider", "state_dirs", "~/.aider", "aarch64"),
+    ("aider", "pypi", "aider-chat", "x86_64"),
+    ("aider", "state_dirs", "~/.aider", "x86_64"))
+
+_rc, _out, _after = _try_record("x86_64", _two_key)
+check("a run proving less on ITS OWN key is refused",
+      _rc == 1 and "aider state_dirs:~/.aider" in _out,
+      f"rc={_rc} out={_out.strip()[:160]!r}")
+check("...and the refusal names the key it compared, and the file's keys",
+      "'x86_64'" in _out and "keys in the committed file" in _out and "aarch64" in _out,
+      "naming only WHAT was lost, and not which key it was compared against, is what sent "
+      "me looking for a bug in the guard")
+
+_rc, _out, _after = _try_record("riscv64", _two_key)
+_keys = {(r.get("arch")) for r in _after}
+check("a run on a DIFFERENT key is not judged against the others",
+      _rc == 0, f"rc={_rc} out={_out.strip()[:160]!r}")
+check("...and it leaves every other key's records alone",
+      {"aarch64", "x86_64"} <= _keys,
+      f"kept arches {sorted(k for k in _keys if k)} -- overwriting would let the last job "
+      f"to finish decide what the scenario had ever proved")
+
 print()
 if failures:
     print(f"matcher: FAIL ({len(failures)})")
