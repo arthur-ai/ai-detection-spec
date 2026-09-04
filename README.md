@@ -200,12 +200,12 @@ what the suite *cannot* prove alongside what it can.
 ## What it cannot see
 
 A discovery tool that hides its blind spots is worse than none, so they are written down and
-counted: **19 blind spots**, from "anything inside a VM" to "what an agent *does*, as opposed
+counted: **20 blind spots**, from "anything inside a VM" to "what an agent *does*, as opposed
 to what it is permitted to do". They are properties of the platform and the osquery tables
 rather than gaps in the test suite — no amount of coverage moves them. They live in one
 place, [`docs/blind-spots.yaml`](docs/blind-spots.yaml), and are rendered into the report.
 
-Six of those are Linux, and one **stopped** being a blind spot: VS Code extensions were
+Seven of those are Linux, and one **stopped** being a blind spot: VS Code extensions were
 invisible to osquery until 5.11.0 and are not any more, so that entry became a version floor
 instead of a missing table. The widest Linux gap is Homebrew — `homebrew_packages` is a
 darwin-only osquery table, and twelve of the sixteen agents carry a `homebrew` identifier that

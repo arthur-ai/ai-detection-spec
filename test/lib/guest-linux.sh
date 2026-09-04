@@ -66,3 +66,41 @@ need_user() {
 
 # Run a command as that user, with a login shell so ~/.local/bin is on PATH.
 as_user() { sudo_maybe su - "$SCENARIO_USER" -c "$*"; }
+
+# EVERY FAILURE CARRIES ITS REASON. `<cmd> || echo "WARN: it failed"` was the pattern here,
+# and it cost a full CI round trip to learn nothing: two scenarios failed on a runner with
+# "WARN: install failed" and the actual error had been redirected to /dev/null, so the log
+# said only that something had gone wrong. That is the same defect as an empty result that
+# looks like a clean machine, applied to the test harness.
+#
+# `try` keeps the quiet output of the passing case -- a scenario that printed every apt line
+# would bury its own assertions -- and prints EVERYTHING on failure, with the exit code.
+# A failure is still not fatal: the scenario carries on so the assertion names the missing
+# agent rather than the setup aborting and naming nothing.
+try() {
+  local label="$1"; shift
+  local out rc
+  out="$("$@" 2>&1)"; rc=$?
+  if [ "$rc" != 0 ]; then
+    echo "WARN: $label failed (exit $rc). Its output follows, because a warning with no"
+    echo "      reason is indistinguishable from one nobody can act on:"
+    printf '%s\n' "$out" | sed 's/^/      /'
+  fi
+  return "$rc"
+}
+
+# The same, for something that has to run as the scenario user.
+try_user() {
+  local label="$1"; shift
+  try "$label" sudo_maybe su - "$SCENARIO_USER" -c "$*"
+}
+
+# What a scenario should print when it could not do its job, so the log says which of the
+# environment or the software was at fault.
+diagnose() {
+  echo "--- diagnostics: id=$(id -un) user=$SCENARIO_USER home=$(getent passwd "$SCENARIO_USER" | cut -d: -f6)"
+  echo "--- PATH=$PATH"
+  for c in "$@"; do
+    printf -- "--- %s: %s\n" "$c" "$(command -v "$c" || echo 'not on PATH')"
+  done
+}

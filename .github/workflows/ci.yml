@@ -337,10 +337,30 @@ jobs:
             || python3 -m pip install --quiet pyyaml
           bin/classify /tmp/inv.json > /tmp/classified.txt
           cat /tmp/classified.txt
-          # A runner has no agents on it, so the assertion is the SHAPE of the answer: an
-          # unread branch must change what "found nothing" means.
-          grep -q "could be read" /tmp/classified.txt \
-            || { echo "::error::a gap was open and the summary did not say so"; exit 1; }
+          # ASSERT THE INVARIANT, NOT A FIXED STRING. The first version of this demanded
+          # the words "could be read", on the assumption that some branch always fails --
+          # true in a container with no Docker and no system bus, and FALSE on this runner,
+          # which has both: every branch reports ok and the honest summary is the plain
+          # "No AI agents found." An assertion that only holds in one environment is worse
+          # than none, because it fails where the code is right.
+          #
+          # What must always hold is that the two AGREE: gaps open means the summary says
+          # the answer is partial, and no gaps means it does not.
+          python3 - <<'EOF'
+          import json, sys
+          inv = json.load(open("/tmp/inv.json"))
+          text = open("/tmp/classified.txt").read()
+          gaps = [r for r in inv if r["kind"] == "scan" and r["extra"] != "ok"]
+          hedged = "could be read" in text
+          if gaps and not hedged:
+              sys.exit(f"::error::{len(gaps)} branch(es) could not be read "
+                       f"({[r['id'] for r in gaps]}) and the summary did not say so")
+          if hedged and not gaps:
+              sys.exit("::error::the summary hedged with no gap open, which understates "
+                       "a complete answer")
+          print(f"consistent: {len(gaps)} gap(s), summary "
+                f"{'hedged' if hedged else 'unhedged'}")
+          EOF
 
       - name: Run every query in the pack
         run: sudo -n python3 tools/check_pack.py
