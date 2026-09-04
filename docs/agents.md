@@ -48,16 +48,9 @@ Each scenario records what it actually matched in its own `observed.json`, and
 `tools/check_workflows.py` fails if a scenario is missing from the matrix, so the two
 cannot drift apart again.
 
-| | identifiers | |
-|---|---:|---|
-| **CI: real install** | 47 | a scenario in the `scenarios.yml` matrix installs the software and asserts the classifier finds it |
-| **CI: fixture** | 1 | matched a captured row by `test_matcher.py`, which runs on **every pull request**. A weaker claim than a real install and a faster cadence — different axes |
-| **local only** | 0 | proved only by a scenario CI does not run. Catches nothing on a pull request |
-| **did not appear** ⚠ | 0 | a CI scenario installed the agent and this identifier never showed up. Usually installed by another route |
-| **no test** | 0 | nothing exercises it at all |
-| _retired alias_ | _2_ | _excluded from the count. Nothing installs these any more, so no scenario can cover one; the fixture row is the only evidence there is, and it proves the alias still resolves_ |
+**47 are proved by a real install** -- a scenario in the `scenarios.yml` matrix installs the software and asserts the classifier finds it. 2 retired alias(es) are excluded, because nothing installs them any more and no scenario can cover one.
 
-> **This number is a floor.** `76-linux-systemd` run in CI and have recorded nothing yet, so identifiers they cover still count as *no test*. Absence of an observation is not absence of a test; the count corrects itself once each scenario has run.
+**The remaining 1 is `paulgauthier/aider`**, whose evidence is a captured row rather than a live install. That is not an oversight in the suite: `containers.sql` is declared `expensive`, so it is deliberately kept out of the composed artifact every scenario asserts against -- no scenario can emit an `image` row at all. What tests it instead is `test/docker_states.sh`, on both platforms on every pull request, serving real images captured from a real daemon through a fake socket and asserting that the real runner and matcher claim the catalogued one and decline the rest -- including a gateway that was removed from this catalog on purpose, so `correctly not an agent` stays distinguishable from `route quietly broken`. A live `docker pull` in CI would upgrade the wording and would not add much: the row it produced is the row already captured.
 
 `tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor
 carrying an `unverified` block, so an unverified signature cannot enter quietly.
