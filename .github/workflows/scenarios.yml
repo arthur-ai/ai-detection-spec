@@ -191,6 +191,7 @@ jobs:
           - 75-linux-browser
           - 76-linux-systemd
           - 78-linux-vscode
+          - 79-linux-image
     steps:
       - uses: actions/checkout@v4
       - name: Install osquery
@@ -229,10 +230,26 @@ jobs:
           else
             echo "runnable=true" >> "$GITHUB_OUTPUT"
           fi
+      # THE ARTIFACT IS CHOSEN BY THE SCENARIO, because one of them asserts on a kind no
+      # composed artifact carries. containers.sql is `expensive` and lives only in
+      # dist/discovery-deep.sql, so a scenario that pulls a container image has nothing to
+      # assert against unless the deep artifact runs -- and the only supported way to run
+      # it is bin/container-scan, behind bin/discover --deep, because that artifact can
+      # block forever and the bound lives in the runner. Declared in expected.json rather
+      # than by scenario name here: a name-matched `if` in a workflow is a list that has to
+      # agree with the tree, which is the drift catalog/routes.yaml exists to end.
+      #
+      # tools/check_workflows.py asserts a `deep: true` scenario is under a job that
+      # honours it. Without that, a misplaced one would run the composed artifact and fail
+      # on the image count -- a real failure, but on a runner instead of at lint.
       - name: Query and assert
         if: steps.provision.outputs.runnable == 'true'
         run: |
-          sudo -n /usr/bin/osqueryi --json < dist/discovery-linux.sql > /tmp/out.json
+          if python3 -c "import json,sys; sys.exit(0 if json.load(open('test/scenarios/${{ matrix.scenario }}/expected.json')).get('deep') else 1)"; then
+            sudo -n bin/discover --deep > /tmp/out.json
+          else
+            sudo -n /usr/bin/osqueryi --json < dist/discovery-linux.sql > /tmp/out.json
+          fi
           test/assert.sh /tmp/out.json test/scenarios/${{ matrix.scenario }}/expected.json
       - name: Record which identifiers this run matched
         if: steps.provision.outputs.runnable == 'true'

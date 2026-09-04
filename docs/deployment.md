@@ -66,10 +66,6 @@ unchanged. Three things differ and are worth knowing before you deploy:
   produces. Read it the way you read the container marker, because "no agent units" and
   "we could not read the unit list" are different answers.
 
-**Homebrew on Linux is invisible**, and it is the widest gap on that platform:
-`homebrew_packages` is a darwin-only osquery table, and twelve of the sixteen agents carry a
-`homebrew` identifier. See [the blind spots](agents.md).
-
 ## The `python3` stub, which bites only on a fleet
 
 On a Mac without Command Line Tools installed, `/usr/bin/python3` is a **stub**. The scheduled

@@ -10,10 +10,9 @@
 -- Linux artifact would make that whole artifact fail on the first table and return
 -- "[\n\n]" with exit 1.
 --
--- A CONSEQUENCE WORTH KNOWING: Homebrew runs on Linux, and osquery cannot see it there.
--- /home/linuxbrew installs are invisible on this route even though every formula name in
--- the catalog would match. Recorded in docs/blind-spots.yaml rather than left to be
--- discovered.
+-- Homebrew does run on Linux and osquery cannot see it there, which is why this route is
+-- darwin-only rather than posix. It is not listed as a blind spot: an agent reachable
+-- through /home/linuxbrew is reachable through its npm, pypi or path route as well.
 --
 -- Emits the six-column contract: kind, id, ver, loc, extra, perms.
 -- Branches within this file are joined with UNION ALL, and the build joins files

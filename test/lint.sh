@@ -130,10 +130,9 @@ for block in re.finditer(r"^  ([a-z_]+):\s*$", reg, re.M):
 #
 # The two differ in both directions, and each direction is a real check:
 #
-#   * `image` is a registry kind that no composed artifact carries. containers.sql is
-#     `expensive`, so it reaches nobody through dist/discovery-<platform>.sql. Demanding
-#     it of a scenario would fail the build on every runner, because no scenario runs
-#     Docker. test/docker_states.sh covers it instead.
+#   * `image` is a registry kind NO COMPOSED ARTIFACT carries. containers.sql is
+#     `expensive`, so it reaches nobody through dist/discovery-<platform>.sql -- which is
+#     why only a `deep: true` scenario may pin it, and why every other scenario must not.
 #   * `scan` is emitted by a QUERY and is not a route kind at all. queries/runtime-linux.sql
 #     emits one on every run, because systemd_units fails soft -- zero rows, exit 0 -- and
 #     the marker is the only thing that separates "no agent units" from "we could not read
@@ -148,6 +147,7 @@ for block in re.finditer(r"^  ([a-z_]+):\s*$", reg, re.M):
 bad_registry = False
 QUERY_DIR = os.path.join(root, "queries")
 EMITTED = {}          # platform -> kinds its fast/slow queries emit
+EMITTED_DEEP = {}     # platform -> kinds only the `expensive` queries emit
 PRODUCERS = {}        # kind -> set of query files emitting it
 for q in sorted(glob.glob(os.path.join(QUERY_DIR, "*.sql"))):
     text = open(q).read()
@@ -157,12 +157,15 @@ for q in sorted(glob.glob(os.path.join(QUERY_DIR, "*.sql"))):
             break
         head.append(line)
     fm = dict(re.findall(r"^--\s*([a-z-]+):\s*(.+?)\s*$", "\n".join(head), re.M))
-    if fm.get("cost") == "expensive":
-        continue
     body = "\n".join(l for l in text.splitlines() if not l.lstrip().startswith("--"))
     kinds = set(re.findall(r"SELECT\s+'(\w+)'", body, re.I))
+    # THE EXPENSIVE QUERIES GO IN THEIR OWN BUCKET rather than being skipped. They used to
+    # be `continue`d, which is why `image` needed a hardcoded exception two checks below:
+    # with no record that containers.sql emits it, a registry kind nothing produced looked
+    # like a route that could never match. Tracked separately, the exception is derived.
+    target = EMITTED_DEEP if fm.get("cost") == "expensive" else EMITTED
     for plat in GROUPS.get(fm["platform"], [fm["platform"]]):
-        EMITTED.setdefault(plat, set()).update(kinds)
+        target.setdefault(plat, set()).update(kinds)
     for k in kinds:
         PRODUCERS.setdefault(k, set()).add(os.path.basename(q))
 
@@ -173,7 +176,7 @@ for r, k in sorted(ROUTE_KIND.items()):
     for plat in ROUTE_PLAT[r]:
         if plat not in EMITTED:            # no queries for that platform at all yet
             continue
-        if k not in EMITTED[plat] and k != "image":
+        if k not in EMITTED[plat] | EMITTED_DEEP.get(plat, set()):
             print(f"FAIL: route {r!r} needs kind {k!r} on {plat}, and no {plat} query "
                   f"emits it -- the route could never match")
             bad_registry = True
@@ -181,10 +184,18 @@ for r, k in sorted(ROUTE_KIND.items()):
 def kinds_for(platform):
     return set(EMITTED.get(platform, set()))
 
+# WHAT A DEEP SCENARIO PINS IS MORE, because it runs more. `deep: true` in expected.json
+# means the scenario asserts against `bin/discover --deep`, which is the composed artifact
+# PLUS dist/discovery-deep.sql -- so `image` becomes a kind it can and must pin. Nothing
+# else may pin it, and that asymmetry is the check: pinning `image` without `deep` fails
+# here rather than failing on a runner with no daemon.
+def deep_kinds_for(platform):
+    return set(EMITTED_DEEP.get(platform, set()))
+
 
 covered, bad = set(), False
 bad = bad or bool(globals().get("bad_registry"))
-seen_platforms = set()
+seen_platforms, deep_platforms = set(), set()
 for f in sorted(glob.glob(os.path.join(here, "scenarios/*/expected.json"))):
     name = os.path.basename(os.path.dirname(f))
     d = json.load(open(f))
@@ -198,6 +209,9 @@ for f in sorted(glob.glob(os.path.join(here, "scenarios/*/expected.json"))):
         continue
     seen_platforms.add(platform)
     want = kinds_for(platform)
+    if d.get("deep"):
+        want |= deep_kinds_for(platform)
+        deep_platforms.add(platform)
     counts = d.get("counts", {})
     missing = want - set(counts)
     if missing:
@@ -224,7 +238,10 @@ for f in sorted(glob.glob(os.path.join(here, "scenarios/*/expected.json"))):
 # state four of these were in before this harness existed. Only kinds belonging to a
 # platform some scenario actually covers are demanded: a Windows kind cannot be exercised
 # by a suite that has no Windows scenario, and failing for that would be noise.
+# `image` is demanded only of a platform that HAS a deep scenario -- the same reason a
+# Windows kind is not demanded of a suite with no Windows scenario.
 demanded = set().union(*(kinds_for(p) for p in seen_platforms)) if seen_platforms else set()
+demanded |= set().union(*(deep_kinds_for(p) for p in deep_platforms)) if deep_platforms else set()
 never = demanded - covered
 if never:
     print(f"FAIL: no scenario exercises {sorted(never)}"); bad = True

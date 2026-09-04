@@ -42,8 +42,8 @@ touches is the local Docker one, and only when you ask for a container scan.
   [the report](docs/agents.md) is generated, so it cannot flatter itself.
 - **🧩 Add an agent without touching the endpoint.** The queries carry no product names, so a new
   signature re-matches evidence you already collected — nothing to redeploy to the fleet.
-- **🗺 Blind spots stated up front.** [Written down and counted](docs/agents.md), because a
-  discovery tool that hides them is worse than none.
+- **🗺 Blind spots stated up front.** [Written down](docs/agents.md), because a discovery tool
+  that hides them is worse than none.
 
 ## What you get
 
@@ -68,23 +68,14 @@ on `ubuntu-24.04`, plus a `fedora:41` container for the rpm family, so both plat
 to the same standard: a signature is verified when a scenario installs the actual software and
 asserts the classifier finds it.
 
-**Coverage is all or nothing, and it is a gate rather than a figure.** Every identifier is
-covered by a CI test that installs the real software, and `tools/agent_status.py --check`
-fails the build if that is ever less than all of them — so there is no partial number to
-interpret. [The report](docs/agents.md) names, per identifier, which scenarios proved it, and
-the Linux ones say so in their names.
+**Coverage is a gate, not a figure.** Every identifier is covered by a CI test that installs
+the real software, and the build fails if that is ever less than all of them — so there is no
+partial number to interpret. [The report](docs/agents.md) names which scenarios proved each
+one.
 
-**Linux needed fewer new signatures than you might expect.** The `npm`, `pypi`, `images` and
-`~/`-rooted path routes were always platform-independent, so nine of the agents are
-found on Linux through identifiers the catalog already had — what was missing was queries that
-look under `/home` and `/root` and a matcher that resolves them. Only Cursor needed genuinely
-new identifiers, and Cline gained one when osquery 5.11.0 made VS Code extensions visible at
-all.
-
-**What is platform-specific, and what is not.** The routes are declared in
-[`catalog/routes.yaml`](catalog/routes.yaml), which is where the matcher, the validator, the
-coverage report and lint all read them from — so this table is the registry rather than a
-description of it:
+**What is platform-specific.** Declared in [`catalog/routes.yaml`](catalog/routes.yaml), which
+the matcher, the validator, the coverage report and lint all read — so this table is the
+registry rather than a description of it:
 
 | | routes | osquery tables |
 |---|---|---|
@@ -94,13 +85,10 @@ description of it:
 
 The composed artifact is per platform for that reason — `dist/discovery-darwin.sql` and
 `dist/discovery-linux.sql` name disjoint sets of tables, so **there is no single file that runs
-on both**, and no unqualified name pretending there is. `bin/discover` picks by `uname -s`.
-Every CI job says which platform it runs on, and the two get the same checks: static lint once
-for both, then runtime, cost bands and the full scenario suite on each.
+on both**. `bin/discover` picks by `uname -s`.
 
 **Windows has no code and no date**, because a date this repo cannot enforce is the kind of
-claim it exists to avoid. `catalog/routes.yaml` can express a Windows route; none is defined,
-and the validator refuses to let an agent claim a platform nothing can find it on.
+claim it exists to avoid.
 
 **Agents — things that act on your behalf.** A protocol SDK is a library an agent is *built
 with*, a gateway is something it *calls through*, a model runner *serves* models, and a
@@ -119,14 +107,9 @@ one.
 | `python3` | **3.7** (`subprocess` `capture_output`) — for `bin/classify`, `bin/discover`'s writer and `tools/` |
 | PyYAML | Only for the tools that read the catalog: `bin/classify` and `tools/validate_catalog.py` |
 
-**Which OS versions has it actually run on?** [`docs/agents.md`](docs/agents.md) answers that
-per scenario, with the platform each run recorded — a generated table, not a claim maintained
-by hand here. Each identifier lists the scenarios that proved it, so which platform an
-identifier has actually been seen on is a fact on the page rather than a figure to divide.
-
 Running the queries needs **osquery alone**. `python3` and PyYAML are for the classifier and
-the scheduled writer, not the endpoint's reporting path — which is a `cat`. `curl` and Docker
-are deliberately absent from that list; [deployment.md](docs/deployment.md) says why.
+the scheduled writer, not the endpoint's reporting path — which is a `cat`. Which OS versions
+each scenario has actually run on is recorded in [`docs/agents.md`](docs/agents.md).
 
 `sudo` is needed because some tables read other users' home directories. Without it you see
 only your own account.
@@ -192,26 +175,23 @@ its own. It reports; you decide.
 
 ### 📋 What it looks for — [`docs/agents.md`](docs/agents.md)
 
-Every agent in the catalog, every identifier each is matched on, and what actually proves it:
-a **real install** in a CI scenario, a **CI fixture**, or nothing yet. The page is generated
-and gated by lint, so it cannot describe a catalog that has moved on without it — and it names
-what the suite *cannot* prove alongside what it can.
+Every agent in the catalog, every identifier each is matched on, and the CI scenario that
+installs the real software and proves it. Generated and gated by lint, so it cannot describe a
+catalog that has moved on without it — and it names what the suite *cannot* prove alongside
+what it can.
 
 **[Open the coverage report →](docs/agents.md)**
 
 ## What it cannot see
 
-A discovery tool that hides its blind spots is worse than none, so they are written down and
-counted: **20 blind spots**, from "anything inside a VM" to "what an agent *does*, as opposed
-to what it is permitted to do". They are properties of the platform and the osquery tables
-rather than gaps in the test suite — no amount of coverage moves them. They live in one
-place, [`docs/blind-spots.yaml`](docs/blind-spots.yaml), and are rendered into the report.
+A discovery tool that hides its blind spots is worse than none, so they live in one place —
+[`docs/blind-spots.yaml`](docs/blind-spots.yaml) — and are rendered into the report. They are
+properties of the platform and the osquery tables rather than gaps in the test suite: no
+amount of coverage moves them.
 
-Seven of those are Linux, and one **stopped** being a blind spot: VS Code extensions were
-invisible to osquery until 5.11.0 and are not any more, so that entry became a version floor
-instead of a missing table. The widest Linux gap is Homebrew — `homebrew_packages` is a
-darwin-only osquery table, and twelve of the sixteen agents carry a `homebrew` identifier that
-a `/home/linuxbrew` install would match if anything could see it.
+The ones most likely to matter to you: anything inside a VM or a container, snap and Flatpak
+packages (osquery has no table for either), AppImage installs, and what an agent *does* as
+opposed to what it is permitted to do.
 
 **[Read them in context →](docs/agents.md#what-osquery-cannot-see)**
 
@@ -228,8 +208,7 @@ $ sudo bin/container-scan --pretty            # containers alone
 
 Opt-in because `docker_images` cannot be bounded from inside osquery: against a daemon that
 accepts the connection and never answers, the query never returns, so the bound has to be a
-kill on a separate process. Every outcome carries a reason rather than an empty result, and
-an image name is weaker evidence than a bundle id because whoever tagged it chose it.
+kill on a separate process. Every outcome carries a reason rather than an empty result.
 
 **[How the bound works, the exit codes, and how image names resolve →](docs/containers.md)**
 
