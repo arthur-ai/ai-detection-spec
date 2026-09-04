@@ -9,10 +9,10 @@
 Every AI agent this repo finds, every identifier it is matched on,
 and the CI test behind each one.
 
-![agents](https://img.shields.io/badge/agents-16-1D4E89)
-![identifiers](https://img.shields.io/badge/identifiers-49-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-47%2F47-2E7D57)
-![real install](https://img.shields.io/badge/by_real_install-46-2E7D57)
+![agents](https://img.shields.io/badge/agents-17-1D4E89)
+![identifiers](https://img.shields.io/badge/identifiers-50-1D4E89)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-48%2F48-2E7D57)
+![real install](https://img.shields.io/badge/by_real_install-47-2E7D57)
 
 </div>
 
@@ -27,12 +27,12 @@ A route's platform is where an identifier can be observed. This table counts whe
 
 | platform | covered | coverable | CI runs it |
 |---|---|---|---|
-| `darwin` | 41 | 44 | yes |
-| `linux` | 17 | 24 | yes |
+| `darwin` | 41 | 45 | yes |
+| `linux` | 18 | 25 | yes |
 
 **A real install is the standard, and every entry meets it.** A CI scenario installs the real software and asserts the classifier finds it. Anything less would be an exception recorded in the catalog with a reason, an evidence grade and a date; there are none open.
 
-16 agents carrying 49 identifiers.
+17 agents carrying 50 identifiers.
 
 ## 🧪 Why a real install is the bar
 
@@ -42,7 +42,7 @@ Mac. `aider` installs as `aider-chat` under `uv` and `pipx` while its state dire
 and neither survived contact with an actual install. Nothing short of installing the
 software catches that class of error.
 
-## 📊 47/47 identifiers are covered by a CI test
+## 📊 48/48 identifiers are covered by a CI test
 
 **Measured per identifier, and only counting tests CI actually runs.** Two things make
 that different from "has anyone tested this". An entry passes when a scenario finds it,
@@ -57,7 +57,7 @@ cannot drift apart again.
 
 | | identifiers | |
 |---|---:|---|
-| **CI: real install** | 46 | a scenario in the `scenarios.yml` matrix installs the software and asserts the classifier finds it |
+| **CI: real install** | 47 | a scenario in the `scenarios.yml` matrix installs the software and asserts the classifier finds it |
 | **CI: fixture** | 1 | matched a captured row by `test_matcher.py`, which runs on **every pull request**. A weaker claim than a real install and a faster cadence — different axes |
 | **local only** | 0 | proved only by a scenario CI does not run. Catches nothing on a pull request |
 | **did not appear** ⚠ | 0 | a CI scenario installed the agent and this identifier never showed up. Usually installed by another route |
@@ -69,7 +69,7 @@ cannot drift apart again.
 `tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor
 carrying an `unverified` block, so an unverified signature cannot enter quietly.
 
-# Agents (16)
+# Agents (17)
 
 Software that acts on the user's behalf. This is what the catalog is for.
 
@@ -81,6 +81,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | **Claude Code** | real install | **`@anthropic-ai/claude-code`**, **`~/.claude`**, **`~/.local/bin/claude`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 90-demo-fleet |
 | **Cline** | real install | **`cline`**, **`saoudrizwan.claude-dev`** | 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode |
 | **Codex CLI** | real install | **`codex`**, **`@openai/codex`**, **`~/.codex`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 90-demo-fleet |
+| **Continue** | real install | **`continue.continue`** | 78-linux-vscode |
 | **GitHub Copilot CLI** | real install | **`copilot-cli`**, **`@github/copilot`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents |
 | **Cursor** | real install | **`com.todesktop.230313mzl4w4u92`**, **`cursor`**, **`cursor`**, **`cursor`**, **`cursor.desktop`** | 10-desktop-apps, 73-linux-deb, 77-linux-rpm, 90-demo-fleet |
 | **Gemini CLI** | real install | **`gemini-cli`**, **`@google/gemini-cli`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents |
@@ -166,6 +167,8 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 76-linux-systemd | systemd user units (systemctl --user) are not visible to the table at all, and a per-user agent gateway is exactly the thing that would be one. |
 | 77-linux-rpm | Runs in a fedora container on an ubuntu runner, because GitHub offers no RPM-distro runner. A container has no systemd, so `unit` is 0 here and the systemd marker reports absent -- correctly. |
 | 78-linux-vscode | min-osquery for this branch is 5.11.0, above the 5.10.0 the rest of the repo declares. On a 5.10.x endpoint the query returns [] and exits 1, which is why it is its own pack entry and its own composed branch. |
+| 78-linux-vscode | Neither agent's state directory is exercised. ~/.continue does not exist after `code --install-extension` -- verified on a real install -- because it appears on first activation in the editor, and nothing here opens a GUI session. So this proves the extension route and says nothing about the path routes for either. |
+| 78-linux-vscode | vscode_edition is reported but not asserted beyond the forbid: this installs into VS Code only, so the cursor, windsurf, vscodium and trae editions the column can report are unexercised. |
 
 `11-perplexity-desktop`, `50-autonomous` need macOS 15 or newer, so CI skips them on older runners rather than failing them. Each scenario's `requires.json` carries the reason.
 

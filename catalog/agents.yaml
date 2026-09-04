@@ -389,6 +389,55 @@ agents:
     # "Cline". routes.yaml records why that matters.
     vscode_extensions: [saoudrizwan.claude-dev]
 
+  # THE ARGUMENT FOR THIS ENTRY IS THAT IT ACTS, and the artifact says so itself. Read off
+  # the installed extension's own package.json, not off the vendor's page:
+  #
+  #   displayName  Continue - open-source AI code agent
+  #   description  The leading open-source AI code agent
+  #
+  # A vendor calling its own product an agent is not sufficient on its own -- `litellm` is
+  # marketed as AI infrastructure and is a gateway -- so the test is what it DOES. Of the 38
+  # commands it contributes, these decide it:
+  #
+  #   continue.applyCodeFromChat        Apply code from chat
+  #   continue.acceptDiff               Accept Diff
+  #   continue.acceptVerticalDiffBlock  Accept Vertical Diff Block
+  #   continue.focusEdit                Add to Edit
+  #
+  # It writes to your files. That is acting on the user's behalf, which is the whole test.
+  #
+  # AND IT IS THE SAME SHAPE AS cline ABOVE, which has been catalogued as a Coding agent
+  # since before this route existed: both are bring-your-own-model VS Code extensions that
+  # edit code, with the same categories and the same contribution surface. Including one and
+  # not the other would have been a distinction nothing in the tree could justify.
+  #
+  # BYO-model is why it is not a model runner. ollama, lm-studio, jan and llama-cpp were all
+  # removed for SERVING models; this drives whichever one you point it at.
+  #
+  # ~/.continue IS DELIBERATELY ABSENT. It is the obvious second route and it would be a
+  # guess: verified on a real install that `code --install-extension continue.continue`
+  # leaves no such directory -- the home directory afterwards holds .cache, .config, .dotnet
+  # and .vscode and nothing else. It appears on first activation in the editor, which needs a
+  # GUI session that CI has not got. Same shape as the note on ~/.hermes above: when the
+  # directory appears depends on the route, and this repo does not ship the version it has
+  # not seen.
+  #
+  # No JetBrains and no npm route for the same reason. Continue ships a JetBrains plugin and
+  # osquery grew a `jetbrains_plugins` table after 5.12.1, but neither the table nor the
+  # plugin id has been read off anything here.
+  - id: continue
+    name: Continue
+    classification: Coding agent
+    platforms: [darwin, linux]
+    # Read off a real install on 2026-09-04: v2.0.0 at
+    # ~/.vscode/extensions/continue.continue-2.0.0-linux-arm64, osquery 5.23.1.
+    #
+    # The value is the row's `name`, which already carries publisher and extension. NOT
+    # built from `publisher_id`: that column is a GUID -- 8701b9ff-bc1c-483c-b95d-ac0ba7d51a0b
+    # here -- and `publisher` is the display name "Continue". catalog/routes.yaml records why
+    # that distinction cost a wrong identifier once already.
+    vscode_extensions: [continue.continue]
+
   # Nous Research's terminal agent. Filed as a Personal agent rather than a Coding agent on
   # the strength of what it ships: ONE GATEWAY PROCESS fronting Telegram, Discord, Slack,
   # WhatsApp and Signal, plus cross-session memory. The Coding-agent reading is defensible --

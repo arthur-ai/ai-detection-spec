@@ -9,7 +9,7 @@ Which coding agents, chat clients, AI browsers and browser extensions are instal
 
 [![CI](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/ci.yml/badge.svg)](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/ci.yml)
 [![Scenarios](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/scenarios.yml/badge.svg)](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/scenarios.yml)
-[![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-47%2F47-2E7D57)](docs/agents.md)
+[![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-48%2F48-2E7D57)](docs/agents.md)
 [![osquery](https://img.shields.io/badge/osquery-5.23.1-1D4E89)](https://osquery.io)
 [![macOS](https://img.shields.io/badge/macOS-shipping-2E7D57)](#requirements)
 [![Linux](https://img.shields.io/badge/Linux-shipping-2E7D57)](#requirements)
@@ -50,7 +50,7 @@ touches is the local Docker one, and only when you ask for a container scan.
 | | | |
 |---|---|---|
 | 🗂 | **`dist/discovery-darwin.sql`**<br>**`dist/discovery-linux.sql`** | One SQL file to run on the endpoint, per platform — the tables are disjoint, so there is no single file that runs on both, and no unqualified name pretending otherwise. **No agent name appears in anything they match on** — the queries look for shapes (an app bundle, a deb, an npm global, a state dotdir), never for "Cursor" or "OpenClaw" — so you never edit them when a new agent appears. About **760 rows** on a developer Mac, 17.9 KB gzipped |
-| 🧭 | **`catalog/agents.yaml`** | The 16 agents and 49 identifiers those rows are matched **against**, off the machine. Add a signature here and it re-matches evidence you already collected — no going back to the fleet |
+| 🧭 | **`catalog/agents.yaml`** | The 17 agents and 50 identifiers those rows are matched **against**, off the machine. Add a signature here and it re-matches evidence you already collected — no going back to the fleet |
 | 🧱 | **`catalog/routes.yaml`** | The route registry: every way an identifier can arrive, which platform it exists on and how it is matched. The matcher, the validator, the coverage report and lint all derive from this one file |
 | 🔎 | **`bin/classify`** | Does that matching, wherever you keep the output |
 | 🐳 | **`bin/container-scan`** | The container half, run separately and on a hard time bound, because a wedged Docker daemon blocks forever |
@@ -73,7 +73,7 @@ platform rather than averaging it into one number. Read it before assuming an id
 where you need it.
 
 **Linux needed fewer new signatures than you might expect.** The `npm`, `pypi`, `images` and
-`~/`-rooted path routes were always platform-independent, so nine of the sixteen agents are
+`~/`-rooted path routes were always platform-independent, so nine of the agents are
 found on Linux through identifiers the catalog already had — what was missing was queries that
 look under `/home` and `/root` and a matcher that resolves them. Only Cursor needed genuinely
 new identifiers, and Cline gained one when osquery 5.11.0 made VS Code extensions visible at
