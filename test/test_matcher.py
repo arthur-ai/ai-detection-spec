@@ -448,17 +448,27 @@ _vsc = [{"kind": "vscodeext", "id": n, "ver": "4.1.17",
                   "6f42e67d-d7ea-4a53-8704-2ae8bf2d86f3.saoudrizwan.claude-dev")]
 _rv = classify_json(_vsc)
 check("a VS Code extension resolves on publisher.name",
-      {f["id"] for f in _rv["findings"]} == {"cline"})
+      "cline" in {f["id"] for f in _rv["findings"]})
 check("a GUID-prefixed id is NOT claimed",
       "6f42e67d-d7ea-4a53-8704-2ae8bf2d86f3.saoudrizwan.claude-dev"
       in unmatched_ids(_rv),
       "publisher_id is a GUID, so the obvious expression produces this -- it must not "
       "match, or a wrong query would look correct")
-check("an uncatalogued agent extension stays unmatched",
-      "continue.continue" in unmatched_ids(_rv)
-      and not any(f["id"] == "continue" for f in _rv["findings"]),
-      "Continue is deliberately not in the catalog: it must under-report, visibly, "
-      "rather than be claimed by Cline's signature")
+# BOTH AGENTS ON THIS ROUTE, AND SEPARATELY. Continue used to be installed by
+# 78-linux-vscode and deliberately left out of the catalog, with this assertion checking it
+# stayed unmatched. It is catalogued now -- its own manifest calls it an agent and it
+# contributes applyCodeFromChat, acceptDiff and focusEdit, so it writes to your files --
+# and the assertion inverts. What matters is that the two resolve to DIFFERENT agents:
+# they are the same shape, so a matcher that collapsed them would look like it worked.
+check("a second agent on the same route resolves separately",
+      {f["id"] for f in _rv["findings"]} == {"cline", "continue"},
+      f"got {sorted(f['id'] for f in _rv['findings'])}")
+check("...and neither claims the other's identifier",
+      all({e["id"] for e in f["evidence"]} ==
+          {"saoudrizwan.claude-dev" if f["id"] == "cline" else "continue.continue"}
+          for f in _rv["findings"]),
+      "two extensions of the same shape on one route is exactly where a prefix or "
+      "substring match would silently merge two findings into one")
 
 
 # --- version skew: warn and match, never refuse ------------------------------------
