@@ -1,5 +1,6 @@
 {
   "description": "Inert OpenClaw gateway LaunchAgent and a live listener on the gateway port.",
+  "platform": "darwin",
   "demo_beat": "step 4 support - the unattended daemon and its listener",
   "counts": {
     "daemon": ">=1",
@@ -9,7 +10,8 @@
     "file": ">=1",
     "npm": ">=0",
     "ext": ">=0",
-    "nmh": ">=0"
+    "nmh": ">=0",
+    "vscodeext": ">=0"
   },
   "classified": {
     "must_find": [

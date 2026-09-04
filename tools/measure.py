@@ -23,6 +23,7 @@ import argparse
 import json
 import pathlib
 import re
+import platform as _platform
 import subprocess
 import sys
 import time
@@ -48,8 +49,11 @@ TIMEOUT = 60
 # bin/container-scan's default CONTAINER_SCAN_TIMEOUT. Kept in step by hand; the two live
 # in different languages and there is no shared config file to put it in.
 DEEP_BOUND = 6.0
+# The macOS pair first so a Mac's answer does not change, then Linux, where both the deb
+# and the rpm install to /usr/bin. Kept in step with bin/container-scan's osqueryi_path.
 OSQI_CANDIDATES = ["/usr/local/bin/osqueryi",
-                   "/opt/osquery/lib/osquery.app/Contents/MacOS/osqueryi", "osqueryi"]
+                   "/opt/osquery/lib/osquery.app/Contents/MacOS/osqueryi",
+                   "/usr/bin/osqueryi", "osqueryi"]
 
 
 def osqueryi():
@@ -105,8 +109,30 @@ def main():
     binary = osqueryi()
     results, failures = [], []
 
+    # ONLY THIS PLATFORM'S QUERIES, and this is a correctness fix rather than a
+    # nicety. Measuring a Linux query on macOS reported `packages-linux.sql  fast  0.24s
+    # 0 rows` -- which is not a measurement at all: `deb_packages` does not exist here, so
+    # osqueryi errored, returned nothing and did it quickly. That is exactly the failure
+    # this file's own header warns about: "the failing query then returns instantly, which
+    # reads as a SPEEDUP if you happen to be timing it." A band held by a query that never
+    # ran is a band nobody is holding.
+    plat = {"Darwin": "darwin", "Linux": "linux"}.get(_platform.system())
+    if plat is None:
+        sys.exit(f"measure: unsupported platform {_platform.system()}")
+    skipped = []
+
     for path in sorted((ROOT / "queries").glob("*.sql")):
         text = path.read_text()
+        head = []
+        for line in text.splitlines():
+            if line.strip() and not line.lstrip().startswith("--"):
+                break
+            head.append(line)
+        declared = (re.search(r"^--\s*platform:\s*(\S+)", "\n".join(head), re.M)
+                    or [None, ""])[1]
+        if declared not in (plat, "posix", "all"):
+            skipped.append(f"{path.name}({declared})")
+            continue
         band = (re.search(r"^--\s*cost:\s*(\w+)", text, re.M) or [None, "fast"])[1]
         seconds, rows = measure(binary, body(text))
         budget = BANDS[band]
@@ -119,12 +145,15 @@ def main():
             failures.append(f"{path.name}: {seconds:.2f}s exceeds the '{band}' band "
                             f"({budget}s) even allowing {TOLERANCE}x for runner variance")
 
-    total, total_rows = measure(binary, body((ROOT / "dist" / "discovery.sql").read_text()))
-    results.append({"query": "dist/discovery.sql", "band": "composed",
+    # THE ARTIFACT FOR THIS PLATFORM, for the same reason as the loop above.
+    composed = ROOT / "dist" / f"discovery-{plat}.sql"
+    total, total_rows = measure(binary, body(composed.read_text()))
+    results.append({"query": f"dist/{composed.name}", "band": "composed",
                     "seconds": round(total, 2), "rows": total_rows,
                     "over_budget": total > 10.0})
     if total > 10.0:
-        failures.append(f"dist/discovery.sql: {total:.2f}s exceeds the self-imposed 10s budget")
+        failures.append(f"dist/{composed.name}: {total:.2f}s exceeds the self-imposed "
+                        f"10s budget")
 
     # The deep artifact, measured against the bound bin/container-scan gives it rather than
     # against the composed budget. It is a separate process with its own bound,
@@ -142,6 +171,12 @@ def main():
                             f"wall clock bin/container-scan allows it, with no daemon to "
                             f"answer -- so it would time out on every Mac")
 
+    # STDERR, NOT STDOUT. `--json` output is piped into tools/check_output.py, so
+    # anything else on stdout corrupts it -- this line went to stdout first and broke the
+    # macOS performance job with "Expecting value: line 1 column 3", which reads like a
+    # query returning nothing rather than like a note printed in front of the JSON.
+    if skipped:
+        print(f"  skipped (other platform): {', '.join(skipped)}", file=sys.stderr)
     if args.json:
         print(json.dumps(results, indent=2))
     else:

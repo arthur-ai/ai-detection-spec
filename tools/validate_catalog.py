@@ -15,10 +15,16 @@ import sys
 import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-ROUTES = {"bundle_ids", "homebrew", "npm", "pypi", "binaries",
-          "state_dirs", "launchd_prefixes", "ports", "model_stores",
-          "native_messaging_hosts", "images", "extension_ids"}
-REQUIRED = {"id", "name", "classification"}
+
+# THE ROUTE VOCABULARY IS NOT WRITTEN HERE ANY MORE. It is catalog/routes.yaml, which is
+# also what bin/classify, tools/agent_status.py and test/lint.sh read -- this list used
+# to be one of five copies that had to agree, and `ext` was missing from another of them
+# from the beginning.
+def load_routes():
+    return yaml.safe_load((ROOT / "catalog" / "routes.yaml").read_text())
+
+
+REQUIRED = {"id", "name", "classification", "platforms"}
 OPTIONAL = {"unverified", "retired"}
 
 # A REAL INSTALL IS THE STANDARD. An agent is verified when a VM scenario installs the
@@ -46,9 +52,73 @@ UNVERIFIED_REQUIRED = {"reason", "evidence", "raised"}
 UNVERIFIED_OPTIONAL = {"blocker", "belongs_in"}
 
 
+def validate_registry(reg):
+    """The registry validates itself, because everything else now trusts it.
+
+    A route with no `kind` is the failure worth naming: bin/classify inverts kind ->
+    routes, so a missing kind means rows of that kind are DROPPED rather than unmatched,
+    which is the `ext` bug reproduced from a typo.
+    """
+    errors = []
+    platforms = set(reg.get("platforms") or ())
+    groups = reg.get("platform_groups") or {}
+    if not platforms:
+        errors.append("routes.yaml: platforms must list the platform vocabulary")
+    for name, members in groups.items():
+        unknown = set(members) - platforms
+        if unknown:
+            errors.append(f"routes.yaml: platform_groups {name!r} names {sorted(unknown)}, "
+                          f"which are not platforms")
+    legal_platform = platforms | set(groups)
+    modes = {"exact", "prefix", "exact-normalised", "home-dir", "home-prefix", "tool-dir"}
+    required = {"platform", "kind", "match", "table", "min_osquery"}
+    optional = {"value_pattern", "retired"}
+    for name, r in (reg.get("routes") or {}).items():
+        if not isinstance(r, dict):
+            errors.append(f"routes.yaml: {name} must be a mapping")
+            continue
+        missing = required - set(r)
+        if missing:
+            errors.append(f"routes.yaml: {name} is missing {sorted(missing)}")
+        unknown = set(r) - required - optional
+        if unknown:
+            errors.append(f"routes.yaml: {name} has unknown field(s) {sorted(unknown)}. "
+                          f"This file carries no field that nothing reads -- see its header")
+        if r.get("platform") not in legal_platform:
+            errors.append(f"routes.yaml: {name} declares platform {r.get('platform')!r}; "
+                          f"expected one of {sorted(legal_platform)}")
+        if r.get("match") not in modes:
+            errors.append(f"routes.yaml: {name} declares match {r.get('match')!r}; "
+                          f"expected one of {sorted(modes)}")
+        if not r.get("kind"):
+            errors.append(f"routes.yaml: {name} declares no kind. bin/classify inverts "
+                          f"kind -> routes, so rows of an unregistered kind are DROPPED, "
+                          f"not unmatched -- invisible even under --show-unmatched.")
+        pattern = r.get("value_pattern")
+        if pattern is not None:
+            try:
+                re.compile(pattern)
+            except re.error as exc:
+                errors.append(f"routes.yaml: {name} value_pattern does not compile: {exc}")
+    return errors
+
+
 def main():
     doc = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
+    reg = load_routes()
+    ROUTES = set(reg["routes"])
+    PLATFORMS = set(reg["platforms"])
+    GROUPS = reg.get("platform_groups", {})
+    # A route's declared platform to the concrete platforms it covers: `posix` is both.
+    route_platforms = {n: set(GROUPS.get(r["platform"], [r["platform"]]))
+                       for n, r in reg["routes"].items()}
+    # Routes whose value is a `~/`-rooted path, derived rather than the hand-written
+    # ("state_dirs", "binaries", "model_stores") tuple this file used to carry -- the
+    # same tuple that also sat in bin/classify and tools/agent_status.py.
+    PATH_ROUTES = [n for n, r in reg["routes"].items() if r["match"].startswith("home-")]
     known = set(doc["classifications"])
+
+    errors_registry = validate_registry(reg)
 
     # not_agents names classifications, so a typo here would silently count an agent as a
     # supporting tool or the reverse -- a wrong headline number with nothing to notice it.
@@ -57,6 +127,7 @@ def main():
     if unknown_na:
         errors.append(f"not_agents names {sorted(unknown_na)}, which are not "
                       f"classifications")
+    errors.extend(errors_registry)
     seen_ids, seen_route_values = set(), {}
 
     for agent in doc["agents"]:
@@ -80,8 +151,12 @@ def main():
             errors.append(f"{aid}: no detection route, so it can never match anything")
 
         # The same identifier claimed by two agents means one of them is wrong, and
-        # both will fire. Ports are excluded: 8080 is legitimately shared.
-        for route in routes - {"ports"}:
+        # both will fire. RETIRED routes are excluded, and `ports` is the only one:
+        # 8080 is legitimately shared, and a value two agents may both hold is not an
+        # identifier -- that exemption was the admission the route had to go. Derived
+        # from routes.yaml's `retired` flag now, so the exemption cannot outlive it.
+        retired_routes = {n for n, r in reg["routes"].items() if r.get("retired")}
+        for route in routes - retired_routes:
             for value in agent[route]:
                 key = (route, str(value))
                 if key in seen_route_values:
@@ -112,22 +187,63 @@ def main():
                 errors.append(f"{aid}: retired {value!r} is not one of its identifiers. "
                               f"Mark a value that exists, or remove it.")
 
-        # A Chrome extension id is 32 characters drawn from a-p -- it is a base16 encoding of
-        # the first half of a SHA-256 over the developer's public key, remapped onto letters.
-        # So a hex-looking id, an id with a digit, or one of the wrong length was transcribed
-        # rather than read off an install, and would silently match nothing.
-        for value in agent.get("extension_ids", []):
-            if not re.fullmatch(r"[a-p]{32}", str(value)):
-                errors.append(f"{aid}: extension_ids {value!r} is not a Chrome extension id "
-                              f"(32 characters, a-p only). Read it from chrome_extensions on a "
-                              f"real install rather than from a Web Store URL.")
+        # PER-ROUTE VALUE SHAPES COME FROM THE REGISTRY, not from a branch per route
+        # here. The Chrome extension-id rule (32 characters from a-p: a base16 encoding
+        # of the first half of a SHA-256 over the developer's public key, remapped onto
+        # letters) used to be one such branch, so a hex-looking id or one of the wrong
+        # length was caught only because someone had written that branch. A new route
+        # now arrives carrying its own `value_pattern` instead of needing one.
+        for route in ROUTES & set(agent):
+            pattern = reg["routes"][route].get("value_pattern")
+            if not pattern:
+                continue
+            for value in agent[route]:
+                if not re.fullmatch(pattern, str(value)):
+                    errors.append(
+                        f"{aid}: {route} {value!r} does not match the shape "
+                        f"{pattern} that routes.yaml declares for this route. Read the "
+                        f"identifier off a real install rather than transcribing it.")
 
         # Paths are written with ~ so nothing user-specific is implied, and so the
-        # matcher expands them consistently.
-        for route in ("state_dirs", "binaries", "model_stores"):
+        # matcher expands them consistently. THIS IS A CORRECTNESS DEPENDENCY, not a
+        # style rule: bin/classify's home_pattern() strips exactly two leading
+        # characters, so a value without the prefix silently loses two of its own.
+        for route in PATH_ROUTES:
             for value in agent.get(route, []):
-                if not value.startswith("~/"):
+                if not str(value).startswith("~/"):
                     errors.append(f"{aid}: {route} {value!r} should start with '~/'")
+
+        # --- platforms -------------------------------------------------------------
+        #
+        # REQUIRED, not optional. On a multi-OS catalog an absent list is ambiguous
+        # between "macOS only" and "nobody said", and those are different claims.
+        declared = agent.get("platforms") or []
+        if not isinstance(declared, list) or not declared:
+            errors.append(f"{aid}: platforms must be a non-empty list, e.g. [darwin]")
+        else:
+            unknown_p = set(map(str, declared)) - PLATFORMS
+            if unknown_p:
+                errors.append(f"{aid}: platforms names {sorted(unknown_p)}, which are not "
+                              f"in routes.yaml's vocabulary {sorted(PLATFORMS)}")
+            # A route this agent declares must be able to fire on a platform it claims.
+            # `deb_packages` without `linux` is a copy-paste, and it reads as coverage.
+            for route in sorted(ROUTES & set(agent)):
+                if not route_platforms[route] & set(map(str, declared)):
+                    errors.append(
+                        f"{aid}: declares {route}, which only exists on "
+                        f"{sorted(route_platforms[route])}, but platforms says "
+                        f"{sorted(declared)}")
+            # ...and the converse: a platform with no route that can match there is a
+            # claim nothing can support. That is a DETECTION GAP, and this repo already
+            # has a place for those -- docs/blind-spots.yaml, which renders onto the
+            # generated page. Record it there rather than exempting it here.
+            for plat in sorted(set(map(str, declared)) & PLATFORMS):
+                if not any(plat in route_platforms[r] for r in ROUTES & set(agent)):
+                    errors.append(
+                        f"{aid}: claims platform {plat!r} but declares no route that can "
+                        f"match there, so nothing can ever find it on {plat}. Either add "
+                        f"a route or drop the platform and record the gap in "
+                        f"docs/blind-spots.yaml.")
 
         if not re.fullmatch(r"[a-z0-9-]+", str(aid)):
             errors.append(f"{aid}: id should be lowercase kebab-case")

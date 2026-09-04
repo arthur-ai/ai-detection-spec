@@ -3,14 +3,14 @@
 Best of three runs. The floor is the honest number: anything above it is scheduler noise,
 and what we are looking for is a query that *blocks*, not a microbenchmark.
 
-Bands: `fast` under 1s, `slow` 1 to 5s, `expensive` excluded from `dist/discovery.sql` and
+Bands: `fast` under 1s, `slow` 1 to 5s, `expensive` excluded from the composed artifacts and
 composed into `dist/discovery-deep.sql` instead. `tools/measure.py --check` enforces them on
 every pull request.
 
 `expensive` covers two different facts. `python_packages` at 15.6s is **slow** — a number.
 `docker_images` against a wedged daemon is **unbounded** — not a number, which is what
 `measure.py`'s `float("inf")` ceiling admits. A slow query can be scheduled; an unbounded one
-needs a process around it that can be killed. Neither belongs in `dist/discovery.sql`.
+needs a process around it that can be killed. Neither belongs in a composed artifact.
 
 The gate fires at **2x the declared band**, not at the band itself. A band is a declaration
 a reader can trust; the gate catches a query that *blocks*, which is an order-of-magnitude
@@ -19,7 +19,7 @@ event. Enforced at the same number, the boundary case flaps: `apps.sql` measured
 teaches people to re-run it, and then a real stall gets re-run too. 2x absorbs runner
 variance and is still five times below the 10.2s stall this exists to catch.
 
-The composed `dist/discovery.sql` is gated at 10s, and **that number is self-imposed.**
+The composed artifact is gated at 10s, and **that number is self-imposed.**
 
 An earlier version of this file called it a platform limit. It is not: no macOS management
 tool we checked documents a per-script timeout, and the evidence runs the other way — scripts
@@ -29,6 +29,64 @@ unbounded collection script does not fail fast; it hangs that machine's inventor
 So the gate stays as a convention: 10s keeps collection brisk, and the real requirement is
 that nothing on a synchronous reporting path can block forever. The better answer is not to
 run a blocking query on that path at all — see the scheduled writer below.
+
+## Linux baseline
+
+GitHub-hosted `ubuntu-24.04`, image **Ubuntu 24.04.4 LTS x86_64**, osquery 5.23.1. A runner
+carries **1212 deb packages, 438 systemd units and 12 desktop entries**, which makes it a
+usefully loaded machine for everything except the agent routes — it has no agents on it, so
+every row count below is the empty case for those.
+
+| query | band | seconds | rows |
+|---|---|---|---|
+| `browser.sql` | fast | 0.05 | 0 |
+| `desktop-linux.sql` | fast | 0.22 | 13 |
+| `filesystem-linux.sql` | fast | 0.22 | 10 |
+| `native-messaging-linux.sql` | fast | 0.22 | 0 |
+| `packages-linux.sql` | fast | 0.26 | 1211 |
+| `packages.sql` | fast | 0.26 | 13 |
+| `ports.sql` | fast | 0.24 | 0 |
+| `runtime-linux.sql` | fast | **1.03** | **478** |
+| `vscode.sql` | fast | 0.23 | 0 |
+| `containers.sql` | expensive | 0.22 | 0 |
+| `dist/discovery-linux.sql` | composed | 1.12 | 1726 |
+| `dist/discovery-deep.sql` | deep | 0.22 | 0 |
+
+### `runtime-linux.sql` is the one to read carefully
+
+This section previously said no Linux numbers existed and that this branch's band was "an
+expectation, not a measurement". It is measured now, and the expectation was optimistic in two
+different ways.
+
+**It is over its declared band.** 1.03s against a `fast` ceiling of 1s — reported as *over
+declared band, within tolerance*, so the 2x gate passes it. **The band is not being changed on
+one sample**, and that is the same judgement `apps.sql` already earned: it measured 0.81s and
+1.14s on consecutive runs of the same commit on the same runner, which is why the gate fires at
+2x and not at the band. 1.03s is inside that noise. A second and third run either settle it
+below 1s or make the case for `slow` on evidence rather than on one reading.
+
+**478 rows is 28% of the whole Linux payload**, and the `systemd_prefixes` route carries **no
+catalog values at all** — so every one of those rows is evidence that can never match anything
+today. That is not automatically wrong: the macOS `daemon` branch keeps all 47 third-party
+launchd jobs on the same argument, that an unrecognised job running unattended is the point. But
+the ratio is very different. macOS drops 937 launchd jobs to 47 with `com.apple.%`; Linux has no
+equivalent, because the distro's units are named `sshd.service` and `cron.service` with nothing
+in the NAME to key on.
+
+`fragment_path` is the only structural discriminator — `/etc/systemd/system` for locally
+installed units against `/usr/lib/systemd/system` for packaged ones — and it is still the wrong
+filter for the reason recorded in the query: a vendor's own `.deb` writes to `/usr/lib` too, so
+it would drop exactly the packaged agent the branch exists to find. **The decision is therefore
+deferred rather than taken**, and now it is deferred with a number attached instead of without
+one. It becomes urgent if either half of the ratio moves: a fleet payload nearing the framing
+budget, or a real agent unit landing in the catalog and making the branch earn its rows.
+
+**The 30KB payload budget is a macOS convention carried over, not a Linux limit.** It comes from
+a Jamf Extension Attribute value cap, and Jamf does not document that either — it is self-imposed
+on both platforms. Linux has no equivalent channel at all. `test/run-linux.sh` and the Linux CI
+job keep the same budget anyway, because a payload small enough to move is worth having
+regardless, but nothing about Linux requires it and no one should restate it as though something
+did.
 
 ## CI baseline
 
@@ -43,7 +101,7 @@ reissue shifts these numbers visibly instead of silently.
 | `filesystem.sql` | fast | 0.25 | 0 |
 | `packages.sql` | fast | 0.24 | 0 |
 | `runtime.sql` | fast | 0.47 | 0 |
-| `dist/discovery.sql` | composed | 1.20 | 0 |
+| `dist/discovery-darwin.sql` | composed | 1.20 | 0 |
 
 **Every row count is zero, and that is a limitation of this baseline, not a result.** The
 runner has no AI agents installed and no browser profiles, so these numbers measure the
@@ -61,7 +119,7 @@ several browser profiles, 76 matching rows.
 | `filesystem.sql` | fast | 0.24 | 4 |
 | `packages.sql` | fast | 0.29 | 1 |
 | `runtime.sql` | fast | 0.38 | 0 |
-| `dist/discovery.sql` | composed | 1.07 | 76 |
+| `dist/discovery-darwin.sql` | composed | 1.07 | 76 |
 
 ## Deliberately not collected
 
@@ -294,7 +352,7 @@ is set by how loaded the Mac is.
 
 **Catalog growth is free.** The query holds no identifiers, so adding agents costs zero
 bytes. Verified rather than assumed: growing `catalog/agents.yaml` from 21 agents to 221 <!--fixed-number-->
-left `dist/discovery.sql` byte-identical and the framed payload unchanged at 17868 bytes.
+left the composed artifact byte-identical and the framed payload unchanged at 17868 bytes.
 Whatever limits this design, it is not how many agents we can name.
 
 **Inventory growth is not free**, and that is the real constraint. Measured by extending

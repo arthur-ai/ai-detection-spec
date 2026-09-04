@@ -49,3 +49,46 @@ jobs:
         with:
           name: performance
           path: /tmp/perf.json
+
+  # THE LINUX BANDS, MEASURED. Every query declares a cost band and tools/measure.py is
+  # what holds it -- so a Linux query whose band nothing ever measured is a declaration
+  # with no enforcement, which is the same class of claim as an identifier no test can
+  # produce.
+  #
+  # One number here is genuinely unknown until this runs: queries/runtime-linux.sql
+  # enumerates EVERY systemd unit with no vendor exclusion, because Linux has no
+  # `com.apple.%` equivalent and `fragment_path` would drop exactly the packaged agent the
+  # branch is for. macOS goes from 937 launchd jobs to 47 with its exclusion; the Linux
+  # row count is unmeasured, and this job is what produces it. If it is large, the filter
+  # decision gets made against evidence rather than by analogy.
+  linux:
+    name: Measured cost on Linux
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install osquery
+        run: |
+          curl -fsSL -o /tmp/osquery.deb \
+            https://pkg.osquery.io/deb/osquery_5.23.1-1.linux_amd64.deb
+          sudo dpkg -i /tmp/osquery.deb
+      - name: Record the baseline machine
+        # A LOADED MACHINE IS THE ONLY VALID BASELINE. An empty one is the state that hid
+        # the docker stall: a query that is slow only when it has rows to return measures
+        # fine on a runner with nothing installed.
+        run: |
+          . /etc/os-release && echo "$PRETTY_NAME  $(uname -m)"
+          echo "deb packages: $(dpkg-query -f '.\n' -W | wc -l)"
+          echo "systemd units: $(systemctl list-unit-files --no-legend 2>/dev/null | wc -l)"
+          echo "desktop entries: $(ls /usr/share/applications/*.desktop 2>/dev/null | wc -l)"
+      - name: Enforce the declared bands
+        run: python3 tools/measure.py --check
+      - name: Publish the numbers
+        if: always()
+        run: |
+          python3 tools/measure.py --json > /tmp/perf-linux.json || true
+          cat /tmp/perf-linux.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-linux
+          path: /tmp/perf-linux.json

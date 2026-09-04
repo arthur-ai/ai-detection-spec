@@ -34,12 +34,41 @@ One line:
 ok 2026-08-31T20:30:29Z rows=775 apps=ok browser=ok containers=ok filesystem=ok packages=ok runtime=ok
 ```
 
-`ok`, `absent`, `unhealthy:<http-code>`, `timeout:<seconds>`, `error`, `no-cache`,
-`stale:<seconds>`. Every payload also carries one dated `kind=scan` row per branch with the
-same value, so a consumer that only has the JSON still knows which branches ran and when.
+`ok`, `absent`, `unhealthy:<http-code>`, `timeout:<seconds>`, `error`, `no-cache`. Every
+payload also carries one dated `kind=scan` row per branch with the same value, so a consumer
+that only has the JSON still knows which branches ran and when.
+
+`stale:<seconds>` used to be listed here and is retired: nothing emitted it. Judge staleness
+from the marker row's `ver`, which holds the unix time of the scan — that is what
+`bin/classify` does, and it lets the reader pick the threshold rather than the writer.
 
 **Judge freshness on that timestamp, not the file's mtime** — redeploying a file resets the
 mtime without changing the truth.
+
+## On Linux, which is the same shape with three differences
+
+`bin/discover` picks its artifact from `uname -s`, so every command on this page works
+unchanged. Three things differ and are worth knowing before you deploy:
+
+- **The composed artifact is per platform, and there is no unqualified one.**
+  `dist/discovery-darwin.sql` and `dist/discovery-linux.sql` name disjoint sets of tables.
+  Feed one to the other platform's `osqueryi` and you get `[\n\n]` and exit 1 — five bytes
+  of valid, empty, plausible JSON. It does exit non-zero, which is the only reason that
+  state is recoverable, so **check the exit status** if you invoke `osqueryi` yourself
+  rather than going through `bin/discover`.
+- **The pack needs no per-platform version.** `dist/ai-discovery.conf` carries every
+  platform's queries, each with osqueryd's own `platform` field, and osqueryd schedules only
+  the ones that apply. One pack, any fleet. `bin/discover --write` filters the same way.
+- **One branch reports whether it could look at all.** `systemd_units` returns zero rows and
+  exits 0 when osquery cannot reach the system bus, so the Linux artifact carries a
+  `kind=scan` row for it: `ok` when units were read, `absent` when there is no bus,
+  `unhealthy:no-units` when there is a bus and no units — which no real systemd host
+  produces. Read it the way you read the container marker, because "no agent units" and
+  "we could not read the unit list" are different answers.
+
+**Homebrew on Linux is invisible**, and it is the widest gap on that platform:
+`homebrew_packages` is a darwin-only osquery table, and twelve of the sixteen agents carry a
+`homebrew` identifier. See [the blind spots](agents.md).
 
 ## The `python3` stub, which bites only on a fleet
 
@@ -53,21 +82,24 @@ This repo ships osquery materials: the queries, the runner, the guard and the bo
 that belong to *your* management stack are deliberately not here, because they differ per
 consumer and would rot in a public repo:
 
-- **A schedule** — a launchd job, an MDM policy, cron.
+- **A schedule** — a launchd job, a systemd timer, an MDM policy, cron.
 - **Transport** — whatever moves the file to wherever you read it.
 - **Framing**, if your channel has a size or encoding limit. Compressing the JSON is usually
-  enough; on a reference Mac 121 KB of rows becomes about 19 KB.
+  enough; on a reference Mac 121 KB of rows becomes about 19 KB. The 30KB figure this repo
+  keeps to is a **Jamf Extension Attribute convention and self-imposed on both platforms** —
+  Linux has no such channel at all, so do not restate it as a limit there.
 - **Classification at scale.** `bin/classify` is the reference implementation and answers "what
-  is on this Mac". For a fleet, collect the rows and match them where the catalog lives, so
+  is on this machine". For a fleet, collect the rows and match them where the catalog lives, so
   that adding a signature re-matches evidence you already hold instead of requiring a re-scan.
 
 ## Two things that are deliberately not prerequisites
 
 **`curl`** is used in exactly one place — the Docker socket health probe inside
-`bin/container-scan` — and `/usr/bin/curl` ships with macOS. Naming it as a prerequisite would
+`bin/container-scan` — and `curl` ships with macOS and with every Linux base image we have
+run this on. Naming it as a prerequisite would
 make the list look longer than it is without telling anyone anything they can act on.
 
 **Docker** is a property of the machine you are scanning, not a dependency of the scanner. If a
-Mac has no Docker, `bin/container-scan` finds no socket and reports `absent` — a stated
+machine has no Docker, `bin/container-scan` finds no socket and reports `absent` — a stated
 outcome, not a failure. See [containers.md](containers.md) for what the container branch buys
 you and when it is worth enabling.

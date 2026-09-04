@@ -1,5 +1,6 @@
 {
   "description": "Every agent type the demo showcases, on one machine.",
+  "platform": "darwin",
   "demo_beat": "the whole script, steps 1-4",
   "counts": {
     "app": ">=6",
@@ -9,7 +10,8 @@
     "port": ">=1",
     "ext": ">=1",
     "file": ">=1",
-    "nmh": ">=1"
+    "nmh": ">=1",
+    "vscodeext": ">=0"
   },
   "classified": {
     "must_find": [

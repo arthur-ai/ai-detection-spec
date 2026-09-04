@@ -41,8 +41,8 @@ for label, g in (("ids", lambda e: {e["id"]}), ("keys", set),
                  ("classes", lambda e: {e.get("classification")})):
     print(f"{label:10}", sorted(set(f(o,g)) - set(f(n,g))), "gone")
 EOF
-$ diff <(git show <prev-tag>:dist/discovery.sql | grep -oE "SELECT '[a-z]+'" | sort -u) \
-       <(grep -oE "SELECT '[a-z]+'" dist/discovery.sql | sort -u)
+$ diff <(git show <prev-tag>:dist/discovery-darwin.sql | grep -oE "SELECT '[a-z]+'" | sort -u) \
+       <(grep -oE "SELECT '[a-z]+'" dist/discovery-darwin.sql | sort -u)
 ```
 
 `catalog/agents.yaml`'s own `version:` key does not track the release. It reading `1` is not
@@ -176,10 +176,22 @@ $ gh run list --workflow=release.yml --limit=1
 $ gh release view v<X.Y.Z> --json assets --jq '[.assets[].name]'
 ```
 
-Six assets, and a missing one is a broken release rather than a tidier one: `discovery.sql`,
-`discovery-deep.sql`, `ai-discovery.conf`, `discover`, `container-scan`, `classify`. The scripts
-resolve each other by relative path, so the notes must say the layout is `bin/` and `dist/` side
-by side — loose in one folder, `bin/discover` will not find `dist/discovery.sql`.
+Nine assets, and a missing one is a broken release rather than a tidier one:
+`discovery-darwin.sql`, `discovery-linux.sql`, `discovery-deep.sql`, `ai-discovery.conf`,
+`discover`, `container-scan`, `classify`, `agents.yaml`, `routes.yaml`.
+
+**There is no unqualified `discovery.sql` any more.** It named one platform while claiming none,
+and fed to the wrong `osqueryi` it returns `[\n\n]` and exits 1. A consumer pinning the old
+name now gets a 404, which is the failure worth having. `bin/discover` picks by `uname -s`.
+
+**The two catalog files are new to the release** and were a real gap: `bin/classify` defaults to
+`catalog/agents.yaml` relative to its own parent, so a downloaded classifier had nothing to
+match against unless the consumer also cloned the repo. `routes.yaml` is required beside it --
+it is the registry the matcher derives its whole route vocabulary from.
+
+The scripts resolve each other by relative path, so the notes must say the layout is `bin/`,
+`dist/` and `catalog/` side by side — loose in one folder, `bin/discover` will not find its
+artifact.
 
 **Deployment glue for a particular MDM is not released from here.** A consumer wraps these; this
 repo ships osquery materials.

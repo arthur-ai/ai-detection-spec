@@ -1,0 +1,33 @@
+{
+  "description": "Cursor's official .rpm on Fedora, and one artifact serving both distro families.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "desktop": ">=1",
+    "ext": ">=0",
+    "file": ">=0",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "port": ">=0",
+    "rpm": ">=1",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "cursor"
+    ],
+    "forbid": [
+      "windsurf",
+      "claude-code"
+    ]
+  },
+  "why": "Two things at once. The identifier: rpm_packages `cursor`, read off a real rpm install rather than assumed to equal the deb's name. And the artifact: dist/discovery-linux.sql names deb_packages AND rpm_packages, and this is the run where the ABSENT one has to return no rows instead of erroring the whole statement -- which is what a genuinely missing table does, as `snap_packages` demonstrates by returning [] and exit 1 on every Linux box. `deb` is pinned at >=0 here for exactly that reason, and it is the assertion, not an omission.",
+  "must_contain": [
+    "cursor"
+  ],
+  "known_gaps": [
+    "Runs in a fedora container on an ubuntu runner, because GitHub offers no RPM-distro runner. A container has no systemd, so `unit` is 0 here and the systemd marker reports absent -- correctly."
+  ]
+}

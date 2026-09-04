@@ -1,5 +1,6 @@
 {
   "description": "Real OpenClaw in a disposable VM.",
+  "platform": "darwin",
   "demo_beat": "step 4 - the punchline",
   "counts": {
     "app": ">=1",
@@ -9,7 +10,8 @@
     "ext": ">=0",
     "nmh": ">=0",
     "daemon": ">=0",
-    "port": ">=0"
+    "port": ">=0",
+    "vscodeext": ">=0"
   },
   "classified": {
     "must_find": [

@@ -1,0 +1,35 @@
+{
+  "description": "An inert systemd unit and a listening port. On probation with the route it exercises.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=0",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "port": ">=1",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=1",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [],
+    "forbid": [
+      "openclaw",
+      "claude-code",
+      "cursor"
+    ]
+  },
+  "why": "Proves the systemd_units branch, the `unit` kind's registration and the scan marker -- and asserts that NOTHING is identified from a unit name. `systemd_prefixes` is registered in catalog/routes.yaml and carries no values: the obvious entry, `ai.openclaw.` mirroring the macOS launchd prefix, would have been a guess, because the launchd labels were read off a live install and no Linux unit name has been. test/test_matcher.py is what caught that. So `openclaw` is FORBIDDEN here even though the unit this scenario writes is named after it -- which is the strongest form of the assertion, and the one that would fail the day someone added the prefix without reading it off an install. The `unit` rows still ship as evidence: a kind absent from the registry would be dropped rather than unmatched, which is the `ext` bug.",
+  "must_contain": [
+    "ai.openclaw.gateway",
+    "18789"
+  ],
+  "known_gaps": [
+    "Skips wherever there is no system dbus -- a container has none, which is what the kind=scan marker in queries/runtime-linux.sql exists to report. It runs for real on a GitHub ubuntu runner, where systemd is PID 1.",
+    "No agent's systemd unit name has been read off a real install, so this proves the query and the matcher and not any vendor's naming. The route is registered and carries no values for exactly that reason.",
+    "systemd user units (systemctl --user) are not visible to the table at all, and a per-user agent gateway is exactly the thing that would be one."
+  ]
+}

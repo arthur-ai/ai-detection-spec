@@ -72,7 +72,13 @@
 #
 # A matcher expands those; the catalog does not repeat them.
 
-version: 1
+# BUMPED TO 2 BECAUSE THE SCHEMA CHANGED: `platforms:` is required on every agent, and the
+# route vocabulary moved to catalog/routes.yaml. This field sat here unread for the whole
+# life of the file -- a version nothing could disagree with -- and bin/classify validates
+# it now: a catalog NEWER than the matcher understands warns on stderr and matches what it
+# can, because refusing would turn version skew into "no agents found", which is the one
+# error this repo exists to avoid.
+version: 2
 
 # THIS CATALOG DETECTS AGENTS. Two entries were REMOVED for failing that test, and the
 # reason is recorded here because the temptation to re-add them is obvious -- both show up
@@ -142,6 +148,7 @@ agents:
   - id: claude-desktop
     name: Claude Desktop
     classification: Desktop assistant
+    platforms: [darwin]
     bundle_ids: [com.anthropic.claudefordesktop]
     homebrew: [claude]
     native_messaging_hosts: [com.anthropic.claude_browser_extension.json]
@@ -167,11 +174,13 @@ agents:
   - id: claude-in-chrome
     name: Claude in Chrome
     classification: Browser agent
+    platforms: [darwin, linux]
     extension_ids: [fcoeoabgfenejglbffodgkkbkcdhcgfn]
 
   - id: claude-code
     name: Claude Code
     classification: Coding agent
+    platforms: [darwin, linux]
     # Ships as a native installer, NOT an npm package. The binary at ~/.local/bin/claude
     # is a symlink into ~/.local/share/claude/versions/<ver>, which is where the version
     # comes from. Never execute it to ask.
@@ -182,6 +191,7 @@ agents:
   - id: openclaw
     name: OpenClaw
     classification: Personal agent
+    platforms: [darwin, linux]
     # ai.openclaw.mac is the shipped identifier, read off a live 2026.7.1 install.
     # bot.molt.mac comes from the Moltbot lineage and is retained for machines that
     # installed the earlier version. The Homebrew cask's zap stanza still lists the old
@@ -202,6 +212,7 @@ agents:
   - id: chatgpt-desktop
     name: ChatGPT Desktop
     classification: Desktop assistant
+    platforms: [darwin]
     # BOTH IDS ARE REAL, and for a long time this catalog said one of them was a mistake.
     # com.openai.codex is what a current build carries -- the app and Codex converged, and
     # the version scheme went with it. com.openai.chat is what every build BEFORE that
@@ -228,6 +239,7 @@ agents:
   - id: codex-cli
     name: Codex CLI
     classification: Coding agent
+    platforms: [darwin, linux]
     npm: ["@openai/codex"]
     homebrew: [codex]                  # a cask, not a formula; both land in homebrew_packages
     state_dirs: ["~/.codex"]
@@ -235,13 +247,44 @@ agents:
   - id: cursor
     name: Cursor
     classification: Coding agent
-    # An opaque ToDesktop identifier. Unguessable; it must be pinned.
+    platforms: [darwin, linux]
+    # An opaque ToDesktop identifier. Unguessable; it must be pinned. Note `todesktop` is
+    # the PACKAGER, not the vendor -- a reverse-DNS prefix cannot be trusted to name who
+    # publishes a thing.
     bundle_ids: [com.todesktop.230313mzl4w4u92]
     homebrew: [cursor]
+    # LINUX. cursor.com/api/download offers a `debUrl` and an `rpmUrl` for both x64 and
+    # arm64, so both package routes carry a real identifier rather than one of them
+    # standing in for the other.
+    #
+    # Read off the installed .deb on 2026-09-04 -- cursor_3.19.7_amd64.deb, 200MB, in an
+    # Ubuntu 24.04 container. deb_packages rendered:
+    #   name=cursor  version=3.19.7-1788393004  section=devel
+    #   maintainer=Cursor <hi@cursor.com>
+    # The package name is `cursor`, not the filename and not the download URL. That
+    # distinction is the whole of the bot.molt.mac lesson.
+    #
+    # THE LOOKALIKES SHIP WITH THE BASE OS. Ubuntu carries `libxcursor1` and
+    # `libwayland-cursor0`, both real deb packages whose names contain this one. The route
+    # matches exactly, so both are declined -- and 73-linux-deb asserts that, because
+    # `libxdmcp` versus `mcp` is the same shape and it is the assertion that tells
+    # correctly-declined from never-looked-at.
+    deb_packages: [cursor]
+    rpm_packages: [cursor]
+    # THE ONLY ROUTE THAT CAN SEE CURSOR'S PRIMARY LINUX DOWNLOAD. cursor.com serves an
+    # AppImage first; an AppImage leaves no package record at all, so every package route
+    # is blind to it. Both the .deb and the AppImage write a .desktop entry.
+    #
+    # The .deb writes TWO -- cursor.desktop and cursor-url-handler.desktop, read off the
+    # same install. Only the first is listed: the url-handler entry is a second file from
+    # one install, not a second install, and matching both would double the evidence rows
+    # for one finding.
+    desktop_ids: [cursor.desktop]
 
   - id: perplexity-comet
     name: Perplexity Comet
     classification: AI browser
+    platforms: [darwin]
     # A Chromium fork, absent from osquery's browser_type, so it is detected as a bundle.
     bundle_ids: [ai.perplexity.comet]
     homebrew: [comet]
@@ -249,24 +292,28 @@ agents:
   - id: perplexity-desktop
     name: Perplexity
     classification: Desktop assistant
+    platforms: [darwin]
     bundle_ids: [ai.perplexity.macv3]  # a separate product from Comet; do not conflate
     homebrew: [perplexity]
 
   - id: windsurf
     name: Windsurf
     classification: Coding agent
+    platforms: [darwin]
     bundle_ids: [com.exafunction.windsurf]
     homebrew: [devin-desktop]          # cask renamed from `windsurf`
 
   - id: orion
     name: Orion
     classification: AI browser
+    platforms: [darwin]
     bundle_ids: [com.kagi.kagimacOS]
     homebrew: [orion]
 
   - id: aider
     name: aider
     classification: Coding agent
+    platforms: [darwin, linux]
     homebrew: [aider]
     # `npm: [aider]` WAS HERE AND IS REMOVED. npm's `aider` is "Lightweight website popular
     # article component for static website", published by an unrelated maintainer -- not
@@ -297,19 +344,35 @@ agents:
   - id: gemini-cli
     name: Gemini CLI
     classification: Coding agent
+    platforms: [darwin, linux]
     homebrew: [gemini-cli]
     npm: ["@google/gemini-cli"]        # a vendor scope, missed by @anthropic-ai/@openai globs
 
   - id: copilot-cli
     name: GitHub Copilot CLI
     classification: Coding agent
+    platforms: [darwin, linux]
     homebrew: [copilot-cli]
     npm: ["@github/copilot"]
 
   - id: cline
     name: Cline
     classification: Coding agent
+    platforms: [darwin, linux]
     npm: [cline]
+    # ITS PRIMARY SHAPE, and until osquery 5.11.0 there was no table that could see it:
+    # docs/blind-spots.yaml said VS Code extensions were invisible, which was true when
+    # it was written and is not now.
+    #
+    # Read off a real install on 2026-09-04 -- `code --install-extension
+    # saoudrizwan.claude-dev` in an Ubuntu 24.04 container, osquery 5.23.1 rendering
+    # v4.1.17 at ~/.vscode/extensions/saoudrizwan.claude-dev-4.1.17.
+    #
+    # The value is the row's `name`, which already carries publisher and extension. Do
+    # NOT build it from `publisher_id`: that column is a GUID
+    # (6f42e67d-d7ea-4a53-8704-2ae8bf2d86f3 here), and `publisher` is the display name
+    # "Cline". routes.yaml records why that matters.
+    vscode_extensions: [saoudrizwan.claude-dev]
 
   # Nous Research's terminal agent. Filed as a Personal agent rather than a Coding agent on
   # the strength of what it ships: ONE GATEWAY PROCESS fronting Telegram, Discord, Slack,
@@ -338,6 +401,7 @@ agents:
   - id: hermes
     name: Hermes Agent
     classification: Personal agent
+    platforms: [darwin, linux]
     homebrew: [hermes-agent]
     pypi: [hermes-agent]
     # Anchored at the front rather than fullmatched, so the sibling commands land here too:

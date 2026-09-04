@@ -1,5 +1,6 @@
 {
   "description": "Chrome with an AI extension holding broad permissions, plus native messaging hosts at the two-component path depth.",
+  "platform": "darwin",
   "demo_beat": "step 3 - expand the extension, show the permissions and the native bridge",
   "counts": {
     "ext": ">=1",
@@ -9,7 +10,8 @@
     "file": ">=1",
     "npm": ">=0",
     "daemon": ">=0",
-    "port": ">=0"
+    "port": ">=0",
+    "vscodeext": ">=0"
   },
   "classified": {
     "forbid": [

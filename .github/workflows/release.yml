@@ -72,8 +72,20 @@ jobs:
       #
       # bin/container-scan resolves dist/discovery-deep.sql relative to its own parent
       # directory, and bin/discover sources bin/container-scan. Downloaded loose into one
-      # folder they will not find each other: the layout is bin/ and dist/ side by side, as
-      # in the repo. Say so in the release notes.
+      # folder they will not find each other: the layout is bin/, dist/ and catalog/ side
+      # by side, as in the repo. Say so in the release notes.
+      #
+      # THE COMPOSED ARTIFACT IS PER PLATFORM, and bin/discover picks by `uname -s`. There
+      # is no unqualified discovery.sql any more: it named one platform while claiming
+      # none, and fed to the wrong osqueryi it returns "[\n\n]" -- valid, empty,
+      # plausible JSON. A consumer pinning the old name gets a 404, which is the failure
+      # we want rather than a silent half-answer.
+      #
+      # THE CATALOG SHIPS NOW, and it did not before -- bin/classify's default
+      # --catalog is catalog/agents.yaml relative to its own parent, so a downloaded
+      # classifier had nothing to match against unless the consumer also cloned the repo.
+      # catalog/routes.yaml is required alongside it: it is the route registry the matcher
+      # derives its whole vocabulary from.
       #
       # Deployment glue for a particular MDM is deliberately not here. A consumer wraps
       # these; this repo ships osquery materials.
@@ -82,5 +94,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release upload "${{ github.event.release.tag_name }}" \
-            dist/discovery.sql dist/discovery-deep.sql dist/ai-discovery.conf \
-            bin/discover bin/container-scan bin/classify --clobber
+            dist/discovery-darwin.sql dist/discovery-linux.sql \
+            dist/discovery-deep.sql dist/ai-discovery.conf \
+            bin/discover bin/container-scan bin/classify \
+            catalog/agents.yaml catalog/routes.yaml --clobber

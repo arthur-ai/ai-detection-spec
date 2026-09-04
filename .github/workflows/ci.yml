@@ -45,7 +45,7 @@ jobs:
           # so `sudo osqueryi` is "command not found" for root.
           OSQI=/usr/local/bin/osqueryi
           start=$(date +%s)
-          sudo -n "$OSQI" --json < dist/discovery.sql > /tmp/out.json
+          sudo -n "$OSQI" --json < dist/discovery-darwin.sql > /tmp/out.json
           elapsed=$(( $(date +%s) - start ))
           rows=$(python3 -c "import json;print(len(json.load(open('/tmp/out.json'))))")
           echo "$rows rows in ${elapsed}s"
@@ -99,9 +99,19 @@ jobs:
           bad = [r for r in inv if set(r) != {"kind","id","ver","loc","extra","perms"}]
           if bad:
               sys.exit(f"::error::{len(bad)} rows violate the six-column contract: {bad[:1]}")
-          # One scan row per query file, so a failure is attributable to a branch.
-          if len(scans) < 6:
-              sys.exit(f"::error::expected a scan row per branch, got {sorted(scans)}")
+          # ONE SCAN ROW PER BRANCH THIS PLATFORM RUNS, derived from the pack rather
+          # than a hardcoded floor. It was `< 6`, which was the branch count when it was
+          # written; the portable branches have since been split out of their macOS
+          # neighbours, so darwin runs ten. A floor that trails the real number stops
+          # being a per-branch check and becomes a check that at least six of them
+          # reported -- which is exactly the attribution this row exists to give.
+          pack = json.load(open("dist/ai-discovery.conf"))["queries"]
+          want = {n for n, q in pack.items()
+                  if q.get("platform") in ("darwin", "posix", "all")}
+          if set(scans) != want:
+              sys.exit(f"::error::expected one scan row per darwin branch. "
+                       f"missing={sorted(want - set(scans))} "
+                       f"unexpected={sorted(set(scans) - want)}")
           for name, r in scans.items():
               if not str(r["ver"]).isdigit() or int(r["ver"]) <= 0:
                   sys.exit(f"::error::branch {name} has no usable timestamp: {r['ver']!r}")
@@ -130,14 +140,22 @@ jobs:
           if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", stamp):
               sys.exit(f"::error::status timestamp is not ISO-8601 UTC: {stamp!r}")
           tokens = dict(p.split("=", 1) for p in rest.split() if "=" in p)
-          for need in ("apps", "browser", "containers", "filesystem", "packages", "runtime"):
+          # The branch names are the pack's query names, and there are more of them now
+          # that the portable branches were split out of their macOS neighbours. This job
+          # runs on macOS, so it demands the darwin+posix set.
+          for need in ("apps", "browser", "containers", "filesystem", "homebrew",
+                       "native-messaging", "packages", "ports", "runtime", "vscode"):
               if need not in tokens:
                   sys.exit(f"::error::status has no token for branch {need!r}: {rest!r}")
           ok = ("ok", "absent", "error")
           for k, v in tokens.items():
               if k == "rows":
                   continue
-              if not (v in ok or v.startswith(("unhealthy:", "timeout:", "stale:"))):
+              # `stale:` was accepted here and emitted by nothing. Removed rather than
+              # left permissive: an allowlist entry with no producer makes the vocabulary
+              # look wider than it is, and a consumer branching on it would be writing
+              # dead code. Staleness comes from the marker row's `ver` instead.
+              if not (v in ok or v.startswith(("unhealthy:", "timeout:"))):
                   sys.exit(f"::error::unknown outcome {v!r} for {k}. Consumers branch on this "
                            f"vocabulary and it must not grow silently")
           print(f"status: {first}, {len(tokens) - 1} branches, all outcomes in vocabulary")

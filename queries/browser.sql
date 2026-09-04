@@ -1,9 +1,23 @@
 -- name: browser
--- description: Browser extensions with their permissions, and native messaging bridges
--- tables: users, chrome_extensions, file
+-- description: Browser extensions with their permissions
+-- tables: users, chrome_extensions
 -- min-osquery: 5.10.0
 -- cost: fast
--- platform: darwin
+-- platform: posix
+--
+-- POSIX, AND THE NATIVE-MESSAGING BRANCHES MOVED OUT to queries/native-messaging.sql and
+-- queries/native-messaging-linux.sql. chrome_extensions is cross-platform and needs no
+-- per-OS knowledge at all -- osquery carries the profile directories itself, and its
+-- Linux list (osquery/tables/applications/chrome/utils.cpp) covers .config/google-chrome,
+-- .config/chromium, Brave, Opera, Vivaldi, Yandex AND snap/chromium/common/chromium. The
+-- native-messaging branches are the opposite: nothing but hardcoded per-OS paths.
+--
+-- VERIFIED ON A REAL LINUX PROFILE, because three hand-built ones returned nothing:
+-- osquery validates a profile by reading its Preferences file, and a fixture that merely
+-- looks right does not pass. A real `google-chrome --headless=new --user-data-dir` profile
+-- returned a row at once, with browser_type 'chrome' and the same permissions format
+-- macOS gives. That is why 75-linux-browser installs a real browser rather than planting
+-- a directory tree.
 --
 -- Emits the six-column contract: kind, id, ver, loc, extra, perms.
 -- Branches within this file are joined with UNION ALL, and the build joins files
@@ -40,7 +54,7 @@
 -- costs one triage row, a false negative hides an extension reading every page.
 -- ALIASED, and every branch's first arm must be. A UNION ALL takes its column NAMES from
 -- the first arm only, so an unaliased first arm inherits whatever precedes it -- which is
--- apps.sql inside dist/discovery.sql, and NOTHING when this file runs on its own. Run
+-- whatever sorts before it in a composed artifact, and NOTHING standalone. Run
 -- standalone unaliased, osquery named the columns 'ext', identifier, browser_type and
 -- "permissions || CASE WHEN manifest_json LIKE ...", and dist/ai-discovery.conf shipped
 -- that: the pack's browser query returned 74 rows that no consumer of the six-column
@@ -51,22 +65,3 @@ SELECT 'ext' AS kind, identifier AS id, version AS ver, profile_path AS loc,
        permissions || CASE WHEN manifest_json LIKE '%<all_urls>%' THEN ',<all_urls>' ELSE '' END
          AS perms
   FROM users CROSS JOIN chrome_extensions USING (uid)
-UNION ALL
--- A single % matches ONE path component. 'Application Support/Google/Chrome/...' is TWO,
--- so the one-% form silently missed com.anthropic.claude_browser_extension.json.
--- Excluded by name, not by a 'com.apple.%' prefix. Stock macOS ships this iCloud Passwords
--- bridge in BOTH /Library/Google/Chrome and /Library/.../Mozilla, so every Mac in the fleet
--- reported two phantom native-messaging findings. Caught by the 00-baseline control, which
--- exists for precisely this. A prefix exclusion would be wider than the evidence supports and
--- would swallow any future first-party Apple Intelligence bridge, which we do want to see.
-SELECT 'nmh', filename, '', path, '', '' FROM file
-  WHERE path LIKE '/Users/%/Library/Application Support/%/NativeMessagingHosts/%.json'
-    AND filename != 'com.apple.passwordmanager.json'
-UNION ALL
-SELECT 'nmh', filename, '', path, '', '' FROM file
-  WHERE path LIKE '/Users/%/Library/Application Support/%/%/NativeMessagingHosts/%.json'
-    AND filename != 'com.apple.passwordmanager.json'
-UNION ALL
-SELECT 'nmh', filename, '', path, '', '' FROM file
-  WHERE path LIKE '/Library/%/%/NativeMessagingHosts/%.json'
-    AND filename != 'com.apple.passwordmanager.json'

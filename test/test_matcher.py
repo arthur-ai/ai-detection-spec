@@ -264,19 +264,237 @@ check("...and says so in the text output",
       "STALE:" in classify_rows([scan_row("ok", age=4 * 86400)]))
 
 # Every non-ok outcome must reach the reader as a gap, with its own wording: an operator
-# fixes a wedged daemon differently from a Mac that has no Docker, and differently again
-# from a writer that was never installed.
-for extra, needle in (("absent", "no Docker socket"),
+# fixes a wedged daemon differently from a machine that has no Docker, and differently
+# again from a writer that was never installed.
+#
+# `error` IS IN THIS LIST NOW, and it is the one that was missing. bin/discover emits it
+# for every non-container branch that ran and failed, and the renderer had no case for
+# it, so it fell through to a generic sentence that substituted "the socket" as the
+# place -- naming a socket that had nothing to do with a failed `apps` query.
+for extra, needle in (("absent", "no socket"),
                       ("no-cache", "never run"),
+                      ("error", "ran and failed"),
                       ("unhealthy:500", "answered 500"),
                       ("timeout:6", "stalled")):
     text = classify_rows([scan_row(extra)])
     check(f"{extra!r} reports COULD NOT LOOK, distinctly",
           "COULD NOT LOOK" in text and needle in text, f"got: {text.splitlines()[:1]}")
 
+# A marker whose branch writes no `loc` must not have a place invented for it. This is
+# the assertion the old generic branch would have failed: `apps` never touched a socket.
+_no_loc = classify_rows([{"kind": "scan", "id": "apps", "ver": str(int(_time.time())),
+                          "loc": "", "extra": "error", "perms": ""}])
+check("a marker with no loc names no place",
+      "COULD NOT LOOK: apps" in _no_loc and "socket" not in _no_loc,
+      f"got: {_no_loc.splitlines()[:1]}")
+
+# bin/classify reads payloads a fleet collector may have merged from several hosts, so it
+# is not entitled to say which platform anything is. "no Docker socket on this Mac" was
+# the wording that made that claim.
+for extra in ("absent", "error", "timeout:6"):
+    check(f"{extra!r} claims no platform",
+          "this Mac" not in classify_rows([scan_row(extra)]),
+          "a matcher over a mixed-platform payload cannot know the platform")
+
 check("a gap is never silently an empty finding set",
       "No AI agents found." not in classify_rows([scan_row("timeout:6")]),
       "'no agents' under an unread branch is the lie this whole marker exists to stop")
+
+# --- home roots and anchors: the two halves of one fix -----------------------------
+#
+# There were three hand-written copies of `/Users/[^/]+/` -- this matcher's path globs,
+# its TOOL_DIR bridge, and tools/agent_status.py's replay, whose comment claimed the two
+# "cannot disagree" while being a copy. They are one HOME_ROOTS alternation now, and it
+# covers every platform at once because a fleet payload can carry rows from several.
+
+def classify_json(rows, *extra):
+    """classify() over an inline row list, as JSON. The sibling of classify_rows()."""
+    return json.loads(subprocess.run(
+        [sys.executable, str(ROOT / "bin" / "classify"), "--json", "--show-unmatched",
+         *extra],
+        input=json.dumps(rows), capture_output=True, text=True, check=True).stdout)
+
+
+def _rows(*paths):
+    return [{"kind": "file", "id": p, "ver": "", "loc": p, "extra": "", "perms": ""}
+            for p in paths]
+
+def _ids(rows):
+    r = json.loads(subprocess.run(
+        [sys.executable, str(ROOT / "bin" / "classify"), "--json", "--show-unmatched"],
+        input=json.dumps(rows), capture_output=True, text=True, check=True).stdout)
+    return {f["id"] for f in r["findings"]}
+
+# THE NEAR MISS. `~/.claude` was front-anchored only, so it also matched `.claudefoo` --
+# and that is not hypothetical: `/home/%/.%/` on a real Linux box returns `.claude/` and
+# `.claudefoo/` side by side. `home-dir` anchors both ends.
+check("a state dir matches, with and without the trailing slash",
+      _ids(_rows("/Users/dana/.claude/")) == {"claude-code"}
+      and _ids(_rows("/home/dana/.claude")) == {"claude-code"})
+for near in ("/Users/dana/.claudefoo/", "/home/dana/.claudefoo/", "/root/.claude-backup/"):
+    check(f"a near miss is NOT claimed ({near})",
+          _ids(_rows(near)) == set(),
+          "front-anchored only, this matched -- the bug the home-dir anchor closes")
+
+# THE OTHER HALF, and the reason the `$` is not a blanket fix: `binaries` is
+# front-anchored ON PURPOSE. One `uv tool install hermes-agent` writes hermes, hermes-acp
+# and hermes-agent, and all three are the same install.
+for cmd in ("/Users/alice/.local/bin/hermes", "/home/alice/.local/bin/hermes-acp",
+            "/root/.local/bin/hermes-agent"):
+    check(f"a sibling command still lands on the agent ({cmd})",
+          _ids(_rows(cmd)) == {"hermes"},
+          "anchoring home-prefix would lose two of the three commands")
+
+# Every home root, on the routes that use them, including root's -- which is not under
+# /home and cannot be reached by a `[^/]+` component.
+check("Linux and root home roots resolve on the path routes",
+      _ids(_rows("/home/dana/.openclaw/")) == {"openclaw"}
+      and _ids(_rows("/root/.codex/")) == {"codex-cli"}
+      and _ids(_rows("/root/.local/bin/claude")) == {"claude-code"})
+
+# The TOOL_DIR bridge under Linux roots. aider installs as `aider-chat` under uv while
+# its state dir is `~/.aider`; without the bridge the evidence says aider and the
+# classifier says nothing.
+check("the pipx/uv tool-dir bridge works under every home root",
+      _ids(_rows("/home/alice/.local/share/uv/tools/aider-chat/")) == {"aider"}
+      and _ids(_rows("/root/.local/pipx/venvs/aider-chat/")) == {"aider"})
+
+# A path that is NOT under any home root must not match, or the alternation is really a
+# substring search.
+check("a path outside every home root is not claimed",
+      _ids(_rows("/opt/dana/.claude/", "/srv/home/dana/.claude/")) == set())
+
+
+# --- the Linux package routes, and the lookalikes the base OS ships ----------------
+#
+# THE POINT: a stock Ubuntu carries `libxcursor1` and `libwayland-cursor0`, both real deb
+# packages whose names contain `cursor`. This is `libxdmcp` versus `mcp` again, except it
+# arrives for free on every Linux box rather than having to be constructed -- so the
+# assertion is cheap and the failure it guards is common.
+def _deb(*names):
+    return [{"kind": "deb", "id": n, "ver": "1.0", "loc": "", "extra": "amd64",
+             "perms": ""} for n in names]
+
+_r = classify_json(_deb("cursor", "libxcursor1", "libwayland-cursor0", "bash", "coreutils"))
+_found = {f["id"] for f in _r["findings"]}
+check("a real deb identifier is found", _found == {"cursor"},
+      f"got {sorted(_found)}")
+_evidence = {e["id"] for f in _r["findings"] for e in f["evidence"]}
+check("the base OS lookalikes are NOT evidence for it",
+      _evidence == {"cursor"},
+      "libxcursor1 and libwayland-cursor0 contain the identifier as a substring -- an "
+      "exact route must decline both, and this is what tells declined from never-looked-at")
+check("...and they are reported unmatched rather than dropped",
+      {"libxcursor1", "libwayland-cursor0"} <= set(unmatched_ids(_r)),
+      "a kind absent from the registry is DROPPED, not unmatched -- the `ext` bug")
+
+# rpm carries the same value on a different route, and the two must not be confused: the
+# uniqueness check is keyed on (route, value), so `cursor` is legitimately both.
+_rpm = [{"kind": "rpm", "id": "cursor", "ver": "3.19.7", "loc": "",
+         "extra": "Cursor", "perms": ""}]
+check("the rpm route resolves the same identifier",
+      {f["id"] for f in classify_json(_rpm)["findings"]} == {"cursor"})
+
+# desktop_ids is the only route that can see an AppImage install, and one install writes
+# more than one entry -- so an exact match must take the catalogued one and leave the rest.
+_desk = [{"kind": "desktop", "id": n, "ver": "", "loc": f"/usr/share/applications/{n}",
+          "extra": "", "perms": ""}
+         for n in ("cursor.desktop", "cursor-url-handler.desktop",
+                   "com.google.Chrome.desktop", "python3.12.desktop")]
+_rd = classify_json(_desk)
+check("a desktop entry resolves the agent",
+      {f["id"] for f in _rd["findings"]} == {"cursor"})
+check("a SECOND entry from the same install is not a second finding",
+      {e["id"] for f in _rd["findings"] for e in f["evidence"]} == {"cursor.desktop"},
+      "cursor-url-handler.desktop is one install's second file, not a second install")
+
+# The systemd marker is a gap, not a finding, and an unreadable unit list must not read as
+# a clean one. This is the branch a container exercises and a CI runner never will.
+_scan = [{"kind": "scan", "id": "systemd", "ver": str(int(_time.time())),
+          "loc": "/run/dbus/system_bus_socket", "extra": "absent", "perms": ""}]
+_txt = classify_rows(_scan)
+check("an unreadable systemd unit list is a gap, not silence",
+      "COULD NOT LOOK: systemd" in _txt
+      and "No AI agents found in the parts that could be read." in _txt,
+      "zero units with no bus is indistinguishable from a clean host without this")
+
+# A systemd unit is EVIDENCE AND NOT A SIGNATURE, and this assertion is why.
+#
+# The obvious catalog entry is `systemd_prefixes: [ai.openclaw.]`, mirroring the macOS
+# launchd prefix. It would be a guess: those launchd labels were read off a live install
+# and no Linux unit name has been. So the route is registered -- which keeps kind='unit'
+# rows unmatched rather than DROPPED -- and carries no values.
+#
+# This is the test that caught the guess when it was written, and it is what will fail if
+# someone adds the prefix without reading it off an install.
+_unit = [{"kind": "unit", "id": "ai.openclaw.gateway.service", "ver": "",
+          "loc": "/etc/systemd/system/ai.openclaw.gateway.service",
+          "extra": "disabled", "perms": ""}]
+_ru = classify_json(_unit)
+check("a unit name alone does NOT identify an agent",
+      not _ru["findings"],
+      "no agent's systemd unit name has been read off a real install, so matching one "
+      "would be a guess wearing a finding's clothes")
+check("...and the unit is still reported, as unmatched evidence",
+      "ai.openclaw.gateway.service" in unmatched_ids(_ru),
+      "an unregistered kind is dropped, not unmatched -- the `ext` bug")
+
+# A VS Code extension id is `publisher.name`, which is what the row's `name` column already
+# holds. The wrong expression -- publisher_id || '.' || name -- yields a GUID-prefixed
+# string, and this asserts the catalog carries the right shape.
+_vsc = [{"kind": "vscodeext", "id": n, "ver": "4.1.17",
+         "loc": "/home/dana/.vscode/extensions/x", "extra": "vscode", "perms": ""}
+        for n in ("saoudrizwan.claude-dev", "continue.continue",
+                  "6f42e67d-d7ea-4a53-8704-2ae8bf2d86f3.saoudrizwan.claude-dev")]
+_rv = classify_json(_vsc)
+check("a VS Code extension resolves on publisher.name",
+      {f["id"] for f in _rv["findings"]} == {"cline"})
+check("a GUID-prefixed id is NOT claimed",
+      "6f42e67d-d7ea-4a53-8704-2ae8bf2d86f3.saoudrizwan.claude-dev"
+      in unmatched_ids(_rv),
+      "publisher_id is a GUID, so the obvious expression produces this -- it must not "
+      "match, or a wrong query would look correct")
+check("an uncatalogued agent extension stays unmatched",
+      "continue.continue" in unmatched_ids(_rv)
+      and not any(f["id"] == "continue" for f in _rv["findings"]),
+      "Continue is deliberately not in the catalog: it must under-report, visibly, "
+      "rather than be claimed by Cline's signature")
+
+
+# --- version skew: warn and match, never refuse ------------------------------------
+#
+# catalog/agents.yaml carried `version:` unread for its whole life, so nothing could ever
+# disagree with it. It is checked now, and the BEHAVIOUR is the assertion: a downloaded
+# bin/classify meeting a newer catalog must warn on stderr and match what it recognises.
+# Refusing would turn version skew into "no agents found" -- which reads downstream as a
+# clean fleet, and is the one error this repo exists to avoid.
+import tempfile as _tf3, yaml as _yaml3
+
+_cat = _yaml3.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
+_cat["version"] = 99
+with _tf3.NamedTemporaryFile("w", suffix=".yaml", delete=False) as _fh:
+    _yaml3.safe_dump(_cat, _fh)
+    _newer = _fh.name
+_rows_j = json.dumps(_deb("cursor"))
+_proc = subprocess.run(
+    [sys.executable, str(ROOT / "bin" / "classify"), "--json", "--catalog", _newer],
+    input=_rows_j, capture_output=True, text=True)
+check("a newer catalog still produces findings",
+      _proc.returncode == 0
+      and {f["id"] for f in json.loads(_proc.stdout)["findings"]} == {"cursor"},
+      f"rc={_proc.returncode} err={_proc.stderr.strip()[:120]}")
+check("...and says so on stderr rather than silently",
+      "version 99" in _proc.stderr and "matcher understands" in _proc.stderr,
+      f"got {_proc.stderr.strip()[:160]!r}")
+
+# The current catalog must NOT warn, or the warning is noise everyone learns to ignore.
+_proc2 = subprocess.run(
+    [sys.executable, str(ROOT / "bin" / "classify"), "--json"],
+    input=_rows_j, capture_output=True, text=True)
+check("the shipped catalog produces no version warning",
+      "matcher understands" not in _proc2.stderr,
+      f"got {_proc2.stderr.strip()[:160]!r}")
+
 
 # --- the coverage recorder must credit the route that actually matched ------------
 # tools/agent_status.py --record replays a run and writes which identifiers it proved.

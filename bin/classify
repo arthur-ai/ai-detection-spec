@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Turn osquery output into findings, using catalog/agents.yaml.
 
-    osqueryi --json < dist/discovery.sql | bin/classify
+    osqueryi --json < dist/discovery-darwin.sql | bin/classify
     bin/discover --deep | bin/classify
 
 This is the reference implementation of matching. It is deliberately small and meant
@@ -21,9 +21,22 @@ from collections import defaultdict
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DEFAULT_CATALOG = ROOT / "catalog" / "agents.yaml"
+DEFAULT_ROUTES = ROOT / "catalog" / "routes.yaml"
+
+# The catalog schema version this matcher understands. See load_catalog: a NEWER catalog
+# warns and matches what it can, because refusing would turn version skew into
+# "no agents found" -- which is the one error this repo exists to avoid.
+CATALOG_VERSION = 2
 
 
-def load_catalog(path):
+def _yaml(path):
+    """Read a YAML file, importing yaml LAZILY.
+
+    The lazy import is load-bearing, not tidiness: image_repo() and image_repos() are
+    imported by tools/ and used on machines with no PyYAML, and a module-level
+    `import yaml` would make that fail at import time for callers that never touch a
+    catalog.
+    """
     try:
         import yaml
     except ImportError:
@@ -31,45 +44,148 @@ def load_catalog(path):
     return yaml.safe_load(pathlib.Path(path).read_text())
 
 
-def build_index(catalog):
+def load_catalog(path):
+    doc = _yaml(path)
+    # THE DORMANT FIELD, NOW LOAD-BEARING. catalog/agents.yaml has carried `version` since
+    # the beginning and nothing read it, so nothing could disagree with it. A downloaded
+    # bin/classify can meet a newer catalog than it knows; warn and match what is
+    # recognisable rather than refusing, because a refusal reads downstream as a clean
+    # fleet. Unknown per-agent fields are already rejected by tools/validate_catalog.py,
+    # so the risk here is a route this matcher has no registry entry for -- which arrives
+    # as unmatched rows, not as silence.
+    version = doc.get("version")
+    if isinstance(version, int) and version > CATALOG_VERSION:
+        print(f"classify: catalog is version {version}; this matcher understands "
+              f"{CATALOG_VERSION}. Matching what it can -- newer routes will read as "
+              f"unmatched rows rather than findings.", file=sys.stderr)
+    return doc
+
+
+def load_routes(path=DEFAULT_ROUTES):
+    """The route registry: catalog/routes.yaml. See that file's header for why."""
+    return _yaml(path)
+
+
+class Registry:
+    """The route vocabulary, derived from catalog/routes.yaml rather than hardcoded.
+
+    Five hardcoded copies of this used to have to agree. `ext` was missing from one of
+    them from the beginning and every browser-extension row was DROPPED -- see the
+    `unmatched` branch at the foot of classify().
+    """
+
+    def __init__(self, routes):
+        self.platforms = list(routes["platforms"])
+        self.groups = {k: list(v) for k, v in routes.get("platform_groups", {}).items()}
+        self.routes = routes["routes"]
+        self.match = {n: r["match"] for n, r in self.routes.items()}
+        self.retired = {n for n, r in self.routes.items() if r.get("retired")}
+        # kind -> the routes reachable through the GENERIC loop. `tool-dir` routes are
+        # excluded on purpose: pypi evidence arrives as kind='file' through the TOOL_DIR
+        # bridge, and listing it here as well is what let a PyPI-only signature claim an
+        # npm package of the same name -- npm's `mcp` is Mintlify's, and it was reported
+        # as the MCP SDK until the two were split.
+        self.kind_routes = {}
+        for name, r in self.routes.items():
+            if r["match"] == "tool-dir":
+                self.kind_routes.setdefault(r["kind"], [])
+                continue
+            self.kind_routes.setdefault(r["kind"], []).append(name)
+
+    def expand(self, platform):
+        """A route's platform to the concrete platforms it covers ('posix' -> both)."""
+        return self.groups.get(platform, [platform])
+
+    def platforms_of(self, route):
+        return self.expand(self.routes[route]["platform"])
+
+    def path_routes(self):
+        """Every route whose value is a `~/`-rooted path, in declaration order.
+
+        The tuple ("state_dirs", "binaries", "model_stores") was written out by hand in
+        bin/classify, tools/validate_catalog.py and tools/agent_status.py. This is that
+        list, derived.
+        """
+        return [n for n, m in self.match.items() if m.startswith("home-")]
+
+
+# EVERY PLATFORM'S HOME ROOTS, MATCHED AT ONCE -- not one platform chosen by a caller.
+#
+# bin/classify runs OFF the machine, over a payload that a fleet collector may have
+# merged from many hosts, so there is no such thing as "the platform" here: a single
+# input can legitimately carry /Users/dana/.claude and /home/dana/.claude. An earlier
+# design took a platform argument, which would have made a mixed payload match only half
+# of itself and reported the rest as unmatched.
+#
+# One alternation rather than one pattern per platform, because path routes are compared
+# against every candidate row -- docs/signature-lifecycle.md's scaling note -- so a
+# per-platform list would multiply the glob count by three for no gain.
+#
+# /root gets its own alternative: root's home is not under /home, and a `[^/]+`
+# component cannot reach it. Verified against `users.directory` on Ubuntu and Fedora.
+HOME_ROOTS = r"(?:/Users/[^/]+/|/home/[^/]+/|/root/)"
+
+
+def home_pattern(value, mode):
+    """Compile a `~/`-rooted catalog value into a regex over real paths.
+
+    THE ANCHOR IS PER ROUTE, and that is the whole point of having two modes.
+
+      home-dir     `~/.claude` -> matches `.../.claude` and `.../.claude/` and NOT
+                   `.../.claudefoo`. The glob was front-anchored only, so `.claudefoo`
+                   DID match -- confirmed on a real Linux box, where `/home/%/.%/`
+                   returns both directories side by side.
+      home-prefix  `~/.local/bin/hermes` -> still matches hermes-acp and hermes-agent,
+                   which is DELIBERATE: one `uv tool install` writes all three commands
+                   and they are the same install. Anchoring this mode would lose two of
+                   the three, which is why the missing `$` is not a blanket fix.
+    """
+    body = re.escape(value[2:])                      # strip the leading '~/'
+    if mode == "home-dir":
+        return re.compile("^" + HOME_ROOTS + body + "/?$")
+    return re.compile("^" + HOME_ROOTS + body)
+
+
+def build_index(catalog, registry):
     """Map every catalog identifier to the agent that claims it.
 
     Routes differ in how they match, and conflating them is how false positives
     happen: `mcp` as an exact npm package name is a real signal, but `mcp` as a
     substring also matches `libxdmcp`, an X11 library. Exact where exact is right.
+
+    Which route matches how is now DECLARED, in catalog/routes.yaml, rather than
+    written out as four route-name tuples here. A route added there is indexed here
+    without an edit -- and a route this function does not know about is a KeyError at
+    build time instead of rows that quietly match nothing.
     """
     exact, prefix, glob = {}, [], []
     for agent in catalog["agents"]:
         meta = {k: agent[k] for k in ("id", "name", "classification")}
-        for route in ("bundle_ids", "homebrew", "npm", "pypi"):
+        for route, mode in registry.match.items():
             for value in agent.get(route, []):
-                if value.endswith("*"):          # e.g. @modelcontextprotocol/*
-                    prefix.append((value[:-1], route, meta))
+                if mode in ("exact", "tool-dir"):
+                    # A trailing `*` is a prefix, e.g. @modelcontextprotocol/*. No agent
+                    # uses one today; the form is kept because removing it would silently
+                    # turn a future scoped signature into a literal name with a star.
+                    if str(value).endswith("*"):
+                        prefix.append((str(value)[:-1], route, meta))
+                    else:
+                        # str() because `ports` values are integers in YAML and a row's
+                        # id is always text.
+                        exact[(route, str(value))] = meta
+                elif mode == "prefix":
+                    prefix.append((str(value), route, meta))
+                elif mode == "exact-normalised":
+                    # Exact on the NORMALISED repository, never a substring. `ollama` as
+                    # a substring would claim `myorg/ollama-fork` and `not-ollama`, and
+                    # an image name is attacker-choosable in a way a bundle id is not:
+                    # anyone can `docker tag` anything.
+                    exact[(route, image_repo(value))] = meta
+                elif mode.startswith("home-"):
+                    glob.append((home_pattern(str(value), mode), route, meta))
                 else:
-                    exact[(route, value)] = meta
-        for value in agent.get("ports", []):
-            exact[("ports", str(value))] = meta
-        for route in ("launchd_prefixes",):
-            for value in agent.get(route, []):
-                prefix.append((value, route, meta))
-        for route in ("state_dirs", "binaries", "model_stores"):
-            for value in agent.get(route, []):
-                # ~/.openclaw matches /Users/<anyone>/.openclaw
-                glob.append((re.compile(r"^/Users/[^/]+/" + re.escape(value[2:])), route, meta))
-        for value in agent.get("native_messaging_hosts", []):
-            exact[("nmh", value)] = meta
-        # A Chrome extension id is derived from the developer's public key, so it is stable
-        # across versions and across every profile carrying the extension. That is what makes
-        # exact matching right here: the same machine legitimately reports the id several
-        # times -- one row per profile, and one per version left on disk -- and each is a
-        # separate piece of evidence for the same finding rather than a duplicate to suppress.
-        for value in agent.get("extension_ids", []):
-            exact[("extension_ids", value)] = meta
-        # Exact on the NORMALISED repository, never a substring. `ollama` as a substring
-        # would claim `myorg/ollama-fork` and `not-ollama`, and an image name is
-        # attacker-choosable in a way a bundle id is not: anyone can `docker tag` anything.
-        for value in agent.get("images", []):
-            exact[("images", image_repo(value))] = meta
+                    raise KeyError(f"routes.yaml: {route} declares unknown match "
+                                   f"mode {mode!r}")
     return exact, prefix, glob
 
 
@@ -126,41 +242,27 @@ def _corroborates(agent, row):
     return any(n and n in haystack.replace("-", "").replace(" ", "") for n in needles)
 
 
-# Which osquery row kinds can satisfy which catalog routes. A bundle id never
-# appears in an npm row, so checking it there would only invite a coincidence.
-KIND_ROUTES = {
-    "app": ["bundle_ids"],
-    "brew": ["homebrew"],
-    # npm ONLY. `pypi` used to be listed here too, and it let a PyPI-only signature claim
-    # an npm package of the same name -- npm's `mcp` (Mintlify's, unrelated to the SDK)
-    # was reported as the MCP SDK on the strength of the catalog's PyPI entry, and removing
-    # the npm identifier did not stop it. A kind='npm' row comes from npm_packages via
-    # packages.sql and is a node package by construction, so there is nothing for the PyPI
-    # route to legitimately match here.
-    #
-    # PyPI evidence does not arrive as kind='npm' at all: python_packages is too slow to
-    # ship (15.6s, no WHERE push-down), so filesystem.sql globs the pipx and uv tool
-    # directories instead and those rows arrive as kind='file'. The TOOL_DIR branch below
-    # checks both routes for them, which is where a package name legitimately means either.
-    "npm": ["npm"],
-    "port": ["ports"],
-    "daemon": ["launchd_prefixes"],
-    "nmh": ["nmh"],
-    "file": ["state_dirs", "binaries", "model_stores"],
-    # An image row's `id` is the tags field, which may name several repositories at once,
-    # so it is matched through image_repos() rather than compared whole. Listing it here
-    # also keeps an unclaimed image UNMATCHED rather than dropped: a kind absent from this
-    # dict falls off the end of the loop below, invisible even under --show-unmatched.
-    "image": ["images"],
-    # browser.sql has emitted kind='ext' since the beginning and nothing consumed it, so every
-    # extension row fell off the end of the loop -- dropped, not unmatched, exactly as the note
-    # above warns. Verified on a real Mac: the Claude extension was collected correctly by the
-    # query, carried a correct identifier and permissions, and did not appear in classify output
-    # even under --show-unmatched. Claude was still reported, but only through its native
-    # messaging bridge, so the fleet-visible symptom was one route quietly missing rather than
-    # an agent going unseen -- which is why it survived this long.
-    "ext": ["extension_ids"],
-}
+# WHICH ROW KINDS CAN SATISFY WHICH ROUTES IS NOW DECLARED, NOT LISTED HERE.
+#
+# This used to be a hand-written dict, and it is the single most expensive list in this
+# repo's history: kind='ext' was missing from it from the beginning, so every
+# browser-extension row fell off the end of classify()'s loop -- DROPPED, not unmatched,
+# invisible even under --show-unmatched. Verified on a real Mac: the Claude extension was
+# collected correctly, carried a correct identifier and permissions, and did not appear
+# in the output. Claude was still reported through its native-messaging bridge, so the
+# fleet-visible symptom was one route quietly missing rather than an agent going unseen,
+# which is why it survived for months.
+#
+# Registry.kind_routes is that mapping, inverted from catalog/routes.yaml. Two properties
+# the old dict had to state by hand and this one gets by construction:
+#
+#   * a route's kind is registered even when the route matches nothing, so an unclaimed
+#     row is UNMATCHED rather than dropped -- which is why `ports` stays in the registry
+#     with `retired: true` long after it stopped being a signature, and why the retired
+#     `model` kind is simply absent from routes.yaml rather than half-present here;
+#   * a bundle id is never looked for in an npm row, because npm_packages produces node
+#     packages by construction and checking a bundle id there would only invite a
+#     coincidence.
 
 # pipx and uv give each installed tool a directory named for the PACKAGE, so the tool
 # name is recoverable from the path and can be matched against the pypi route.
@@ -168,14 +270,18 @@ KIND_ROUTES = {
 # Without this, PyPI-installed agents are enumerated and then silently dropped. The
 # endpoint cannot query python_packages -- 15.6s with no WHERE push-down -- so it globs
 # these directories instead, and those rows arrive as kind 'file' whose only routes are
-# state_dirs, binaries and model_stores. aider installs as 'aider-chat' under uv, its
-# state_dir is ~/.aider, and the two never meet: the evidence says aider and the
-# classifier says nothing.
+# the path ones. aider installs as 'aider-chat' under uv, its state_dir is ~/.aider, and
+# the two never meet: the evidence says aider and the classifier says nothing.
 #
 # Caught by 25-python-agents asserting on the classifier rather than on row counts. The
 # count-based version passed throughout, because the row was present the whole time.
+#
+# HOME_ROOTS rather than a hardcoded /Users/, so a uv tool install under /home/dana or
+# /root resolves the same way. That was one of three hand copies of the same prefix; the
+# other two were this file's path globs and tools/agent_status.py's replay.
 TOOL_DIR = re.compile(
-    r"^/Users/[^/]+/\.local/(?:pipx/venvs|share/uv/tools)/([^/]+)/?$")
+    "^" + HOME_ROOTS + r"\.local/(?:pipx/venvs|share/uv/tools)/([^/]+)/?$")
+
 
 
 # A row that says a branch could not look, rather than what it found. bin/container-scan
@@ -194,8 +300,16 @@ SCAN_OK = "ok"
 STALE_AFTER = 24 * 3600
 
 
-def classify(rows, catalog):
-    exact, prefix, glob = build_index(catalog)
+def classify(rows, catalog, routes=None):
+    """Match rows against the catalog. `routes` is catalog/routes.yaml, loaded once.
+
+    The registry and the index are built ONCE here rather than per row, and the caller
+    may pass a pre-loaded `routes` so a tool classifying many payloads does not re-read
+    the file. Left optional so the existing two-argument call keeps working.
+    """
+    registry = Registry(routes if routes is not None else load_routes())
+    exact, prefix, glob = build_index(catalog, registry)
+    kind_routes = registry.kind_routes
     findings, unmatched, gaps, scans = defaultdict(list), [], [], []
 
     for row in rows:
@@ -211,27 +325,40 @@ def classify(rows, catalog):
         # A pipx/uv tool directory names its package. Try that before the path globs,
         # which describe state directories rather than install locations.
         tool = TOOL_DIR.match(ident) or TOOL_DIR.match(loc)
-        if kind == "file" and tool:
+        if tool and kind in {registry.routes[r]["kind"]
+                             for r, m in registry.match.items() if m == "tool-dir"}:
             name = tool.group(1)
-            for route in ("pypi", "npm"):
+            # The routes a tool directory can legitimately name: the tool-dir routes
+            # themselves, plus the package routes that share their match mode. A pipx or
+            # uv directory holds a PyPI distribution, and the same name is meaningful as
+            # an npm package for agents that ship both.
+            bridged = [r for r, m in registry.match.items() if m == "tool-dir"]
+            bridged += [r for r, m in registry.match.items()
+                        if m == "exact" and registry.routes[r]["kind"] == "npm"]
+            for route in bridged:
                 if (route, name) in exact:
                     hit = exact[(route, name)]
                     break
             if hit is None:
                 for pre, proute, meta in prefix:
-                    if proute in ("pypi", "npm") and name.startswith(pre):
+                    if proute in bridged and name.startswith(pre):
                         hit = meta
                         break
 
         # Before the generic loop, because the identifier has to be normalised first and
         # there may be several of them in the one field.
-        if kind == "image" and not hit:
-            for repo in image_repos(ident):
-                if ("images", repo) in exact:
-                    hit = exact[("images", repo)]
+        if not hit:
+            for route in kind_routes.get(kind, []):
+                if registry.match[route] != "exact-normalised":
+                    continue
+                for repo in image_repos(ident):
+                    if (route, repo) in exact:
+                        hit = exact[(route, repo)]
+                        break
+                if hit:
                     break
 
-        for route in [] if hit else KIND_ROUTES.get(kind, []):
+        for route in [] if hit else kind_routes.get(kind, []):
             if (route, ident) in exact:
                 candidate = exact[(route, ident)]
                 # A port number alone is not a signature. 8080 is held by half the
@@ -240,7 +367,7 @@ def classify(rows, catalog):
                 # Require the owning process to corroborate: `ollama` on 11434 is a
                 # finding, an unknown process on 11434 is a question for the
                 # collector, not an identification.
-                if route == "ports" and not _corroborates(candidate, row):
+                if route in registry.retired and not _corroborates(candidate, row):
                     continue
                 hit = candidate
                 break
@@ -258,7 +385,10 @@ def classify(rows, catalog):
                 break
         if hit:
             findings[hit["id"]].append((hit, row))
-        elif kind in KIND_ROUTES:
+        elif kind in kind_routes:
+            # UNMATCHED, NOT DROPPED, and the difference is the whole reason the registry
+            # exists. A kind absent from it falls off the end of this loop and is
+            # discarded in silence -- see the note above kind_routes.
             unmatched.append(row)
 
     return findings, unmatched, gaps, scans
@@ -269,6 +399,8 @@ def main():
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("input", nargs="?", help="osquery JSON; omit to read stdin")
     ap.add_argument("--catalog", default=DEFAULT_CATALOG)
+    ap.add_argument("--routes", default=DEFAULT_ROUTES,
+                    help="the route registry (catalog/routes.yaml)")
     ap.add_argument("--json", action="store_true", help="machine-readable output")
     ap.add_argument("--show-unmatched", action="store_true",
                     help="also list rows no signature claimed")
@@ -276,7 +408,12 @@ def main():
 
     raw = pathlib.Path(args.input).read_text() if args.input else sys.stdin.read()
     rows = json.loads(raw)
-    findings, unmatched, gaps, scans = classify(rows, load_catalog(args.catalog))
+    findings, unmatched, gaps, scans = classify(rows, load_catalog(args.catalog),
+                                                load_routes(args.routes))
+    # ONE clock reading for the whole report. time.time() used to be called three times
+    # per scan row inside a comprehension, so two rows in one payload could straddle a
+    # second boundary and date themselves differently from the same scan.
+    now = int(time.time())
 
     if args.json:
         json.dump({
@@ -299,8 +436,8 @@ def main():
             # Provenance for the branches that DID run, with the age computed here so a
             # consumer never has to know that `ver` holds unix seconds.
             **({"scans": [{"id": r.get("id"), "at": int(r.get("ver") or 0),
-                           "age_seconds": max(0, int(time.time()) - int(r.get("ver") or 0)),
-                           "stale": max(0, int(time.time()) - int(r.get("ver") or 0)) > STALE_AFTER}
+                           "age_seconds": max(0, now - int(r.get("ver") or 0)),
+                           "stale": max(0, now - int(r.get("ver") or 0)) > STALE_AFTER}
                           for r in scans]} if scans else {}),
         }, sys.stdout, indent=2)
         print()
@@ -333,20 +470,36 @@ def main():
         print()
 
     for row in gaps:
-        reason, where = row.get("extra", ""), row.get("loc") or "the socket"
+        # `loc` IS NOT ALWAYS A SOCKET, and defaulting it to "the socket" was wrong in a
+        # way that read as authoritative. bin/discover's per-branch markers write
+        # loc: "" -- so a failed `apps` branch rendered as
+        # "COULD NOT LOOK: apps -- the socket reported 'error'", naming a socket that had
+        # nothing to do with it. There is now no substituted noun: a marker either names
+        # a place or the sentence does not claim one.
+        reason, where, branch = row.get("extra", ""), row.get("loc") or "", row.get("id", "?")
+        at = f" at {where}" if where else ""
         if reason == "absent":
-            detail = "no Docker socket on this Mac"
+            # Was "no Docker socket on this Mac". Two things wrong with that: containers
+            # are no longer the only branch that reports absent -- the Linux systemd
+            # branch does too -- and "this Mac" is not a safe thing for a matcher that
+            # reads a mixed-platform fleet payload to say about anything.
+            detail = f"no socket{at}" if where else "not present on this machine"
         elif reason == "no-cache":
-            detail = (f"nothing has been written to {where}. The scheduled writer is not "
-                      f"installed, or has never run")
+            detail = (f"nothing has been written to {where or 'the cache'}. The scheduled "
+                      f"writer is not installed, or has never run")
+        elif reason == "error":
+            # THE REASON bin/discover ACTUALLY EMITS, and the one this renderer had no
+            # branch for. It means the branch ran and failed -- a missing table, a bad
+            # query, a permission wall -- not that a daemon was unreachable.
+            detail = f"the {branch} query ran and failed{at}"
         elif reason.startswith("unhealthy:"):
-            detail = f"the daemon at {where} answered {reason.split(':', 1)[1]}"
+            detail = f"what answers{at or ' there'} answered {reason.split(':', 1)[1]}"
         elif reason.startswith("timeout:"):
-            detail = (f"the daemon at {where} answered /_ping and then stalled; gave up at "
-                      f"{reason.split(':', 1)[1]}s")
+            detail = (f"whatever answers{at or ' there'} accepted the connection and then "
+                      f"stalled; gave up at {reason.split(':', 1)[1]}s")
         else:
-            detail = f"{where} reported {reason!r}"
-        print(f"COULD NOT LOOK: {row.get('id', '?')} -- {detail}")
+            detail = f"reported {reason!r}" + (f" for {where}" if where else "")
+        print(f"COULD NOT LOOK: {branch} -- {detail}")
     if gaps:
         print("  These are not findings and not an absence of them. That part of the "
               "machine was not read.\n")

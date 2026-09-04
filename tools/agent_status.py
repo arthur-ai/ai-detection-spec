@@ -41,15 +41,21 @@ _spec = importlib.util.spec_from_loader(
 classify_mod = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(classify_mod)
 
-# Routes whose catalog value is compared whole against a row's id, so an evidence row
-# names the exact identifier that claimed it. The rest are globs and prefixes, which can
-# only be credited at route level.
-EXACT_KINDS = {"app": "bundle_ids", "brew": "homebrew", "port": "ports",
-               "nmh": "native_messaging_hosts", "ext": "extension_ids"}
-GLOB_ROUTES = {"state_dirs", "binaries", "model_stores", "launchd_prefixes"}
-ALL_ROUTES = ["bundle_ids", "homebrew", "npm", "pypi", "binaries", "state_dirs",
-              "launchd_prefixes", "ports", "model_stores", "native_messaging_hosts",
-              "images", "extension_ids"]
+# THE ROUTE VOCABULARY COMES FROM catalog/routes.yaml, not from three lists here.
+#
+# EXACT_KINDS, GLOB_ROUTES and ALL_ROUTES used to sit at this spot -- three of the five
+# hardcoded copies that had to agree with bin/classify and test/lint.sh. ALL_ROUTES also
+# fixed the report's column order, which is now the registry's declaration order, so the
+# page and the matcher cannot disagree about what a route even is.
+ROUTES = classify_mod.load_routes()
+REGISTRY = classify_mod.Registry(ROUTES)
+# Declaration order, which is what the report renders in.
+ALL_ROUTES = list(ROUTES["routes"])
+# Routes that can only ever be credited at ROUTE level, never per value: a prefix or a
+# path glob tells you the route fired, not which of its values did. `GLOB_ROUTES` was the
+# old name and it under-described itself -- launchd_prefixes is a prefix, not a glob.
+ROUTE_LEVEL_ONLY = {n for n, m in REGISTRY.match.items()
+                    if m == "prefix" or m.startswith("home-")}
 
 
 def _plain(block):
@@ -83,60 +89,80 @@ def replay(paths, catalog):
         rows = json.loads(path.read_text())
         rows = rows["findings"] if isinstance(rows, dict) else rows
         # classify() returns findings as {agent id: [(meta, row), ...]}, not a list.
-        for aid, matched in classify_mod.classify(rows, catalog)[0].items():
+        for aid, matched in classify_mod.classify(rows, catalog, ROUTES)[0].items():
+            agent = by_id.get(aid, {})
             for _meta, ev in matched:
-                kind, ident = ev.get("kind"), ev.get("id", "")
-                if kind in EXACT_KINDS:
-                    values[aid].add((EXACT_KINDS[kind], ident))
-                    seen_ver[(aid, EXACT_KINDS[kind], ident)] = ev.get("ver", "")
-                    routes[aid].add(EXACT_KINDS[kind])
-                elif kind == "image":
-                    for repo in classify_mod.image_repos(ident):
-                        values[aid].add(("images", repo))
-                        seen_ver[(aid, "images", repo)] = ev.get("ver", "")
-                    routes[aid].add("images")
-                elif kind == "npm":
-                    # kind='npm' comes from npm_packages and is a node package by
-                    # construction, so it credits the npm route and nothing else.
-                    values[aid].add(("npm", ident))
-                    seen_ver[(aid, "npm", ident)] = ev.get("ver", "")
-                    routes[aid].add("npm")
-                elif kind == "file":
-                    # RESOLVE WHICH GLOB MATCHED. Crediting the whole route group here was
-                    # a false positive with a very plausible face: 25-python-agents matched
-                    # aider on ~/.local/share/uv/tools/aider-chat/ and this recorded
-                    # `state_dirs: ~/.aider` as observed in a real install -- an identifier
-                    # that appears NOWHERE in that run's output. The report then showed the
-                    # strongest possible evidence for a path no machine had produced.
-                    #
-                    # Rebuilt the same way bin/classify builds it, so the two cannot
-                    # disagree: ~/.openclaw matches /Users/<anyone>/.openclaw.
-                    agent = by_id.get(aid, {})
-                    loc = ev.get("loc", "")
-                    for route in ("state_dirs", "binaries", "model_stores"):
-                        for value in agent.get(route, []):
-                            pat = re.compile(r"^/Users/[^/]+/" + re.escape(str(value)[2:]))
+                kind, ident, loc = ev.get("kind"), ev.get("id", ""), ev.get("loc", "")
+                ver = ev.get("ver", "")
+
+                def credit(route, value, exact_value=True):
+                    values[aid].add((route, str(value)))
+                    routes[aid].add(route)
+                    # A version is only recorded where the row actually carries one AND
+                    # the credit names the exact identifier. A path glob names no version
+                    # and inventing one would be worse than leaving it out.
+                    if exact_value and ver:
+                        seen_ver[(aid, route, str(value))] = ver
+
+                # RESOLVE WHICH ROUTE, AND WHICH VALUE, ACTUALLY MATCHED -- generically,
+                # from the registry, rather than one branch per kind.
+                #
+                # Crediting a whole route group was a false positive with a very
+                # plausible face: 25-python-agents matched aider on
+                # ~/.local/share/uv/tools/aider-chat/ and this recorded
+                # `state_dirs: ~/.aider` as observed in a real install -- an identifier
+                # that appears NOWHERE in that run's output. The report then showed the
+                # strongest possible evidence for a path no machine had produced.
+                for route in REGISTRY.kind_routes.get(kind, []):
+                    mode = REGISTRY.match[route]
+                    listed = [str(v) for v in agent.get(route, [])]
+                    if mode == "exact":
+                        if str(ident) in listed:
+                            credit(route, ident)
+                        else:
+                            # A trailing `*` is a prefix form; credit the value as
+                            # written, because that is what the catalog carries and what
+                            # record() looks up.
+                            for value in listed:
+                                if value.endswith("*") and str(ident).startswith(value[:-1]):
+                                    credit(route, value, exact_value=False)
+                    elif mode == "exact-normalised":
+                        for repo in classify_mod.image_repos(ident):
+                            if repo in listed:
+                                credit(route, repo)
+                    elif mode == "prefix":
+                        for value in listed:
+                            if str(ident).startswith(value):
+                                credit(route, value, exact_value=False)
+                    elif mode.startswith("home-"):
+                        # THE SAME FUNCTION bin/classify MATCHES WITH, not a copy of it.
+                        # This was a hand-built `^/Users/[^/]+/` regex under a comment
+                        # claiming the two "cannot disagree" -- and it would have
+                        # disagreed the moment the matcher learned /home and /root,
+                        # reporting Linux coverage as absent while the classifier found
+                        # it. That is the silent-disagreement shape this repo is built
+                        # around.
+                        for value in listed:
+                            pat = classify_mod.home_pattern(value, mode)
                             if pat.match(ident) or pat.match(loc):
-                                values[aid].add((route, str(value)))
-                                routes[aid].add(route)
-                    # A pipx/uv tool directory names its PACKAGE, which is why classify
-                    # checks the npm and pypi routes for it and not the path globs.
-                    tool = classify_mod.TOOL_DIR.match(ident) or classify_mod.TOOL_DIR.match(loc)
-                    if tool:
-                        name = tool.group(1)
-                        for route in ("pypi", "npm"):
-                            if name in [str(v) for v in agent.get(route, [])]:
-                                values[aid].add((route, name))
-                                routes[aid].add(route)
-                elif kind == "daemon":
-                    for value in agent_of(aid).get("launchd_prefixes", []):
-                        if ident.startswith(str(value)):
-                            values[aid].add(("launchd_prefixes", str(value)))
-                    routes[aid].add("launchd_prefixes")
+                                credit(route, value, exact_value=False)
+
+                # A pipx/uv tool directory names its PACKAGE, which is why classify
+                # checks the package routes for it and not the path globs.
+                tool = (classify_mod.TOOL_DIR.match(ident)
+                        or classify_mod.TOOL_DIR.match(loc))
+                if tool:
+                    name = tool.group(1)
+                    bridged = [r for r, m in REGISTRY.match.items() if m == "tool-dir"]
+                    bridged += [r for r, m in REGISTRY.match.items()
+                                if m == "exact" and REGISTRY.routes[r]["kind"] == "npm"]
+                    for route in bridged:
+                        if name in [str(v) for v in agent.get(route, [])]:
+                            credit(route, name)
     return values, routes, seen_ver
 
 
-def record(artifact, scenario_dir, os_version="", arch=""):
+def record(artifact, scenario_dir, os_version="", arch="", platform=""):
     """Write scenario/observed.json: which identifiers a REAL run actually matched.
 
     test/artifacts/ is gitignored and per-machine, so the raw output cannot back a
@@ -151,7 +177,7 @@ def record(artifact, scenario_dir, os_version="", arch=""):
         for route in ALL_ROUTES:
             for value in agent.get(route, []):
                 value = str(value)
-                if route in GLOB_ROUTES or value.endswith("*"):
+                if route in ROUTE_LEVEL_ONLY or value.endswith("*"):
                     proven = (route, value) in values[aid]
                 else:
                     key = classify_mod.image_repo(value) if route == "images" else value
@@ -168,6 +194,13 @@ def record(artifact, scenario_dir, os_version="", arch=""):
                          classify_mod.image_repo(value) if route == "images" else value))
                     if ver:
                         rec["agent_version"] = ver
+                    # PLATFORM BESIDE os, NOT INSTEAD OF IT. `os` holds "14.8.7" or
+                    # "24.04" -- a release, which names a platform family only if you
+                    # already know whose numbering that is. Coverage is counted per
+                    # platform now, so the family is recorded rather than inferred from a
+                    # version string.
+                    if platform:
+                        rec["platform"] = platform
                     if os_version:
                         rec["os"] = os_version
                     if arch:
@@ -181,11 +214,11 @@ def record(artifact, scenario_dir, os_version="", arch=""):
     # MERGE BY PLATFORM. A scenario runs on more than one macOS version now, so a run adds
     # its own platform's records and leaves every other platform's alone. Overwriting would
     # mean the last job to finish decided what the whole scenario had ever proved.
-    plat = (os_version or None, arch or None)
+    plat = (platform or None, os_version or None, arch or None)
     kept = []
     if out_path.exists():
         for r in json.loads(out_path.read_text()).get("identifiers", []):
-            if (r.get("os"), r.get("arch")) != plat:
+            if (r.get("platform"), r.get("os"), r.get("arch")) != plat:
                 kept.append(r)
 
     # A RUN THAT PROVES LESS THAN THE COMMITTED RECORD IS ALMOST ALWAYS A STALE ARTIFACT,
@@ -199,7 +232,7 @@ def record(artifact, scenario_dir, os_version="", arch=""):
     if out_path.exists() and "--allow-shrink" not in sys.argv:
         was = {(r["agent"], r["route"], r["value"])
                for r in json.loads(out_path.read_text()).get("identifiers", [])
-               if (r.get("os"), r.get("arch")) == plat}
+               if (r.get("platform"), r.get("os"), r.get("arch")) == plat}
         now = {(r["agent"], r["route"], r["value"]) for r in idents}
         lost = sorted(was - now)
         if lost:
@@ -225,7 +258,8 @@ def record(artifact, scenario_dir, os_version="", arch=""):
     # when what the run OBSERVED changes.
     idents = kept + idents
     idents.sort(key=lambda r: (r["agent"], r["route"], r["value"],
-                               r.get("os") or "", r.get("arch") or ""))
+                               r.get("platform") or "", r.get("os") or "",
+                               r.get("arch") or ""))
     out.write_text(json.dumps({"scenario": pathlib.Path(scenario_dir).name,
                                "identifiers": idents}, indent=2) + "\n")
     print(f"recorded {len(idents)} identifiers observed by {out.parent.name}")
@@ -239,19 +273,73 @@ def ci_scenarios():
     that state -- passing locally, absent from the matrix -- which is why the metric is
     "does CI test this" rather than "has anyone ever tested this".
     """
+    return set().union(*_ci_jobs().values()) if _ci_jobs() else set()
+
+
+def _ci_jobs():
+    """{job name: set of scenarios}, across EVERY job that has a scenario matrix.
+
+    This read one named job before Linux, which would have made every scenario under a
+    second job invisible to the coverage report -- counted as "no CI test covers it" while
+    CI ran it on a schedule. tools/check_workflows.py asserts the same set from the other
+    side.
+    """
+    wf = ROOT / ".github" / "workflows" / "scenarios.yml"
+    if not wf.exists():
+        return {}
+    doc = yaml.safe_load(wf.read_text())
+    out = {}
+    for job, spec in (doc.get("jobs") or {}).items():
+        names = ((spec.get("strategy") or {}).get("matrix") or {}).get("scenario")
+        if names:
+            out[job] = set(names)
+    return out
+
+
+def ci_platforms():
+    """Which platforms CI actually runs, derived from the jobs' runners.
+
+    THE POINT OF DERIVING IT: an identifier for a platform CI does not run is not
+    "untested through neglect", it is untested because there is no runner. Those two need
+    different words, or the second silently becomes an excuse for the first -- so the gate
+    reports `no-ci-platform` for them, counts them, and names them, and starts FAILING the
+    moment that platform joins the matrix.
+    """
     wf = ROOT / ".github" / "workflows" / "scenarios.yml"
     if not wf.exists():
         return set()
     doc = yaml.safe_load(wf.read_text())
-    return set(doc["jobs"]["scenario"]["strategy"]["matrix"]["scenario"])
+    plats = set()
+    for spec in (doc.get("jobs") or {}).values():
+        if not ((spec.get("strategy") or {}).get("matrix") or {}).get("scenario"):
+            continue
+        if spec.get("container"):
+            plats.add("linux")
+            continue
+        text = " ".join([str(spec.get("runs-on", ""))]
+                        + [str(x) for x in
+                           (((spec.get("strategy") or {}).get("matrix") or {})
+                            .get("os") or [])])
+        if "macos" in text:
+            plats.add("darwin")
+        if "ubuntu" in text or "fedora" in text:
+            plats.add("linux")
+    return plats
 
 
 def collect():
     catalog = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
 
     scenarios = collections.defaultdict(set)
+    # A scenario's platform is declared in its own expected.json, which is also what
+    # test/lint.sh and tools/check_workflows.py read. Taken from there rather than from an
+    # observation's `os` field, because "24.04" names a platform family only to a reader
+    # who already knows whose numbering that is.
+    scenario_platform = {}
     for path in sorted((ROOT / "test" / "scenarios").glob("*/expected.json")):
-        block = json.loads(path.read_text()).get("classified", {})
+        doc = json.loads(path.read_text())
+        scenario_platform[path.parent.name] = doc.get("platform")
+        block = doc.get("classified", {})
         for aid in block.get("must_find", []):
             scenarios[aid].add(path.parent.name)
 
@@ -270,6 +358,12 @@ def collect():
             if rec.get("os"):
                 observed_os.add(rec["os"])
     in_ci = ci_scenarios()
+    in_ci_platforms = ci_platforms()
+    # Route -> the platforms it can fire on, from the registry. An identifier's platform
+    # is its route's platform: there is nowhere else it could come from, which is why this
+    # needed no new field in catalog/agents.yaml.
+    route_platforms = {n: set(REGISTRY.expand(r["platform"]))
+                       for n, r in REGISTRY.routes.items()}
     # Which agents each CI scenario claims to install, from its own expectations. An
     # identifier of such an agent that the run did NOT produce was reached by the suite and
     # failed to appear -- worth naming separately from one nothing has ever tried.
@@ -295,7 +389,7 @@ def collect():
         for route in ALL_ROUTES:
             for value in agent.get(route, []):
                 value = str(value)
-                if route in GLOB_ROUTES or value.endswith("*"):
+                if route in ROUTE_LEVEL_ONLY or value.endswith("*"):
                     proven = route in routes[aid]       # route-level only
                     precision = "route"
                 else:
@@ -320,14 +414,25 @@ def collect():
                 # moltbot for real. Checking `retired` first excluded them from the
                 # denominator while a scenario was proving them, which understated the
                 # coverage and mislabelled the evidence.
+                # THE ORDER IS THE MEANING. Real-install evidence outranks everything;
+                # a retired alias comes next because nothing can install it any more.
+                #
+                # `no-ci-platform` sits below both and above every "we tried and it did
+                # not appear" state, because it is not a failure to observe -- it is the
+                # absence of a runner. Naming it separately is what stops it becoming an
+                # excuse for the states beneath it, and the two defences against that are
+                # written into --gate and into the per-platform breakdown the report
+                # always prints: an embarrassing zero is on the generated front page, and
+                # the gate FAILS the instant that platform joins the CI matrix with
+                # identifiers still uncovered.
                 if ci_scens:
                     state = "ci-install"
                 elif str(value) in retired_of.get(aid, ()):
                     state = "alias"
-                elif ci_scens:
-                    state = "ci-install"
                 elif proven:
                     state = "ci-fixture"
+                elif not (route_platforms.get(route, set()) & in_ci_platforms):
+                    state = "no-ci-platform"
                 elif scens:
                     state = "local-only"
                 # .get() on a defaultdict does NOT create the default, so a brand-new
@@ -344,6 +449,21 @@ def collect():
                                "fixture": proven, "real": bool(scens),
                                "scenarios": scens, "ci_scenarios": ci_scens,
                                "reached_by": sorted(asserted_by[aid] - set(unrecorded)),
+                               # The platforms this identifier can be observed on --
+                               # its route's platforms, because that is the only place
+                               # the information exists. This is what makes per-platform
+                               # coverage countable without a new catalog field.
+                               "platforms": sorted(route_platforms.get(route, ())),
+                               # WHICH PLATFORMS ACTUALLY OBSERVED IT, as opposed to
+                               # which could. A `posix` identifier proved on macOS says
+                               # nothing about Linux -- the route is portable, the
+                               # observation is not -- so crediting it to both would put
+                               # a confident face on an untested platform. That is the
+                               # whole failure mode the per-platform breakdown exists to
+                               # expose, so it must not be the thing computing it.
+                               "observed_on": sorted(
+                                   {scenario_platform.get(sc) for sc in ci_scens}
+                                   - {None}),
                                "state": state, "precision": precision})
         agents.append({
             "id": aid, "name": agent["name"], "classification": agent["classification"],
@@ -389,6 +509,10 @@ STATE_LABEL = {
     "ci-install": "CI: real install",
     "ci-fixture": "CI: fixture",
     "alias": "alias (fixture)",
+    # Not a failure to observe: there is no runner for that platform. Named rather than
+    # folded into NO TEST, because the two need different actions -- one is a test to
+    # write, the other is a platform to add to the matrix.
+    "no-ci-platform": "NO CI PLATFORM",
     "tested-absent": "DID NOT APPEAR",
     "local-only": "LOCAL ONLY",
     "none": "NO TEST",
@@ -428,12 +552,41 @@ def badge_for(data):
     drawn from the same data and neither was right.
     """
     ids = [i for a in data["agents"] for i in a["identifiers"]]
-    n = sum(1 for i in ids if i["state"] != "alias")
+    # A NO-CI-PLATFORM IDENTIFIER IS OUT OF BOTH HALVES, for the same reason a retired
+    # alias is: no test can cover it, so counting it in the numerator would claim one that
+    # does not exist, and counting it only in the denominator would cap the figure below
+    # complete for a reason nobody can act on. It is counted and named in the breakdown
+    # instead -- see platform_badges() -- which is where an embarrassing zero belongs.
+    n = sum(1 for i in ids if i["state"] not in ("alias", "no-ci-platform"))
     covered = sum(1 for i in ids if i["state"] in ("ci-install", "ci-fixture"))
     # Green only at complete. Anything less is amber -- a badge that reads green at 90%
     # trains the reader to stop looking at the number beside it.
     colour = "2E7D57" if covered == n else "A26A16"
     return covered, n, colour
+
+
+def platform_badges(data):
+    """Per-platform coverage, as (platform, covered, coverable, has_ci) rows.
+
+    ALWAYS RENDERED, even at zero. `no-ci-platform` is a new place a guess could hide, and
+    this is one of the two things that stops it: the number sits on the generated front
+    page where a zero is visible, rather than being absorbed into a single figure that
+    reads complete. The other is --gate, which fails the moment a platform joins the CI
+    matrix with identifiers uncovered.
+    """
+    plats = ci_platforms()
+    rows = []
+    for plat in sorted(REGISTRY.platforms):
+        ids = [i for a in data["agents"] for i in a["identifiers"]
+               if plat in i.get("platforms", [])]
+        n = sum(1 for i in ids if i["state"] not in ("alias", "no-ci-platform"))
+        # OBSERVED ON THIS PLATFORM, not merely coverable on it. A fixture is deliberately
+        # not counted here: it proves the matcher resolves an identifier, which is a claim
+        # about code and not about any platform's software.
+        covered = sum(1 for i in ids if plat in i.get("observed_on", []))
+        if ids:
+            rows.append((plat, covered, n, plat in plats))
+    return rows
 
 
 def rewrite_badge(data, text):
@@ -491,13 +644,37 @@ def markdown(data):  # noqa: C901
         "</div>",
         "",
         "> **This page is generated.** `tools/agent_status.py` counts it from",
-        "> `catalog/agents.yaml`, the test fixtures, and what each CI scenario actually",
-        "> matched. Lint fails when it drifts, so it cannot describe a catalog that has",
-        "> moved on without it. Nothing here is typed by hand.",
+        "> `catalog/agents.yaml`, `catalog/routes.yaml`, the test fixtures, and what each",
+        "> CI scenario actually matched. Lint fails when it drifts, so it cannot describe",
+        "> a catalog that has moved on without it. Nothing here is typed by hand.",
         "",
+        # PER PLATFORM, ALWAYS, EVEN AT ZERO.
+        #
+        # One number across platforms is the shape of claim this repo exists to avoid: a
+        # portable identifier observed on macOS says nothing about Linux, so averaging
+        # them puts a confident face on an untested platform. `observed_on` is what this
+        # counts, which is why a `posix` route proved only on a Mac shows here as covered
+        # for darwin and NOT for linux.
+        "### Coverage per platform",
+        "",
+        "A route's platform is where an identifier can be observed. This table counts "
+        "where one **actually was** -- so a portable identifier proved on one platform "
+        "does not count for the other, because the route being portable is not evidence "
+        "that the software is.",
+        "",
+        "| platform | covered | coverable | CI runs it |",
+        "|---|---|---|---|",
+        *[f"| `{plat}` | {cov} | {tot} | {'yes' if ci else '**no**'} |"
+          for plat, cov, tot, ci in platform_badges(data)],
+        "",
+        *(["A platform with no CI runner has its identifiers counted as "
+           "`NO CI PLATFORM` and excluded from the badge above, the same way a retired "
+           "alias is: no test can cover them, so counting them either way would be a "
+           "claim nobody can act on. They are named here instead.", ""]
+          if any(not ci for _, _, _, ci in platform_badges(data)) else []),
         # One line, not two. The policy and the current state were being stated separately
         # and adjacently, which read as emphasis rather than as information.
-        ("**A real install is the standard, and every entry meets it.** A VM scenario installs "
+        ("**A real install is the standard, and every entry meets it.** A CI scenario installs "
          "the real software and asserts the classifier finds it. Anything less would be an "
          "exception recorded in the catalog with a reason, an evidence grade and a date; there "
          "are none open."
@@ -506,7 +683,7 @@ def markdown(data):  # noqa: C901
          "exception is recorded.**"),
         "",
         (f"| | entries | |\n|---|---:|---|\n"
-         f"| **standard** | {n_scen} | a VM scenario installs the real software and asserts "
+         f"| **standard** | {n_scen} | a CI scenario installs the real software and asserts "
          f"the classifier finds it |\n"
          f"| **exception** | {len(agents) - n_scen} | recorded in the catalog with a reason, an "
          f"evidence grade and the date it was raised |"
@@ -715,7 +892,8 @@ def main():
         i = sys.argv.index("--record")
         def opt(flag):
             return sys.argv[sys.argv.index(flag) + 1] if flag in sys.argv else ""
-        record(sys.argv[i + 1], sys.argv[i + 2], opt("--os"), opt("--arch"))
+        record(sys.argv[i + 1], sys.argv[i + 2], opt("--os"), opt("--arch"),
+               opt("--platform"))
         return
     if "--json" in sys.argv:
         print(json.dumps(data, indent=2))

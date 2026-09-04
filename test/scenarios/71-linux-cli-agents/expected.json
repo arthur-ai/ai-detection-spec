@@ -1,0 +1,41 @@
+{
+  "description": "Five CLI agents on Linux, all found through identifiers the catalog already had.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=2",
+    "nmh": ">=0",
+    "npm": ">=4",
+    "port": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "claude-code",
+      "codex-cli",
+      "gemini-cli",
+      "copilot-cli",
+      "cline"
+    ],
+    "forbid": [
+      "openclaw",
+      "cursor"
+    ]
+  },
+  "why": "THE POINT OF THE LINUX PORT IN ONE SCENARIO: not one identifier here was added for Linux. The npm route and the `~/`-rooted path routes were always portable, so what was missing was queries that look under /home and /root and a matcher whose HOME_ROOTS resolves them. If this passes, the portable half of the catalog works on Linux with no catalog edit at all.",
+  "must_contain": [
+    "@openai/codex",
+    "@google/gemini-cli",
+    "@github/copilot",
+    "cline",
+    "/home/dana/"
+  ],
+  "known_gaps": [
+    "Claude Code's npm identifier is not exercised here -- the native installer is its primary route and the two would fight over the same binary name. 21-cli-agents-homebrew makes the same argument on macOS."
+  ]
+}

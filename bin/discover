@@ -10,7 +10,8 @@
 #
 # TWO ARTIFACTS, TWO PROCESSES, AND THAT IS THE POINT.
 #
-#   dist/discovery.sql       every fast and slow query, composed. ~1.2s, cannot block.
+#   dist/discovery-<platform>.sql  every fast and slow query for this platform,
+#                                  composed. ~1.2s, cannot block.
 #   dist/discovery-deep.sql  the expensive ones. CAN BLOCK FOREVER, so it runs behind a
 #                            health guard and a wall-clock kill -- bin/container-scan.
 #
@@ -33,7 +34,22 @@
 set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BASE="$ROOT/dist/discovery.sql"
+
+# THE ARTIFACT IS PER PLATFORM, and picking the wrong one is not a soft failure: the
+# tables are disjoint, so a Linux artifact on macOS dies on the first table and prints
+# "[\n\n]" -- valid, empty, entirely plausible JSON. It does at least exit non-zero,
+# which is the only reason that state is recoverable.
+#
+# `uname -s` rather than a flag, because the endpoint has no operator to ask. An
+# unrecognised platform stops here rather than falling through to a missing file, where
+# the message would be about a path instead of about the platform.
+case "$(uname -s)" in
+  Darwin) PLATFORM=darwin ;;
+  Linux)  PLATFORM=linux ;;
+  *) echo "discover: unsupported platform $(uname -s). This repo ships darwin and linux;" \
+          "Windows is a separate implementation, not a port." >&2; exit 1 ;;
+esac
+BASE="${DISCOVER_BASE:-$ROOT/dist/discovery-$PLATFORM.sql}"
 DEEP_SCAN=0
 # --cache reads what a scheduled bin/container-scan --cache wrote, and never talks to a
 # daemon. That is the deployment shape to prefer: see bin/container-scan's cache_write.
@@ -148,7 +164,22 @@ if [ -n "$WRITE" ]; then
   tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/discover.XXXXXX")" || exit 1
   # The pack is the artifact that carries one named query per file, already flattened to a
   # single argv-safe line. Running it is running what ships.
-  names="$(python3 -c 'import json,sys; print(" ".join(sorted(json.load(open(sys.argv[1]))["queries"])))' "$PACK")"
+  # FILTERED BY PLATFORM, or every branch for the other platform runs and fails. The pack
+  # carries every query for every platform -- that is what osqueryd's per-query `platform`
+  # field is for -- so on Linux the unfiltered list would run `apps`, `homebrew`, `runtime`
+  # and `native-messaging`, each dying on a missing table. Each would then write a
+  # kind=scan marker reading `error`, so a healthy Linux endpoint would report four gaps
+  # per scan and a reader would be told to go and fix a Mac.
+  #
+  # `posix` covers both, matching catalog/routes.yaml's platform_groups.
+  names="$(python3 -c '
+import json, sys
+want = sys.argv[2]
+pack = json.load(open(sys.argv[1]))["queries"]
+print(" ".join(sorted(
+    n for n, q in pack.items()
+    if q.get("platform") in (want, "posix", "all"))))' "$PACK" "$PLATFORM")"
+  [ -n "$names" ] || { echo "discover: no queries in $PACK for platform $PLATFORM" >&2; exit 1; }
   for name in $names; do
     q="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["queries"][sys.argv[2]]["query"])' "$PACK" "$name")"
     if [ "$name" = containers ]; then

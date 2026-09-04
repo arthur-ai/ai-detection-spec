@@ -1,0 +1,38 @@
+{
+  "description": "Cursor's official .deb, and the two base-OS packages whose names look like it.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=1",
+    "desktop": ">=1",
+    "ext": ">=0",
+    "file": ">=0",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "port": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "cursor"
+    ],
+    "forbid": [
+      "windsurf",
+      "claude-code"
+    ],
+    "forbid_evidence": [
+      "libxcursor",
+      "libwayland-cursor"
+    ]
+  },
+  "why": "The only Linux scenario carrying identifiers that did not exist before: deb_packages `cursor` and desktop_ids `cursor.desktop`, both read off a real 200MB install rather than off the download filename. It also gets the negative control free -- Ubuntu ships libxcursor1 and libwayland-cursor0, and an exact route must decline both. forbid_evidence is what makes that a test rather than an observation: `correctly declined` and `never looked at` are the same shape without it, which is exactly what the dropped `ext` kind hid behind.",
+  "must_contain": [
+    "cursor",
+    "cursor.desktop"
+  ],
+  "known_gaps": [
+    "The AppImage, which is Cursor's primary Linux download, is not installed here. desktop_ids is the route that would catch it, and this scenario exercises that route through the .deb's own entry instead."
+  ]
+}

@@ -37,8 +37,16 @@ UNION ALL
 -- Every top-level dotdir now, not four named ones. 47 on a loaded reference Mac, which is
 -- affordable, and it means a new agent's state directory is evidence on the first scan
 -- rather than after a fleet redeploy.
+--
+-- `.` AND `..` COME BACK FROM THIS GLOB SHAPE. Measured on a reference Mac: 4 of the 47
+-- dotdir rows were /Users/x/./ and /Users/x/../, which can never match anything and
+-- arrive as unmatched rows a reader has to dismiss by hand. Found while writing the Linux
+-- twin of this branch and fixed in both, so the two files do not differ for a reason
+-- nobody could explain.
 SELECT 'file', path, '', path, '', '' FROM file
   WHERE path LIKE '/Users/%/.%/'
+    AND path NOT LIKE '%/./'
+    AND path NOT LIKE '%/../'
 UNION ALL
 -- PYTHON-PACKAGED AGENTS. python_packages is deliberately absent from this query (15.6s,
 -- no WHERE push-down), which would leave pipx, uv and pip --user installs invisible. That

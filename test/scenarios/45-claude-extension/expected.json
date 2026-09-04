@@ -1,5 +1,6 @@
 {
   "description": "The Claude browser extension is collected as kind=ext and matched by id.",
+  "platform": "darwin",
   "counts": {
     "ext": ">=1",
     "nmh": ">=0",
@@ -8,7 +9,8 @@
     "file": ">=0",
     "npm": ">=0",
     "daemon": ">=0",
-    "port": ">=0"
+    "port": ">=0",
+    "vscodeext": ">=0"
   },
   "classified": {
     "must_find": [
