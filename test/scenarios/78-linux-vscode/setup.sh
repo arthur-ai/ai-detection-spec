@@ -47,5 +47,4 @@ echo "--- extensions the CLI reports:"
 as_user 'code --no-sandbox --list-extensions --show-versions' 2>&1 | sed 's/^/      /' || true
 echo "--- extensions on disk:"
 home=$(getent passwd "$SCENARIO_USER" | cut -d: -f6)
-ls -1 "$home/.vscode/extensions" 2>&1 | head -10 \
-  || diagnose code
+as_user_ls "$home/.vscode/extensions" | head -10 || diagnose code

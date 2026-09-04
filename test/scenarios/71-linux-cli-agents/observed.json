@@ -47,7 +47,7 @@
       "agent": "copilot-cli",
       "route": "npm",
       "value": "@github/copilot",
-      "agent_version": "1.0.82",
+      "agent_version": "1.0.83",
       "platform": "linux",
       "os": "24.04",
       "arch": "aarch64"

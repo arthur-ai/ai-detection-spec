@@ -64,8 +64,39 @@ need_user() {
   sudo_maybe useradd -m -s /bin/bash "$SCENARIO_USER"
 }
 
-# Run a command as that user, with a login shell so ~/.local/bin is on PATH.
-as_user() { sudo_maybe su - "$SCENARIO_USER" -c "$*"; }
+# Run a command as that user, with HOME AND PATH SET EXPLICITLY.
+#
+# `su - <user>` is the obvious way to do this and it does not work on a GitHub runner. The
+# commands ran as dana with HOME still pointing at the runner's home, and VS Code said so
+# in the one line that finally identified it:
+#
+#     EACCES: permission denied, mkdir '/home/runner/.config/Code/User'
+#
+# Both tools this matters for write to $HOME by default -- `code` puts extensions in
+# ~/.vscode and Chrome puts its profile wherever --user-data-dir says, which is written
+# relative to $HOME -- so a wrong HOME sends the evidence to another user's home directory,
+# or here to one the target user cannot write at all. Chrome's failure was the same cause
+# wearing a stranger disguise: `chrome_crashpad_handler: --database is required`, exit 133,
+# because it could not create its crash directory.
+#
+# IT ALSO PASSED FOR THE WRONG REASON, which is the part worth keeping in mind:
+# 71 and 72 were GREEN on that run, because `/home/%/.local/...` matches the runner's home
+# as happily as dana's. They asserted the right thing about the wrong user.
+#
+# So HOME is exported rather than inferred, and PATH carries ~/.local/bin because dropping
+# `-` means this is no longer a login shell.
+as_user() {
+  local home
+  home="$(getent passwd "$SCENARIO_USER" | cut -d: -f6)"
+  [ -n "$home" ] || { echo "as_user: no home for $SCENARIO_USER" >&2; return 1; }
+  sudo_maybe su "$SCENARIO_USER" -s /bin/bash -c \
+    "export HOME='$home'; export PATH=\"\$HOME/.local/bin:\$PATH\"; $*"
+}
+
+# Read something out of the scenario user's home. Their home is mode 750, so the CI user
+# cannot list it directly -- which made a diagnostic print "Permission denied" and look
+# like the failure it was trying to explain.
+as_user_ls() { sudo_maybe ls -1 "$@" 2>&1; }
 
 # EVERY FAILURE CARRIES ITS REASON. `<cmd> || echo "WARN: it failed"` was the pattern here,
 # and it cost a full CI round trip to learn nothing: two scenarios failed on a runner with

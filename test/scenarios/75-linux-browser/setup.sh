@@ -55,7 +55,7 @@ try_user "the headless Chrome run that scaffolds the profile" \
      --user-data-dir=$HOME/.config/google-chrome --dump-dom about:blank' \
   || diagnose google-chrome
 echo "--- profile contents:"
-ls -1 "$(getent passwd "$SCENARIO_USER" | cut -d: -f6)/.config/google-chrome" 2>&1 | head -8
+as_user_ls "$(getent passwd "$SCENARIO_USER" | cut -d: -f6)/.config/google-chrome" | head -8
 
 # An extension planted into that REAL profile, the same move 40-browser makes on macOS.
 # The permissions and the <all_urls> host_permission are what the assertion reads.
