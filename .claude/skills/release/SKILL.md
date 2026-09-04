@@ -41,9 +41,17 @@ for label, g in (("ids", lambda e: {e["id"]}), ("keys", set),
                  ("classes", lambda e: {e.get("classification")})):
     print(f"{label:10}", sorted(set(f(o,g)) - set(f(n,g))), "gone")
 EOF
-$ diff <(git show <prev-tag>:dist/discovery-darwin.sql | grep -oE "SELECT '[a-z]+'" | sort -u) \
-       <(grep -oE "SELECT '[a-z]+'" dist/discovery-darwin.sql | sort -u)
+$ for p in darwin linux; do
+    diff <(git show <prev-tag>:dist/discovery-$p.sql 2>/dev/null \
+             | grep -oE "SELECT '[a-z]+'" | sort -u) \
+         <(grep -oE "SELECT '[a-z]+'" dist/discovery-$p.sql | sort -u) \
+      && echo "$p: same kinds"
+  done
 ```
+
+**Both artifacts, because a kind can move on one platform only.** The composed file is per
+platform and they name disjoint tables, so diffing just one hides half the answer — and the
+half it hides is whichever platform you are not sitting on.
 
 `catalog/agents.yaml`'s own `version:` key does not track the release. It reading `1` is not
 evidence the schema held.
@@ -72,20 +80,55 @@ this file was written still runs. Three of them fail in ways that reach the note
 | gate | what it catches |
 |---|---|
 | `check_doc_numbers.py` | a number in prose that is no longer true — `CLAUDE.md` claimed 40/40 after it became 38/38. The notes are prose full of numbers |
-| `check_workflows.py` | a step referencing a deleted file. An unparseable workflow *vanishes* from the checks list instead of going red, and `scenarios.yml` never runs per PR |
+| `check_workflows.py` | a step referencing a deleted file, a scenario in no job's matrix, a scenario paired with a runner that cannot host it, and an input missing from `docs.yml`'s path trigger. An unparseable workflow *vanishes* from the checks list instead of going red |
 | `agent_status.py --check` | a stale `docs/agents.md`, which is where the notes' coverage figures come from |
 
-The last three commands need osquery or sudo, so they are outside `gates.sh`. Run them: **four
-things ship and they are not the same query** (`CLAUDE.md` has the table). A release that checks
-only `discovery.sql` has verified a quarter of what it attaches, and the pack once shipped with
-four of five queries silently returning zero rows.
+The last three commands need osquery or sudo, so they are outside `gates.sh`. Run them:
+**several things ship and they are not the same query** (`CLAUDE.md` has the table). A release
+that checks one composed artifact has verified a fraction of what it attaches, and the pack once
+shipped with four of five queries silently returning zero rows.
 
-Then confirm the last Scenarios run on `main` was green — it runs on dispatch and schedule, so a
-red matrix sits undetected:
+### You cannot verify both platforms from one machine, and the tools say which they checked
+
+**`measure.py`, `check_pack.py` and `docker_states.sh` each resolve the platform themselves and
+skip the other's queries by name.** That is deliberate — a Linux query measured on macOS reported
+`0.24s, 0 rows`, which is a query that ERRORED being recorded as fast — but it means the three
+commands above verify **only the half you are sitting on**. They say so:
 
 ```console
-$ gh run list --workflow=scenarios.yml --branch=main --limit=3
+  skipped (other platform): desktop-linux(linux), filesystem-linux(linux), ...
+pack: ok, 10 of 15 queries run on darwin
 ```
+
+**Read that line.** If it says `darwin`, nothing local has run a Linux query. Two ways to cover
+the other half, and CI is the one that counts:
+
+```console
+$ gh run list --workflow=ci.yml --branch=main --limit=1     # Runtime on macOS AND on Linux
+$ test/run-linux.sh                                          # locally, in containers, needs Docker
+```
+
+`test/run-linux.sh` skips two scenarios for reasons that are facts about a container rather than
+about the software — `75-linux-browser` needs an x86_64 host for Chrome, `76-linux-systemd` needs
+a real system bus — so a clean local run is not the same claim as a green CI run.
+
+### Confirm the Scenarios run for the exact commit you are tagging
+
+Scenarios run **per pull request** as well as on push, schedule and dispatch, so the suite is
+usually already green for the commit you are about to tag. Check the commit rather than the
+branch, because a `pull_request` run reports against the PR's MERGE commit and a `push` run
+against `main` — and reading the wrong one is how a release gets cut on someone else's result:
+
+```console
+$ sha=$(git rev-parse HEAD)
+$ gh run list --workflow=scenarios.yml --branch=main --limit=6 \
+    --json headSha,status,conclusion,databaseId \
+    --jq ".[] | select(.headSha==\"$sha\") | \"\(.databaseId) \(.status)/\(.conclusion)\""
+```
+
+A run that is **queued has no jobs yet**, and an empty job list is not the same as nothing
+failing. If that prints nothing, the suite has not run for this commit — wait, do not read the
+previous one.
 
 ## 3. Write the notes
 
@@ -118,6 +161,13 @@ State the change, then its consequence for someone running this on a fleet. Cove
 - **Payload and cost** if either moved, with the measured number and the machine it came from.
   `queries/COST.md` must say so as well — and if enumeration is pushing the payload toward the
   self-imposed 30KB budget, that number belongs in the notes, not only in the file.
+- **Which platform a claim is about.** "Coverage is 47/47" is true and says nothing about where:
+  `docs/agents.md`'s per-platform table is the figure to quote, because a portable identifier
+  proved on macOS is not evidence about Linux. Say the split, not the total.
+- **A cold cost, where one is recorded.** `measure.py` reports the floor of three warm runs; the
+  composed Linux artifact measured 1.12s that way and 8–14s cold under `sudo` on a loaded
+  runner. The cold number is what an endpoint's first scheduled scan pays, so that is the one a
+  reader is deciding with.
 - **Known gaps** carried forward, with the reason each is a gap.
 
 Every quantity is read off the tree. Each source below is the **only** copy of what it holds, so
@@ -128,7 +178,8 @@ quoting a second one against it is how the notes and the docs come to disagree:
 | `tools/agent_status.py` | *generated* — entry and identifier counts, per-identifier CI coverage, the exception register. Its `did not appear` and `no test` states are the honest gaps |
 | `docs/agents.md` | *generated* — the page a reader checks the notes against. Take figures from the tool, not by re-counting this |
 | `docs/blind-spots.yaml` | hand-maintained; "the canonical list, and the only copy". It lived in the README too, and which copy a reader met depended on which page they opened |
-| `queries/COST.md` | measured costs, **and the machine they came from**. A cost without its machine is not a measurement |
+| `queries/COST.md` | measured costs, **and the machine they came from**. A cost without its machine is not a measurement — and on Linux, without saying whether it is the warm floor or the cold run, which differ by 8x |
+| `catalog/routes.yaml` | which routes exist, how each matches, and **which platform each one is on**. The only copy: the matcher, the validator, the coverage report and lint all derive from it |
 
 For a gap belonging to one query rather than the platform, use that query's own comment — the
 `npx`/`bunx` cache is the standing case, at the foot of `queries/filesystem.sql`.
