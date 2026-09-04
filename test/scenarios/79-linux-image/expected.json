@@ -1,0 +1,40 @@
+{
+  "description": "A real `docker pull paulgauthier/aider`, plus two near-miss tags an exact route must decline.",
+  "platform": "linux",
+  "deep": true,
+  "counts": {
+    "deb": ">=1",
+    "desktop": ">=1",
+    "ext": ">=0",
+    "file": ">=0",
+    "image": ">=1",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "port": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "aider"
+    ],
+    "forbid": [
+      "claude-code",
+      "cursor"
+    ],
+    "forbid_evidence": [
+      "aider-fork",
+      "aider2"
+    ]
+  },
+  "must_contain": [
+    "paulgauthier/aider:latest"
+  ],
+  "why": "The only scenario that asserts an `image` identifier against a live registry, and the reason the catalog no longer carries a fixture-backed one. `deep: true` is what makes it possible: containers.sql is `expensive`, so it is absent from dist/discovery-linux.sql and this scenario asserts against `bin/discover --deep` instead -- the same artifact and the same bounded runner that ship. The controls are the half that makes it a test: `paulgauthier/aider-fork` has the catalogued value as a PREFIX, so declining it proves the route compares whole repository names and not substrings, and forbid_evidence is how that is asserted -- `correctly declined` and `never looked at` are the same shape without it.",
+  "known_gaps": [
+    "A pull proves the registry still serves this repository under this name. It does not prove the image is the vendor's: an image name is chosen by whoever tags it, so `docker tag alpine paulgauthier/aider` produces the same finding. That is a property of container images and is recorded in the blind spots, not something a scenario can close.",
+    "Nothing here runs the image. `docker_containers` needs a per-container inspect document osquery reads strictly, so what a running container is doing stays out of scope."
+  ]
+}

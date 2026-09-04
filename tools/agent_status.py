@@ -741,18 +741,18 @@ def markdown(data):  # noqa: C901
         + (f" {n_st('alias')} retired alias(es) are excluded, because nothing installs them "
            f"any more and no scenario can cover one." if n_st("alias") else ""),
         "",
-        *([f"**The remaining {n_st('ci-fixture')} {_fx_is} {_fx_names}**, whose evidence is a "
-           f"captured row rather than a live install. "
-           f"That is not an oversight in the suite: `containers.sql` is declared "
-           f"`expensive`, so it is deliberately kept out of the composed artifact every "
-           f"scenario asserts against -- no scenario can emit an `image` row at all. What "
-           f"tests it instead is `test/docker_states.sh`, on both platforms on every pull "
-           f"request, serving real images captured from a real daemon through a fake socket "
-           f"and asserting that the real runner and matcher claim the catalogued one and "
-           f"decline the rest -- including a gateway that was removed from this catalog on "
-           f"purpose, so `correctly not an agent` stays distinguishable from `route quietly "
-           f"broken`. A live `docker pull` in CI would upgrade the wording and would not "
-           f"add much: the row it produced is the row already captured.", ""]
+        # NO EXPLANATION IS WRITTEN IN HERE, because the last one outlived its own fact.
+        # It read "no scenario can emit an `image` row at all" -- true while containers.sql
+        # reached nobody, false the day 79-linux-image began asserting against
+        # bin/discover --deep. A generated page is the wrong place for a standing excuse:
+        # this names the identifier and where its evidence comes from, and the sentence
+        # disappears on its own when a real install records one.
+        *([f"**The remaining {n_st('ci-fixture')} {_fx_is} {_fx_names}**, whose recorded "
+           f"evidence is a captured row rather than a live install -- "
+           f"`test/docker_states.sh` serves real images through a fake socket and asserts "
+           f"the real runner and matcher claim the catalogued one and decline the rest. "
+           f"A CI scenario that installs it for real has not recorded an observation yet.",
+           ""]
           if n_st("ci-fixture") else []),
         # The floor note names scenarios in CI that have recorded nothing yet -- but only
         # where that actually costs coverage. It used to fire for ANY unrecorded scenario,

@@ -151,6 +151,35 @@ for _job, _names in sorted(_jobs.items()):
                   f"{_plat}. It would skip on every run while looking scheduled.")
             failed = True
 
+# A `deep: true` SCENARIO MUST BE UNDER A JOB THAT RUNS THE DEEP ARTIFACT, and a job that
+# runs it must have one.
+#
+# `image` rows come from dist/discovery-deep.sql and from nowhere else -- no composed
+# artifact carries containers.sql, because it is `expensive`. So a deep scenario listed
+# under a job whose query step runs only the composed artifact fails on the image count,
+# on a runner, with a message about a row count rather than about the artifact. This moves
+# it to lint, where the person who moved the scenario can see why.
+#
+# The reverse is checked too: a `--deep` branch no scenario reaches is payload nobody can
+# read, which is what happened to the retired `model` branch and to the dropped `ext` kind.
+for _job, _names in sorted(_jobs.items()):
+    _runs = " ".join(_s.get("run", "") or "" for _s in _doc["jobs"][_job].get("steps", []))
+    _honours = "--deep" in _runs
+    _deep = set()
+    for _name in sorted(_names & _on_disk):
+        _exp = repo / "test" / "scenarios" / _name / "expected.json"
+        if _exp.exists() and json.loads(_exp.read_text()).get("deep"):
+            _deep.add(_name)
+    for _name in sorted(_deep):
+        if not _honours:
+            print(f"FAIL: {_name} declares \"deep\": true but job {_job!r} runs only the "
+                  f"composed artifact. It would fail on the image count instead of here.")
+            failed = True
+    if _honours and not _deep:
+        print(f"FAIL: scenarios.yml job {_job!r} runs the deep artifact and no scenario it "
+              f"lists declares \"deep\": true -- a branch nothing reaches.")
+        failed = True
+
 # EVERY INPUT THE GENERATED DOC IS BUILT FROM MUST BE IN docs.yml's PATH TRIGGER.
 #
 # THIS IS THE ONE THAT FAILS BY GOING QUIET, which is this repo's signature failure mode.

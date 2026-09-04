@@ -50,7 +50,7 @@ cannot drift apart again.
 
 **47 are proved by a real install** -- a scenario in the `scenarios.yml` matrix installs the software and asserts the classifier finds it. 2 retired alias(es) are excluded, because nothing installs them any more and no scenario can cover one.
 
-**The remaining 1 is `paulgauthier/aider`**, whose evidence is a captured row rather than a live install. That is not an oversight in the suite: `containers.sql` is declared `expensive`, so it is deliberately kept out of the composed artifact every scenario asserts against -- no scenario can emit an `image` row at all. What tests it instead is `test/docker_states.sh`, on both platforms on every pull request, serving real images captured from a real daemon through a fake socket and asserting that the real runner and matcher claim the catalogued one and decline the rest -- including a gateway that was removed from this catalog on purpose, so `correctly not an agent` stays distinguishable from `route quietly broken`. A live `docker pull` in CI would upgrade the wording and would not add much: the row it produced is the row already captured.
+**The remaining 1 is `paulgauthier/aider`**, whose recorded evidence is a captured row rather than a live install -- `test/docker_states.sh` serves real images through a fake socket and asserts the real runner and matcher claim the catalogued one and decline the rest. A CI scenario that installs it for real has not recorded an observation yet.
 
 `tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor
 carrying an `unverified` block, so an unverified signature cannot enter quietly.
@@ -63,7 +63,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 
 | name | evidence | identifiers | scenarios |
 |---|---|---|---|
-| **aider** | real install | **`aider`**, **`aider-chat`**, `paulgauthier/aider`, **`~/.aider`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents |
+| **aider** | real install | **`aider`**, **`aider-chat`**, `paulgauthier/aider`, **`~/.aider`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
 | **Claude Code** | real install | **`@anthropic-ai/claude-code`**, **`~/.claude`**, **`~/.local/bin/claude`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 90-demo-fleet |
 | **Cline** | real install | **`cline`**, **`saoudrizwan.claude-dev`** | 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode |
 | **Codex CLI** | real install | **`codex`**, **`@openai/codex`**, **`~/.codex`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 90-demo-fleet |
@@ -155,6 +155,8 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 78-linux-vscode | min-osquery for this branch is 5.11.0, above the 5.10.0 the rest of the repo declares. On a 5.10.x endpoint the query returns [] and exits 1, which is why it is its own pack entry and its own composed branch. |
 | 78-linux-vscode | Neither agent's state directory is exercised. ~/.continue does not exist after `code --install-extension` -- verified on a real install -- because it appears on first activation in the editor, and nothing here opens a GUI session. So this proves the extension route and says nothing about the path routes for either. |
 | 78-linux-vscode | vscode_edition is reported but not asserted beyond the forbid: this installs into VS Code only, so the cursor, windsurf, vscodium and trae editions the column can report are unexercised. |
+| 79-linux-image | A pull proves the registry still serves this repository under this name. It does not prove the image is the vendor's: an image name is chosen by whoever tags it, so `docker tag alpine paulgauthier/aider` produces the same finding. That is a property of container images and is recorded in the blind spots, not something a scenario can close. |
+| 79-linux-image | Nothing here runs the image. `docker_containers` needs a per-container inspect document osquery reads strictly, so what a running container is doing stays out of scope. |
 
 `11-perplexity-desktop`, `50-autonomous` need macOS 15 or newer, so CI skips them on older runners rather than failing them. Each scenario's `requires.json` carries the reason.
 
