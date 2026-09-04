@@ -662,10 +662,8 @@ def markdown(data):  # noqa: C901
         "",
         "</div>",
         "",
-        "> **This page is generated.** `tools/agent_status.py` counts it from",
-        "> `catalog/agents.yaml`, `catalog/routes.yaml`, the test fixtures, and what each",
-        "> CI scenario actually matched. Lint fails when it drifts, so it cannot describe",
-        "> a catalog that has moved on without it. Nothing here is typed by hand.",
+        "> **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and",
+        "> what each CI scenario actually matched. Lint fails when it drifts.",
         "",
         # ONE INDICATOR, AND IT IS A GATE RATHER THAN A PROGRESS BAR.
         #
@@ -678,21 +676,23 @@ def markdown(data):  # noqa: C901
         # a red build, which --check enforces -- so there is ONE number, it always reads
         # complete, and the platform detail moved to the per-identifier table below, where
         # it is a fact someone can act on instead of a score to interpret.
-        f"**Every identifier is covered by a CI test that installs the real software** — "
-        f"{n_ci} of {n_ident - n_st('alias')}, with {n_st('alias')} retired alias(es) "
-        f"excluded because nothing installs them any more. This page cannot report partial "
-        f"coverage: `tools/agent_status.py --check` fails the build if the two numbers ever "
-        f"differ, so it either says this or CI is red.",
-        "",
-        # One line, not two. The policy and the current state were being stated separately
-        # and adjacently, which read as emphasis rather than as information.
-        ("**A real install is the standard, and every entry meets it.** A CI scenario installs "
-         "the real software and asserts the classifier finds it. Anything less would be an "
-         "exception recorded in the catalog with a reason, an evidence grade and a date; there "
-         "are none open."
-         if not (len(agents) - n_scen) else
-         "**A real install is the standard. Everything else is an exception, and every "
-         "exception is recorded.**"),
+        # SAID ONCE. Three statements stood here in a row -- the coverage fact, then "a real
+        # install is the standard, and every entry meets it", then a count of agents and
+        # identifiers the badges above already carried. All three were true and the second
+        # and third added nothing, which reads as emphasis rather than as information.
+        # THE STRONG CLAIM ONLY WHEN IT IS TRUE. This read "covered by a CI test that
+        # installs the real software -- 48 of 48" directly above "47 are proved by a real
+        # install", which is a contradiction of exactly one: the headline was counting
+        # every covered identifier and describing only the real-install ones.
+        ((f"**Every identifier is proved by a real install in CI** — {n_ci} of "
+          f"{n_ident - n_st('alias')}.")
+         if n_ci == n_st("ci-install") else
+         (f"**Every identifier is covered by a CI test** — {n_ci} of "
+          f"{n_ident - n_st('alias')}, {n_st('ci-install')} of them by a real install."))
+        + (f" {n_st('alias')} retired alias(es) are excluded: nothing installs them any more."
+           if n_st("alias") else "")
+        + " Anything below complete is a red build, so there is no partial number to read"
+          " here.",
         "",
         (f"| | entries | |\n|---|---:|---|\n"
          f"| **standard** | {n_scen} | a CI scenario installs the real software and asserts "
@@ -700,33 +700,19 @@ def markdown(data):  # noqa: C901
          f"| **exception** | {len(agents) - n_scen} | recorded in the catalog with a reason, an "
          f"evidence grade and the date it was raised |"
          if len(agents) - n_scen else None),
-        # Only describe a split when there IS one. "15 entries, 15 of them agents" says the
-        # same thing twice, and reads as though something is being held back.
-        (f"{len(agents)} agents carrying {n_ident} identifiers."
-         if not n_tools else
-         f"{len(agents)} entries carrying {n_ident} identifiers &mdash; "
-         f"**{len(agents) - n_tools} agents** and **{n_tools} not**."),
-        "",
+        # Only describe a split when there IS one. Without one this restated the badges.
+        (f"{len(agents)} entries carrying {n_ident} identifiers &mdash; "
+         f"**{len(agents) - n_tools} agents** and **{n_tools} not**." if n_tools else None),
         "## 🧪 Why a real install is the bar",
         "",
-        "`bot.molt.mac` was read off OpenClaw's own Homebrew metadata and matched nothing on any",
-        "Mac. `aider` installs as `aider-chat` under `uv` and `pipx` while its state directory is",
-        "`~/.aider`, so evidence and signature never met. Both were silent, both survived review,",
-        "and neither survived contact with an actual install. Nothing short of installing the",
-        "software catches that class of error.",
+        "`bot.molt.mac` came off OpenClaw's own Homebrew metadata and matched nothing on any",
+        "Mac. `aider` installs as `aider-chat` under `uv` and `pipx` while its state directory",
+        "is `~/.aider`, so evidence and signature never met. Both were silent and both survived",
+        "review.",
         "",
-        f"## 📊 {n_ci}/{n_ident - n_st('alias')} identifiers are covered by a CI test",
-        "",
-        "**Measured per identifier, and only counting tests CI actually runs.** Two things make",
-        "that different from \"has anyone tested this\". An entry passes when a scenario finds it,",
-        "but `expected.json` names the *agent* and never the identifier that matched — so an entry",
-        "could look verified while carrying identifiers nothing had exercised. And a scenario that",
-        "runs only on a maintainer's Mac catches nothing on a pull request: `45-claude-extension`",
-        "sat in exactly that state, passing locally and absent from the CI matrix.",
-        "",
-        "Each scenario records what it actually matched in its own `observed.json`, and",
-        "`tools/check_workflows.py` fails if a scenario is missing from the matrix, so the two",
-        "cannot drift apart again.",
+        "Coverage is counted **per identifier**, from what each scenario recorded in its own",
+        "`observed.json`, and only from scenarios in the CI matrix — an agent can pass while",
+        "carrying an identifier nothing exercised.",
         "",
         # A TABLE OF ZEROS IS A CONFUSING STAT. This listed all six states with a count
         # each, and five of them are zero and must stay zero -- `--check` fails the build
@@ -736,11 +722,9 @@ def markdown(data):  # noqa: C901
         #
         # The states still exist and still label each identifier in the tables below. What
         # goes is presenting them as a distribution.
-        f"**{n_st('ci-install')} are proved by a real install** -- a scenario in the "
-        f"`scenarios.yml` matrix installs the software and asserts the classifier finds it."
-        + (f" {n_st('alias')} retired alias(es) are excluded, because nothing installs them "
-           f"any more and no scenario can cover one." if n_st("alias") else ""),
-        "",
+        # NOTHING RESTATES THE SPLIT. "47 are proved by a real install" stood here while
+        # the headline above already read "47 of them by a real install"; the only thing
+        # left worth saying is which identifier is the exception, and why.
         # NO EXPLANATION IS WRITTEN IN HERE, because the last one outlived its own fact.
         # It read "no scenario can emit an `image` row at all" -- true while containers.sql
         # reached nobody, false the day 79-linux-image began asserting against
