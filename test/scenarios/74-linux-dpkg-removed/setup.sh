@@ -16,10 +16,13 @@ set -e
 source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest-linux.sh"
 [ "$(pm)" = apt ] || { echo "SKIP: dpkg states need an apt distro"; exit 3; }
 
-need_pkgs nano cron || echo "WARN: install failed"
+try "installing nano and cron, which ship conffiles" need_pkgs nano cron \
+  || echo "WARN: the packages this scenario removes did not install"
 echo "--- installed:"; dpkg -l nano cron 2>/dev/null | tail -2
 
 # REMOVE, NOT PURGE. --purge would delete the record and the scenario would pass for the
 # wrong reason.
-sudo_maybe apt-get -qq remove -y nano cron >/dev/null 2>&1 || echo "WARN: remove failed"
+try "apt-get remove (NOT purge) of nano and cron" \
+  sudo_maybe apt-get -qq remove -y nano cron \
+  || echo "WARN: the removal this scenario tests did not happen"
 echo "--- after remove (expect rc, not ii):"; dpkg -l nano cron 2>/dev/null | tail -2

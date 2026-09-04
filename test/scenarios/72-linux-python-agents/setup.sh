@@ -17,16 +17,18 @@ need_pkgs python3 || true
 # and exercise bin/classify's TOOL_DIR bridge under a Linux home root. aider installs as
 # `aider-chat` while its state dir is ~/.aider, and the bridge is the only thing that
 # makes those two the same agent.
-as_user 'curl -fsSL https://astral.sh/uv/install.sh | sh' >/dev/null 2>&1 \
-  || echo "WARN: uv install failed"
+try_user "the uv installer" 'curl -fsSL https://astral.sh/uv/install.sh | sh' || true
 for pkg in aider-chat hermes-agent litellm; do
-  as_user "\$HOME/.local/bin/uv tool install --python 3.12 $pkg" >/dev/null 2>&1 \
-    || echo "WARN: $pkg install failed"
+  try_user "uv tool install $pkg" \
+    "\$HOME/.local/bin/uv tool install --python 3.12 $pkg" || true
 done
 
 # aider writes ~/.aider on a VERSION CHECK, not on a model call: is_first_run_of_new_version()
 # writes installs.json, so --just-check-update needs no API key, no network credential and
 # no repository. A first attempt used --version, which exits before anything is written and
 # looked like an auth wall.
-as_user '$HOME/.local/bin/aider --just-check-update' >/dev/null 2>&1 || true
-as_user '$HOME/.local/bin/hermes --version' >/dev/null 2>&1 || true
+try_user "aider --just-check-update, which is what writes ~/.aider" \
+  '$HOME/.local/bin/aider --just-check-update' || true
+try_user "hermes --version" '$HOME/.local/bin/hermes --version' || true
+echo "--- uv tool directories that landed:"
+as_user_ls "$(getent passwd "$SCENARIO_USER" | cut -d: -f6)/.local/share/uv/tools" | head

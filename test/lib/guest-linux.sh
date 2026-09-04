@@ -64,38 +64,40 @@ need_user() {
   sudo_maybe useradd -m -s /bin/bash "$SCENARIO_USER"
 }
 
-# Run a command as that user, with HOME AND PATH SET EXPLICITLY.
+# Run a command as that user, in a SCRUBBED environment.
 #
-# `su - <user>` is the obvious way to do this and it does not work on a GitHub runner. The
-# commands ran as dana with HOME still pointing at the runner's home, and VS Code said so
-# in the one line that finally identified it:
+# THIS TOOK THREE ATTEMPTS AND EACH FAILURE WAS INSTRUCTIVE, so the reasoning is here
+# rather than in the history.
 #
-#     EACCES: permission denied, mkdir '/home/runner/.config/Code/User'
+#   1. `su - "$user" -c ...` -- the obvious form. On a GitHub runner the command ran as
+#      the right user with HOME still pointing at the RUNNER's home, and VS Code said so:
+#      `EACCES: permission denied, mkdir '/home/runner/.config/Code/User'`.
+#   2. Exporting HOME explicitly. HOME was then correct and the SAME error appeared, which
+#      is the useful part: that path is not built from HOME at all. It is
+#      $XDG_CONFIG_HOME, which a runner exports pointing at its own home and which sudo's
+#      env_keep and a non-login `su` both carry straight through. Chrome's failure was the
+#      same leak wearing a stranger disguise -- `chrome_crashpad_handler: --database is
+#      required`, exit 133 -- because its crash directory resolves the same way.
+#   3. `env -i`, below. Nothing inherited, everything named.
 #
-# Both tools this matters for write to $HOME by default -- `code` puts extensions in
-# ~/.vscode and Chrome puts its profile wherever --user-data-dir says, which is written
-# relative to $HOME -- so a wrong HOME sends the evidence to another user's home directory,
-# or here to one the target user cannot write at all. Chrome's failure was the same cause
-# wearing a stranger disguise: `chrome_crashpad_handler: --database is required`, exit 133,
-# because it could not create its crash directory.
+# Reproducing it needed the leak reproduced too: a container that does not export XDG_*
+# passes every version of this, which is why attempts 1 and 2 looked correct locally.
 #
-# IT ALSO PASSED FOR THE WRONG REASON, which is the part worth keeping in mind:
-# 71 and 72 were GREEN on that run, because `/home/%/.local/...` matches the runner's home
-# as happily as dana's. They asserted the right thing about the wrong user.
-#
-# So HOME is exported rather than inferred, and PATH carries ~/.local/bin because dropping
-# `-` means this is no longer a login shell.
+# THE COMMAND ARRIVES ON STDIN, as `bash -s`, so an arbitrary command needs no quoting at
+# this level -- the alternative was nesting three layers of quotes inside `env -i ... bash
+# -lc '...'` and getting it wrong for whichever scenario used an apostrophe first. Nothing
+# these scenarios run reads stdin itself.
 as_user() {
   local home
   home="$(getent passwd "$SCENARIO_USER" | cut -d: -f6)"
   [ -n "$home" ] || { echo "as_user: no home for $SCENARIO_USER" >&2; return 1; }
-  sudo_maybe su "$SCENARIO_USER" -s /bin/bash -c \
-    "export HOME='$home'; export PATH=\"\$HOME/.local/bin:\$PATH\"; $*"
+  printf '%s\n' "$*" | sudo_maybe su "$SCENARIO_USER" -s /bin/bash -c \
+    "env -i HOME='$home' USER='$SCENARIO_USER' LOGNAME='$SCENARIO_USER' \
+       SHELL=/bin/bash TERM=dumb \
+       PATH='$home/.local/bin:$home/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' \
+       bash -s"
 }
 
-# Read something out of the scenario user's home. Their home is mode 750, so the CI user
-# cannot list it directly -- which made a diagnostic print "Permission denied" and look
-# like the failure it was trying to explain.
 as_user_ls() { sudo_maybe ls -1 "$@" 2>&1; }
 
 # EVERY FAILURE CARRIES ITS REASON. `<cmd> || echo "WARN: it failed"` was the pattern here,
