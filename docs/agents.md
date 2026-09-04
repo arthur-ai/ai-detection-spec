@@ -21,14 +21,7 @@ and the CI test behind each one.
 > CI scenario actually matched. Lint fails when it drifts, so it cannot describe
 > a catalog that has moved on without it. Nothing here is typed by hand.
 
-### Coverage per platform
-
-A route's platform is where an identifier can be observed. This table counts where one **actually was** -- so a portable identifier proved on one platform does not count for the other, because the route being portable is not evidence that the software is.
-
-| platform | covered | coverable | CI runs it |
-|---|---|---|---|
-| `darwin` | 41 | 45 | yes |
-| `linux` | 18 | 25 | yes |
+**Every identifier is covered by a CI test that installs the real software** — 48 of 48, with 2 retired alias(es) excluded because nothing installs them any more. This page cannot report partial coverage: `tools/agent_status.py --check` fails the build if the two numbers ever differ, so it either says this or CI is red.
 
 **A real install is the standard, and every entry meets it.** A CI scenario installs the real software and asserts the classifier finds it. Anything less would be an exception recorded in the catalog with a reason, an evidence grade and a date; there are none open.
 

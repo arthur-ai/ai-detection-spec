@@ -68,9 +68,11 @@ on `ubuntu-24.04`, plus a `fedora:41` container for the rpm family, so both plat
 to the same standard: a signature is verified when a scenario installs the actual software and
 asserts the classifier finds it.
 
-The two are **not equally covered**, and [the report](docs/agents.md) prints the split per
-platform rather than averaging it into one number. Read it before assuming an identifier works
-where you need it.
+**Coverage is all or nothing, and it is a gate rather than a figure.** Every identifier is
+covered by a CI test that installs the real software, and `tools/agent_status.py --check`
+fails the build if that is ever less than all of them — so there is no partial number to
+interpret. [The report](docs/agents.md) names, per identifier, which scenarios proved it, and
+the Linux ones say so in their names.
 
 **Linux needed fewer new signatures than you might expect.** The `npm`, `pypi`, `images` and
 `~/`-rooted path routes were always platform-independent, so nine of the agents are
@@ -119,8 +121,8 @@ one.
 
 **Which OS versions has it actually run on?** [`docs/agents.md`](docs/agents.md) answers that
 per scenario, with the platform each run recorded — a generated table, not a claim maintained
-by hand here. Coverage is counted **per platform** there rather than averaged, because a
-portable identifier proved on macOS is not evidence about Linux.
+by hand here. Each identifier lists the scenarios that proved it, so which platform an
+identifier has actually been seen on is a fact on the page rather than a figure to divide.
 
 Running the queries needs **osquery alone**. `python3` and PyYAML are for the classifier and
 the scheduled writer, not the endpoint's reporting path — which is a `cat`. `curl` and Docker
