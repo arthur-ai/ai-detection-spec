@@ -108,9 +108,12 @@ $ gh run list --workflow=ci.yml --branch=main --limit=1     # Runtime on macOS A
 $ test/run-linux.sh                                          # locally, in containers, needs Docker
 ```
 
-`test/run-linux.sh` skips two scenarios for reasons that are facts about a container rather than
-about the software — `75-linux-browser` needs an x86_64 host for Chrome, `76-linux-systemd` needs
-a real system bus — so a clean local run is not the same claim as a green CI run.
+`test/run-linux.sh` skips several scenarios for reasons that are facts about the container or the
+host arch rather than about the software — `76-linux-systemd` needs a real system bus,
+`79-linux-image` needs a reachable Docker daemon, and `73`, `75` and `78` need an x86_64 host for
+the vendor builds they install — so a clean local run is not the same claim as a green CI run.
+Each prints its reason and exits 3; **read them**, because a suite reporting SKIP for the half
+you care about has verified nothing about it.
 
 ### Confirm the Scenarios run for the exact commit you are tagging
 
@@ -129,6 +132,29 @@ $ gh run list --workflow=scenarios.yml --branch=main --limit=6 \
 A run that is **queued has no jobs yet**, and an empty job list is not the same as nothing
 failing. If that prints nothing, the suite has not run for this commit — wait, do not read the
 previous one.
+
+### Confirm the observations landed, or the coverage figures are a merge behind
+
+The `collect` job runs **only on `main`** — a pull request asserts and uploads without committing,
+because a PR must not be able to move recorded coverage. It commits two things: each scenario's
+`observed.json` **and the regenerated `docs/agents.md`**. So immediately after merging a PR that
+adds an identifier's first real install, the page still describes the tree as it was.
+
+This has already happened: `79-linux-image` pulled `paulgauthier/aider` for real and passed on
+the PR, and `docs/agents.md` read *"47 of them by a real install"* until collect ran on `main` and
+moved it to 48. **A release cut in that window quotes a figure that is stale by one merge**, and
+every coverage number in the notes comes from that page.
+
+```console
+$ git log --oneline -3 origin/main            # a "record identifier coverage" commit after your merge
+$ gh run list --workflow=scenarios.yml --branch=main --limit=1 \
+    --json databaseId,status,conclusion
+$ tools/gates.sh                              # agent_status --check fails on a stale page
+```
+
+`gates.sh` catches the stale page but not the *pending* one: a tree whose `agents.md` matches its
+own uncommitted observations is internally consistent and still a merge behind. Pull `main` again
+after collect lands.
 
 ## 3. Write the notes
 
