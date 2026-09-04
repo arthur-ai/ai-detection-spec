@@ -123,9 +123,20 @@ try() {
 }
 
 # The same, for something that has to run as the scenario user.
+#
+# IT DELEGATES TO as_user AND MUST NOT GROW ITS OWN `su`, which is exactly what it did and
+# what cost three CI rounds. as_user was rewritten to scrub the environment with `env -i`
+# and this function kept its own `su - "$user" -c`, so every scenario that used try_user --
+# which is all of the ones that failed -- still leaked XDG_CONFIG_HOME and still could not
+# write. 72 passed the whole time because uv tolerates the leak and VS Code does not, which
+# made it look like a per-tool problem rather than one wrong copy of one line.
+#
+# Two functions doing the same job with one of them wrong is the drift this repo built a
+# route registry to end. test/lint.sh now asserts that `su` appears in exactly one place
+# in this file.
 try_user() {
   local label="$1"; shift
-  try "$label" sudo_maybe su - "$SCENARIO_USER" -c "$*"
+  try "$label" as_user "$@"
 }
 
 # What a scenario should print when it could not do its job, so the log says which of the
