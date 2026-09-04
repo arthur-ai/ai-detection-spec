@@ -191,6 +191,50 @@ because a scenario that only runs on a maintainer's Mac catches nothing on a pul
 identifier is what the software ships today — the failure that produced `bot.molt.mac`, a
 vendor-documented identifier matching nothing on any Mac.
 
+### `observed.json` is what coverage is counted from
+
+Each scenario records what it actually matched in `test/scenarios/<name>/observed.json`, and
+`tools/agent_status.py` counts coverage from those files rather than from what `expected.json`
+asserts — an agent can pass while carrying an identifier nothing exercised.
+
+The `collect` job writes them and it runs **only on `main`**: a pull request asserts and
+uploads without committing, because a PR must not be able to move recorded coverage. So **a PR
+that adds an identifier's first real install should commit the observation itself** — otherwise
+the generated page reports that identifier as uncovered until the merge lands, while the
+scenario proving it sits green on the same PR.
+
+```console
+$ python3 tools/agent_status.py --record /tmp/out.json test/scenarios/<name> \
+    --platform linux --os 24.04 --arch x86_64
+```
+
+Records merge and are refused when they shrink: a run proving fewer identifiers than the
+committed file already holds stops rather than overwriting it, because that is also what a
+query that quietly broke looks like. `--allow-shrink` is the deliberate override, for an
+identifier genuinely removed from the catalog.
+
+### `observed.json` is what coverage is counted from
+
+Each scenario records what it actually matched in `test/scenarios/<name>/observed.json`, and
+`tools/agent_status.py` counts coverage from those files rather than from what `expected.json`
+asserts — an agent can pass while carrying an identifier nothing exercised.
+
+The `collect` job writes them and it runs **only on `main`**: a pull request asserts and
+uploads without committing, because a PR must not be able to move recorded coverage. So **a PR
+that adds an identifier's first real install should commit the observation itself** — otherwise
+the generated page reports that identifier as uncovered until the merge lands, while the
+scenario proving it sits green on the same PR.
+
+```console
+$ python3 tools/agent_status.py --record /tmp/out.json test/scenarios/<name> \
+    --platform linux --os 24.04 --arch x86_64
+```
+
+Records merge and are refused when they shrink: a run proving fewer identifiers than the
+committed file already holds stops rather than overwriting it, because that is also what a
+query that quietly broke looks like. `--allow-shrink` is the deliberate override, for an
+identifier genuinely removed from the catalog.
+
 The state to read closely is **`did not appear`**: a scenario installed the agent and this
 identifier never showed up. It means one of three things, and telling them apart is the work:
 
