@@ -320,8 +320,16 @@ jobs:
           # scenario had ever proved, and the other platform's evidence vanished -- which is
           # the exact thing the OS axis exists to make visible.
           #
-          # Records carry their own os and arch, so the union is keyed on
-          # (agent, route, value, os, arch) and needs no cleverness.
+          # Records carry their own platform, os and arch, so the union is keyed on
+          # (agent, route, value, platform, os, arch) and needs no cleverness.
+          #
+          # PLATFORM IS IN THE KEY AND IN THE SORT, and it has to match
+          # tools/agent_status.py's record() exactly -- that function writes these files
+          # locally and this job writes them in CI, so a different ordering means the
+          # committed file and a local `--record` run disagree about a file neither of
+          # them changed. Two records could not collide on the key today, because `os`
+          # holds "14.8.7" against "24.04", but that is a coincidence of version
+          # numbering rather than a property worth relying on.
           python3 - <<'PYEOF'
           import json, pathlib, collections
           merged = collections.defaultdict(dict)
@@ -332,7 +340,8 @@ jobs:
               doc = json.loads(f.read_text())
               scen = doc.get("scenario") or d.name.split("--")[0].removeprefix("observed-")
               for r in doc.get("identifiers", []):
-                  key = (r["agent"], r["route"], r["value"], r.get("os"), r.get("arch"))
+                  key = (r["agent"], r["route"], r["value"],
+                         r.get("platform"), r.get("os"), r.get("arch"))
                   merged[scen][key] = r
           for scen, recs in sorted(merged.items()):
               out = pathlib.Path("test/scenarios") / scen / "observed.json"
@@ -340,11 +349,15 @@ jobs:
                   continue
               rows = sorted(recs.values(),
                             key=lambda r: (r["agent"], r["route"], r["value"],
-                                           r.get("os") or "", r.get("arch") or ""))
+                                           r.get("platform") or "", r.get("os") or "",
+                                           r.get("arch") or ""))
               out.write_text(json.dumps({"scenario": scen, "identifiers": rows},
                                         indent=2) + "\n")
-              plats = sorted({r.get("os") for r in rows if r.get("os")})
-              print(f"  {scen}: {len(rows)} records across {plats or ['(no platform)']}")
+              # Was labelled "platforms" while printing `os`, which on a macOS-only
+              # suite looked the same and no longer does.
+              plats = sorted({f"{r.get('platform') or '?'}/{r.get('os') or '?'}"
+                              for r in rows})
+              print(f"  {scen}: {len(rows)} records across {plats or ['(none recorded)']}")
           PYEOF
       - name: Regenerate the doc and commit if anything moved
         run: |
