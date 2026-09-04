@@ -1,0 +1,13 @@
+{
+  "scenario": "75-linux-browser",
+  "identifiers": [
+    {
+      "agent": "claude-desktop",
+      "route": "native_messaging_hosts",
+      "value": "com.anthropic.claude_browser_extension.json",
+      "platform": "linux",
+      "os": "24.04",
+      "arch": "x86_64"
+    }
+  ]
+}

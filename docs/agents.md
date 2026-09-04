@@ -12,7 +12,7 @@ and the CI test behind each one.
 ![agents](https://img.shields.io/badge/agents-16-1D4E89)
 ![identifiers](https://img.shields.io/badge/identifiers-49-1D4E89)
 ![covered](https://img.shields.io/badge/covered_by_a_CI_test-47%2F47-2E7D57)
-![real install](https://img.shields.io/badge/by_real_install-45-2E7D57)
+![real install](https://img.shields.io/badge/by_real_install-46-2E7D57)
 
 </div>
 
@@ -28,7 +28,7 @@ A route's platform is where an identifier can be observed. This table counts whe
 | platform | covered | coverable | CI runs it |
 |---|---|---|---|
 | `darwin` | 41 | 44 | yes |
-| `linux` | 16 | 24 | yes |
+| `linux` | 17 | 24 | yes |
 
 **A real install is the standard, and every entry meets it.** A CI scenario installs the real software and asserts the classifier finds it. Anything less would be an exception recorded in the catalog with a reason, an evidence grade and a date; there are none open.
 
@@ -57,14 +57,14 @@ cannot drift apart again.
 
 | | identifiers | |
 |---|---:|---|
-| **CI: real install** | 45 | a scenario in the `scenarios.yml` matrix installs the software and asserts the classifier finds it |
-| **CI: fixture** | 2 | matched a captured row by `test_matcher.py`, which runs on **every pull request**. A weaker claim than a real install and a faster cadence — different axes |
+| **CI: real install** | 46 | a scenario in the `scenarios.yml` matrix installs the software and asserts the classifier finds it |
+| **CI: fixture** | 1 | matched a captured row by `test_matcher.py`, which runs on **every pull request**. A weaker claim than a real install and a faster cadence — different axes |
 | **local only** | 0 | proved only by a scenario CI does not run. Catches nothing on a pull request |
 | **did not appear** ⚠ | 0 | a CI scenario installed the agent and this identifier never showed up. Usually installed by another route |
 | **no test** | 0 | nothing exercises it at all |
 | _retired alias_ | _2_ | _excluded from the count. Nothing installs these any more, so no scenario can cover one; the fixture row is the only evidence there is, and it proves the alias still resolves_ |
 
-> **This number is a floor.** `75-linux-browser`, `76-linux-systemd` run in CI and have recorded nothing yet, so identifiers they cover still count as *no test*. Absence of an observation is not absence of a test; the count corrects itself once each scenario has run.
+> **This number is a floor.** `76-linux-systemd` run in CI and have recorded nothing yet, so identifiers they cover still count as *no test*. Absence of an observation is not absence of a test; the count corrects itself once each scenario has run.
 
 `tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor
 carrying an `unverified` block, so an unverified signature cannot enter quietly.
@@ -111,7 +111,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | name | evidence | identifiers | scenarios |
 |---|---|---|---|
 | **ChatGPT Desktop** | real install | **`com.openai.codex`**, **`com.openai.chat`**, **`chatgpt`** | 10-desktop-apps, 90-demo-fleet |
-| **Claude Desktop** | real install | **`com.anthropic.claudefordesktop`**, **`claude`**, `com.anthropic.claude_browser_extension.json` | 10-desktop-apps, 90-demo-fleet |
+| **Claude Desktop** | real install | **`com.anthropic.claudefordesktop`**, **`claude`**, **`com.anthropic.claude_browser_extension.json`** | 10-desktop-apps, 90-demo-fleet |
 | **Perplexity** | real install | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
 
 > **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = retired alias, uninstallable by design. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it.
