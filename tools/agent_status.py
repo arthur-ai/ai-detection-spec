@@ -47,6 +47,12 @@ _spec.loader.exec_module(classify_mod)
 # hardcoded copies that had to agree with bin/classify and test/lint.sh. ALL_ROUTES also
 # fixed the report's column order, which is now the registry's declaration order, so the
 # page and the matcher cannot disagree about what a route even is.
+# THE SCENARIOS ROOT, named once. It was written out six times, and one of those spellings
+# gates whether record() merges with a committed observation and runs the coverage shrink
+# guard at all -- so the guard could not be tested, because a test had nowhere to put a
+# fixture that record() would accept as a scenario. test/test_matcher.py repoints this.
+SCENARIOS = ROOT / "test" / "scenarios"
+
 ROUTES = classify_mod.load_routes()
 REGISTRY = classify_mod.Registry(ROUTES)
 # Declaration order, which is what the report renders in.
@@ -240,11 +246,23 @@ def record(artifact, scenario_dir, os_version="", arch="", platform=""):
                   f"{len(lost)} fewer identifier(s) than the committed record:")
             for a, r, v in lost:
                 print(f"  lost  {a} {r}:{v}")
-            # NAME THE KEY IT COMPARED ON. The message used to say WHAT was lost and not
-            # WHICH platform's record it was compared against -- and the comparison is
-            # per (platform, os, arch), so "lost" from a run on a different architecture
-            # would be a bug in the guard rather than a real loss. Working out which cost
-            # a long detour with a CI log that could not answer it.
+            # NAME THE KEY IT COMPARED ON, and the keys the file holds. The message used
+            # to say WHAT was lost and not WHICH record it was judged against.
+            #
+            # THAT COST A LONG DETOUR AND THE GUARD WAS RIGHT. A CI job refused with
+            # `lost aider state_dirs:~/.aider` against a branch file whose records were
+            # all arch=aarch64, on a runner reporting x86_64 -- so the filtered set looked
+            # like it had to be empty and the guard looked broken.
+            #
+            # It was not. A `pull_request` job checks out the MERGE of the branch into
+            # main, not the branch, and main's copy of that file already carried x86_64
+            # records from an earlier run on main. The guard filtered to x86_64, found
+            # them, and correctly reported one fewer. The mistake was the forensics:
+            # comparing against `git show <branch>:...` when CI had never read that file.
+            #
+            # These two lines would have said so immediately, which is the whole reason
+            # they are here. test/test_matcher.py pins the scoping in both directions,
+            # using the same two-key file that caused the confusion.
             keys = sorted({(r.get("platform"), r.get("os"), r.get("arch"))
                            for r in committed})
             print(f"  compared on (platform, os, arch) = {plat}, against "
@@ -256,7 +274,7 @@ def record(artifact, scenario_dir, os_version="", arch="", platform=""):
     # record() is called directly by test/test_matcher.py against a TemporaryDirectory, which
     # is not a scenario and gets no merge with a committed record.
     scen = pathlib.Path(scenario_dir).resolve()
-    if scen.parent != (ROOT / "test" / "scenarios").resolve():
+    if scen.parent != SCENARIOS.resolve():
         print(f"recorded {len(idents)} identifiers observed by {scen.name} "
               f"(not a scenario directory)")
         out_path.write_text(json.dumps({"scenario": scen.name, "identifiers": idents},
@@ -346,7 +364,7 @@ def collect():
     # observation's `os` field, because "24.04" names a platform family only to a reader
     # who already knows whose numbering that is.
     scenario_platform = {}
-    for path in sorted((ROOT / "test" / "scenarios").glob("*/expected.json")):
+    for path in sorted(SCENARIOS.glob("*/expected.json")):
         doc = json.loads(path.read_text())
         scenario_platform[path.parent.name] = doc.get("platform")
         block = doc.get("classified", {})
@@ -361,7 +379,7 @@ def collect():
     # one a pull request would catch.
     seen_in = collections.defaultdict(set)      # (agent, route, value) -> {scenario}
     observed_os = set()
-    for path in sorted((ROOT / "test" / "scenarios").glob("*/observed.json")):
+    for path in sorted(SCENARIOS.glob("*/observed.json")):
         doc = json.loads(path.read_text())
         for rec in doc.get("identifiers", []):
             seen_in[(rec["agent"], rec["route"], rec["value"])].add(doc["scenario"])
@@ -378,7 +396,7 @@ def collect():
     # identifier of such an agent that the run did NOT produce was reached by the suite and
     # failed to appear -- worth naming separately from one nothing has ever tried.
     asserted_by = collections.defaultdict(set)      # agent id -> {scenario}
-    for path in sorted((ROOT / "test" / "scenarios").glob("*/expected.json")):
+    for path in sorted(SCENARIOS.glob("*/expected.json")):
         name = path.parent.name
         if name not in in_ci:
             continue
@@ -388,7 +406,7 @@ def collect():
     # the count is pessimistic until each has run once. Absence of an observation is not
     # absence of a test, and reporting the total without saying which scenarios are
     # missing would present a floor as a measurement.
-    recorded = {p.parent.name for p in (ROOT / "test" / "scenarios").glob("*/observed.json")}
+    recorded = {p.parent.name for p in SCENARIOS.glob("*/observed.json")}
     unrecorded = sorted(in_ci - recorded)
 
     agents = []
@@ -493,7 +511,7 @@ def collect():
     # lists only successes is the same failure mode as an empty result on a clean machine:
     # it reads as complete when it is merely silent.
     limits = []
-    for path in sorted((ROOT / "test" / "scenarios").glob("*/*.json")):
+    for path in sorted(SCENARIOS.glob("*/*.json")):
         doc = json.loads(path.read_text())
         name = path.parent.name
         for gap in doc.get("known_gaps", []):
