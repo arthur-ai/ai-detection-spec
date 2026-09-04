@@ -56,7 +56,13 @@ every row count below is the empty case for those.
 
 **Both numbers above and below are real, and they answer different questions.** The 1.12s in
 the table is what `tools/measure.py` reports; the CI job that runs the artifact the way an
-endpoint does measured **8s, 9s and 12s** across three commits, with the same ~1750 rows.
+endpoint does measured **8s, 9s, 12s and 14s** across four runs, with the same ~1750 rows.
+
+**Four readings, and every one of them is at or over the 10s budget.** That is worth saying
+plainly rather than filing under runner variance: this is not `apps.sql` measuring 0.81s and
+1.14s either side of a 1s band. The cold cost of the composed Linux artifact on a loaded
+machine EXCEEDS the budget this repo sets itself, consistently, and the CI gate emits a
+warning every time it does.
 
 The gap is not the data. It is how each number is taken:
 
@@ -79,10 +85,18 @@ Two consequences, and neither is a defect in the query:
   not to put this on a synchronous reporting path and to schedule `bin/discover --write` and
   `cat` the file. A cold cost near the budget is the measurement behind that sentence rather
   than a new problem.
-- **The CI gate warns at the budget and fails at 2x**, which is the convention `measure.py`
-  already uses and for the same reason: this job was red at 12s and green at 9s on the same
-  code. The paragraph below on `apps.sql` measuring 0.81s and 1.14s on consecutive runs of one
-  commit is that argument, and it applies here.
+- **The CI gate warns at the budget and fails at 2x.** That is the convention `measure.py`
+  already uses, and the reason it is right HERE is narrower than the reason it is right there:
+  a hard gate made this job red at 12s and green at 9s on identical code, which teaches people
+  to re-run rather than to read. The warning is the part that matters -- it fires on every run,
+  so the overrun stays visible instead of being absorbed into a green tick.
+- **The `unit` branch is the first thing to reconsider if this needs to come down.** It is 477
+  of the ~1750 rows -- 28% of the payload -- and `systemd_prefixes` carries no catalog values,
+  so none of those rows can match anything today. Dropping or filtering it would cut payload
+  and time together. It is not dropped yet because an unrecognised unit running unattended is
+  the same argument that keeps 47 third-party launchd jobs on macOS, and because
+  `fragment_path` is the wrong discriminator for the reason the query records. But the
+  trade is now measured on both sides rather than argued on one.
 
 The cold macOS cost was checked the same way for comparison and is not interesting: 1.65s cold
 against 1.22s warm, a factor of 1.3. Whatever makes the Linux figure 8-10x is specific to that
