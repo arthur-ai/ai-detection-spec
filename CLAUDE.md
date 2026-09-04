@@ -188,12 +188,19 @@ in both directions — a stale artifact and an artifact nothing generates are th
 ```console
 $ test/lint.sh                      # contract, first-arm aliases, kind coverage
 $ python3 tools/build.py --check    # dist/ matches queries/
-$ python3 tools/validate_catalog.py
+$ python3 tools/validate_catalog.py # + routes.yaml, platforms, value_pattern
 $ python3 tools/check_no_catalog.py
 $ python3 test/test_matcher.py
+$ python3 tools/check_workflows.py  # matrix union, platform pairing, docs.yml triggers
 $ sudo test/docker_states.sh        # every daemon state, guard and bound (~31s)
 $ sudo python3 tools/check_pack.py  # every pack query actually returns rows
+$ python3 tools/measure.py --check  # cost bands
 ```
+
+**Everything above runs on both platforms and measures the one it is on.**
+`docker_states.sh`, `check_pack.py` and `measure.py` each resolve the platform themselves
+and skip the other's queries by name rather than silently — a Linux query measured on macOS
+reported `0.24s, 0 rows`, which is a query that ERRORED being recorded as fast.
 
 **Assert on what must NOT match, not only on what must.** `libxdmcp` must not be claimed by the
 `mcp` signature; a fork must not be claimed as the real image. Only that shape of assertion can
@@ -204,7 +211,13 @@ bug hid behind.
 months because its fixture had no agent on either tag. If removing the code does not turn the
 test red, the test proves nothing.
 
-VM scenarios (`test/run.sh`) need Tart and run on dispatch and a schedule, not per PR. Where something genuinely cannot be
+**Scenarios run per pull request, on both platforms.** `test/run.sh` boots a macOS guest under
+Tart; `test/run-linux.sh` runs the Linux scenarios in containers and needs no hypervisor. Each
+scenario declares its `platform` in `expected.json`, and `tools/check_workflows.py` asserts it
+is paired with a runner that can host it — a Linux scenario listed under the macOS job would
+otherwise skip on every run while looking scheduled.
+
+Where something genuinely cannot be
 tested, a scenario `exit 3`s to SKIP with the reason in `requires.json` — but **be slow to
 conclude that.** This repo asserted that the Claude extension could not be installed without
 MDM, and was wrong twice over: Chrome had never been launched, so no profile existed to read,

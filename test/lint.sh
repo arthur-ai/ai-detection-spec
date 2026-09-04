@@ -262,6 +262,27 @@ for f in "$HERE"/run.sh "$HERE"/lib/vm.sh "$HERE"/lib/assert.sh \
   bash -n "$f" || { echo "FAIL: bash syntax in $f"; fail=1; }
 done
 
+# ONE WAY TO BECOME THE SCENARIO USER, and only one.
+#
+# test/lib/guest-linux.sh had two: as_user, which scrubs the environment with `env -i`, and
+# try_user, which had grown its own `su - "$user" -c`. Fixing one and not the other cost
+# three CI rounds, because the scenarios that used the wrong one failed with an error
+# (EACCES on $XDG_CONFIG_HOME) that pointed at the tool rather than at the helper. Any new
+# `su` in that file is that mistake again.
+# CODE ONLY, not the comments that explain the mistake -- two of the three matches were
+# the note describing the wrong form, and a check that counts its own documentation is a
+# check nobody can satisfy.
+_su_count=$(grep -vE '^\s*#' "$HERE/lib/guest-linux.sh" \
+            | grep -cE '(^|[^a-z_-])su ' || true)
+if [ "${_su_count:-0}" -gt 1 ]; then
+  echo "FAIL: guest-linux.sh invokes \`su\` $_su_count times. as_user is the only place"
+  echo "      that should: it is what scrubs the environment, and a second copy leaks the"
+  echo "      caller's XDG_* to the scenario user. Route it through as_user."
+  fail=1
+else
+  echo "guest-linux.sh: one way to become the scenario user"
+fi
+
 # bin/container-scan is SOURCED by test/docker_states.sh and by bin/discover, so that it
 # lends out the guard and the bound rather than having them copied. Two things can break
 # that silently: deleting the `(return 0 2>/dev/null) && return 0` line, after which

@@ -30,14 +30,32 @@ arch=$(dpkg --print-architecture 2>/dev/null || echo amd64)
 curl -fsSLo /tmp/chrome.deb \
   https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
   || { echo "SKIP: Chrome download failed"; exit 3; }
-sudo_maybe apt-get -qq install -y /tmp/chrome.deb >/dev/null 2>&1 \
-  || echo "WARN: Chrome install failed"
+try "installing the Chrome deb" sudo_maybe apt-get -qq install -y /tmp/chrome.deb \
+  || echo "WARN: Chrome did not install"
 rm -f /tmp/chrome.deb
+google-chrome --version 2>&1 | head -1 || true
 
-# Let Chrome scaffold its own profile. --no-sandbox because CI has no user namespaces.
-as_user 'google-chrome --headless=new --no-sandbox --disable-gpu \
-  --user-data-dir=$HOME/.config/google-chrome --dump-dom about:blank' >/dev/null 2>&1 \
-  || echo "WARN: headless Chrome run failed"
+# LET CHROME SCAFFOLD ITS OWN PROFILE. This is the step that cannot be faked: three
+# hand-built profiles returned zero rows from chrome_extensions, because osquery validates
+# a profile by reading its Preferences file and a directory tree that merely looks right
+# does not pass.
+#
+# The flags are the standard CI set and each earns its place: --no-sandbox because a
+# runner has no user namespaces, --disable-dev-shm-usage because /dev/shm is small in a
+# container and Chrome crashes on it, and --no-first-run/--no-default-browser-check
+# because either can block waiting for a decision nobody is there to make.
+#
+# `try_user`, NOT `>/dev/null 2>&1`. The first CI run of this scenario failed with
+# "WARN: headless Chrome run failed" and nothing else, and Chrome is the single noisiest
+# program to debug blind -- it logs a wall of harmless dbus errors and still exits 0, so
+# the difference between noise and a real failure is only visible in the output.
+try_user "the headless Chrome run that scaffolds the profile" \
+  'google-chrome --headless=new --no-sandbox --disable-gpu --disable-dev-shm-usage \
+     --no-first-run --no-default-browser-check \
+     --user-data-dir=$HOME/.config/google-chrome --dump-dom about:blank' \
+  || diagnose google-chrome
+echo "--- profile contents:"
+as_user_ls "$(getent passwd "$SCENARIO_USER" | cut -d: -f6)/.config/google-chrome" | head -8
 
 # An extension planted into that REAL profile, the same move 40-browser makes on macOS.
 # The permissions and the <all_urls> host_permission are what the assertion reads.

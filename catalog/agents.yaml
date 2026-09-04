@@ -1,9 +1,24 @@
 # Detection catalog for AI agents.
 #
-# Every route here is macOS-shaped today -- `bundle_ids`, `homebrew`, `launchd_prefixes`.
-# Windows and Linux are coming and will need routes of their own; adding one means adding
-# it to tools/validate_catalog.py's ROUTES and bin/classify's KIND_ROUTES, or the rows are
-# dropped rather than unmatched -- see the `ext` failure that hid for months.
+# EVERY ROUTE IS DECLARED IN catalog/routes.yaml, which says what it matches, how, and on
+# WHICH PLATFORM. Read that file before adding a route here -- and adding one there is the
+# whole edit, because the matcher, the validator, the coverage report and lint all derive
+# from it. It used to mean editing tools/validate_catalog.py's ROUTES and bin/classify's
+# KIND_ROUTES by hand, and `ext` was missing from one of them for months: the rows were
+# DROPPED rather than unmatched, invisible even under --show-unmatched.
+#
+# WHICH ROUTES ARE PLATFORM-SPECIFIC MATTERS WHEN YOU ADD AN AGENT:
+#
+#   darwin only   bundle_ids, homebrew, launchd_prefixes
+#   linux only    deb_packages, rpm_packages, desktop_ids, systemd_prefixes
+#   both          npm, pypi, extension_ids, native_messaging_hosts, vscode_extensions,
+#                 images, state_dirs, binaries, model_stores
+#
+# `platforms:` on each agent is REQUIRED and is checked against those: declaring
+# `deb_packages` without `linux` is a copy-paste error, and claiming a platform no route
+# can match on is a gap that belongs in docs/blind-spots.yaml rather than here.
+#
+# Windows has no routes at all. routes.yaml can express one; none is defined.
 #
 # One entry per tool, carrying EVERY route it ships through. A single agent commonly
 # arrives as a Homebrew cask, an npm global and a curl installer that wraps npm, and

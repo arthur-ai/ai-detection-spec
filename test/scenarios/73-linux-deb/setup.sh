@@ -29,7 +29,9 @@ url=$(curl -fsSL "https://cursor.com/api/download?platform=$plat&releaseTrack=st
   || { echo "SKIP: could not resolve the Cursor download URL"; exit 3; }
 echo "--- installing $url"
 curl -fsSLo /tmp/cursor.deb "$url" || { echo "SKIP: download failed"; exit 3; }
-sudo_maybe apt-get -qq install -y /tmp/cursor.deb >/dev/null 2>&1 \
-  || sudo_maybe dpkg -i /tmp/cursor.deb >/dev/null 2>&1 \
-  || echo "WARN: cursor install failed"
+try "installing the Cursor .deb" sudo_maybe apt-get -qq install -y /tmp/cursor.deb \
+  || try "dpkg -i for Cursor" sudo_maybe dpkg -i /tmp/cursor.deb \
+  || echo "WARN: Cursor did not install"
+echo "--- what dpkg recorded:"
+dpkg -l 2>/dev/null | grep -iE "^i.*cursor" || echo "      no cursor package"
 rm -f /tmp/cursor.deb

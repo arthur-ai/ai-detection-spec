@@ -17,7 +17,24 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$HERE/.."
 SOCK=/tmp/arthur-fake-docker.sock
-OSQI="${OSQI:-/usr/local/bin/osqueryi}"
+# The macOS path first so a Mac's behaviour does not change, then whatever is on PATH --
+# which is how the Linux deb and rpm both present it, at /usr/bin/osqueryi. This suite is
+# platform-portable by design: it needs NO Docker at all (test/lib/fake_docker.py serves
+# every daemon state), so the only thing that was macOS-specific about it was this default
+# and one BSD-only stat below.
+OSQI="${OSQI:-$([ -x /usr/local/bin/osqueryi ] && echo /usr/local/bin/osqueryi \
+      || command -v osqueryi || echo /usr/local/bin/osqueryi)}"
+
+# THE COMPOSED ARTIFACT FOR THIS PLATFORM. There is no unqualified one, and reaching for
+# the wrong platform's is not a soft failure: it dies on its first missing table and
+# returns in milliseconds, which made the "inlining the branch is silent" test below
+# report that the stall had gone away rather than that it had run the wrong file.
+case "$(uname -s)" in
+  Darwin) PLATFORM=darwin ;;
+  Linux)  PLATFORM=linux ;;
+  *) echo "docker_states: unsupported platform $(uname -s)" >&2; exit 1 ;;
+esac
+COMPOSED="$ROOT/dist/discovery-$PLATFORM.sql"
 QUERY="SELECT tags FROM docker_images"
 fail=0
 
@@ -262,7 +279,7 @@ echo "  inlining the branch is silent, which is why the split exists"
 # blocked (it had to be killed), that it exits 0, and that the output looks complete.
 start_fake wedge
 inline="$(mktemp "${TMPDIR:-/tmp}/inline.XXXXXX")"
-{ sed 's/;$//' "$ROOT/dist/discovery-darwin.sql"; printf '\nUNION ALL\n\n'
+{ sed 's/;$//' "$COMPOSED"; printf '\nUNION ALL\n\n'
   awk '/^SELECT/,0' "$ROOT/queries/containers.sql"; echo ';'; } > "$inline"
 naive="$(mktemp "${TMPDIR:-/tmp}/naive.XXXXXX")"
 "$OSQI" --docker_socket="$SOCK" --json < "$inline" > "$naive" 2>/dev/null &
@@ -280,8 +297,11 @@ import json
 try: rows = json.load(open('$naive'))
 except Exception: print(0); raise SystemExit
 kinds = {r['kind'] for r in rows}
-# Every base kind present, no image row, and enough rows to look like a real answer.
-print(1 if len(rows) > 100 and 'image' not in kinds and 'app' in kinds else 0)" 2>/dev/null)" \
+# A base kind this platform actually emits, no image row, and enough rows to look like a
+# real answer. 'app' is darwin-only -- naming it unconditionally made this assert on a
+# kind Linux cannot produce.
+base = 'app' if '$PLATFORM' == 'darwin' else 'deb'
+print(1 if len(rows) > 100 and 'image' not in kinds and base in kinds else 0)" 2>/dev/null)" \
       "rows=$(python3 -c "import json;print(len(json.load(open('$naive'))))" 2>/dev/null)"
 rm -f "$inline" "$naive"
 stop_fake
@@ -450,9 +470,13 @@ echo "  the cache is replaced by rename, not written in place"
 CACHE="$(mktemp "${TMPDIR:-/tmp}/cache.XXXXXX")"
 start_fake healthy
 "$ROOT/bin/container-scan" --socket "$SOCK" --cache "$CACHE" >/dev/null 2>&1
-ino1=$(stat -f %i "$CACHE")
+# `stat -f %i` is BSD and `stat -c %i` is GNU, and neither exists on the other. Asking
+# python for it needs no branch and no feature detection -- and python3 is already a hard
+# requirement of the writer this test exercises.
+inode() { python3 -c 'import os,sys; print(os.stat(sys.argv[1]).st_ino)' "$1"; }
+ino1=$(inode "$CACHE")
 "$ROOT/bin/container-scan" --socket "$SOCK" --cache "$CACHE" >/dev/null 2>&1
-ino2=$(stat -f %i "$CACHE")
+ino2=$(inode "$CACHE")
 check "a rewrite produces a new inode" "$([ "$ino1" != "$ino2" ] && echo 1 || echo 0)" \
       "inode unchanged ($ino1), so the file was written in place and a reader can tear it"
 stop_fake
@@ -490,23 +514,33 @@ echo "  one broken branch costs one branch"
 # five separate inline snippets was fragile and, in this shell, silently produced nothing.
 PACKDIR="$(mktemp -d "${TMPDIR:-/tmp}/pack.XXXXXX")"
 python3 - "$ROOT/dist/ai-discovery.conf" "$PACKDIR/pack.conf" <<'MKPACK'
-import json, sys
+import json, platform, sys
 full = json.load(open(sys.argv[1]))
+# THE BORROWED BRANCHES MUST BE THIS PLATFORM'S, or bin/discover filters every one of them
+# out and writes no payload at all -- which is how this test failed on Linux while passing
+# on macOS. The pair and the kinds they must produce are named per platform rather than
+# derived from the same pack, because deriving both sides of an assertion from one source
+# is how a test stops being able to fail.
+PLATFORM = {"Darwin": "darwin", "Linux": "linux"}[platform.system()]
+BORROW = {"darwin": (("apps", "homebrew"), {"app", "brew"}),
+          "linux": (("packages-linux", "desktop-linux"), {"deb", "desktop"})}[PLATFORM]
 # Three branches, not all of them: two good ones plus a broken one prove the claim, and
 # the rest would add seconds of re-measuring what the suite already measures.
 #
-# `homebrew` RATHER THAN `packages`, and the swap is the point. This used to take
-# ("apps", "packages") and assert both `app` and `brew` came back -- true when packages.sql
-# carried the Homebrew branch. It is `posix` now and carries only npm, because
-# homebrew_packages is a darwin-only table and could not stay in a file a Linux artifact
-# composes. The assertion below still names `brew`, so it needs the file that now emits it.
-pack = {"queries": {k: full["queries"][k] for k in ("apps", "homebrew")}}
+# `homebrew` RATHER THAN `packages` on darwin, and the swap is the point. This used to
+# take ("apps", "packages") and assert both `app` and `brew` came back -- true when
+# packages.sql carried the Homebrew branch. It is `posix` now and carries only npm,
+# because homebrew_packages is a darwin-only table and could not stay in a file a Linux
+# artifact composes.
+pack = {"queries": {k: full["queries"][k] for k in BORROW[0]}}
 # A table that cannot exist, which is what an older osquery presents for a real one.
 pack["queries"]["broken"] = {
     "query": "SELECT 1 AS kind, 2 AS id, 3 AS ver, 4 AS loc, 5 AS extra, 6 AS perms "
              "FROM table_that_does_not_exist;",
-    "interval": 3600, "platform": "darwin", "description": "deliberately broken"}
+    "interval": 3600, "platform": PLATFORM, "description": "deliberately broken"}
 json.dump(pack, open(sys.argv[2], "w"))
+# Hand the expected kinds to the verdict below rather than making it guess.
+json.dump(sorted(BORROW[1]), open(sys.argv[2] + ".kinds", "w"))
 MKPACK
 DISCOVER_PACK="$PACKDIR/pack.conf" OSQI="$OSQI" "$ROOT/bin/discover" \
   --write "$PACKDIR/out.json" >/dev/null 2>/dev/null
@@ -519,7 +553,8 @@ try:
     valid = 1
     kinds = {r.get("kind") for r in rows}
     scans = {r.get("id"): r.get("extra") for r in rows if r.get("kind") == "scan"}
-    good = 1 if {"app", "brew"} <= kinds and len(rows) > 100 else 0
+    want = set(json.load(open(sys.argv[1].replace("out.json", "pack.conf.kinds"))))
+    good = 1 if want <= kinds and len(rows) > 100 else 0
     attributed = 1 if scans.get("broken") == "error" else 0
     detail = f"{len(rows)} rows, kinds={sorted(k for k in kinds if k)}, scans={scans}"
 except Exception as e:

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Inventory this Mac's AI tooling. The entry point for the shipped artifacts.
+# Inventory this machine's AI tooling. The entry point for the shipped artifacts.
+# macOS and Linux both -- the composed artifact is chosen by `uname -s` below.
 #
 #     bin/discover                     # base inventory, as one JSON array
 #     bin/discover --deep              # base inventory plus a LIVE container scan
@@ -75,7 +76,7 @@ STATUS=""
 #
 #   one branch's table unavailable, as on an older osquery:
 #     composed, one statement ..... 0 rows, exit 1, stdout "[\n\n]" -- five bytes of
-#                                   VALID EMPTY JSON. One missing table and the Mac
+#                                   VALID EMPTY JSON. One missing table and the machine
 #                                   reports as though nothing is installed on it.
 #     independent ................. 6 of 6 branches, 757 rows, the bad one contributes 0
 #
@@ -125,14 +126,14 @@ done
 osqi="$(osqueryi_path)" || { echo "discover: no osqueryi found (set OSQI)" >&2; exit 1; }
 [ -s "$BASE" ] || { echo "discover: no $BASE (run tools/build.py)" >&2; exit 1; }
 
-# --cache: emit and stop. Before the osqueryi lookup, because this path must work on a Mac
+# --cache: emit and stop. Before the osqueryi lookup, because this path must work on a host
 # where osquery is not installed at all -- the writer's Mac and the reader's are the same
 # machine here, but they need not be, and a reader that required osquery would be a
 # surprising dependency for something documented as `cat`.
 if [ -n "$CACHE_PATH" ]; then
   [ -z "$WRITE" ] || { echo "discover: --cache and --write are opposite ends of the same pipe; pick one" >&2; exit 1; }
   if [ ! -r "$CACHE_PATH" ]; then
-    # A missing cache is a fact about the deployment, not about this Mac. Saying nothing
+    # A missing cache is a fact about the deployment, not about this machine. Saying nothing
     # would let it read as "nothing installed here".
     echo "discover: no readable cache at $CACHE_PATH -- is the scheduled writer installed?" >&2
     python3 -c 'import json,sys,time; print(json.dumps([{"kind":"scan","id":"inventory",
@@ -141,7 +142,7 @@ if [ -n "$CACHE_PATH" ]; then
     exit 1
   fi
   # Parsed rather than echoed, so a truncated or half-written file is caught here instead of
-  # reaching a collector as "this Mac reported nothing".
+  # reaching a collector as "this machine reported nothing".
   python3 -c '
 import json, sys
 try:
@@ -227,19 +228,29 @@ for name in names:
                 raise ValueError("not a list")
         except (OSError, ValueError):
             outcome = "error"
-    # container-scan emits its own scan row, carrying a reason we must not overwrite.
+    # A BRANCH MAY EMIT ITS OWN SCAN ROWS, and whether one REPLACES this branch's marker
+    # depends on whether it carries the same id.
+    #
+    # container-scan emits `id: containers` for the `containers` branch -- same name, so
+    # it is a substitution, and its reason (absent, unhealthy, timeout) must not be
+    # overwritten with a bare "ok".
+    #
+    # queries/runtime-linux.sql emits `id: systemd`, which is a DIFFERENT fact: whether
+    # the unit list could be read, inside a branch that ran fine. Treating that as a
+    # substitution silently dropped the `runtime-linux` marker altogether, so the status
+    # line said `systemd=absent` and never said whether the branch itself ran. Both rows
+    # ship now.
     own = [r for r in got if r.get("kind") == "scan"]
     rows += [r for r in got if r.get("kind") != "scan"]
-    if own:
-        rows += own
-    else:
+    rows += own
+    if not any(r.get("id") == name for r in own):
         rows.append({"kind": "scan", "id": name, "ver": now, "loc": "", "extra": outcome,
                      "perms": ""})
 json.dump(rows, sys.stdout, separators=(",", ":"))
 MERGE
   [ -s "$tmpdir/payload" ] || { echo "discover: produced no payload; $WRITE left alone" >&2; rm -rf "$tmpdir"; exit 1; }
   # Rename, never write in place: a `cat` that caught a half-written file yields truncated
-  # JSON, which a collector reads as a Mac that reported nothing.
+  # JSON, which a collector reads as a machine that reported nothing.
   mkdir -p "$(dirname "$WRITE")" 2>/dev/null
   mv -f "$tmpdir/payload" "$WRITE" || { echo "discover: could not write $WRITE" >&2; rm -rf "$tmpdir"; exit 1; }
   chmod 644 "$WRITE" 2>/dev/null
@@ -293,7 +304,7 @@ esac
 # Join by PARSING both documents, each arriving on its own channel -- the base on stdin,
 # the deep rows in the environment. Splicing brackets in bash, or splitting one stream on a
 # delimiter, would both be betting that the delimiter cannot appear in the data. A
-# malformed array reads to a collector as "this Mac reported nothing", which is the single
+# malformed array reads to a collector as "this machine reported nothing", which is the single
 # outcome every guard in this repo exists to prevent, so it is not a bet worth taking to
 # save a process.
 export DISCOVER_DEEP_JSON="${deep:-[]}"

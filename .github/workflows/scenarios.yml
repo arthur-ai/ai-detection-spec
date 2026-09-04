@@ -1,14 +1,35 @@
 name: Scenarios
 
 # Installs real software on a throwaway runner and asserts what the query finds.
-# Not run per pull request: macOS runner minutes are expensive and these take
-# several minutes each. A maintainer can trigger a run on a contribution.
+#
+# RUNS PER PULL REQUEST. It did not, and the reason it did not -- macOS runner minutes --
+# was the wrong thing to optimise: a signature is the one kind of change in this repo whose
+# correctness CANNOT be checked statically. lint proves the SQL is well-formed and the
+# catalog is consistent; only a real install proves an identifier is what the software
+# ships. Landing a signature on the strength of a green lint is how `bot.molt.mac` got in.
+#
+# The cost is real and is bounded three ways rather than by not running:
+#
+#   * `concurrency` below cancels a PR's superseded runs, so pushing five times to a
+#     branch costs one suite and not five.
+#   * `fail-fast: false` on every matrix, so one flaky download reports one red job
+#     instead of hiding the other twenty.
+#   * the `collect` job stays main-only, so a PR run asserts and uploads without
+#     committing observations. A PR must not be able to move recorded coverage.
 on:
+  pull_request:
   push:
     branches: [main]
   schedule:
     - cron: "0 6 * * *"
   workflow_dispatch:
+
+# Cancel superseded PR runs, NEVER a main or scheduled one. A cancelled main run loses the
+# observations `collect` would have committed, and a lost observation reads downstream as
+# an identifier that stopped appearing.
+concurrency:
+  group: scenarios-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   scenario:

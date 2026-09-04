@@ -26,7 +26,7 @@ measurements.
 `3` asked and gave up, `1` could not run — and, on every outcome, in a `kind=scan` row.
 
 That row is not decoration: an interrupted `osqueryi` exits 0 having printed a valid empty
-array, so without it a wedged daemon and a Mac with no containers produce the same value.
+array, so without it a wedged daemon and a machine with no containers produce the same value.
 `bin/classify` prints it as `COULD NOT LOOK` above the findings.
 
 ## An image name is weaker evidence than a bundle id
@@ -45,5 +45,24 @@ Container images are rare in this catalog — `catalog/agents.yaml`'s `images:` 
 which agents carry one. So `--deep` earns its place on fleets that run agents in containers
 and adds little elsewhere.
 
-Docker itself is never required. A Mac with no Docker reports `absent`, which is a stated
+Docker itself is never required. A machine with no Docker reports `absent`, which is a stated
 outcome rather than a failure.
+
+## On Linux, where the socket is simpler and the blind spot is wider
+
+`docker_images` is in osquery's `specs/posix`, so the SQL needs no change at all and
+`dist/discovery-deep.sql` is one file for both platforms. What differs is the runner:
+
+- **The socket is `/var/run/docker.sock` and that is usually the only candidate.** Docker
+  Engine has no per-user socket, so the two Docker-Desktop-shaped paths
+  `bin/container-scan` also probes simply never hit there.
+- **Podman is not probed, and on Linux that costs more.** It is often the default there, and
+  `/run/podman/podman.sock` would pass the health guard and then return **zero images**,
+  because `docker_images` does not read Podman's image store at all. That is a manufactured
+  "we looked", which is worse than a gap — so it is recorded as a gap in
+  [the blind spots](agents.md) instead of probed.
+- **A rootless Podman socket lives under `$XDG_RUNTIME_DIR`**, which the same argument
+  covers.
+
+So on a Podman host `--deep` reports `absent` and means it: there is no Docker socket. It is
+not saying the machine has no containers, and nothing here can tell you whether it does.

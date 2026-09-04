@@ -299,17 +299,45 @@ inherent. A `slow` query is fine; an undeclared one is not.
 
 ## Running the tests
 
+Platform-free, and worth running first:
+
 ```console
-$ test/lint.sh                 # static checks, about a second, no VM
-$ tools/measure.py --check     # cost bands, needs osquery and a few seconds
-$ test/docker_states.sh        # every daemon state, that the bound kills the one the guard
-                               # wrongly admits, and that image rows classify, ~35s
-$ test/run.sh 00-baseline      # one scenario in a disposable macOS VM
+$ test/lint.sh                 # static checks, about a second, no osquery, both platforms
+$ python3 test/test_matcher.py # the matcher, no osquery, no VM, no container
+$ python3 tools/build.py --check
+$ python3 tools/validate_catalog.py
 ```
 
-Scenarios run on GitHub-hosted macOS runners in CI. Locally they use
+Needs osquery, and measures whichever platform you are on:
+
+```console
+$ tools/measure.py --check     # cost bands, a few seconds
+$ sudo test/docker_states.sh   # every daemon state, that the bound kills the one the guard
+                               # wrongly admits, and that image rows classify, ~35s
+$ sudo python3 tools/check_pack.py
+```
+
+Scenarios, which install real software and are therefore per platform:
+
+```console
+$ test/run.sh 00-baseline           # macOS, in a disposable VM
+$ test/run-linux.sh 70-linux-baseline   # Linux, in a disposable container
+$ test/run-linux.sh                 # every Linux scenario
+```
+
+**The two harnesses differ because the platforms do.** `test/run.sh` uses
 [Tart](https://tart.run), which needs an Apple Silicon Mac and a base image of roughly 25GB.
-You do not need to run them locally to contribute: push the branch and let CI do it.
+`test/run-linux.sh` needs only Docker, because a Linux scenario needs no hypervisor — which
+is also why the Linux CI jobs run directly on the runner with no VM layer.
+
+Two Linux scenarios **skip** in a container and run for real in CI, and both reasons are
+facts about the container rather than about the software: `75-linux-browser` needs an x86_64
+host because Google ships no Linux arm64 Chrome, and `76-linux-systemd` needs a real system
+bus, which a container has no PID 1 to provide.
+
+**Scenarios run on every pull request**, on macOS and Linux both. You do not need to run them
+locally to contribute: push the branch and let CI do it. Superseded runs on the same branch are
+cancelled, so pushing repeatedly costs one suite rather than one per push.
 
 Assertions are on **counts and specific identifiers**, never "did it parse". Every defect found
 in this project so far produced plausible-looking output with the wrong number of rows, and not
@@ -334,12 +362,16 @@ uploaded by hand.
 ## Reporting a detection gap
 
 If you know of an agent this misses, open an issue with the tool, how you installed it, and what
-`queries/discovery.sql` returned. If disclosing it publicly would be unwise, see
+`dist/discovery-darwin.sql` or `dist/discovery-linux.sql` returned. If disclosing it
+publicly would be unwise, see
 [SECURITY.md](SECURITY.md).
 
 ## Scope
 
-macOS today; Windows and Linux are coming. The catalog describes **what software is
-present**, not whether it is good, safe or permitted. Classifications like `Personal agent`
+**macOS and Linux both ship. Windows does not** — no queries, no routes, no runner, and
+`tools/validate_catalog.py` refuses to let an agent claim a platform nothing can find it on.
+
+The catalog describes **what software is present**, not whether it is good, safe or
+permitted. Classifications like `Personal agent`
 describe deployment shape. Whether a given agent is acceptable is your judgement about your
 fleet, not ours about a vendor.

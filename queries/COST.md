@@ -52,6 +52,58 @@ every row count below is the empty case for those.
 | `dist/discovery-linux.sql` | composed | 1.12 | 1726 |
 | `dist/discovery-deep.sql` | deep | 0.22 | 0 |
 
+### The composed Linux artifact costs 8-12s COLD, not 1.12s
+
+**Both numbers above and below are real, and they answer different questions.** The 1.12s in
+the table is what `tools/measure.py` reports; the CI job that runs the artifact the way an
+endpoint does measured **8s, 9s, 12s and 14s** across four runs, with the same ~1750 rows.
+
+**Four readings, and every one of them is at or over the 10s budget.** That is worth saying
+plainly rather than filing under runner variance: this is not `apps.sql` measuring 0.81s and
+1.14s either side of a 1s band. The cold cost of the composed Linux artifact on a loaded
+machine EXCEEDS the budget this repo sets itself, consistently, and the CI gate emits a
+warning every time it does.
+
+The gap is not the data. It is how each number is taken:
+
+| | `tools/measure.py` | the `Runtime on Linux` job |
+|---|---|---|
+| runs | **floor of three** | one |
+| warmth | `performance.yml`'s baseline step runs `dpkg-query`, `systemctl list-unit-files` and `ls /usr/share/applications` first — **exactly what this query reads** | cold, first thing after installing osquery |
+| privilege | unprivileged | `sudo`, so it can read other users' homes |
+
+`measure.py`'s own docstring is right about what it is for — *"the floor is the honest number:
+anything above it is scheduler noise, and we are looking for queries that block, not for
+microbenchmarks"* — and that makes it a **warm floor**, which is the wrong number to judge a
+synchronous reporting path by. **The cold number is what an endpoint's first scheduled scan
+pays**, and on a machine with 1212 deb packages and 438 systemd units that is 8-12s against a
+self-imposed 10s budget.
+
+Two consequences, and neither is a defect in the query:
+
+- **It reinforces the deployment advice this repo already gives.** `docs/deployment.md` says
+  not to put this on a synchronous reporting path and to schedule `bin/discover --write` and
+  `cat` the file. A cold cost near the budget is the measurement behind that sentence rather
+  than a new problem.
+- **The CI gate warns at the budget and fails at 2x.** That is the convention `measure.py`
+  already uses, and the reason it is right HERE is narrower than the reason it is right there:
+  a hard gate made this job red at 12s and green at 9s on identical code, which teaches people
+  to re-run rather than to read. The warning is the part that matters -- it fires on every run,
+  so the overrun stays visible instead of being absorbed into a green tick.
+- **The `unit` branch is the first thing to reconsider if this needs to come down.** It is 477
+  of the ~1750 rows -- 28% of the payload -- and `systemd_prefixes` carries no catalog values,
+  so none of those rows can match anything today. Dropping or filtering it would cut payload
+  and time together. It is not dropped yet because an unrecognised unit running unattended is
+  the same argument that keeps 47 third-party launchd jobs on macOS, and because
+  `fragment_path` is the wrong discriminator for the reason the query records. But the
+  trade is now measured on both sides rather than argued on one.
+
+The cold macOS cost was checked the same way for comparison and is not interesting: 1.65s cold
+against 1.22s warm, a factor of 1.3. Whatever makes the Linux figure 8-10x is specific to that
+platform's tables — `deb_packages` reads a ~5MB dpkg database and `systemd_units` makes DBus
+round trips for 438 units — and it has **not** been isolated further than that. Saying so is
+better than picking one of them and writing it down.
+
 ### `runtime-linux.sql` is the one to read carefully
 
 This section previously said no Linux numbers existed and that this branch's band was "an

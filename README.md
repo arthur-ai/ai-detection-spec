@@ -12,7 +12,8 @@ Which coding agents, chat clients, AI browsers and browser extensions are instal
 [![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-47%2F47-2E7D57)](docs/agents.md)
 [![osquery](https://img.shields.io/badge/osquery-5.23.1-1D4E89)](https://osquery.io)
 [![macOS](https://img.shields.io/badge/macOS-shipping-2E7D57)](#requirements)
-[![Windows and Linux](https://img.shields.io/badge/Windows_%26_Linux-planned-6B7480)](#scope-so-you-know-what-you-are-getting)
+[![Linux](https://img.shields.io/badge/Linux-shipping-2E7D57)](#requirements)
+[![Windows](https://img.shields.io/badge/Windows-not_yet-6B7480)](#scope-so-you-know-what-you-are-getting)
 [![License](https://img.shields.io/badge/license-MIT-6B7480)](LICENSE)
 
 **[What we detect, and what tests it →](docs/agents.md)**
@@ -78,6 +79,23 @@ look under `/home` and `/root` and a matcher that resolves them. Only Cursor nee
 new identifiers, and Cline gained one when osquery 5.11.0 made VS Code extensions visible at
 all.
 
+**What is platform-specific, and what is not.** The routes are declared in
+[`catalog/routes.yaml`](catalog/routes.yaml), which is where the matcher, the validator, the
+coverage report and lint all read them from — so this table is the registry rather than a
+description of it:
+
+| | routes | osquery tables |
+|---|---|---|
+| **macOS only** | `bundle_ids`, `homebrew`, `launchd_prefixes` | `apps`, `homebrew_packages`, `launchd` — all in osquery's `specs/darwin` |
+| **Linux only** | `deb_packages`, `desktop_ids`, `rpm_packages`, `systemd_prefixes` | `deb_packages`, `rpm_packages`, `systemd_units`, `file` |
+| **Both** | `binaries`, `extension_ids`, `images`, `model_stores`, `native_messaging_hosts`, `npm`, `pypi`, `state_dirs`, `vscode_extensions` | `npm_packages`, `chrome_extensions`, `vscode_extensions`, `docker_images`, `file` |
+
+The composed artifact is per platform for that reason — `dist/discovery-darwin.sql` and
+`dist/discovery-linux.sql` name disjoint sets of tables, so **there is no single file that runs
+on both**, and no unqualified name pretending there is. `bin/discover` picks by `uname -s`.
+Every CI job says which platform it runs on, and the two get the same checks: static lint once
+for both, then runtime, cost bands and the full scenario suite on each.
+
 **Windows has no code and no date**, because a date this repo cannot enforce is the kind of
 claim it exists to avoid. `catalog/routes.yaml` can express a Windows route; none is defined,
 and the validator refuses to let an agent claim a platform nothing can find it on.
@@ -99,9 +117,10 @@ one.
 | `python3` | **3.7** (`subprocess` `capture_output`) — for `bin/classify`, `bin/discover`'s writer and `tools/` |
 | PyYAML | Only for the tools that read the catalog: `bin/classify` and `tools/validate_catalog.py` |
 
-**Which macOS versions has it actually run on?** [`docs/agents.md`](docs/agents.md) answers that
+**Which OS versions has it actually run on?** [`docs/agents.md`](docs/agents.md) answers that
 per scenario, with the platform each run recorded — a generated table, not a claim maintained
-by hand here.
+by hand here. Coverage is counted **per platform** there rather than averaged, because a
+portable identifier proved on macOS is not evidence about Linux.
 
 Running the queries needs **osquery alone**. `python3` and PyYAML are for the classifier and
 the scheduled writer, not the endpoint's reporting path — which is a `cat`. `curl` and Docker
@@ -181,12 +200,12 @@ what the suite *cannot* prove alongside what it can.
 ## What it cannot see
 
 A discovery tool that hides its blind spots is worse than none, so they are written down and
-counted: **19 blind spots**, from "anything inside a VM" to "what an agent *does*, as opposed
+counted: **20 blind spots**, from "anything inside a VM" to "what an agent *does*, as opposed
 to what it is permitted to do". They are properties of the platform and the osquery tables
 rather than gaps in the test suite — no amount of coverage moves them. They live in one
 place, [`docs/blind-spots.yaml`](docs/blind-spots.yaml), and are rendered into the report.
 
-Six of those are Linux, and one **stopped** being a blind spot: VS Code extensions were
+Seven of those are Linux, and one **stopped** being a blind spot: VS Code extensions were
 invisible to osquery until 5.11.0 and are not any more, so that entry became a version floor
 instead of a missing table. The widest Linux gap is Homebrew — `homebrew_packages` is a
 darwin-only osquery table, and twelve of the sixteen agents carry a `homebrew` identifier that

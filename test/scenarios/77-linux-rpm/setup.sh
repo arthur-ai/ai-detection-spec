@@ -27,8 +27,8 @@ echo "--- installing $url"
 curl -fsSLo /tmp/cursor.rpm "$url" || { echo "SKIP: download failed"; exit 3; }
 # --nodeps: the rpm declares desktop dependencies a container has no reason to carry, and
 # what is under test is the PACKAGE RECORD, not whether Cursor could launch.
-sudo_maybe rpm -i --nodeps /tmp/cursor.rpm >/dev/null 2>&1 \
-  || sudo_maybe dnf -q -y install /tmp/cursor.rpm >/dev/null 2>&1 \
-  || echo "WARN: cursor rpm install failed"
+try "rpm -i --nodeps of the Cursor rpm" sudo_maybe rpm -i --nodeps /tmp/cursor.rpm \
+  || try "dnf install of the Cursor rpm" sudo_maybe dnf -q -y install /tmp/cursor.rpm \
+  || echo "WARN: Cursor did not install"
 rm -f /tmp/cursor.rpm
 rpm -qa 2>/dev/null | grep -i cursor || echo "WARN: no cursor rpm recorded"

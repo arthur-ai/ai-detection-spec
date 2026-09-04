@@ -43,6 +43,18 @@
 -- `unit_file_state` ships in `extra` -- enabled, masked, static -- because an installed
 -- but masked unit is a materially different finding from a running one, and only the
 -- collector can weigh that.
+--
+-- IT REPORTS LOADED UNITS, NOT UNIT FILES, and that is not the same thing as macOS.
+-- `launchd` reads the plist FILES on disk, so an inert job that has never been loaded is
+-- visible there. systemd_units asks the running manager for its loaded units, so a unit
+-- file nobody has loaded does not exist as far as this table is concerned. Measured on a
+-- GitHub runner: a unit written to /etc/systemd/system and daemon-reloaded did NOT appear
+-- among the 477 rows returned, and appeared once it was started.
+--
+-- The detection consequence is the interesting half: AN AGENT THAT INSTALLED A UNIT AND
+-- HAS NEVER RUN IS INVISIBLE ON THIS ROUTE. Its state directory is what would find it,
+-- which is one more reason the path routes carry more weight than this one.
+-- docs/blind-spots.yaml records it.
 SELECT 'unit' AS kind, id AS id, '' AS ver, fragment_path AS loc,
        unit_file_state AS extra, '' AS perms
   FROM systemd_units
