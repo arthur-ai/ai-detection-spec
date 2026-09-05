@@ -9,17 +9,17 @@
 Every AI agent this repo finds, every identifier it is matched on,
 and the CI test behind each one.
 
-![agents](https://img.shields.io/badge/agents-17-1D4E89)
-![identifiers](https://img.shields.io/badge/identifiers-50-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-48%2F48-2E7D57)
-![real install](https://img.shields.io/badge/by_real_install-48-2E7D57)
+![agents](https://img.shields.io/badge/agents-19-1D4E89)
+![identifiers](https://img.shields.io/badge/identifiers-56-1D4E89)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-54%2F54-2E7D57)
+![real install](https://img.shields.io/badge/by_real_install-54-2E7D57)
 
 </div>
 
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 48 of 48. 2 retired alias(es) are excluded: nothing installs them any more. Anything below complete is a red build, so there is no partial number to read here.
+**Every identifier is proved by a real install in CI** — 54 of 54. 2 retired alias(es) are excluded: nothing installs them any more. Anything below complete is a red build, so there is no partial number to read here.
 
 ## 🧪 Why a real install is the bar
 
@@ -35,7 +35,7 @@ carrying an identifier nothing exercised.
 `tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor
 carrying an `unverified` block, so an unverified signature cannot enter quietly.
 
-# Agents (17)
+# Agents (19)
 
 Software that acts on the user's behalf. This is what the catalog is for.
 
@@ -44,6 +44,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | name | evidence | identifiers | scenarios |
 |---|---|---|---|
 | **aider** | real install | **`aider`**, **`aider-chat`**, **`paulgauthier/aider`**, **`~/.aider`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
+| **Google Antigravity** | real install | **`com.google.antigravity`**, **`com.google.antigravity-ide`**, **`antigravity`**, **`antigravity-ide`** | 10-desktop-apps |
 | **Claude Code** | real install | **`@anthropic-ai/claude-code`**, **`~/.claude`**, **`~/.local/bin/claude`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 90-demo-fleet |
 | **Cline** | real install | **`cline`**, **`saoudrizwan.claude-dev`** | 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode |
 | **Codex CLI** | real install | **`codex`**, **`@openai/codex`**, **`~/.codex`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 90-demo-fleet |
@@ -51,6 +52,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | **GitHub Copilot CLI** | real install | **`copilot-cli`**, **`@github/copilot`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents |
 | **Cursor** | real install | **`com.todesktop.230313mzl4w4u92`**, **`cursor`**, **`cursor`**, **`cursor`**, **`cursor.desktop`** | 10-desktop-apps, 73-linux-deb, 77-linux-rpm, 90-demo-fleet |
 | **Gemini CLI** | real install | **`gemini-cli`**, **`@google/gemini-cli`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents |
+| **Kiro** | real install | **`dev.kiro.desktop`**, **`kiro`** | 10-desktop-apps |
 | **Windsurf** | real install | **`com.exafunction.windsurf`**, **`devin-desktop`** | 10-desktop-apps |
 
 ## Personal agent
@@ -105,6 +107,7 @@ they are stated once. No amount of test coverage moves them.
 | A cloned-but-never-run source checkout | Nothing has been created on disk yet |
 | What an agent *does* | Every route reports presence and declared capability. `permissions` says an extension **may** read every page, never that it did |
 | The identity of a sideloaded extension | osquery derives `identifier` from the manifest `key`, which unpacked and sideloaded extensions do not carry, so they report an empty one. A Web Store CRX does carry it |
+| GitHub Copilot inside VS Code | Copilot Chat now ships BUILT IN: VS Code's own bundle carries `GitHub.copilot-chat` 0.64.1 among its 97 built-in extensions, and `vscode_extensions` reports only the user extension directories -- a run with 97 built-ins present returned 2 rows, both user-installed. The marketplace `github.copilot` cannot be installed over it either, because it pins `github.copilot-chat` 0.48.1 and VS Code refuses to downgrade a built-in, so no scenario can produce the identifier. Measured on VS Code stable, 2026-09-05. The route therefore cannot identify Copilot at all, which is why no signature is carried rather than one that would match every VS Code install -- `copilot-cli` is the Copilot this catalog can prove. Detecting the built-in would report the EDITOR, not a fleet's choice of agent |
 | VS Code extensions on osquery below 5.11.0 | `vscode_extensions` arrived in 5.11.0, above this repo's 5.10.0 floor, so `queries/vscode.sql` declares its own minimum and returns nothing on an older endpoint. The `vscode_edition` column that tells VS Code from Cursor and Windsurf came in 5.15.0 |
 | Behaviour that only appears after launch or sign-in | Nothing here launches an app -- `open -a` needs an Aqua session and SSH has none -- so first-launch daemons, ports and state directories go unobserved, and account-gated products are never signed in to |
 
@@ -115,6 +118,7 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | scenario | not proven |
 |---|---|
 | 10-desktop-apps, 11-perplexity-desktop | Paid or account-gated in several cases. The install is unattended and the sign-in is not, so nothing exercises behaviour that only appears once a user is signed in. |
+| 10-desktop-apps | Kiro CLI is not installed here. It is a separate product whose app ships bundle id com.amazon.codewhisperer under cask `kiro-cli` (old tokens amazon-q, codewhisperer), and it is uncatalogued, so this run says nothing about it. Its dmg is 1.05GB, which is why. |
 | 45-claude-extension | The CRX is unpacked into a real profile rather than installed by Chrome, so the identifier is genuine but the browser's install, update and enterprise-policy paths are all untested. Whether ExtensionInstallForcelist needs an MDM-delivered profile on macOS is UNVERIFIED. |
 | 55-openclaw-npm | The gateway runs with --allow-unconfigured --auth none, which is not how a real deployment runs it: enough to open the listener this scenario asserts, with no channel connected and no model reachable. |
 | 56-openclaw-retired-names | The retired npm names only. bot.molt.mac (bundle id) and bot.molt. (launchd prefix) come from the old .app, and Homebrew keeps no versioned cask for it -- whether an old build is still downloadable is UNVERIFIED. |

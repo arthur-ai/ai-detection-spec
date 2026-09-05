@@ -325,6 +325,54 @@ agents:
     bundle_ids: [com.kagi.kagimacOS]
     homebrew: [orion]
 
+  # KIRO, Amazon's agent-centric IDE. Same shape as cursor and windsurf above: a VS Code
+  # fork whose agent writes to your files and runs commands, so it is an agent by this
+  # repo's test rather than an editor with a chat panel bolted on.
+  #
+  # dev.kiro.desktop WAS READ OFF THE SHIPPED ARTIFACT, and the obvious guess is wrong.
+  # The cask's zap stanza lists `~/Library/Preferences/dev.kiro.cli.plist`, which invites
+  # `dev.kiro.cli` -- that is the CLI's preference domain, not this app's bundle id, and
+  # transcribing it is the bot.molt.mac mistake with a new vendor. Read from
+  # Kiro.app/Contents/Info.plist inside the 1.0.411 stable darwin-arm64 dmg, 2026-09-05,
+  # which is the same plist the `apps` table reads.
+  #
+  # KIRO CLI IS A DIFFERENT PRODUCT and is DELIBERATELY NOT HERE YET. It is worth writing
+  # down what was measured, because the next person will assume the ids rhyme and they do
+  # not: the `kiro-cli` cask carries old_tokens [amazon-q, codewhisperer], and its app ships
+  # bundle id `com.amazon.codewhisperer` -- unchanged from the CodeWhisperer era, at version
+  # 2.20.1. So the cask token was renamed twice while the bundle id never moved. Both were
+  # read for real (a machine here still carries `amazon-q` AND `kiro-cli` rows from the
+  # rename, plus a com.amazon.codewhisperer.launcher LaunchAgent). It is left out only
+  # because its dmg is 1.05GB and no scenario should pay that to prove a token; it is the
+  # strongest candidate to add next.
+  - id: kiro
+    name: Kiro
+    classification: Coding agent
+    platforms: [darwin]
+    bundle_ids: [dev.kiro.desktop]
+    homebrew: [kiro]
+
+  # GOOGLE ANTIGRAVITY. Two shipping products under one name, and they are ONE entry rather
+  # than two on purpose -- the contrast is perplexity-desktop and perplexity-comet, which
+  # are split because a chat client and a browser are different kinds of thing. These are
+  # two editions of one agentic-IDE product line, and the question a reader has is whether
+  # Antigravity is on the machine; `ver` and `loc` carry which edition.
+  #
+  # Both bundle ids read off the shipped artifacts on 2026-09-05, from
+  # Antigravity.app/Contents/Info.plist in the 2.11.0 hub dmg and
+  # `Antigravity IDE.app`/Contents/Info.plist in the 2.5.5 ide dmg. NOTE THE HYPHEN in
+  # com.google.antigravity-ide: it is legal under routes.yaml's bundle_ids value_pattern
+  # and it is what the artifact says, so it is not tidied to a dot.
+  #
+  # antigravity-cli is a third cask, binary-only with no app. Not carried: it would need a
+  # binaries route nothing here exercises yet.
+  - id: antigravity
+    name: Google Antigravity
+    classification: Coding agent
+    platforms: [darwin]
+    bundle_ids: [com.google.antigravity, com.google.antigravity-ide]
+    homebrew: [antigravity, antigravity-ide]
+
   - id: aider
     name: aider
     classification: Coding agent

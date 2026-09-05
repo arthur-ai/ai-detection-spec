@@ -388,6 +388,38 @@ check("...and they are reported unmatched rather than dropped",
       {"libxcursor1", "libwayland-cursor0"} <= set(unmatched_ids(_r)),
       "a kind absent from the registry is DROPPED, not unmatched -- the `ext` bug")
 
+# THE WRONG GUESS FOR KIRO, ASSERTED AS WRONG. `dev.kiro.desktop` was read off
+# Kiro.app/Contents/Info.plist in the shipped dmg, but the cask's zap stanza names
+# `~/Library/Preferences/dev.kiro.cli.plist` -- so `dev.kiro.cli` is the value a reader
+# transcribing vendor metadata would write, and it belongs to a DIFFERENT product (Kiro
+# CLI, whose app ships com.amazon.codewhisperer). This is the bot.molt.mac shape exactly,
+# and the only way to keep it fixed is to assert that the wrong value does not match.
+#
+# The helper sub-bundle is the second half: an app bundle ships nested helpers whose ids
+# extend the parent's, so `com.google.antigravity.helper.renderer` tests that bundle_ids is
+# really exact and not a prefix. If it ever became a prefix route, one install would report
+# as several.
+def _app(*ids):
+    return [{"kind": "app", "id": i, "ver": "1.0", "loc": f"/Applications/{i}.app",
+             "extra": "", "perms": ""} for i in ids]
+
+_r = classify_json(_app("dev.kiro.desktop", "dev.kiro.cli",
+                        "com.google.antigravity", "com.google.antigravity.helper.renderer"))
+_found = {f["id"] for f in _r["findings"]}
+check("the agentic IDE forks are found by their real bundle ids",
+      _found == {"kiro", "antigravity"}, f"got {sorted(_found)}")
+_evidence = {e["id"] for f in _r["findings"] for e in f["evidence"]}
+check("the vendor-metadata guess is NOT evidence for kiro",
+      "dev.kiro.cli" not in _evidence,
+      "dev.kiro.cli is the CLI's preference domain, not this app's bundle id -- if it "
+      "matches, the catalog has been written from the zap stanza rather than the artifact")
+check("a nested helper bundle is NOT evidence for antigravity",
+      "com.google.antigravity.helper.renderer" not in _evidence,
+      "bundle_ids is an exact route; as a prefix it would report one install as several")
+check("...and both are reported unmatched rather than dropped",
+      {"dev.kiro.cli", "com.google.antigravity.helper.renderer"} <= set(unmatched_ids(_r)),
+      "a kind absent from the registry is DROPPED, not unmatched -- the `ext` bug")
+
 # rpm carries the same value on a different route, and the two must not be confused: the
 # uniqueness check is keyed on (route, value), so `cursor` is legitimately both.
 _rpm = [{"kind": "rpm", "id": "cursor", "ver": "3.19.7", "loc": "",
