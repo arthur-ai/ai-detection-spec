@@ -5,8 +5,40 @@
       "agent": "antigravity",
       "route": "bundle_ids",
       "value": "com.google.antigravity",
+      "agent_version": "2.11.0",
+      "os": "14.8.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "antigravity",
+      "route": "bundle_ids",
+      "value": "com.google.antigravity",
+      "agent_version": "2.11.0",
+      "os": "15.7.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "antigravity",
+      "route": "bundle_ids",
+      "value": "com.google.antigravity",
       "agent_version": "2.12.2",
       "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "antigravity",
+      "route": "bundle_ids",
+      "value": "com.google.antigravity-ide",
+      "agent_version": "2.5.5",
+      "os": "14.8.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "antigravity",
+      "route": "bundle_ids",
+      "value": "com.google.antigravity-ide",
+      "agent_version": "2.5.5",
+      "os": "15.7.9",
       "arch": "arm64"
     },
     {
@@ -21,8 +53,40 @@
       "agent": "antigravity",
       "route": "homebrew",
       "value": "antigravity",
+      "agent_version": "2.11.0,6376446768316416",
+      "os": "14.8.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "antigravity",
+      "route": "homebrew",
+      "value": "antigravity",
+      "agent_version": "2.11.0,6376446768316416",
+      "os": "15.7.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "antigravity",
+      "route": "homebrew",
+      "value": "antigravity",
       "agent_version": "2.12.2,6298742303883264",
       "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "antigravity",
+      "route": "homebrew",
+      "value": "antigravity-ide",
+      "agent_version": "2.5.5,4923483625488384",
+      "os": "14.8.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "antigravity",
+      "route": "homebrew",
+      "value": "antigravity-ide",
+      "agent_version": "2.5.5,4923483625488384",
+      "os": "15.7.9",
       "arch": "arm64"
     },
     {
@@ -277,8 +341,40 @@
       "agent": "kiro",
       "route": "bundle_ids",
       "value": "dev.kiro.desktop",
+      "agent_version": "1.0.395",
+      "os": "14.8.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "kiro",
+      "route": "bundle_ids",
+      "value": "dev.kiro.desktop",
+      "agent_version": "1.0.395",
+      "os": "15.7.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "kiro",
+      "route": "bundle_ids",
+      "value": "dev.kiro.desktop",
       "agent_version": "1.0.437",
       "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "kiro",
+      "route": "homebrew",
+      "value": "kiro",
+      "agent_version": "1.0.395",
+      "os": "14.8.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "kiro",
+      "route": "homebrew",
+      "value": "kiro",
+      "agent_version": "1.0.395",
+      "os": "15.7.9",
       "arch": "arm64"
     },
     {
