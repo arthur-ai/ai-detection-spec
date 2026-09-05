@@ -22,6 +22,13 @@ need_brew
 # WARN rather than exit: a cask download failing is a network fact, and the assertion is
 # where a missing app should be reported, because it names WHICH one. An aborted setup
 # names none of them.
-for c in claude cursor chatgpt comet orion devin-desktop; do
+# kiro, antigravity and antigravity-ide added 2026-09-05. All three declare
+# depends_on macos >= 12, read off the Homebrew API that day (kiro 1.0.411,
+# antigravity 2.11.0, antigravity-ide 2.5.5), so they clear the 13 ceiling above and cost
+# macos-14 nothing. THEY DO COST DOWNLOAD: 255MB, 191MB and 212MB, which is roughly a
+# 50% increase on this scenario's bytes. Recorded because that is the tradeoff to revisit
+# if this list grows again, not a reason to skip the install -- the bundle ids are the
+# whole point and only an install proves them.
+for c in claude cursor chatgpt comet orion devin-desktop kiro antigravity antigravity-ide; do
   brew install --cask "$c" || echo "WARN: $c failed"
 done
