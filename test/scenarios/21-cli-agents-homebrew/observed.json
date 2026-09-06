@@ -61,7 +61,7 @@
       "agent": "claude-code",
       "route": "npm",
       "value": "@anthropic-ai/claude-code",
-      "agent_version": "2.1.261",
+      "agent_version": "2.1.263",
       "os": "15.7.9",
       "arch": "arm64"
     },

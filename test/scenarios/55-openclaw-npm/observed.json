@@ -29,7 +29,7 @@
       "agent": "openclaw",
       "route": "npm",
       "value": "openclaw",
-      "agent_version": "2026.9.1",
+      "agent_version": "2026.9.2",
       "os": "15.7.9",
       "arch": "arm64"
     },
