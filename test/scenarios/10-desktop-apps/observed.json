@@ -493,7 +493,7 @@
       "agent": "perplexity-comet",
       "route": "bundle_ids",
       "value": "ai.perplexity.comet",
-      "agent_version": "151.0.7922.247",
+      "agent_version": "152.0.7977.197",
       "os": "15.7.9",
       "arch": "arm64"
     },
