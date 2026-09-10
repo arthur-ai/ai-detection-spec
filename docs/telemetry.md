@@ -58,33 +58,42 @@ zero, because "no timeout happened" and "a timeout of zero seconds" are differen
 
 | field | value |
 |---|---|
-| `device_id` | a random `uuid4`, made on first run and kept in `~/.config/ai-discovery/install-id`. **Never** derived from hostname, MAC or username — a pseudonym computed from a machine identifier is still a machine identifier. Amplitude requires an id of some kind; this is the least it can be |
+| `device_id` | a random `uuid4`, made on first run and kept in `~/.config/ai-discovery/install-id`. **Never** derived from hostname, MAC or username — a pseudonym computed from a machine identifier is still a machine identifier |
 | `ip` | `"$remote"`, which asks Amplitude to take the source address of the request and geolocate it. **This is personal data under GDPR.** It is how the project can tell one organisation's usage from another's; if you would rather not send it, turn telemetry off |
-| `time` | when the event was made |
-| `insert_id` | a random dedupe token, so a proxy retry cannot double-count. Carries no information about you |
+| `time`, `insert_id` | when the event was made, and a dedupe key |
+| `os_name`, `os_version` | the same two values as `host_os` and `host_os_release` below |
 
 ### Properties
-
-Ten on a successful run, thirteen on a crash. **Every one of them answers a question
-somebody asked for**, and the list is deliberately short: telemetry that grows by what the
-author finds interesting is how a counter turns into a profile. An earlier draft of this
-carried eighteen more fields — row totals, per-kind counts, a dropped-row counter, the
-payload's platform, how long the run took. Each was defensible alone; none had been asked
-for; all were removed. Anything wanted later gets added on purpose, here and in
-`EVENT_FIELDS`, which this page is gated against.
 
 | field | what it is |
 |---|---|
 | `catalog_sha` | first 12 hex of `sha256(catalog/agents.yaml)`. Which catalog revision, without a version field anybody has to remember to bump. It means nothing until releases are hashed and mapped on the receiving side |
 | `catalog_schema_version` | the catalog's own `version:` key |
-| `kinds_seen` | the row kinds present, comma-joined and sorted. Anything outside the route vocabulary is reported as `other`, never forwarded verbatim |
+| `catalog_agents` | how many agents the catalog carries |
+| `catalog_skew` | whether the catalog is newer than this classifier understands |
+| `classify_sha` | first 12 hex of `sha256` of `bin/classify` itself — a stale classifier is as interesting as a stale catalog |
+| `rows_total` | rows in the payload |
+| `findings_agents` | distinct agents matched |
+| `findings_rows` | evidence rows across those agents |
+| `unmatched_rows` | rows a route looked at and no signature claimed |
+| `dropped_rows` | rows whose `kind` belongs to no route, and which the classifier therefore discards in silence. **Non-zero means a route is missing** |
+| `gap_rows` | `kind=scan` markers reporting that a branch could not look |
+| `scan_rows` | `kind=scan` markers reporting a branch ran fine |
+| `kinds_seen` | the row kinds present, comma-joined and sorted. Anything outside the route vocabulary is reported as `other` |
+| `kind_counts` | how many rows of each of those kinds |
 | `deep_scan` | whether the container branch was attempted — including when it failed, because asking and being refused is still use |
-| `gap_reasons` | the gap vocabulary present: `absent`, `no-cache`, `error`, `unhealthy`, `timeout`, or `other`. The reason only — not the HTTP code, not the timeout in seconds |
-| `findings_agents` | how many distinct agents were matched |
-| `unmatched_rows` | how many rows a route looked at and no signature claimed |
-| `dropped_rows` | how many rows had a `kind` belonging to no route, and were therefore discarded in silence. **Non-zero means a route is missing.** Added after the list was trimmed, by request, to keep a chart working |
-| `host_os` | the OS `bin/classify` ran on — `Darwin` or `Linux`. The name only, no release number |
+| `gap_reasons` | the gap vocabulary present: `absent`, `no-cache`, `error`, `unhealthy`, `timeout`, or `other` |
+| `gap_unhealthy_code` | the HTTP code an unhealthy daemon answered with |
+| `gap_timeout_seconds` | the bound a timed-out branch gave up at |
+| `stale_branches` | branches last scanned over 24h ago |
+| `newest_scan_age_seconds` | age of the freshest branch in the payload |
+| `host_os` | the OS **`bin/classify` ran on** |
+| `host_os_release` | its major version only — `25`, not `25.6.0` |
+| `payload_platform` | the platform the **payload** came from: `darwin`, `linux`, `mixed`, or `unknown`. Routinely a different machine from `host_os` |
 | `python_version` | the interpreter running the classifier |
+| `output_mode` | `json` or `text` |
+| `show_unmatched` | whether `--show-unmatched` was passed |
+| `duration_ms` | how long the run took |
 | `error_type` | on a crash: the exception class name |
 | `error_site` | on a crash: `filename:lineno`, the basename only |
 | `phase` | on a crash: `args`, `read`, `classify` or `render` |

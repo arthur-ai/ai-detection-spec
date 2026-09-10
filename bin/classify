@@ -440,21 +440,15 @@ TELEMETRY_TIMEOUT = 2.0
 # tools/check_doc_numbers.py, so the published list cannot drift from the sent one -- the
 # five-hardcoded-lists-that-had-to-agree bug, pre-empted this time.
 EVENT_FIELDS = (
-    # catalog version -- is anyone on a stale catalog?
-    "catalog_sha", "catalog_schema_version",
-    # kinds -- is anyone using the deep scan?
-    "kinds_seen", "deep_scan",
-    # gap reasons
-    "gap_reasons",
-    # row counts
-    "findings_agents", "unmatched_rows",
-    # ADDED BY REQUEST, after the field list had been cut back to what was asked for.
-    # It is here because somebody decided it should be, which is the only way anything
-    # else gets added to this tuple.
-    "dropped_rows",
-    # platform, and the interpreter that ran the classifier
-    "host_os", "python_version",
-    # crash report
+    "catalog_sha", "catalog_schema_version", "catalog_agents", "catalog_skew",
+    "classify_sha",
+    "rows_total", "findings_agents", "findings_rows", "unmatched_rows", "dropped_rows",
+    "gap_rows", "scan_rows",
+    "kinds_seen", "kind_counts", "deep_scan",
+    "gap_reasons", "gap_unhealthy_code", "gap_timeout_seconds",
+    "stale_branches", "newest_scan_age_seconds",
+    "host_os", "host_os_release", "payload_platform", "python_version",
+    "output_mode", "show_unmatched", "duration_ms",
     "error_type", "error_site", "phase",
 )
 # A CLOSED VOCABULARY, because `kind` and `extra` arrive from a payload this process did
@@ -551,14 +545,34 @@ def _sha(path):
         return ""
 
 
-def _known_kinds(routes):
-    """The kind vocabulary, from catalog/routes.yaml rather than a list kept here.
+def _kind_platforms(routes):
+    """kind -> the concrete platforms its routes cover, from catalog/routes.yaml.
 
-    Used only to decide whether a row's `kind` is one this project defines. A hardcoded
-    copy would be the sixth thing that has to agree with routes.yaml, which is the bug
-    that dropped every `ext` row for months.
+    Derived, not listed. A hardcoded darwin/linux kind split here would be the sixth copy
+    of a vocabulary that has to agree with five others, which is the bug that dropped
+    every `ext` row for months.
     """
-    return {spec["kind"] for spec in routes["routes"].values()}
+    groups = routes.get("platform_groups", {})
+    out = {}
+    for spec in routes["routes"].values():
+        out.setdefault(spec["kind"], set()).update(
+            groups.get(spec["platform"], [spec["platform"]]))
+    return out
+
+
+def _payload_platform(kinds, kind_platforms):
+    """Which platform the PAYLOAD came from -- not the one classify is running on.
+
+    Those are different machines and routinely different systems: an analyst on a Mac
+    reads a Linux fleet's rows. Only a kind exclusive to one platform is evidence; `file`
+    and `npm` are posix and say nothing. A payload merged from both is a real and
+    supported state, so it gets its own word rather than being forced into one.
+    """
+    seen = {p for k in kinds for p in kind_platforms.get(k, ())
+            if len(kind_platforms.get(k, ())) == 1}
+    if len(seen) > 1:
+        return "mixed"
+    return next(iter(seen)) if seen else "unknown"
 
 
 def _error_site(exc):
@@ -574,7 +588,7 @@ def _error_site(exc):
     return f"{os.path.basename(last.tb_frame.f_code.co_filename)}:{last.tb_lineno}"
 
 
-def telemetry_props(state):
+def telemetry_props(state, started):
     """The event properties, from whatever the run has established so far.
 
     Progressive on purpose: a crash during rendering still reports the catalog and the row
@@ -583,11 +597,12 @@ def telemetry_props(state):
     import platform as _platform
 
     props = dict(state["props"])
-    # THE OS NAME AND NOTHING MORE. The question is which platform runs the classifier, and
-    # "Darwin" answers it; a release number narrows a machine further than the question
-    # needs, and every field here has to be one somebody asked for.
     props["host_os"] = _platform.system() or "unknown"
+    # MAJOR ONLY. "25.6.0" narrows a machine further than "25" does, and the question this
+    # answers -- which OS generations are in use -- is answered by the major.
+    props["host_os_release"] = (_platform.release() or "").split(".")[0].split("-")[0]
     props["python_version"] = _platform.python_version()
+    props["duration_ms"] = int((time.time() - started) * 1000)
     return props
 
 
@@ -605,6 +620,8 @@ def telemetry_event(props, event_type, install_id):
         # address of this request and geolocate it. It is personal data under GDPR and
         # docs/telemetry.md says so in those words.
         "ip": "$remote",
+        "os_name": props.get("host_os", ""),
+        "os_version": props.get("host_os_release", ""),
         "event_properties": props,
     }
 
@@ -636,7 +653,7 @@ def telemetry_finish(state, started, event_type):
     off = _telemetry_off()
     if off and not state.get("check"):
         return
-    props = telemetry_props(state)
+    props = telemetry_props(state, started)
     install_id, first_run = _install_id(create=not state.get("check"))
     event = telemetry_event(props, event_type, install_id)
     if state.get("check"):
@@ -717,7 +734,7 @@ def _run(state, started):
     aged = [(max(0, now - int(r.get("ver") or 0)), r) for r in scans]
     stale = [(a, r) for a, r in aged if a > STALE_AFTER]
 
-    state["props"].update(_measure(rows, findings, unmatched, gaps, scans,
+    state["props"].update(_measure(rows, findings, unmatched, gaps, scans, aged, stale,
                                    catalog, routes, args))
     if state["check"]:
         # Before rendering, and instead of it. This mode answers "what leaves my machine",
@@ -831,53 +848,71 @@ def _run(state, started):
     # Exit 0 either way. Finding nothing is a valid answer, not an error.
 
 
-def _measure(rows, findings, unmatched, gaps, scans, catalog, routes, args):
-    """Counts, and nothing but counts -- one value per question that was actually asked.
-
-    EVERY FIELD HERE IS ONE SOMEBODY REQUESTED. An earlier version carried eighteen more:
-    row totals, per-kind counts, a dropped-row counter, the payload's platform, how long
-    the run took. Each was defensible on its own and none had been asked for, which is the
-    whole problem -- telemetry that grows by what the author finds interesting is how a
-    counter becomes a profile. Anything wanted later gets added deliberately, to this list
-    and to docs/telemetry.md, which is gated against it.
+def _measure(rows, findings, unmatched, gaps, scans, aged, stale, catalog, routes, args):
+    """Counts, and nothing but counts. Every value here is a number, a bool, or a word
+    from a vocabulary this file declares.
     """
-    known = _known_kinds(routes)
-    # A CLOSED VOCABULARY. `kind` and `extra` arrive from a payload this process did not
-    # produce -- a collector merging many hosts, or a hand-edited file, can put any string
-    # in either -- and forwarding one verbatim would turn an analytics property into a
-    # channel for arbitrary text off a machine we are meant to describe in counts.
-    kinds = {(k if k in known else OTHER) for k in (r.get("kind") for r in rows)}
-    reasons = set()
+    kind_platforms = _kind_platforms(routes)
+    known = set(kind_platforms) | {GAP_KIND}
+    counts = defaultdict(int)
+    for row in rows:
+        kind = row.get("kind")
+        counts[kind if kind in known else OTHER] += 1
+
+    findings_rows = sum(len(hits) for hits in findings.values())
+    reasons, codes, timeouts = set(), [], []
     for row in gaps:
-        head = (row.get("extra") or "").split(":", 1)[0]
+        extra = row.get("extra") or ""
+        head = extra.split(":", 1)[0]
         reasons.add(head if head in GAP_REASONS else OTHER)
+        tail = extra.split(":", 1)[1] if ":" in extra else ""
+        if head == "unhealthy" and tail.isdigit():
+            codes.append(int(tail))
+        if head == "timeout" and tail.isdigit():
+            timeouts.append(int(tail))
 
     props = {
-        # Which catalog revision, without a version field anybody has to remember to bump.
         "catalog_sha": _sha(args.catalog),
         "catalog_schema_version": catalog.get("version"),
-        "kinds_seen": ",".join(sorted(k for k in kinds if k)),
-        # An image row, or a containers marker either way it went: asking for the deep scan
-        # and being refused is still using it, and counting only successes undercounts.
-        "deep_scan": "image" in kinds
-                     or any(r.get("id") == "containers" for r in gaps + scans),
-        "gap_reasons": ",".join(sorted(reasons)),
+        "catalog_agents": len(catalog.get("agents") or []),
+        # The condition load_catalog already warns about on stderr. Counting it says how
+        # often a downloaded classifier is older than the catalog beside it.
+        "catalog_skew": isinstance(catalog.get("version"), int)
+                        and catalog["version"] > CATALOG_VERSION,
+        "classify_sha": _sha(__file__),
+        "rows_total": len(rows),
         "findings_agents": len(findings),
+        "findings_rows": findings_rows,
         # Always populated regardless of --show-unmatched: the flag gates the OUTPUT, not
         # the list, so counting it here changes no behaviour.
         "unmatched_rows": len(unmatched),
-        # ROWS NOTHING IN THIS TREE HAS EVER COUNTED. A row whose kind is in no route falls
-        # off the end of classify()'s loop and is discarded in silence -- not unmatched,
-        # DROPPED, invisible even under --show-unmatched. That is the bug that hid every
-        # browser-extension row for months, and it was found by accident. A non-zero value
-        # on somebody's fleet is the same bug happening again.
-        #
-        # The evidence-row total it is derived from is NOT sent: this number answers "is a
-        # route missing", and the volume behind it was not asked for.
-        "dropped_rows": max(0, len(rows) - sum(len(h) for h in findings.values())
-                            - len(unmatched) - len(gaps) - len(scans)),
+        # THE NUMBER NOTHING IN THIS TREE HAS EVER COUNTED. A row whose kind is in no route
+        # falls off the end of classify()'s loop and is discarded in silence -- not
+        # unmatched, DROPPED, invisible even under --show-unmatched. That is the bug that
+        # hid every browser-extension row for months, and it was found by accident. A
+        # non-zero value here on somebody's fleet is the same bug happening again.
+        "dropped_rows": max(0, len(rows) - findings_rows - len(unmatched) - len(gaps)
+                            - len(scans)),
+        "gap_rows": len(gaps),
+        "scan_rows": len(scans),
+        "kinds_seen": ",".join(sorted(counts)),
+        "kind_counts": dict(counts),
+        # An image row, or a containers marker either way it went. The marker is what makes
+        # a FAILED deep scan count as an attempt: asking and being refused is use.
+        "deep_scan": any(k in counts for k in ("image",))
+                     or any(r.get("id") == "containers" for r in gaps + scans),
+        "gap_reasons": ",".join(sorted(reasons)),
+        "gap_unhealthy_code": max(codes) if codes else None,
+        "gap_timeout_seconds": max(timeouts) if timeouts else None,
+        "stale_branches": len(stale),
+        "newest_scan_age_seconds": min((a for a, _ in aged), default=None),
+        "payload_platform": _payload_platform(set(counts), kind_platforms),
+        "output_mode": "json" if args.json else "text",
+        "show_unmatched": bool(args.show_unmatched),
     }
-    # A key whose value is unknown is OMITTED rather than sent as 0.
+    # A key whose value is unknown is OMITTED rather than sent as 0. "No timeout happened"
+    # and "a timeout of zero seconds" are different facts, and Amplitude cannot tell them
+    # apart once both are a number.
     return {k: v for k, v in props.items() if v is not None}
 
 

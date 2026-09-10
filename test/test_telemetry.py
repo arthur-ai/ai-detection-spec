@@ -243,6 +243,30 @@ props = props_of(cap_ok)
 check("every property is one docs/telemetry.md declares",
       set(props) <= set(classify_mod.EVENT_FIELDS),
       f"undeclared: {sorted(set(props) - set(classify_mod.EVENT_FIELDS))}")
+
+# THE AGREED LIST, WRITTEN OUT. Not "are the declared fields present" -- that passes on
+# any list, however it grew -- but "is this still the set somebody signed off". The field
+# list was cut to eight requested items once and put back in full deliberately; either way
+# the guard is the same, and it is the reason a field cannot arrive here because an author
+# found it interesting. Adding one means editing this literal, which is the point.
+AGREED = {
+    "catalog_sha", "catalog_schema_version", "catalog_agents", "catalog_skew",
+    "classify_sha",
+    "rows_total", "findings_agents", "findings_rows", "unmatched_rows", "dropped_rows",
+    "gap_rows", "scan_rows",
+    "kinds_seen", "kind_counts", "deep_scan",
+    "gap_reasons", "gap_unhealthy_code", "gap_timeout_seconds",
+    "stale_branches", "newest_scan_age_seconds",
+    "host_os", "host_os_release", "payload_platform", "python_version",
+    "output_mode", "show_unmatched", "duration_ms",
+    "error_type", "error_site", "phase",
+}
+check("the shipped field list is EXACTLY the agreed one, in both directions",
+      set(classify_mod.EVENT_FIELDS) == AGREED,
+      f"added: {sorted(set(classify_mod.EVENT_FIELDS) - AGREED)}  "
+      f"missing: {sorted(AGREED - set(classify_mod.EVENT_FIELDS))}")
+check("and a successful run sends no property outside it",
+      set(props) <= AGREED, f"extra: {sorted(set(props) - AGREED)}")
 check("every value is a number, a bool, a closed-vocabulary word, or a count map",
       all(isinstance(v, (int, float, bool, dict)) or
           (isinstance(v, str) and len(v) < 200) for v in props.values()),
@@ -290,6 +314,10 @@ check("the ingest key travels in the body, as Amplitude's HTTP V2 expects",
       full.get("api_key") == "test-ingest-key")
 check("the source IP is requested explicitly rather than by accident",
       event.get("ip") == "$remote")
+check("the envelope carries an id, the IP, a timestamp, a dedupe token and the OS",
+      set(event) == {"device_id", "event_type", "time", "insert_id", "ip",
+                     "os_name", "os_version", "event_properties"},
+      f"envelope is {sorted(event)}")
 check("the device id is random, persisted, and not a machine identifier",
       len(event.get("device_id", "")) == 32 and
       (home_ok / "ai-discovery" / "install-id").exists())
@@ -300,50 +328,30 @@ check("the first run says so on stderr, and the second does not",
 check("...and the notice never touches stdout, which --json callers parse",
       "docs/telemetry.md" not in first.stdout)
 
-# DERIVED FROM THE TOOL, NOT TYPED IN. These were literal numbers -- 8 agents, 16
-# unmatched -- read off the fixture on the day this was written. Both are facts about the
-# CATALOG, which gains signatures weekly, so each was a future failure with no bug behind
-# it. The invariant that matters is that the event agrees with the report.
+# DERIVED FROM THE TOOL, NOT TYPED IN. These were literal numbers -- 8 agents, 31 rows,
+# 16 unmatched -- read off the fixture on the day this was written. Every one of them is a
+# fact about the CATALOG, which gains signatures weekly, so each was a future failure with
+# no bug behind it. The invariant that actually matters is that the event agrees with the
+# report, and that one holds however the catalog grows.
 ref = json.loads(subprocess.run(
     [sys.executable, str(CLASSIFY), str(KNOWN), "--json", "--show-unmatched"],
     capture_output=True, text=True,
     env=env(TMP / "home-ref", AI_DISCOVERY_TELEMETRY="0")).stdout)
-check("the findings count is the one the report itself shows",
-      props.get("findings_agents") == len(ref["findings"]),
-      f"event says {props.get('findings_agents')}, report says {len(ref['findings'])}")
+check("the counts are the ones the report itself shows",
+      props.get("findings_agents") == len(ref["findings"])
+      and props.get("rows_total") == len(json.loads(KNOWN.read_text()))
+      and props.get("findings_rows") == sum(len(f["evidence"]) for f in ref["findings"]),
+      f"event says {props.get('findings_agents')} agents / {props.get('rows_total')} rows; "
+      f"the report says {len(ref['findings'])} / {len(json.loads(KNOWN.read_text()))}")
 check("unmatched is counted without --show-unmatched being asked for",
       props.get("unmatched_rows") == len(ref["unmatched"]),
       f"{props.get('unmatched_rows')} vs {len(ref['unmatched'])} in the report")
-
-check("a clean payload reports nothing dropped", props.get("dropped_rows") == 0,
-      f"{props.get('dropped_rows')}")
-
-# THE SCOPE ASSERTION. Not "are the declared fields present" but "is anything else here at
-# all" -- the list was agreed field by field, and a counter that grows by whatever the
-# author found interesting is how telemetry turns into a profile. This is the check that
-# fails when someone adds a field without adding it to docs/telemetry.md and the ask.
-ASKED_FOR = {
-    "catalog_sha", "catalog_schema_version",   # is anyone on a stale catalog?
-    "kinds_seen", "deep_scan",                 # is anyone using the deep scan?
-    "gap_reasons",                             # absent / no-cache / unhealthy / timeout
-    "findings_agents", "unmatched_rows",       # row counts
-    "dropped_rows",                            # added later, by request, for one chart
-    "host_os", "python_version",               # platform, interpreter
-    "error_type", "error_site", "phase",       # crash report
-}
-check("the shipped field list is EXACTLY what was asked for, nothing added",
-      set(classify_mod.EVENT_FIELDS) == ASKED_FOR,
-      f"added: {sorted(set(classify_mod.EVENT_FIELDS) - ASKED_FOR)}  "
-      f"missing: {sorted(ASKED_FOR - set(classify_mod.EVENT_FIELDS))}")
-check("and a successful run sends no property outside it",
-      set(props) <= ASKED_FOR, f"extra: {sorted(set(props) - ASKED_FOR)}")
-check("the envelope carries only an id, the IP, a timestamp and a dedupe token",
-      set(event) == {"device_id", "event_type", "time", "insert_id", "ip",
-                     "event_properties"},
-      f"envelope is {sorted(event)}")
-
 check("the catalog identifies itself by content hash",
       len(props.get("catalog_sha", "")) == 12 and props.get("catalog_schema_version") == 2)
+check("a clean payload reports nothing dropped", props.get("dropped_rows") == 0,
+      f"{props.get('dropped_rows')}")
+check("the platform reported is the PAYLOAD's, not the machine classify ran on",
+      props.get("payload_platform") == "darwin", f"{props.get('payload_platform')}")
 
 # --- the gap vocabulary, end to end ----------------------------------------------------
 # Every reason bin/discover and bin/container-scan can emit, plus one nobody emits. The
@@ -379,12 +387,13 @@ gp = props_of(cap_gap)
 check("every gap reason a scan row can carry arrives normalised",
       gp.get("gap_reasons") == "absent,error,no-cache,other,timeout,unhealthy",
       f"{gp.get('gap_reasons')!r}")
-check("the unhealthy code and the timeout seconds are NOT sent",
-      "gap_unhealthy_code" not in gp and "gap_timeout_seconds" not in gp and
-      "500" not in cap_gap.read_text(),
-      "the reason was asked for; the code behind it was not")
+check("...with the unhealthy code and the timeout kept as numbers",
+      gp.get("gap_unhealthy_code") == 500 and gp.get("gap_timeout_seconds") == 6,
+      f"code={gp.get('gap_unhealthy_code')} timeout={gp.get('gap_timeout_seconds')}")
 check("an unknown reason is reported as 'other', never forwarded verbatim",
       "exploded" not in cap_gap.read_text() and "/Users/dana" not in cap_gap.read_text())
+check("a stale branch is counted", gp.get("stale_branches") == 1,
+      f"{gp.get('stale_branches')}")
 check("a containers marker counts as a deep scan even when the scan FAILED",
       gp.get("deep_scan") is True,
       "asking and being refused is use; only counting successes undercounts the feature")
