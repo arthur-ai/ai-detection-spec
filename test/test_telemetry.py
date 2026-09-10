@@ -253,8 +253,9 @@ AGREED = {
     "catalog_sha", "catalog_schema_version", "catalog_agents", "catalog_skew",
     "classify_sha",
     "rows_total", "findings_agents", "findings_rows", "unmatched_rows", "dropped_rows",
+    "payload_bytes", "payload_packed_bytes",
     "gap_rows", "scan_rows",
-    "kinds_seen", "kind_counts", "deep_scan",
+    "kinds_seen", "deep_scan",
     "gap_reasons", "gap_unhealthy_code", "gap_timeout_seconds",
     "stale_branches", "newest_scan_age_seconds",
     "host_os", "host_os_release", "payload_platform", "python_version",
@@ -267,10 +268,12 @@ check("the shipped field list is EXACTLY the agreed one, in both directions",
       f"missing: {sorted(AGREED - set(classify_mod.EVENT_FIELDS))}")
 check("and a successful run sends no property outside it",
       set(props) <= AGREED, f"extra: {sorted(set(props) - AGREED)}")
-check("every value is a number, a bool, a closed-vocabulary word, or a count map",
-      all(isinstance(v, (int, float, bool, dict)) or
-          (isinstance(v, str) and len(v) < 200) for v in props.values()),
-      f"{[k for k, v in props.items() if not isinstance(v, (int, float, bool, dict, str))]}")
+# NO NESTED STRUCTURES. kind_counts was the only one and it is gone; a scalar cannot
+# carry a list of things found on a machine, which is the shape a leak would take.
+check("every value is a number, a bool, or a closed-vocabulary word -- nothing nested",
+      all(isinstance(v, (int, float, bool)) or (isinstance(v, str) and len(v) < 200)
+          for v in props.values()),
+      f"{[(k, type(v).__name__) for k, v in props.items() if isinstance(v, (dict, list))]}")
 
 # THE ASSERTION THIS FILE EXISTS FOR, and the second version of it. The first listed the
 # strings by hand -- "/Users/", "alice", a bundle id -- and a deliberate leak of a row's
@@ -346,6 +349,14 @@ check("the counts are the ones the report itself shows",
 check("unmatched is counted without --show-unmatched being asked for",
       props.get("unmatched_rows") == len(ref["unmatched"]),
       f"{props.get('unmatched_rows')} vs {len(ref['unmatched'])} in the report")
+# MEASURED, NOT INFERRED. Row counts cannot answer whether a payload still fits the
+# channel: bytes per row vary 2.7x across kinds on a real payload, so this has to come
+# from the bytes classify actually read.
+check("the payload size is reported, raw and packed, and packing helps",
+      props.get("payload_bytes") == len(KNOWN.read_bytes())
+      and 0 < props.get("payload_packed_bytes", 0) < props.get("payload_bytes", 0),
+      f"raw={props.get('payload_bytes')} (file is {len(KNOWN.read_bytes())}) "
+      f"packed={props.get('payload_packed_bytes')}")
 check("the catalog identifies itself by content hash",
       len(props.get("catalog_sha", "")) == 12 and props.get("catalog_schema_version") == 2)
 check("a clean payload reports nothing dropped", props.get("dropped_rows") == 0,

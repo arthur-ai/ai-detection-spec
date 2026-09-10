@@ -78,9 +78,10 @@ zero, because "no timeout happened" and "a timeout of zero seconds" are differen
 | `unmatched_rows` | rows a route looked at and no signature claimed |
 | `dropped_rows` | rows whose `kind` belongs to no route, and which the classifier therefore discards in silence. **Non-zero means a route is missing** |
 | `gap_rows` | `kind=scan` markers reporting that a branch could not look |
+| `payload_bytes` | size of the payload as read, in bytes |
+| `payload_packed_bytes` | the same after gzip -9 and base64, matching `tools/measure_payload.py`. This is the figure a single-text-value channel actually pays. **The 30KB budget it is judged against is self-imposed** — a Jamf Extension Attribute convention this project keeps to, not a documented platform limit |
 | `scan_rows` | `kind=scan` markers reporting a branch ran fine |
 | `kinds_seen` | the row kinds present, comma-joined and sorted. Anything outside the route vocabulary is reported as `other` |
-| `kind_counts` | how many rows of each of those kinds |
 | `deep_scan` | whether the container branch was attempted — including when it failed, because asking and being refused is still use |
 | `gap_reasons` | the gap vocabulary present: `absent`, `no-cache`, `error`, `unhealthy`, `timeout`, or `other` |
 | `gap_unhealthy_code` | the HTTP code an unhealthy daemon answered with |
