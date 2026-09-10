@@ -120,7 +120,10 @@ only your own account.
 ## Quickstart
 
 ```console
+$ git clone https://github.com/arthur-ai/osquery-ai-discovery
+$ cd osquery-ai-discovery              # or download the assets from a tagged release
 $ brew install --cask osquery          # or https://osquery.io/downloads
+$ python3 -m pip install pyyaml        # for bin/classify only -- the queries need nothing
 $ sudo osqueryi --json < dist/discovery-darwin.sql | bin/classify
 $ sudo bin/discover --deep | bin/classify     # the same, plus container images
 
@@ -129,6 +132,16 @@ $ sudo bin/discover --deep | bin/classify     # the same, plus container images
 $ sudo apt install ./osquery_5.23.1-1.linux_amd64.deb
 $ sudo osqueryi --json < dist/discovery-linux.sql | bin/classify
 ```
+
+`dist/` is committed, so a clone is ready to run — there is nothing to build. Pinning a
+tagged release is the recommended posture, and one ships the same artifacts plus the
+catalog; see [SECURITY.md](SECURITY.md).
+
+**`bin/classify` sends one anonymous usage event per run.** It carries counts — never a
+path, a hostname or an agent identifier. `bin/classify --telemetry-check` prints exactly
+what would be sent without sending it, `AI_DISCOVERY_TELEMETRY=0` turns it off, and
+[`docs/telemetry.md`](docs/telemetry.md) lists every field. Nothing that runs on an
+endpoint sends anything.
 
 For a fleet, do not run either of those on a synchronous reporting path — schedule
 `bin/discover --write` and `cat` the file. See [Running it on a fleet](docs/deployment.md).
