@@ -1,9 +1,19 @@
 #!/usr/bin/env bash
-# Static checks on the query and scenarios. No VM, no network — runs in about a second,
-# so CI can gate on it and a VM run never burns 20 minutes on a typo.
+# Static checks on the query and scenarios. No VM, and no network beyond a loopback socket
+# the telemetry suite binds for itself — 11.4s measured here, so CI can gate on it and a VM
+# run never burns 20 minutes on a typo. It was about one second before test_telemetry.py
+# joined it, and most of the difference is that suite waiting out a sender it has pointed
+# at an endpoint which never answers. That wait is the assertion: shortening it would mean
+# not proving the bound.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 fail=0
+# A TEST RUN IS NOT A USE, and bin/classify sends one usage event per run. `CI` already
+# suppresses it on a runner, but a scenario guest is a fresh VM or container that inherits
+# nothing, and a maintainer's own machine has no CI set at all -- so the suite would post
+# an event for every fixture it classifies and the field data would be mostly us. Set
+# explicitly rather than relied upon: see docs/telemetry.md.
+export AI_DISCOVERY_TELEMETRY=0
 
 for q in "$HERE"/../queries/*.sql; do
 python3 - "$q" <<'PY' || fail=1
@@ -330,6 +340,7 @@ PY
 python3 "$HERE/../tools/validate_catalog.py" || fail=1
 python3 "$HERE/../tools/build.py" --check || fail=1
 python3 "$HERE/../test/test_matcher.py" >/dev/null || { echo "FAIL: matcher tests"; fail=1; }
+python3 "$HERE/../test/test_telemetry.py" >/dev/null || { echo "FAIL: telemetry tests"; fail=1; }
 python3 "$HERE/../tools/check_workflows.py" || fail=1
 python3 "$HERE/../tools/check_no_catalog.py" || fail=1
 # docs/agents.md is generated from the catalog and its coverage, exactly as dist/ is

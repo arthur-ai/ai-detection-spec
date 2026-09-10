@@ -6,12 +6,16 @@ The second half matters as much: a signature that over-matches produces confiden
 wrong findings across a fleet, and nothing errors.
 """
 import json
+import os
 import pathlib
 import subprocess
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 FIXTURES = ROOT / "test" / "fixtures"
+# Every classify below runs as a subprocess and inherits this. A test run is not a use;
+# test/test_telemetry.py is the file that exercises the sending path deliberately.
+os.environ.setdefault("AI_DISCOVERY_TELEMETRY", "0")
 failures = []
 
 

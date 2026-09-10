@@ -20,7 +20,7 @@ Every query branch emits **six columns, in this order**:
 | 6 | `perms` | Declared permissions, `ext` only |
 
 Everything composes into one `UNION ALL`, so a branch emitting five columns breaks the whole
-query. `test/lint.sh` catches it in about a second. Run it first.
+query. `test/lint.sh` catches it in about ten seconds. Run it first.
 
 Use `''` rather than `NULL` for a column a branch has nothing for. `NULL` propagates through
 string concatenation and silently empties whole rows.
@@ -346,7 +346,7 @@ inherent. A `slow` query is fine; an undeclared one is not.
 Platform-free, and worth running first:
 
 ```console
-$ test/lint.sh                 # static checks, about a second, no osquery, both platforms
+$ test/lint.sh                 # static checks, ~10s, no osquery, both platforms
 $ python3 test/test_matcher.py # the matcher, no osquery, no VM, no container
 $ python3 tools/build.py --check
 $ python3 tools/validate_catalog.py

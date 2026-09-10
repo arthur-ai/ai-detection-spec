@@ -14,6 +14,13 @@
 # agent, and `forbid` proves it resolves to nothing else.
 set -euo pipefail
 
+# A TEST RUN IS NOT A USE, and bin/classify sends one usage event per run. `CI` already
+# suppresses it on a runner, but a scenario guest is a fresh VM or container that inherits
+# nothing, and a maintainer's own machine has no CI set at all -- so the suite would post
+# an event for every fixture it classifies and the field data would be mostly us. Set
+# explicitly rather than relied upon: see docs/telemetry.md.
+export AI_DISCOVERY_TELEMETRY=0
+
 assert_counts() {
   local actual_json="$1" expected_json="$2"
   python3 - "$actual_json" "$expected_json" <<'PY'
