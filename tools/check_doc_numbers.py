@@ -16,6 +16,8 @@ per row"). Rewriting either would destroy the point it makes. Mark the line
 <!--fixed-number--> and it is skipped -- deliberately verbose, so exempting is a decision
 rather than a reflex.
 """
+import importlib.machinery
+import importlib.util
 import json
 import pathlib
 import re
@@ -61,9 +63,42 @@ PATTERNS = [(re.compile(rf"(\d+)\s+{word}\b"), word)
 COVERAGE = re.compile(r"(\d+)\s*/\s*(\d+)\s*(?:identifiers|coverage)?")
 
 
+def telemetry_fields():
+    """The published event field list must be the sent one.
+
+    bin/classify declares EVENT_FIELDS once and docs/telemetry.md tabulates it for people
+    deciding whether to leave telemetry on. Two lists that have to agree is the shape of
+    every drift bug this repo has had -- five copies of the route vocabulary, one missing
+    `ext`, every browser row dropped for months. So the code is the source and the page is
+    checked against it, rather than both being maintained and neither being right.
+    """
+    doc = ROOT / "docs" / "telemetry.md"
+    if not doc.exists():
+        return ["docs/telemetry.md is missing, and bin/classify sends an event it is "
+                "supposed to describe"]
+    loader = importlib.machinery.SourceFileLoader("classify", str(ROOT / "bin" / "classify"))
+    spec = importlib.util.spec_from_loader("classify", loader)
+    mod = importlib.util.module_from_spec(spec)
+    loader.exec_module(mod)
+    declared = set(mod.EVENT_FIELDS)
+    # The Properties table only -- the envelope table above it describes Amplitude's own
+    # fields, which bin/classify does not declare.
+    body = doc.read_text().partition("### Properties")[2]
+    published = set(re.findall(r"^\| `([a-z_]+)` \|", body, re.M))
+    bad = []
+    for missing in sorted(declared - published):
+        bad.append(f"docs/telemetry.md: does not document `{missing}`, which "
+                   f"bin/classify sends. A field nobody published is a field nobody "
+                   f"agreed to.")
+    for extra in sorted(published - declared):
+        bad.append(f"docs/telemetry.md: documents `{extra}`, which bin/classify does not "
+                   f"send. Remove it, or the page overstates what leaves the machine.")
+    return bad
+
+
 def main():
     facts = truth()
-    bad = []
+    bad = telemetry_fields()
     for name in DOCS:
         path = ROOT / name
         if not path.exists():

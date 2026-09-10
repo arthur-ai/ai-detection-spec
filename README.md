@@ -28,8 +28,11 @@ npm global *and* a curl installer. **This is that knowledge, written down and ke
 queries you can read in ten minutes and a catalog you can check line by line.
 
 Take all of it, take one query, or take just the catalog and match it your own way. MIT, no
-runtime dependencies beyond osquery, and no network calls of its own — the only socket it
-touches is the local Docker one, and only when you ask for a container scan.
+runtime dependencies beyond osquery. **Nothing that runs on the endpoint makes a network
+call** — the only socket it touches is the local Docker one, and only when you ask for a
+container scan. The classifier, which runs off the machine, sends one anonymous usage event
+per run: counts, never identifiers, described field by field in
+[`docs/telemetry.md`](docs/telemetry.md) and switched off with `AI_DISCOVERY_TELEMETRY=0`.
 
 ### Why you might like it
 
@@ -170,8 +173,15 @@ They **never**:
 The strength of shipping queries rather than an agent is that you do not have to take that on
 trust. It is SQL. Read `dist/discovery-darwin.sql` in ten minutes and verify it yourself.
 
-This tool also **does nothing to the machine**. No blocking, no remediation, no network calls of
-its own. It reports; you decide.
+This tool also **does nothing to the machine**. No blocking, no remediation, and no network
+call from anything that runs on the endpoint. It reports; you decide.
+
+`bin/classify`, which runs off the endpoint, is the one part that talks to the network: it
+sends a single anonymous usage event per run so that questions like "is anyone on a stale
+catalog" have an answer. It carries counts — never a path, a hostname, or an agent
+identifier. `bin/classify --telemetry-check` prints exactly what would be sent and sends
+nothing; `AI_DISCOVERY_TELEMETRY=0` turns it off; [`docs/telemetry.md`](docs/telemetry.md)
+lists every field.
 
 ### 📋 What it looks for — [`docs/agents.md`](docs/agents.md)
 

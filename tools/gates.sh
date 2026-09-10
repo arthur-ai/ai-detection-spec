@@ -9,6 +9,12 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$HERE/.."
 fail=0
+# A TEST RUN IS NOT A USE, and bin/classify sends one usage event per run. `CI` already
+# suppresses it on a runner, but a scenario guest is a fresh VM or container that inherits
+# nothing, and a maintainer's own machine has no CI set at all -- so the suite would post
+# an event for every fixture it classifies and the field data would be mostly us. Set
+# explicitly rather than relied upon: see docs/telemetry.md.
+export AI_DISCOVERY_TELEMETRY=0
 run() {
   local out rc
   out=$("$@" 2>&1); rc=$?
@@ -26,6 +32,7 @@ run python3 tools/validate_catalog.py
 run python3 tools/agent_status.py --check
 run python3 tools/agent_status.py --json
 run python3 test/test_matcher.py
+run python3 test/test_telemetry.py
 run python3 tools/check_no_catalog.py
 run python3 tools/check_doc_numbers.py
 run python3 tools/check_workflows.py

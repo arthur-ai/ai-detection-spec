@@ -14,6 +14,13 @@
 # six. `wedge` -- 200 on /_ping, silence on /images/json -- is the fifth, it passes every
 # probe there is, and only the wall-clock kill in bin/container-scan closes it.
 set -uo pipefail
+
+# A TEST RUN IS NOT A USE, and bin/classify sends one usage event per run. `CI` already
+# suppresses it on a runner, but a scenario guest is a fresh VM or container that inherits
+# nothing, and a maintainer's own machine has no CI set at all -- so the suite would post
+# an event for every fixture it classifies and the field data would be mostly us. Set
+# explicitly rather than relied upon: see docs/telemetry.md.
+export AI_DISCOVERY_TELEMETRY=0
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$HERE/.."
 SOCK=/tmp/arthur-fake-docker.sock

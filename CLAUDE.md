@@ -120,6 +120,16 @@ an agent identifier leaks back into the SQL.
 
 Every row is the **six-column contract**: `kind, id, ver, loc, extra, perms`.
 
+**Telemetry lives on exactly one side of that boundary.** `bin/classify` sends one anonymous
+usage event per run; `bin/discover`, `bin/container-scan` and every composed artifact send
+nothing, and that is a rule rather than a gap waiting to be filled — the endpoint runs as
+root on machines whose owners did not choose this tool, and the classifier does not. The
+event is counts only, its field list is declared once in `EVENT_FIELDS` and gated against
+`docs/telemetry.md`, and `test/test_telemetry.py` asserts the negative: that nothing from a
+payload full of home directories and agent identifiers comes back out. `--telemetry-check`
+prints what would be sent without sending or creating anything, because a field list you
+cannot print is one the reader has to take on trust.
+
 **`catalog/routes.yaml` is the route registry, and adding a route there is the whole edit.** The
 vocabulary used to live in five hardcoded lists that had to agree — `validate_catalog`'s
 `ROUTES`, `classify`'s `KIND_ROUTES`, `agent_status`'s `EXACT_KINDS`/`GLOB_ROUTES`/`ALL_ROUTES`,
