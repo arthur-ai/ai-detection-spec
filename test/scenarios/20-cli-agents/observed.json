@@ -117,7 +117,7 @@
       "agent": "codex-cli",
       "route": "npm",
       "value": "@openai/codex",
-      "agent_version": "0.153.3",
+      "agent_version": "0.153.4",
       "os": "15.7.9",
       "arch": "arm64"
     },
@@ -209,7 +209,7 @@
       "agent": "gemini-cli",
       "route": "npm",
       "value": "@google/gemini-cli",
-      "agent_version": "0.58.0",
+      "agent_version": "0.59.0",
       "os": "15.7.9",
       "arch": "arm64"
     }

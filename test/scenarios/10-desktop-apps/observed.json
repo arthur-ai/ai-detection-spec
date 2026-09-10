@@ -2,6 +2,102 @@
   "scenario": "10-desktop-apps",
   "identifiers": [
     {
+      "agent": "antigravity",
+      "route": "bundle_ids",
+      "value": "com.google.antigravity",
+      "agent_version": "2.11.0",
+      "os": "14.8.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "antigravity",
+      "route": "bundle_ids",
+      "value": "com.google.antigravity",
+      "agent_version": "2.11.0",
+      "os": "15.7.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "antigravity",
+      "route": "bundle_ids",
+      "value": "com.google.antigravity",
+      "agent_version": "2.12.2",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "antigravity",
+      "route": "bundle_ids",
+      "value": "com.google.antigravity-ide",
+      "agent_version": "2.5.5",
+      "os": "14.8.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "antigravity",
+      "route": "bundle_ids",
+      "value": "com.google.antigravity-ide",
+      "agent_version": "2.5.5",
+      "os": "15.7.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "antigravity",
+      "route": "bundle_ids",
+      "value": "com.google.antigravity-ide",
+      "agent_version": "2.5.5",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "antigravity",
+      "route": "homebrew",
+      "value": "antigravity",
+      "agent_version": "2.11.0,6376446768316416",
+      "os": "14.8.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "antigravity",
+      "route": "homebrew",
+      "value": "antigravity",
+      "agent_version": "2.11.0,6376446768316416",
+      "os": "15.7.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "antigravity",
+      "route": "homebrew",
+      "value": "antigravity",
+      "agent_version": "2.12.2,6298742303883264",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "antigravity",
+      "route": "homebrew",
+      "value": "antigravity-ide",
+      "agent_version": "2.5.5,4923483625488384",
+      "os": "14.8.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "antigravity",
+      "route": "homebrew",
+      "value": "antigravity-ide",
+      "agent_version": "2.5.5,4923483625488384",
+      "os": "15.7.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "antigravity",
+      "route": "homebrew",
+      "value": "antigravity-ide",
+      "agent_version": "2.5.5,4923483625488384",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
       "agent": "chatgpt-desktop",
       "route": "bundle_ids",
       "value": "com.openai.chat",
@@ -35,6 +131,14 @@
     },
     {
       "agent": "chatgpt-desktop",
+      "route": "bundle_ids",
+      "value": "com.openai.codex",
+      "agent_version": "26.901.41123",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "chatgpt-desktop",
       "route": "homebrew",
       "value": "chatgpt",
       "agent_version": "1.2026.160,1781312926",
@@ -63,6 +167,14 @@
       "value": "chatgpt",
       "agent_version": "26.825.32147",
       "os": "15.7.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "chatgpt-desktop",
+      "route": "homebrew",
+      "value": "chatgpt",
+      "agent_version": "26.901.41123",
+      "os": "26.6.2",
       "arch": "arm64"
     },
     {
@@ -99,6 +211,14 @@
     },
     {
       "agent": "claude-desktop",
+      "route": "bundle_ids",
+      "value": "com.anthropic.claudefordesktop",
+      "agent_version": "1.46388.3",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "claude-desktop",
       "route": "homebrew",
       "value": "claude",
       "agent_version": "1.15962.1,1e236d9fa9efd21a5a0a66a7b70c028f48848604",
@@ -127,6 +247,14 @@
       "value": "claude",
       "agent_version": "1.40609.0,f65e386db0db64c8f8b39950e25adb11f5f5e3f3",
       "os": "15.7.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "claude-desktop",
+      "route": "homebrew",
+      "value": "claude",
+      "agent_version": "1.46388.3,f1b512995860e5f5e88248c50bd938885b4adb88",
+      "os": "26.6.2",
       "arch": "arm64"
     },
     {
@@ -163,6 +291,14 @@
     },
     {
       "agent": "cursor",
+      "route": "bundle_ids",
+      "value": "com.todesktop.230313mzl4w4u92",
+      "agent_version": "3.19.7",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "cursor",
       "route": "homebrew",
       "value": "cursor",
       "agent_version": "3.9.16,042b3c1a4c53f2c3808067f519fbfc67b72cad8b",
@@ -194,6 +330,62 @@
       "arch": "arm64"
     },
     {
+      "agent": "cursor",
+      "route": "homebrew",
+      "value": "cursor",
+      "agent_version": "3.19.7,90de2327392570a5f5f625c656c6749d228e6437",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "kiro",
+      "route": "bundle_ids",
+      "value": "dev.kiro.desktop",
+      "agent_version": "1.0.395",
+      "os": "14.8.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "kiro",
+      "route": "bundle_ids",
+      "value": "dev.kiro.desktop",
+      "agent_version": "1.0.395",
+      "os": "15.7.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "kiro",
+      "route": "bundle_ids",
+      "value": "dev.kiro.desktop",
+      "agent_version": "1.0.437",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "kiro",
+      "route": "homebrew",
+      "value": "kiro",
+      "agent_version": "1.0.395",
+      "os": "14.8.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "kiro",
+      "route": "homebrew",
+      "value": "kiro",
+      "agent_version": "1.0.395",
+      "os": "15.7.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "kiro",
+      "route": "homebrew",
+      "value": "kiro",
+      "agent_version": "1.0.437",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
       "agent": "orion",
       "route": "bundle_ids",
       "value": "com.kagi.kagimacOS",
@@ -223,6 +415,14 @@
       "value": "com.kagi.kagimacOS",
       "agent_version": "1.1.2",
       "os": "15.7.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "orion",
+      "route": "bundle_ids",
+      "value": "com.kagi.kagimacOS",
+      "agent_version": "1.1.2",
+      "os": "26.6.2",
       "arch": "arm64"
     },
     {
@@ -258,6 +458,14 @@
       "arch": "arm64"
     },
     {
+      "agent": "orion",
+      "route": "homebrew",
+      "value": "orion",
+      "agent_version": "1.1.2,151",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
       "agent": "perplexity-comet",
       "route": "bundle_ids",
       "value": "ai.perplexity.comet",
@@ -285,8 +493,16 @@
       "agent": "perplexity-comet",
       "route": "bundle_ids",
       "value": "ai.perplexity.comet",
-      "agent_version": "151.0.7922.247",
+      "agent_version": "152.0.7977.197",
       "os": "15.7.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "perplexity-comet",
+      "route": "bundle_ids",
+      "value": "ai.perplexity.comet",
+      "agent_version": "151.0.7922.247",
+      "os": "26.6.2",
       "arch": "arm64"
     },
     {
@@ -319,6 +535,14 @@
       "value": "comet",
       "agent_version": "145.2.7632.4581",
       "os": "15.7.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "perplexity-comet",
+      "route": "homebrew",
+      "value": "comet",
+      "agent_version": "145.2.7632.4581",
+      "os": "26.6.2",
       "arch": "arm64"
     },
     {
@@ -355,6 +579,14 @@
     },
     {
       "agent": "windsurf",
+      "route": "bundle_ids",
+      "value": "com.exafunction.windsurf",
+      "agent_version": "3.8.20",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "windsurf",
       "route": "homebrew",
       "value": "devin-desktop",
       "agent_version": "3.3.18,16737566f57f3b53bde136375fe0544eca12fac4",
@@ -383,6 +615,14 @@
       "value": "devin-desktop",
       "agent_version": "3.8.20,2d9020110aa91587b3c3b0fcf7d1faaf601fc7b8",
       "os": "15.7.9",
+      "arch": "arm64"
+    },
+    {
+      "agent": "windsurf",
+      "route": "homebrew",
+      "value": "devin-desktop",
+      "agent_version": "3.8.20,2d9020110aa91587b3c3b0fcf7d1faaf601fc7b8",
+      "os": "26.6.2",
       "arch": "arm64"
     }
   ]

@@ -1,10 +1,10 @@
 {
-  "description": "The desktop AI apps that make up the bulk of the demo table.",
+  "description": "The desktop AI apps that make up the bulk of the demo table, plus the agentic IDE forks.",
   "platform": "darwin",
   "demo_beat": "step 1 - the fleet-wide list",
   "counts": {
-    "app": ">=5",
-    "brew": ">=4",
+    "app": ">=7",
+    "brew": ">=6",
     "npm": ">=0",
     "file": ">=1",
     "ext": ">=0",
@@ -15,9 +15,11 @@
   },
   "classified": {
     "must_find": [
+      "antigravity",
       "chatgpt-desktop",
       "claude-desktop",
       "cursor",
+      "kiro",
       "orion",
       "perplexity-comet",
       "windsurf"
@@ -27,7 +29,7 @@
       "perplexity-desktop"
     ]
   },
-  "why": "The four bundle ids that used to be must_contain are now must_find on the classifier, which is the layer that actually knows them. ChatGPT's id is a LIST because run 33511815638 showed the same cask resolving to two builds -- 26.721.41059 with com.openai.codex on macos-15, 1.2026.160 with com.openai.chat on macos-14 -- and both are real. It stays a raw probe rather than being dropped for the classifier: `chatgpt` matches on the brew route too, so must_find would still pass with every bundle id in the catalog broken, and this is the only assertion that reads the row. perplexity-desktop moved to 11-perplexity-desktop for its macOS >= 15 floor and is FORBIDDEN here rather than dropped: an assertion that merely stopped naming it could not tell 'no longer installed' from 'route quietly broken'.",
+  "why": "The four bundle ids that used to be must_contain are now must_find on the classifier, which is the layer that actually knows them. ChatGPT's id is a LIST because run 33511815638 showed the same cask resolving to two builds -- 26.721.41059 with com.openai.codex on macos-15, 1.2026.160 with com.openai.chat on macos-14 -- and both are real. It stays a raw probe rather than being dropped for the classifier: `chatgpt` matches on the brew route too, so must_find would still pass with every bundle id in the catalog broken, and this is the only assertion that reads the row. perplexity-desktop moved to 11-perplexity-desktop for its macOS >= 15 floor and is FORBIDDEN here rather than dropped: an assertion that merely stopped naming it could not tell 'no longer installed' from 'route quietly broken'. Kiro and Antigravity join as the two agentic IDE forks the catalog was missing, and their bundle ids are raw probes for the same reason ChatGPT's are: both also match on the brew route, so must_find alone would still pass with every bundle id here broken. dev.kiro.desktop is asserted precisely because the guessable value is wrong -- the cask's zap stanza names dev.kiro.cli, which belongs to a different product -- and com.google.antigravity-ide is asserted alongside com.google.antigravity because one entry covers both editions, so a signature that silently lost the second would still be found by the first.",
   "must_contain": [
     "com.anthropic.claudefordesktop",
     "com.todesktop.230313mzl4w4u92",
@@ -36,9 +38,13 @@
       "com.openai.chat"
     ],
     "ai.perplexity.comet",
-    "com.kagi.kagimacOS"
+    "com.kagi.kagimacOS",
+    "dev.kiro.desktop",
+    "com.google.antigravity",
+    "com.google.antigravity-ide"
   ],
   "known_gaps": [
-    "Paid or account-gated in several cases. The install is unattended and the sign-in is not, so nothing exercises behaviour that only appears once a user is signed in."
+    "Paid or account-gated in several cases. The install is unattended and the sign-in is not, so nothing exercises behaviour that only appears once a user is signed in.",
+    "Kiro CLI is not installed here. It is a separate product whose app ships bundle id com.amazon.codewhisperer under cask `kiro-cli` (old tokens amazon-q, codewhisperer), and it is uncatalogued, so this run says nothing about it. Its dmg is 1.05GB, which is why."
   ]
 }

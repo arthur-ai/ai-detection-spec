@@ -105,6 +105,10 @@ jobs:
           fi
 
       - name: Provision
+        # id, so the two always() steps at the foot of this job can ask whether there was
+        # ever a query to measure. The Linux job's Provision has carried one since it was
+        # written; this one did not, which is the whole of the bug described down there.
+        id: provision
         if: steps.runnable.outputs.runnable == 'true'
         run: test/scenarios/${{ matrix.scenario }}/setup.sh
       - name: Query and assert
@@ -141,16 +145,37 @@ jobs:
       # Enumeration trades payload for not being wrong about the catalog, so the payload
       # is now a number worth watching per scenario rather than once on a developer Mac.
       #
-      # always() AND runnable, not always() alone. always() includes SKIPPED, so on a runner
-      # the scenario cannot use, this measured a /tmp/out.json that no step ever wrote and
-      # turned an honest skip into a red job -- which is what the gate above exists to
-      # prevent. The always() half still earns its place: when the assert FAILS the query did
-      # run, and the payload of a failing run is the number worth having.
+      # always() AND runnable AND PROVISION SUCCEEDED, not always() alone.
+      #
+      # always() includes SKIPPED, so on a runner the scenario cannot use, this measured a
+      # /tmp/out.json that no step ever wrote and turned an honest skip into a red job --
+      # which is what the runnable gate exists to prevent. The always() half still earns
+      # its place: when the ASSERT fails the query did run, and the payload of a failing
+      # run is the number worth having.
+      #
+      # runnable=true was not enough, because it says only that the runner could HOST the
+      # scenario -- nothing about whether setup.sh got far enough to leave anything behind.
+      # Run 34342254845: openclaw's npm install refused the runner's Node 22, Provision
+      # failed, the query never ran, and this step then failed with
+      # `FileNotFoundError: /tmp/out.json`. Two red steps, and the second one named a
+      # missing file rather than the install that was actually broken. A job that fails
+      # once should say so once, at the step that failed.
+      #
+      # `outcome`, not `conclusion`: both are 'success' here, but outcome is the step's own
+      # result before continue-on-error could rewrite it, and it is 'skipped' rather than
+      # empty when the runnable gate already stopped Provision -- so this stays correct if
+      # that gate ever moves.
       - name: Measure the payload
         if: always() && steps.runnable.outputs.runnable == 'true'
+          && steps.provision.outcome == 'success'
         run: python3 tools/measure_payload.py /tmp/out.json
       - name: Keep the output
+        # THE SAME CONDITION, deliberately. This one merely warns on a missing file rather
+        # than failing, so it stayed green through the run above -- it uploaded an empty
+        # artifact instead. Keeping the two conditions identical means the pair cannot
+        # drift into disagreeing about when a payload exists.
         if: always() && steps.runnable.outputs.runnable == 'true'
+          && steps.provision.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           # THE OS IS IN THE NAME, as it is for the observation above. Two jobs per scenario
