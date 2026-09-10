@@ -93,7 +93,7 @@
       "agent": "codex-cli",
       "route": "homebrew",
       "value": "codex",
-      "agent_version": "0.150.1",
+      "agent_version": "0.153.4",
       "os": "15.7.9",
       "arch": "arm64"
     },
@@ -125,7 +125,7 @@
       "agent": "copilot-cli",
       "route": "homebrew",
       "value": "copilot-cli",
-      "agent_version": "1.0.81",
+      "agent_version": "1.0.83",
       "os": "15.7.9",
       "arch": "arm64"
     },
@@ -189,7 +189,7 @@
       "agent": "hermes",
       "route": "homebrew",
       "value": "hermes-agent",
-      "agent_version": "2026.8.27",
+      "agent_version": "2026.8.31_1",
       "os": "15.7.9",
       "arch": "arm64"
     }

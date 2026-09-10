@@ -29,7 +29,7 @@
       "agent": "perplexity-desktop",
       "route": "homebrew",
       "value": "perplexity",
-      "agent_version": "26.34.0",
+      "agent_version": "26.35.0",
       "os": "15.7.9",
       "arch": "arm64"
     }

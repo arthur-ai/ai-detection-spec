@@ -13,7 +13,7 @@
       "agent": "antigravity",
       "route": "bundle_ids",
       "value": "com.google.antigravity",
-      "agent_version": "2.12.2",
+      "agent_version": "2.11.0",
       "os": "15.7.9",
       "arch": "arm64"
     },
@@ -61,7 +61,7 @@
       "agent": "antigravity",
       "route": "homebrew",
       "value": "antigravity",
-      "agent_version": "2.12.2,6298742303883264",
+      "agent_version": "2.11.0,6376446768316416",
       "os": "15.7.9",
       "arch": "arm64"
     },
@@ -125,7 +125,7 @@
       "agent": "chatgpt-desktop",
       "route": "bundle_ids",
       "value": "com.openai.codex",
-      "agent_version": "26.901.51231",
+      "agent_version": "26.825.32147",
       "os": "15.7.9",
       "arch": "arm64"
     },
@@ -165,7 +165,7 @@
       "agent": "chatgpt-desktop",
       "route": "homebrew",
       "value": "chatgpt",
-      "agent_version": "26.901.51231",
+      "agent_version": "26.825.32147",
       "os": "15.7.9",
       "arch": "arm64"
     },
@@ -205,7 +205,7 @@
       "agent": "claude-desktop",
       "route": "bundle_ids",
       "value": "com.anthropic.claudefordesktop",
-      "agent_version": "1.46388.4",
+      "agent_version": "1.40609.0",
       "os": "15.7.9",
       "arch": "arm64"
     },
@@ -245,7 +245,7 @@
       "agent": "claude-desktop",
       "route": "homebrew",
       "value": "claude",
-      "agent_version": "1.46388.4,50e62f90a2c85243eef42913398f7c8f1534abef",
+      "agent_version": "1.40609.0,f65e386db0db64c8f8b39950e25adb11f5f5e3f3",
       "os": "15.7.9",
       "arch": "arm64"
     },
@@ -285,7 +285,7 @@
       "agent": "cursor",
       "route": "bundle_ids",
       "value": "com.todesktop.230313mzl4w4u92",
-      "agent_version": "3.19.13",
+      "agent_version": "3.17.21",
       "os": "15.7.9",
       "arch": "arm64"
     },
@@ -325,7 +325,7 @@
       "agent": "cursor",
       "route": "homebrew",
       "value": "cursor",
-      "agent_version": "3.19.13,dd066f332fcea7382764400fde902f61920648d5",
+      "agent_version": "3.17.21,8f2a112cb2845a97b75fd932ea5c470579ca4063",
       "os": "15.7.9",
       "arch": "arm64"
     },
@@ -349,7 +349,7 @@
       "agent": "kiro",
       "route": "bundle_ids",
       "value": "dev.kiro.desktop",
-      "agent_version": "1.0.437",
+      "agent_version": "1.0.395",
       "os": "15.7.9",
       "arch": "arm64"
     },
@@ -373,7 +373,7 @@
       "agent": "kiro",
       "route": "homebrew",
       "value": "kiro",
-      "agent_version": "1.0.437",
+      "agent_version": "1.0.395",
       "os": "15.7.9",
       "arch": "arm64"
     },
