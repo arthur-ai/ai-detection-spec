@@ -30,7 +30,7 @@
       "agent": "cursor",
       "route": "rpm_packages",
       "value": "cursor",
-      "agent_version": "3.19.13",
+      "agent_version": "3.19.19",
       "platform": "linux",
       "os": "41",
       "arch": "x86_64"
