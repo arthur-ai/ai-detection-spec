@@ -448,6 +448,10 @@ EVENT_FIELDS = (
     "gap_reasons",
     # row counts
     "findings_agents", "unmatched_rows",
+    # ADDED BY REQUEST, after the field list had been cut back to what was asked for.
+    # It is here because somebody decided it should be, which is the only way anything
+    # else gets added to this tuple.
+    "dropped_rows",
     # platform, and the interpreter that ran the classifier
     "host_os", "python_version",
     # crash report
@@ -862,6 +866,16 @@ def _measure(rows, findings, unmatched, gaps, scans, catalog, routes, args):
         # Always populated regardless of --show-unmatched: the flag gates the OUTPUT, not
         # the list, so counting it here changes no behaviour.
         "unmatched_rows": len(unmatched),
+        # ROWS NOTHING IN THIS TREE HAS EVER COUNTED. A row whose kind is in no route falls
+        # off the end of classify()'s loop and is discarded in silence -- not unmatched,
+        # DROPPED, invisible even under --show-unmatched. That is the bug that hid every
+        # browser-extension row for months, and it was found by accident. A non-zero value
+        # on somebody's fleet is the same bug happening again.
+        #
+        # The evidence-row total it is derived from is NOT sent: this number answers "is a
+        # route missing", and the volume behind it was not asked for.
+        "dropped_rows": max(0, len(rows) - sum(len(h) for h in findings.values())
+                            - len(unmatched) - len(gaps) - len(scans)),
     }
     # A key whose value is unknown is OMITTED rather than sent as 0.
     return {k: v for k, v in props.items() if v is not None}

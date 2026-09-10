@@ -65,7 +65,7 @@ zero, because "no timeout happened" and "a timeout of zero seconds" are differen
 
 ### Properties
 
-Nine on a successful run, twelve on a crash. **Every one of them answers a question
+Ten on a successful run, thirteen on a crash. **Every one of them answers a question
 somebody asked for**, and the list is deliberately short: telemetry that grows by what the
 author finds interesting is how a counter turns into a profile. An earlier draft of this
 carried eighteen more fields — row totals, per-kind counts, a dropped-row counter, the
@@ -82,6 +82,7 @@ for; all were removed. Anything wanted later gets added on purpose, here and in
 | `gap_reasons` | the gap vocabulary present: `absent`, `no-cache`, `error`, `unhealthy`, `timeout`, or `other`. The reason only — not the HTTP code, not the timeout in seconds |
 | `findings_agents` | how many distinct agents were matched |
 | `unmatched_rows` | how many rows a route looked at and no signature claimed |
+| `dropped_rows` | how many rows had a `kind` belonging to no route, and were therefore discarded in silence. **Non-zero means a route is missing.** Added after the list was trimmed, by request, to keep a chart working |
 | `host_os` | the OS `bin/classify` ran on — `Darwin` or `Linux`. The name only, no release number |
 | `python_version` | the interpreter running the classifier |
 | `error_type` | on a crash: the exception class name |

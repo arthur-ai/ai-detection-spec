@@ -315,6 +315,9 @@ check("unmatched is counted without --show-unmatched being asked for",
       props.get("unmatched_rows") == len(ref["unmatched"]),
       f"{props.get('unmatched_rows')} vs {len(ref['unmatched'])} in the report")
 
+check("a clean payload reports nothing dropped", props.get("dropped_rows") == 0,
+      f"{props.get('dropped_rows')}")
+
 # THE SCOPE ASSERTION. Not "are the declared fields present" but "is anything else here at
 # all" -- the list was agreed field by field, and a counter that grows by whatever the
 # author found interesting is how telemetry turns into a profile. This is the check that
@@ -324,6 +327,7 @@ ASKED_FOR = {
     "kinds_seen", "deep_scan",                 # is anyone using the deep scan?
     "gap_reasons",                             # absent / no-cache / unhealthy / timeout
     "findings_agents", "unmatched_rows",       # row counts
+    "dropped_rows",                            # added later, by request, for one chart
     "host_os", "python_version",               # platform, interpreter
     "error_type", "error_site", "phase",       # crash report
 }
@@ -384,6 +388,9 @@ check("an unknown reason is reported as 'other', never forwarded verbatim",
 check("a containers marker counts as a deep scan even when the scan FAILED",
       gp.get("deep_scan") is True,
       "asking and being refused is use; only counting successes undercounts the feature")
+check("a row whose kind no route claims is counted as DROPPED",
+      gp.get("dropped_rows") == 1,
+      f"{gp.get('dropped_rows')} -- this number is the ext bug, made visible")
 check("...and its kind is reported as 'other' rather than by name",
       "other" in gp.get("kinds_seen", "") and "bogus" not in cap_gap.read_text())
 
