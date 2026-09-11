@@ -103,16 +103,132 @@ was measured:
 ```yaml
 superseded:
   - {route: bundle_ids, value: com.openai.chat,
-     last_seen: 1.2026.160, by: 10-desktop-apps, run: 33511815638}
+     last_version: 1.2026.160, last_proved: 2026-08-20,
+     by: 10-desktop-apps, run: 33511815638}
 ```
 
-Same structure, same place in the file, one concept instead of two. `run` is the workflow run
-that last produced the identifier, and the report renders that run's date beside it, so a
-reader gets an age without the catalog storing one.
+Same structure, same place in the file, one concept instead of two. Every field is copied from
+the archived observation, and none is typed.
+
+| field | type | what it is |
+|---|---|---|
+| `route` | route name | which route the value arrived on. Half the key — see below |
+| `value` | string | the identifier itself, exactly as it appears on its route list |
+| `last_version` | **version string**, not a date | the agent version the row carried the last time a run produced this identifier. `1.2026.160` is a ChatGPT build number, not a year and a day |
+| `last_proved` | date, `YYYY-MM-DD` | when that run happened |
+| `by` | scenario name | which scenario produced it, so the evidence can be found |
+| `run` | CI run id | **the run that last produced the identifier** — not the run that noticed it was gone |
+
+Three of those need saying out loud, because each was ambiguous in an earlier draft of this
+design and the ambiguity would have shipped:
+
+**`last_version` is a version, and it was called `last_seen`.** That name reads as a timestamp
+in most tooling, and this field holds `1.2026.160` — a build number. Renamed so the type is
+legible without reading the schema. Everything the section on version semantics below says
+about it still holds: it is a **sighting, not a bound**.
+
+**`last_proved` is stored rather than derived.** A run id can be resolved to a date through the
+GitHub API, and an earlier draft said the report would render it that way. That is wrong:
+`tools/validate_catalog.py` and `tools/agent_status.py` run inside `test/lint.sh`, offline, on
+every pull request, and a page that needs a network call to render a date cannot be generated
+there. The transition knows the date at the moment it writes the record, so it writes it.
+
+**`run` names the run that last *proved* it, not the run that lost it.** Those are different
+runs, and the useful provenance is the first: it points at the job whose logs and artifacts
+show the identifier actually present. It is a GitHub Actions run id, so it resolves to
+`https://github.com/<owner>/<repo>/actions/runs/<run>`. The value is copied out of the archived
+observation rather than read from the environment, because the losing run is the one holding
+the environment variable and it is the wrong run to record.
 
 `run` is the one field an observation does not carry today, and adding it pays twice: it is
 also what distinguishes a CI runner from a maintainer's Mac, which is the missing
 discrimination v1 names as a gap.
+
+### Tracking several at once
+
+A superseded record is keyed on **`(route, value)`**, the same key coverage credits use and for
+the same reason. One agent may carry many, on different routes and with different last
+versions, while current values sit beside them on those same route lists:
+
+```yaml
+agents:
+  - id: openclaw
+    name: OpenClaw
+    classification: Personal agent
+    platforms: [darwin, linux]
+    # The route lists are UNCHANGED by supersession. Every value below is still
+    # indexed and still matched; `superseded:` only says which of them belong to
+    # an earlier release.
+    bundle_ids: [ai.openclaw.mac, bot.molt.mac]
+    homebrew: [openclaw]
+    npm: [openclaw, clawdbot, moltbot]
+    state_dirs: ["~/.openclaw"]
+    launchd_prefixes: [ai.openclaw., bot.molt.]
+    superseded:
+      - {route: npm, value: clawdbot, last_version: 2026.1.24-3,
+         last_proved: 2026-09-02, by: 56-openclaw-retired-names, run: 33702118455}
+      - {route: npm, value: moltbot, last_version: 0.1.0,
+         last_proved: 2026-09-02, by: 56-openclaw-retired-names, run: 33702118455}
+      - {route: bundle_ids, value: bot.molt.mac, last_version: 2025.11.4,
+         last_proved: 2026-06-14, by: 57-openclaw-moltbot-app, run: 32884019773}
+      - {route: launchd_prefixes, value: bot.molt., last_version: 2025.11.4,
+         last_proved: 2026-06-14, by: 57-openclaw-moltbot-app, run: 32884019773}
+
+  - id: chatgpt-desktop
+    name: ChatGPT Desktop
+    classification: Desktop assistant
+    platforms: [darwin]
+    bundle_ids: [com.openai.codex, com.openai.chat]
+    homebrew: [chatgpt]
+    superseded:
+      - {route: bundle_ids, value: com.openai.chat, last_version: 1.2026.160,
+         last_proved: 2026-08-20, by: 10-desktop-apps, run: 33511815638}
+```
+
+Read what that example is asserting, because several of its properties are load-bearing:
+
+- **Two agents, separate blocks.** Nothing is global. An agent's superseded values live on that
+  agent, so a reader answering *what does this catalog say about OpenClaw* reads one entry.
+  `tools/validate_catalog.py` already refuses the same `(route, value)` claimed by two agents,
+  so a value cannot be superseded for one and current for another.
+- **One route, some values superseded and some not.** `npm` carries `openclaw` (current),
+  `clawdbot` and `moltbot` (superseded). Supersession is per value, never per route — a whole
+  route going quiet is a different failure and stays red.
+- **One value, two routes, independently.** OpenClaw ships an npm package *and* a Homebrew cask
+  both called `openclaw`. Keying on the value alone would let one supersede the other; keying on
+  `(route, value)` is what v1 records as the fix for the same bug in coverage credits, and this
+  field inherits it rather than inventing a second rule.
+- **Different last versions, and they are not comparable.** `2026.1.24-3`, `0.1.0` and
+  `2025.11.4` come from three different products in one lineage. Nothing sorts them, and nothing
+  should try to.
+- **Two records may share a run.** `clawdbot` and `moltbot` were superseded by the same run, so
+  they carry the same `by` and `run`. That is normal: one run can stop producing several
+  identifiers at once, and each still gets its own record because each is its own signature.
+
+> The two `bot.molt.` records above are **illustrative, not current**. Nothing has ever proved
+> either value, so neither could hold a record like this today — that is exactly what
+> [What the rule refuses](#what-the-rule-refuses) is about, and the scenario named in them does
+> not exist. They are shown because a lineage with several superseded generations is the case
+> this design has to handle, and OpenClaw is the clearest example of one.
+
+On the evidence side, each of those records has a counterpart, and the pair is what makes the
+catalog entry checkable:
+
+```json
+{
+  "scenario": "56-openclaw-retired-names",
+  "identifiers": [],
+  "archived": [
+    {"agent": "openclaw", "route": "npm", "value": "clawdbot",
+     "agent_version": "2026.1.24-3", "platform": "darwin", "os": "14.8.9",
+     "arch": "arm64", "run": "33702118455", "archived": "2026-09-11"}
+  ]
+}
+```
+
+`last_version` in the catalog is that record's `agent_version`; `run` is its `run`; `by` is the
+scenario the file belongs to. A record whose four fields do not line up with an archived
+observation is refused.
 
 ### Where the evidence lives afterwards
 
@@ -151,7 +267,7 @@ indexed.
 | `bin/classify` | reads `superseded:` **only to label**. Matching is unchanged by construction. An evidence row carries a flag; a finding whose *every* match is superseded says so in one line, because "this machine is on a build old enough that its identifier changed" is the actionable fact and it is invisible today |
 | `test/test_matcher.py` | generates one assertion per superseded value: it still resolves to its agent. This is the live test of a superseded signature |
 | `tools/agent_status.py` | one coverage state replacing `alias`, out of both halves of the badge — no live test can cover it, so the numerator would claim a test that does not exist and the denominator would cap the figure for a reason nobody can act on. Named and counted in the report |
-| `tools/validate_catalog.py` | keeps today's check that the value is one of the agent's identifiers, which is what guards the section above. Adds: `last_seen`, `by` and `run` must match an archived observation, field for field — a record whose evidence is not in the tree is a guess wearing provenance-shaped fields |
+| `tools/validate_catalog.py` | keeps today's check that the value is one of the agent's identifiers, which is what guards the section above. Adds: `last_version`, `last_proved`, `by` and `run` must match an archived observation, field for field — a record whose evidence is not in the tree is a guess wearing provenance-shaped fields |
 
 If the labelling in `bin/classify` were ever dropped, the result is silence about generation,
 not lost detection. That is the right way round, and it is the reason labelling is the only
@@ -172,7 +288,7 @@ A superseded record keeps the version that last produced the identifier. It is t
 field in the record and it is a **sighting, not a bound.** The temptation is to read it as
 *version X or below*, and the counterexample is in this catalog:
 
-- `com.openai.chat` was last proved at `1.2026.160`. Current builds number from `26.` — the
+- `com.openai.chat` was last seen at version `1.2026.160`. Current builds number from `26.` — the
   exact figure moves with every release, and `test/scenarios/10-desktop-apps/observed.json`
   holds whichever one CI last saw. **The version scheme changed at the same rename that
   superseded the identifier**: the app and Codex converged and the numbering went with them. So
@@ -182,7 +298,8 @@ field in the record and it is a **sighting, not a bound.** The temptation is to 
   build and absent at another. The true ceiling is somewhere between, and no run has looked
   there. Recording the sighting as a ceiling rounds an observation into a fact.
 
-So the field is named for what it is, `last_seen`, and the rule that follows from it:
+So the field is named for what it is — `last_version`, a build number and not a date — and the
+rule that follows from it:
 
 > **Say it in prose; never compute on it.** The report may render *last seen at 1.2026.160, so
 > a machine reporting this is on that era or older*. Nothing may filter findings by it — a
@@ -267,10 +384,10 @@ version automates one more step — the transition — and leaves the judgement 
 | this version adds | why there and not elsewhere |
 |---|---|
 | moving the lost observation into `observed.json`'s `archived` list instead of replacing it | the shrink guard is the one place that already knows an identifier was proved and is not being reproduced, and this is the step that would otherwise destroy the evidence |
-| writing the superseded record — route, value, `last_seen`, `by`, `run` — from that observation | every field is knowable at that moment and none has to be typed, which is the whole difference between this and `retired:` |
+| writing the superseded record — route, value, `last_version`, `last_proved`, `by`, `run` — from that observation | every field is knowable at that moment and none has to be typed, which is the whole difference between this and `retired:` |
 | stamping the run identity onto every observation as it is recorded | the field that makes both the transition and the CI-versus-local distinction possible |
 | asserting every superseded value still resolves | generated from the block, so the assertion cannot be forgotten for a value added later |
-| refusing a superseded record whose `last_seen`/`by`/`run` matches no archived observation | otherwise the record is a guess with provenance-shaped fields, which is worse than a guess |
+| refusing a superseded record whose `last_version`/`last_proved`/`by`/`run` matches no archived observation | otherwise the record is a guess with provenance-shaped fields, which is worse than a guess |
 
 | stays manual | why |
 |---|---|
