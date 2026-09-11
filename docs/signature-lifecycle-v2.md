@@ -333,6 +333,132 @@ this was not a rename: the route went away. An AppImage replacing a `.deb` leave
 record at all, and that reads as a lost `deb_packages` value with no successor anywhere —
 which is a different finding, and one the candidate list makes visible by being empty.
 
+## Naming the successor with a model
+
+The narrowing above gets the candidate list down to a few rows. Deciding *which* row is the
+renamed product is the step that needs knowledge the rows do not carry: nothing in a payload
+says `ai.openclaw.mac` succeeds `bot.molt.mac`. That is what a model is for here, in the daily
+run, and it is worth being exact about what it is and is not allowed to do.
+
+### The boundary that decides whether this is safe
+
+Two different things hide under "use a model to find new signatures", and the difference is
+**where the identifier string comes from**:
+
+| | what the model does | verdict |
+|---|---|---|
+| **correlate** | reads the unmatched rows **from the same run** and says which one is the successor | fine. The fact still comes from a real install |
+| **recall** | answers *what is OpenClaw's new bundle id* from training data or the web | **this is how `bot.molt.mac` got in.** Refused |
+
+The second is this repo's founding failure with a faster source, and the enforcement is
+mechanical rather than a matter of prompt discipline: **the request carries no `web_search` and
+no `web_fetch` tool, and no tools at all.** With an empty tool list and the evidence supplied
+in the prompt, recall has nowhere to enter from. Every string the model can return is one that
+was already in front of it.
+
+### The model chooses; the tooling writes
+
+The model's entire output is **a choice and a reason** — which candidate row is the successor,
+with what confidence, and why. It does not emit YAML, a diff, or a patch. Every file in the
+resulting pull request is composed by the same code that composes the superseded record, from
+rows that are already in the run.
+
+That split is what keeps the blast radius to one decision. A model that writes the diff can
+write anything into it; a model that returns `candidates[2]` can only ever be wrong about
+*which* real row was chosen — and a reviewer checking one choice against five candidate rows is
+doing a job a person can actually do.
+
+**Abstaining is a first-class answer.** The output schema carries `no_candidate` as a valid
+result, and the prompt says so. A model forced to choose from a list that contains no successor
+will choose confidently and wrongly, which is the failure this repo exists to avoid; when it
+abstains, the run opens an issue naming the loss and the candidates it rejected, rather than a
+pull request.
+
+### What the pull request contains
+
+A rename is one change and it lands as one reviewable change. The agent was already installed
+by an existing scenario — that is how the new row appeared — so a new scenario is usually not
+needed. Five files, all derived:
+
+| file | what changes | why |
+|---|---|---|
+| `catalog/agents.yaml` | the new value added to its route list, and the `superseded:` record for the old one | the two halves of the rename, together |
+| `test/fixtures/known-agents.json` | the **actual row from the run**, added verbatim | the interim proof, and a permanent matcher test |
+| `test/scenarios/<name>/expected.json` | `must_contain` widened to an alternation carrying both generations | runners disagree during a transition — this is the mechanism v1 documents, applied |
+| `test/scenarios/<name>/observed.json` | the lost observation moved into `archived` | the superseded side's evidence |
+| the PR body | the lost identifier, its archived observation, every candidate row, the model's choice and reasoning, and the run that produced all of it | what a reviewer needs to disagree |
+
+**It is a pull request, never a commit, and it does not auto-merge.** The daily job runs on
+main and has write access; that is exactly why the output is a branch and a PR rather than a
+push. A person reviews and merges.
+
+### Why the pull request cannot smuggle in a guess
+
+This is the part worth understanding before trusting the flow, and the answer is that **the
+existing gates already refuse it** — no new enforcement is needed:
+
+- A catalog value that no CI test covers fails `--gate` and `--check`. If the model picked a
+  row that is not really this agent's, the value still has to be proved by something, and the
+  fixture is the only thing standing behind it at review time.
+- The fixture row is not synthetic. It is the row the runner actually produced, copied
+  verbatim, which is the one kind of fixture this repo grades as real evidence about the
+  matcher. After merge, the next main run upgrades the identifier from fixture-proved to
+  install-proved on its own.
+- The alternation in `must_contain` is deliberately **not** what proves the new value. An
+  alternation passes on either generation, so it would go green on the old value alone — that is
+  the vacuous-assertion failure this repo has already had once. Coverage is what proves the new
+  identifier; the alternation only keeps the cross-runner case from going red during the
+  transition.
+
+Measured rather than reasoned. Adding an identifier to `catalog/agents.yaml` with nothing
+behind it, then adding the fixture row a successor pull request would carry:
+
+```console
+catalog value, no evidence      catalog-gate: FAIL
+  chatgpt-desktop: bundle_ids:com.example.successor-probe is tested-absent
+  -- no CI test covers it. Cover it, remove it, or record why under `untested:`
++ the fixture row from the run   catalog-gate: ok
+```
+
+<!--fixed-number-->
+The gate went from refusing that identifier to counting it, and the covered total rose from 54
+to 55 — a measurement taken against a temporarily modified tree, not a claim about the tree as
+it stands. So the gate refuses a signature with nothing behind it and accepts one carrying a row
+a run really produced: exactly the shape of the pull request described above, and exactly not
+the shape of a guess.
+
+The residual risk is a wrong choice that the fixture then makes look covered, and there is no
+mechanism that catches it — a reviewer does. That is the reason for the PR, and the reason the
+body has to carry the rejected candidates rather than only the chosen one.
+
+### Where it runs, and what it must never do
+
+| constraint | why |
+|---|---|
+| **the `collect` job, main-only, on the daily schedule** | `collect` is already main-only and already the place that aggregates a run. Scenario jobs run on every pull request, so calling from there would spend money per push and widen the secret's scope for nothing |
+| **it cannot fail the suite** | a missing key, a rate limit or an API error records the observations and moves on, loudly. An enrichment that fails must never read as *no successor found* |
+| **nothing it produces reaches a gated artifact** | `docs/agents.md` is generated and `--check` compares it. Non-determinism in a compared file is a permanently red build |
+| **CI payloads only** | runner rows are synthetic and disposable. `bin/classify` is designed to run off-machine over merged fleet payloads, and the same code pointed at one would ship a customer's inventory to an API |
+| **what is sent is declared, documented and gate-checked** | the precedent is `docs/telemetry.md`, whose field list `tools/check_doc_numbers.py` fails the build over if it disagrees with `bin/classify`. A second thing that leaves the machine gets the same treatment rather than a new posture |
+
+The inputs are the candidate rows, the lost identifier with its archived observation, and the
+agent's other identifiers for context. Bundle ids and image tags are **attacker-choosable
+strings** — the catalog says so explicitly of image tags — so they are untrusted input reaching
+a prompt. In CI, installing known software on a disposable runner, the exposure is small, and
+the mitigations are the ones already listed: no tools, the model returns a choice rather than
+text that becomes a diff, and nothing merges without review.
+
+Cost is per rename, not per run: the call happens only when the shrink guard trips.
+
+### Do the cheap half first
+
+The deterministic narrowing — filter by the lost route's kind, subtract the baseline — may well
+leave a single candidate, and a single candidate needs no model at all. **Ship the narrowing,
+measure how often the list is genuinely ambiguous, and add the model against that measurement.**
+That is cheaper to find out than to argue about, and it is the same discipline the rest of this
+document applies to identifiers: the number of ambiguous cases is a fact about the tree, and
+nobody has counted it yet.
+
 ## What the version field can and cannot say
 
 A superseded record keeps the version that last produced the identifier. It is the most useful
@@ -453,6 +579,8 @@ today. The claim this version makes is **"nothing is typed"**, not "nothing is d
 | moving the lost observation into `observed.json`'s `archived` list instead of replacing it | the shrink guard is the one place that already knows an identifier was proved and is not being reproduced, and this is the step that would otherwise destroy the evidence |
 | deriving the superseded record — route, value, `last_version`, `last_proved`, `by`, `run` — from that observation | every field is knowable at that moment and none has to be typed, which is the whole difference between this and `retired:` |
 | listing the successor candidates from the same run's unmatched rows | the losing run is also the gaining run, and that correlation exists nowhere else |
+| naming which candidate is the successor, in the daily run, with a model | the link from one generation to the next is knowledge the rows do not carry. The model returns a choice, never a diff |
+| composing the pull request — catalog, fixture, assertion, archived observation, body | every file is derived from rows already in the run, so none of it has to be written by the model or by a person |
 | stamping the run identity onto every observation as it is recorded | the field that makes both the transition and the CI-versus-local distinction possible |
 | asserting every superseded value still resolves | generated from the block, so the assertion cannot be forgotten for a value added later |
 | refusing a superseded record whose `last_version`/`last_proved`/`by`/`run` matches no archived observation | otherwise the record is a guess with provenance-shaped fields, which is worse than a guess |
@@ -462,6 +590,6 @@ today. The claim this version makes is **"nothing is typed"**, not "nothing is d
 | triaging **why** an identifier stopped appearing | five causes, five different actions, and only two are separable from the record alone |
 | confirming supersession rather than accepting the first red run | a vendor pulling a download for a week and a rename look identical for that week |
 | committing the transition | a pull request must not move recorded coverage, and the guard runs on pull requests |
-| confirming a successor candidate **is** the renamed product | an unmatched row is a row nothing claimed, which is not the same as a row that belongs to this agent |
+| confirming a successor candidate **is** the renamed product, by reviewing and merging the pull request | an unmatched row is a row nothing claimed, which is not the same as a row that belongs to this agent — and a wrong choice that a fixture then makes look covered is caught here or not at all |
 | widening an assertion to an alternation list | which generations a runner may produce is read off runs, not predicted |
 | deciding a signature cannot be proved at all | the rule makes this the one decision that removes a signature, so it should cost a person |
