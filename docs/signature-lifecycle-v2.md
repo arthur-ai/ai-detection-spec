@@ -282,6 +282,57 @@ reasons its way to exactly this rule for one value: *a real install found it exa
 is not repeatable, so the fixture row is the standing proof.* Generating the assertion from the
 block makes that total instead of remembered.
 
+## The other half: finding the successor
+
+Everything above handles the identifier that **left**. A rename has two halves, and the second
+one is not designed yet.
+
+When a vendor renames, one run loses an identifier *and* gains a row nothing claims — same
+machine, same payload, same agent. `com.openai.chat` did not merely vanish; `com.openai.codex`
+arrived in its place, on the same runner, in the same JSON. **That correlation is the strongest
+signal this repo could have, and nothing uses it.**
+
+What already exists, and what happens to it:
+
+| piece | state |
+|---|---|
+| `test/lib/assert.sh` runs `bin/classify --json --show-unmatched` on **every scenario** | the successor row is already computed, on every run |
+| an `unmatched_max` assertion exists in that file | **no scenario sets it** — a mechanism with zero users, the same shape as `untested:` |
+| `tools/agent_status.py`'s `record()` calls `classify(...)[0]` | findings only. The unmatched list is discarded in the same call that records the findings |
+
+So the new identifier arrives in CI, is computed, is not looked at, and is thrown away. The
+old one leaving is caught by three separate guards; the new one arriving is caught by none.
+
+**The design: the guard that reports a loss also reports the candidates.** When the shrink
+guard fires, the successor candidates are in the same run's unmatched rows, narrowed two ways:
+
+- **By kind.** A lost `bundle_ids` value means the candidate is an `app` row. The route's kind
+  is already in `catalog/routes.yaml`, so this needs no new information.
+- **By baseline.** `00-baseline` is a bare machine with `must_find: []` — its unmatched set is
+  the runner's noise floor. Subtract it and what remains is what *this scenario's install*
+  added. That is a candidate list of a few rows rather than the several hundred an unfiltered
+  `--show-unmatched` returns on a real Mac.
+
+The two halves then land in one commit — the superseded record and the successor's signature —
+which is what makes a rename reviewable as a single change rather than as a coverage drop
+followed, weeks later, by an unexplained addition.
+
+**What this must not do is add a signature.** It proposes candidates; a person confirms the row
+is the renamed product by reading what the row points at — a path, an `Info.plist`, a package
+name — and adds it under the same real-install standard as any other signature. The difference
+from how `bot.molt.mac` got in is that here **the real install already happened**: the candidate
+arrives with its evidence attached, from a run that installed the software, rather than from a
+vendor's documentation.
+
+The honest limit: an unmatched row is not proof of identity. A scenario installs one agent onto
+a machine carrying many other things, and the baseline subtraction removes what was there
+before, not what arrived alongside. Narrowing is not deciding.
+
+**No candidate is information too.** If an identifier is lost and nothing unclaimed arrives,
+this was not a rename: the route went away. An AppImage replacing a `.deb` leaves no package
+record at all, and that reads as a lost `deb_packages` value with no successor anywhere —
+which is a different finding, and one the candidate list makes visible by being empty.
+
 ## What the version field can and cannot say
 
 A superseded record keeps the version that last produced the identifier. It is the most useful
@@ -379,12 +430,29 @@ on.
 ## What this automates, and what it deliberately does not
 
 v1 automates measurement and enforcement end to end and leaves every decision manual. This
-version automates one more step — the transition — and leaves the judgement where it was.
+version keeps that split exactly and moves one thing across it: the **content** of the
+transition, never the decision to make it.
+
+**The transition is prepared automatically and committed by a person**, and it has to be, for
+two reasons that are not style:
+
+- **A pull request must not move recorded coverage.** That is `scenarios.yml`'s own rule, and
+  it is why the `collect` job is main-only. The shrink guard runs inside each scenario job,
+  which runs on every pull request, so the guard is in the one place that cannot write.
+- **A vendor pulling a download for a week looks exactly like a rename for that week.** A guard
+  that wrote the record and went green would supersede a live signature on the strength of one
+  bad afternoon, and the entry condition above exists to stop precisely that.
+
+So the guard keeps failing the job, as it does today, and emits the record it *would* write —
+every field derived from the archived observation, none typed. A maintainer confirms the
+supersession is real and commits it with a deliberate flag, the same shape `--allow-shrink` has
+today. The claim this version makes is **"nothing is typed"**, not "nothing is decided".
 
 | this version adds | why there and not elsewhere |
 |---|---|
 | moving the lost observation into `observed.json`'s `archived` list instead of replacing it | the shrink guard is the one place that already knows an identifier was proved and is not being reproduced, and this is the step that would otherwise destroy the evidence |
-| writing the superseded record — route, value, `last_version`, `last_proved`, `by`, `run` — from that observation | every field is knowable at that moment and none has to be typed, which is the whole difference between this and `retired:` |
+| deriving the superseded record — route, value, `last_version`, `last_proved`, `by`, `run` — from that observation | every field is knowable at that moment and none has to be typed, which is the whole difference between this and `retired:` |
+| listing the successor candidates from the same run's unmatched rows | the losing run is also the gaining run, and that correlation exists nowhere else |
 | stamping the run identity onto every observation as it is recorded | the field that makes both the transition and the CI-versus-local distinction possible |
 | asserting every superseded value still resolves | generated from the block, so the assertion cannot be forgotten for a value added later |
 | refusing a superseded record whose `last_version`/`last_proved`/`by`/`run` matches no archived observation | otherwise the record is a guess with provenance-shaped fields, which is worse than a guess |
@@ -393,5 +461,7 @@ version automates one more step — the transition — and leaves the judgement 
 |---|---|
 | triaging **why** an identifier stopped appearing | five causes, five different actions, and only two are separable from the record alone |
 | confirming supersession rather than accepting the first red run | a vendor pulling a download for a week and a rename look identical for that week |
+| committing the transition | a pull request must not move recorded coverage, and the guard runs on pull requests |
+| confirming a successor candidate **is** the renamed product | an unmatched row is a row nothing claimed, which is not the same as a row that belongs to this agent |
 | widening an assertion to an alternation list | which generations a runner may produce is read off runs, not predicted |
 | deciding a signature cannot be proved at all | the rule makes this the one decision that removes a signature, so it should cost a person |

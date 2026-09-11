@@ -281,7 +281,7 @@ manual.
 
 ## Where this version falls short
 
-Four gaps. `docs/signature-lifecycle-v2.md` closes all four.
+Five gaps. `docs/signature-lifecycle-v2.md` closes all five.
 
 - **`retired:` is an assertion that excuses itself.** It exempts a value from the coverage gate,
   and nothing checks that the value was ever real. Of OpenClaw's four retired identifiers, the
@@ -302,3 +302,9 @@ Four gaps. `docs/signature-lifecycle-v2.md` closes all four.
   Every scenario directory is in the matrix today, so nothing is in this state — but the moment
   one is dropped, its identifiers fall to the state meaning *observed, but never by CI*, and the
   record that would have justified them sits in the tree unread.
+- **Only half of a rename is watched.** Three separate guards fire when an identifier stops
+  appearing. **Nothing fires when a new one arrives unclaimed** — and a rename does both, in one
+  run, on one machine. `test/lib/assert.sh` already runs `bin/classify --json --show-unmatched`
+  on every scenario, and there is an `unmatched_max` assertion available; **no scenario sets
+  it**, and `record()` calls `classify(...)[0]`, which keeps the findings and discards the
+  unmatched list in the same call. So the successor is computed on every run and thrown away.
