@@ -252,10 +252,11 @@ no such record, because nothing can produce a name that belongs to other softwar
 
 Neither case is hypothetical. Both catalog bugs found so far were the wrong-identifier one:
 npm `mcp` is Mintlify's package, and npm `aider` is *"Lightweight website popular article
-component for static website"*. `docs/signature-lifecycle.md` covers how something genuinely
-unverifiable is recorded rather than guessed at, and `docs/signature-drift.md` covers the
-superseded case — how generations coexist, what fires when one stops appearing, and which
-parts of the response are automated.
+component for static website"*. `docs/signature-lifecycle-v1.md` is the full lifecycle as the
+tree runs it today — how coverage is proved, how several generations of one signature coexist,
+what fires when one stops appearing, and how something genuinely unverifiable is recorded
+rather than guessed at. `docs/signature-lifecycle-v2.md` is the successor design, and is **not
+built**.
 
 ### The `images` route
 

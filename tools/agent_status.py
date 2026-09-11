@@ -173,7 +173,7 @@ def record(artifact, scenario_dir, os_version="", arch="", platform=""):
 
     test/artifacts/ is gitignored and per-machine, so the raw output cannot back a
     committed document. This is the compact, reviewable residue of a run -- the
-    observations layer of docs/signature-lifecycle.md, at its smallest useful size.
+    observations layer of docs/signature-lifecycle-v1.md, at its smallest useful size.
     """
     catalog = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
     values, routes, seen_ver = replay([pathlib.Path(artifact)], catalog)

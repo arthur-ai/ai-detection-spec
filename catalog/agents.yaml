@@ -184,7 +184,7 @@ agents:
   # neither id was confirmed, so neither is a fact. Note this is a claim about the IDS, not
   # about testability -- 45-claude-extension verifies an id by fetching the Web Store's
   # signed CRX and deriving the id from its manifest key, so a confirmed id could be
-  # verified in minutes. See docs/signature-lifecycle.md: a catalog may carry a guess, but
+  # verified in minutes. See docs/signature-lifecycle-v1.md: a catalog may carry a guess, but
   # it may not hide one.
   - id: claude-in-chrome
     name: Claude in Chrome
