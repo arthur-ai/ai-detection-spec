@@ -51,16 +51,23 @@ stale.
 The exception is permitted and **reported on every regeneration** of `docs/agents.md`, so it
 cannot quietly become permanent. **A catalog may carry a guess. It may not hide one.**
 
+An identifier that was true and has been superseded is a different case from one that was
+never true, and it takes the opposite action: the old value is **kept**, because the machines
+that installed that build still report it. `docs/signature-drift.md` covers that half — how
+several generations of one signature coexist, what fires when one stops appearing, and how
+much of the response is automated.
+
 ## The state that does the most work
 
 `did not appear` — a CI scenario installed the agent and the identifier never showed up. It
-means one of three things, and they are worth telling apart:
+means one of four things, and they are worth telling apart:
 
 | it means | what to do |
 |---|---|
 | the scenario installs by another route | install that route, on **another machine** — two routes claiming one binary name cannot share a host |
 | the artifact only exists once the agent **runs** | invoke it; a state directory is not created by installing |
 | the identifier is wrong | remove it |
+| the identifier is right and is no longer installable | **keep it**, on that agent's `retired:` list. Told apart from the row above by whether any run ever produced the value — see `docs/signature-drift.md` |
 
 Both catalog bugs found so far surfaced through the third case, and neither survived a registry
 lookup: npm `mcp` is Mintlify's package, and npm `aider` is a static-site component by an
@@ -98,3 +105,8 @@ passing locally, absent from the matrix, indistinguishable from covered.
 from months ago, and nothing says which. Marker rows carry the scan time in `ver` and
 `bin/classify` computes staleness from it, but coverage records do not, so a freshness gate
 does not exist yet.
+
+It is the same missing field that stops a superseded identifier keeping its proof: with no run
+identity on a record, an observation from a CI runner cannot be told from one on a maintainer's
+Mac, so the evidence that a value *was* real cannot outlive the scenario that produced it.
+`docs/signature-drift.md` has the design that closes both with one field.

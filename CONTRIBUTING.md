@@ -236,19 +236,26 @@ query that quietly broke looks like. `--allow-shrink` is the deliberate override
 identifier genuinely removed from the catalog.
 
 The state to read closely is **`did not appear`**: a scenario installed the agent and this
-identifier never showed up. It means one of three things, and telling them apart is the work:
+identifier never showed up. It means one of four things, and telling them apart is the work:
 
 | it means | what to do |
 |---|---|
 | the scenario installs by another route | install that route in a **separate** scenario — two routes claiming one binary name cannot share a machine, which is why `21-cli-agents-homebrew` exists beside `20-cli-agents` |
 | the artifact only exists once the agent **runs** | invoke it. A state directory does not exist until first run |
 | **the identifier is wrong** | remove it, and keep its row as a negative control |
+| **the identifier is right and is no longer installable** | **keep it.** The software moved on and the machines on the old build still report it — add the value to that agent's `retired:` list |
 
-That last case is not hypothetical. Both catalog bugs found so far surfaced this way: npm
-`mcp` is Mintlify's package, and npm `aider` is *"Lightweight website popular article component
-for static website"*. Neither could ever appear, because neither names the product.
-`docs/signature-lifecycle.md` covers how something genuinely unverifiable is recorded rather
-than guessed at.
+The last two look identical in the report and take opposite actions, so tell them apart
+before you edit anything. The discriminator is whether any run has ever produced the value:
+`grep -rl '"value": "<the value>"' test/scenarios/*/observed.json`. A wrong identifier has
+no such record, because nothing can produce a name that belongs to other software.
+
+Neither case is hypothetical. Both catalog bugs found so far were the wrong-identifier one:
+npm `mcp` is Mintlify's package, and npm `aider` is *"Lightweight website popular article
+component for static website"*. `docs/signature-lifecycle.md` covers how something genuinely
+unverifiable is recorded rather than guessed at, and `docs/signature-drift.md` covers the
+superseded case — how generations coexist, what fires when one stops appearing, and which
+parts of the response are automated.
 
 ### The `images` route
 
