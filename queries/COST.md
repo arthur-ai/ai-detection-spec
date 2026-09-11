@@ -195,6 +195,31 @@ self-hosted run.
 If your query touches a daemon, socket or external service, measure it stopped and
 mid-startup before you trust either table above.
 
+## The container branch against a live daemon, 2026-09-11
+
+Both tables above were measured on runners with **no Docker**, where `containers.sql`
+returns zero rows in 0.22s. That number says nothing about the cost of the branch actually
+doing its job, and it now has three arms rather than one, so here is the live reading.
+
+macOS 15, Docker 28.4.0, osquery 5.23.1, **18 images / 1 running container / 6 label rows**,
+`dist/discovery-deep.sql` through `osqueryi` three times consecutively:
+
+```
+0.67s   0.54s   0.52s      25 rows, 4447 bytes of JSON
+```
+
+**Roughly +0.1s over the 0.44s the images arm alone measured on the same class of host**, for
+a running container and its vendor labels. Comfortably inside `bin/container-scan`'s 6s
+wall-clock bound, which is the number that matters — the bound exists because
+`docker_images` is UNBOUNDED against a wedged daemon, not because the healthy path is slow.
+
+**Two things this does not measure, and both scale with the host rather than the query.**
+`docker_containers` is a per-container inspect, so its cost grows with how many containers
+are RUNNING, and one machine with one container cannot show that curve. `docker_image_labels`
+grows with images times labels per image — 6 rows from 18 images here, because most images
+carry no `source` label at all. A developer machine running a twenty-container Compose stack
+is the case to measure before trusting this figure, and it has not been measured.
+
 ## The container scan, and why it runs in its own process
 
 `bin/container-scan` is the only supported way to run `dist/discovery-deep.sql`. It carries

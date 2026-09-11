@@ -80,6 +80,22 @@ class Registry:
         self.routes = routes["routes"]
         self.match = {n: r["match"] for n, r in self.routes.items()}
         self.retired = {n for n, r in self.routes.items() if r.get("retired")}
+        # A route that reads ANOTHER route's catalog values. `container_images` matches the
+        # same repository names as `images` and differs only in the row kind it arrives on,
+        # so an agent declares its image once and both routes index it.
+        #
+        # THE ALTERNATIVE WAS DUPLICATION, and it would have rotted: two lists of the same
+        # names, no check that they agree, and a container route silently one name behind
+        # the image route the day somebody edited only one. Catalogued once is the whole
+        # point -- catalog/agents.yaml's header says an agent carries EVERY route it ships
+        # through, and an image reached two ways is still one image.
+        #
+        # Deliberately NOT read by tools/agent_status.py: an aliased route contributes no
+        # catalog key, so `agent.get(route, [])` finds nothing there and the identifier is
+        # counted once, under the route that owns it. Coverage counts identifiers, not the
+        # number of ways one can be reached.
+        self.values_from = {n: r["values_from"] for n, r in self.routes.items()
+                            if r.get("values_from")}
         # kind -> the routes reachable through the GENERIC loop. `tool-dir` routes are
         # excluded on purpose: pypi evidence arrives as kind='file' through the TOOL_DIR
         # bridge, and listing it here as well is what let a PyPI-only signature claim an
@@ -162,7 +178,9 @@ def build_index(catalog, registry):
     for agent in catalog["agents"]:
         meta = {k: agent[k] for k in ("id", "name", "classification")}
         for route, mode in registry.match.items():
-            for value in agent.get(route, []):
+            # `values_from` lets a route index another's values -- see Registry. Absent,
+            # a route reads its own key, which is every route but one.
+            for value in agent.get(registry.values_from.get(route, route), []):
                 if mode in ("exact", "tool-dir"):
                     # A trailing `*` is a prefix, e.g. @modelcontextprotocol/*. No agent
                     # uses one today; the form is kept because removing it would silently

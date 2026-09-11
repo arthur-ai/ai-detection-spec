@@ -19,7 +19,26 @@ import sys
 #   com.apple.passwordmanager.json -> the iCloud Passwords bridge every Mac ships, which
 #                                     otherwise reports two phantom findings fleet-wide
 # Adding to this list means arguing the same case again. It is not a general escape hatch.
-ALLOWED = {"com.apple.%", "com.apple.passwordmanager.json"}
+#
+# org.opencontainers.image.source is the third entry, and it is a DIFFERENT KIND of thing
+# from the two above -- it names a FIELD, not a product, and the case is worth writing out
+# because the reverse-DNS shape makes it look exactly like what this file exists to catch.
+#
+#   * It is a key from the OCI image specification, the same category of string as the
+#     column name `bundle_identifier`. queries/apps.sql selects that column without naming
+#     a single bundle; queries/containers.sql selects this label without naming a single
+#     agent. The OCI publishes no AI product and this namespace cannot come to hold one.
+#   * IT CHANGES NO MATCHING DECISION. The agents are still in catalog/agents.yaml, under
+#     `image_labels:`, and the endpoint still enumerates every image's source label whether
+#     or not anything claims it -- the unmatched ones reach the reader as unmatched. A
+#     wrong catalog entry is still fixed off the machine, which is the whole of D20.
+#   * The alternative is emitting EVERY label key: measured 2026-09-11, that is 30 rows for
+#     one langflow image, and it would put `title=wolfi-base` and `ref.name=ubuntu` --
+#     values inherited from base images -- in front of a matcher as if they identified
+#     anything. Selecting the one key that survived that measurement is narrowing the
+#     payload, not narrowing the catalog.
+ALLOWED = {"com.apple.%", "com.apple.passwordmanager.json",
+           "org.opencontainers.image.source"}
 
 # Vendors and products seen in earlier revisions of these files, plus the ecosystem names
 # a future contributor is most likely to reach for.

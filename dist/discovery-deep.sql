@@ -23,4 +23,54 @@
 -- from containers.sql
 SELECT 'image' AS kind, tags AS id, '' AS ver, id AS loc,
        CAST(size_bytes AS TEXT) AS extra, '' AS perms
-  FROM docker_images;
+  FROM docker_images
+
+UNION ALL
+
+-- RUNNING CONTAINERS, which is a different question from the one above and the only place
+-- in this repo that answers it. Every other route reports PRESENCE: a bundle on disk, a
+-- package in a manifest, a dotdir. This reports that something is executing right now.
+--
+-- RUNNING ONLY. Measured 2026-09-11 on Docker 28.4.0: two exited containers produced ZERO
+-- rows here, because osquery reads /containers/json without `all=1`. So this never
+-- replaces the image branch -- an agent that is installed but stopped appears there and
+-- not here -- and a reader must not take an empty container list for an empty machine.
+--
+-- `image` carries the FULL TAG, verified on that host ("paulgauthier/aider:latest"), so
+-- bin/classify's image_repo() normalises it exactly as it does a docker_images tag. That
+-- is why the catalog needs no second list of names for this route.
+--
+-- `extra` is the COMMAND, and it is the point of the branch beyond liveness. An image name
+-- is chosen by whoever tagged it; what a container actually runs is not cosmetic in the
+-- same way, so `docker tag alpine paulgauthier/aider` fakes the name and cannot fake
+-- `/venv/bin/aider`. It is corroboration the `images` route cannot supply for itself.
+--
+-- `perms` carries `privileged` because it is a capability fact, in the column this
+-- contract already reserves for capability facts. A privileged agent container can reach
+-- the host; an unprivileged one cannot. env_variables is NOT selected here and must never
+-- be: it holds ANTHROPIC_API_KEY and its like, and this payload leaves the machine.
+SELECT 'container' AS kind, c.image AS id, c.state AS ver, c.id AS loc,
+       c.command AS extra,
+       CASE WHEN c.privileged = 1 THEN 'privileged' ELSE '' END AS perms
+  FROM docker_containers c
+
+UNION ALL
+
+-- OCI LABELS, AND ONLY `source`. A label is written by the vendor in their own Dockerfile
+-- and travels in the manifest, which makes it the one container identifier a retagger does
+-- not control -- catalog/routes.yaml's `image_labels` entry carries the reasoning and the
+-- measurements.
+--
+-- WHY ONLY `source`. Measured across thirteen real images on 2026-09-11: `title`, `vendor`
+-- and `ref.name` are INHERITED FROM THE BASE IMAGE and routinely wrong -- litellm reports
+-- title=wolfi-base, sweagent/swe-agent reports ref.name=ubuntu and nothing else. Emitting
+-- those would put "ubuntu" forward as an agent's identity. `source` was correct on every
+-- image that carried one, so it is the only key worth a row.
+--
+-- NO CATALOG LIVES HERE. Selecting one label key is choosing a FIELD, the way the apps
+-- query chooses bundle_identifier -- it names no agent, and tools/check_no_catalog.py
+-- still passes. The rows are evidence whether or not anything claims them.
+SELECT 'ilabel' AS kind, l.value AS id, '' AS ver, l.id AS loc,
+       l.key AS extra, '' AS perms
+  FROM docker_image_labels l
+ WHERE l.key = 'org.opencontainers.image.source';
