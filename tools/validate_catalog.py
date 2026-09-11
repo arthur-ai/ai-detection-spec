@@ -37,7 +37,7 @@ OPTIONAL = {"unverified", "retired"}
 # the alternative is what we had before: verified and assumed identifiers sitting side by
 # side, indistinguishable, with nothing recording which was which.
 #
-# The grades, weakest first. See docs/signature-lifecycle.md.
+# The grades, weakest first. See docs/signature-lifecycle-v1.md.
 EVIDENCE = {
     # What produced bot.molt.mac. The vendor says so and nothing else does.
     "vendor-documentation",

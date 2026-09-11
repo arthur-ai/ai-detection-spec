@@ -3,7 +3,7 @@
 
 The generated pages cannot go stale -- docs/agents.md and the README badges are rebuilt and
 gated. PROSE CAN, and it did: CLAUDE.md claimed 40/40 coverage after the figure became
-38/38, and docs/signature-lifecycle.md said 42 identifiers after two were removed. Both read
+38/38, and the signature lifecycle doc said 42 identifiers after two were removed. Both read
 perfectly; neither was true; nothing checked them.
 
 A catalog that changes often makes this the normal case rather than an accident, so the
@@ -28,7 +28,8 @@ import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DOCS = ["README.md", "CLAUDE.md", "CONTRIBUTING.md",
-        "docs/signature-lifecycle.md", "queries/COST.md"]
+        "docs/signature-lifecycle-v1.md", "docs/signature-lifecycle-v2.md",
+        "queries/COST.md"]
 EXEMPT = "<!--fixed-number-->"
 
 
