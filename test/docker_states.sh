@@ -233,8 +233,21 @@ elapsed=$(python3 -c "import time;print(f'{time.time()-$t0:.2f}')")
 noise="$(cat "$errf")"; rm -f "$errf"
 
 check "the bound reports a timeout (124)" "$([ "$rc" = 124 ] && echo 1 || echo 0)" "got $rc"
+# THE SAME ARGUMENT AS "killed promptly" BELOW, which was widened from 4 to 10 for exactly
+# this reason -- and this threshold was left behind because nothing had made it marginal yet.
+#
+# THE NOMINAL COST GREW, and it grew for a reason recorded in bin/container-scan: SIGTERM no
+# longer ends a wedged osqueryi once the query names docker_containers or
+# docker_image_labels, so the SIGKILL grace is now paid on EVERY bounded kill rather than
+# skipped when the child exits politely. 2s bound + 1s grace + ~0.5s startup is ~3.5s
+# nominal where it used to be ~2.5s.
+#
+# Against a 5s ceiling that is not much headroom, and CI proved it: 4.61s in one run and
+# 5.45s in the next, which failed for contention rather than for anything the test is about.
+# What this check exists to catch is a bound that never fires, and the fake sleeps 300s --
+# so 10 detects that just as decisively and stops the suite going red on a busy runner.
 check "bounded at 2s (${elapsed}s)" \
-      "$(python3 -c "print(1 if $elapsed < 5 else 0)")" "took ${elapsed}s"
+      "$(python3 -c "print(1 if $elapsed < 10 else 0)")" "took ${elapsed}s"
 # THE KILL IS THE ASSERTION. A wrapper that merely stopped waiting passes both checks above
 # and leaves an osqueryi holding the socket for the full 300s the fake sleeps.
 sleep 0.3
@@ -274,16 +287,28 @@ check "the rows survived" "$(printf '%s' "$BOUNDED_OUT" | grep -q '"x"' && echo 
 check "returns well inside the bound (${elapsed}s)" \
       "$(python3 -c "print(1 if $elapsed < 2 else 0)")" "took ${elapsed}s"
 
-echo "  inlining the branch is silent, which is why the split exists"
+echo "  inlining the branch costs the whole inventory, which is why the split exists"
 # THE EVIDENCE FOR THE ARCHITECTURE, and the reason nobody should fold containers back into
-# the composed artifact. Composed into one statement and killed, osqueryi does NOT lose the
-# other branches' rows -- it returns them and exits 0, so the answer looks complete while
-# the container half was never read. That is strictly worse than an error, and it is the
-# thing a wall-clock bound on the COMPOSED file would buy you.
-# ONE run, not two. An earlier version also ran this through run_bounded to assert the
-# bound fires -- which the wedge case above already proves -- and paid three extra seconds
-# for it. The naive run below establishes all three parts of the finding at once: that it
-# blocked (it had to be killed), that it exits 0, and that the output looks complete.
+# the composed artifact.
+#
+# THE SHAPE OF THIS FAILURE CHANGED when the branch grew past docker_images, and the new
+# shape is worse. Both are measured, on 2026-09-13, against this same wedge fake:
+#
+#   docker_images alone          SIGTERM ends it in 200ms, exit 0, and the file holds a
+#                                FULL-looking inventory with the container half missing --
+#                                a plausible lie.
+#   plus docker_containers OR    SIGTERM IS IGNORED ENTIRELY. The process must be SIGKILLed,
+#   docker_image_labels          wait status 137, and the output file is ZERO BYTES.
+#
+# Either arm alone reproduces it; it is not an interaction between them. So a naive wrapper
+# that sends SIGTERM and waits -- which is what this test did until the second arm landed,
+# and what this whole suite's 120s watchdog caught -- now WAITS FOREVER.
+#
+# That is still an argument for the split, and a stronger one. The old failure lied
+# quietly; the new one hangs the collector. bin/container-scan survives both because
+# run_bounded escalates to SIGKILL on a deadline -- which was written as a belt-and-braces
+# measure against a process "not obliged to honour" SIGTERM and is now LOAD-BEARING.
+# Simplifying that escalation away would leave an unkillable osqueryi on every wedged Mac.
 start_fake wedge
 inline="$(mktemp "${TMPDIR:-/tmp}/inline.XXXXXX")"
 { sed 's/;$//' "$COMPOSED"; printf '\nUNION ALL\n\n'
@@ -293,23 +318,31 @@ naive="$(mktemp "${TMPDIR:-/tmp}/naive.XXXXXX")"
 np=$!; nw=0
 while [ "$nw" -lt 20 ]; do kill -0 "$np" 2>/dev/null || break; sleep 0.1; nw=$(( nw + 1 )); done
 if kill -0 "$np" 2>/dev/null; then blocked=1; else blocked=0; fi
-kill -TERM "$np" 2>/dev/null; { wait "$np"; nrc=$?; } 2>/dev/null
+kill -TERM "$np" 2>/dev/null
+# A GRACE PERIOD, THEN SIGKILL, and the grace is the assertion. If SIGTERM ever starts
+# working again this loop exits early and `termed` says so, which is how an osquery upgrade
+# that changes this becomes visible instead of being discovered by a hung suite.
+ng=0
+while [ "$ng" -lt 10 ] && kill -0 "$np" 2>/dev/null; do sleep 0.1; ng=$(( ng + 1 )); done
+if kill -0 "$np" 2>/dev/null; then termed=0; else termed=1; fi
+kill -KILL "$np" 2>/dev/null
+{ wait "$np"; nrc=$?; } 2>/dev/null
 check "the composed query blocks and has to be killed" "$blocked" \
       "it finished on its own -- if the stall is gone, re-argue the split from scratch"
-check "a naive wrapper sees exit 0 from a query it killed" \
-      "$([ "$nrc" = 0 ] && echo 1 || echo 0)" "got $nrc"
-check "...and a FULL-looking inventory, with the container half missing" \
+check "SIGTERM alone does NOT end it, so a naive wrapper waits forever" \
+      "$([ "$termed" = 0 ] && echo 1 || echo 0)" \
+      "SIGTERM ended it after ${ng}00ms. That is the OLD docker_images-only behaviour: if it
+       is back, the comment above is stale and the run_bounded escalation is belt-and-braces
+       again rather than load-bearing. Re-measure before believing it."
+check "...and SIGKILL leaves NO inventory at all, not a partial one" \
       "$(python3 -c "
 import json
 try: rows = json.load(open('$naive'))
-except Exception: print(0); raise SystemExit
-kinds = {r['kind'] for r in rows}
-# A base kind this platform actually emits, no image row, and enough rows to look like a
-# real answer. 'app' is darwin-only -- naming it unconditionally made this assert on a
-# kind Linux cannot produce.
-base = 'app' if '$PLATFORM' == 'darwin' else 'deb'
-print(1 if len(rows) > 100 and 'image' not in kinds and base in kinds else 0)" 2>/dev/null)" \
-      "rows=$(python3 -c "import json;print(len(json.load(open('$naive'))))" 2>/dev/null)"
+except Exception: print(1); raise SystemExit   # unparseable or empty is the finding
+print(0)" 2>/dev/null)" \
+      "the file parsed as JSON -- $(wc -c < "$naive" | tr -d ' ') bytes. A killed osqueryi
+       that still flushes valid JSON is the plausible-lie failure, which needs its own
+       assertion rather than this one"
 rm -f "$inline" "$naive"
 stop_fake
 

@@ -649,6 +649,84 @@ check("...and it leaves every other key's records alone",
       f"kept arches {sorted(k for k in _keys if k)} -- overwriting would let the last job "
       f"to finish decide what the scenario had ever proved")
 
+# --- running containers and vendor labels ------------------------------------------
+# The two routes added beside `images`, and the reason both exist: a tag is chosen by
+# whoever ran `docker tag`, a label is written by the vendor, and a running container says
+# something no other route in this repo can say about anything.
+#
+# Rows are shaped exactly as queries/containers.sql emits them, and every id below was
+# read off a real daemon (Docker 28.4.0 / osquery 5.23.1, 2026-09-11) rather than invented.
+
+
+def _container(image, state="running", command="", cid="c0ffee"):
+    return {"kind": "container", "id": image, "ver": state, "loc": cid,
+            "extra": command, "perms": ""}
+
+
+def _ilabel(value, img="deadbeef"):
+    return {"kind": "ilabel", "id": value, "ver": "", "loc": img,
+            "extra": "org.opencontainers.image.source", "perms": ""}
+
+
+r = classify_json([_container("ghcr.io/block/goose:latest", command="sleep 600")])
+check("a running container from a catalogued image is found",
+      {f["id"] for f in r["findings"]} == {"goose"},
+      f"got {[f['id'] for f in r['findings']]}; the container route reads `images:` "
+      f"through values_from, and an empty index here means that alias is broken")
+
+# THE ALIAS IS THE LOAD-BEARING PART, so prove it reaches a value the agent declares only
+# once. goose has no `container_images:` key of its own; if build_index stopped honouring
+# values_from, this is the assertion that goes red.
+r = classify_json([_container("ghcr.io/openhands/openhands:latest")])
+check("...for every agent, not just the first one indexed",
+      {f["id"] for f in r["findings"]} == {"openhands"},
+      f"got {[f['id'] for f in r['findings']]}")
+
+# MUST NOT MATCH, and it is the same near-miss 79-linux-image runs as a real container.
+# A container route matching on a prefix would claim this, and every positive assertion
+# above would still pass.
+r = classify_json([_container("paulgauthier/aider-fork:latest")])
+check("a near-miss image is NOT claimed through the container route",
+      not r["findings"] and "paulgauthier/aider-fork:latest" in unmatched_ids(r),
+      "exact on the normalised repository, and visibly declined rather than dropped")
+
+# THE `ext` GUARD, for the two new kinds. A kind absent from catalog/routes.yaml falls off
+# the end of classify()'s loop -- DROPPED, not unmatched, invisible even under
+# --show-unmatched. That cost this repo months once, so each new kind gets the assertion.
+r = classify_json([_container("postgres:15"), _ilabel("https://github.com/BerriAI/litellm")])
+check("an unclaimed container row is UNMATCHED, not dropped",
+      "postgres:15" in unmatched_ids(r), "the kind must be registered in routes.yaml")
+check("an unclaimed label row is UNMATCHED, not dropped",
+      "https://github.com/BerriAI/litellm" in unmatched_ids(r),
+      "a gateway is not an agent, and its source URL must be visibly declined")
+
+r = classify_json([_ilabel("https://github.com/OpenHands/OpenHands"),
+                   _ilabel("https://github.com/block/goose")])
+check("a vendor-set OCI source label identifies its agent",
+      {f["id"] for f in r["findings"]} == {"openhands", "goose"},
+      f"got {[f['id'] for f in r['findings']]}")
+
+# THE LABEL TRAP, and it is why the query emits `source` and nothing else. Measured on
+# sweagent/swe-agent, whose only labels are org.opencontainers.image.ref.name=ubuntu and
+# version=22.04, both inherited from its base image. If anyone widens containers.sql to
+# emit `title` or `ref.name`, these rows start arriving and must still claim nothing.
+r = classify_json([_ilabel("ubuntu"), _ilabel("22.04"), _ilabel("wolfi-base")])
+check("an inherited base-image label claims nothing",
+      not r["findings"] and {"ubuntu", "22.04", "wolfi-base"} <= unmatched_ids(r),
+      "a label route keyed on `title` would offer Ubuntu as an agent's identity")
+
+# A container is a SECOND witness, not a replacement: the image row and the container row
+# describe the same agent and must fold into one finding rather than two.
+r = classify_json([{"kind": "image", "id": "ghcr.io/block/goose:latest", "ver": "",
+                    "loc": "d85a724ee487", "extra": "455000000", "perms": ""},
+                   _container("ghcr.io/block/goose:latest", command="sleep 600"),
+                   _ilabel("https://github.com/block/goose")])
+check("three routes agreeing produce ONE agent, with all three as evidence",
+      [f["id"] for f in r["findings"]] == ["goose"]
+      and {e["kind"] for e in r["findings"][0]["evidence"]}
+      == {"image", "container", "ilabel"},
+      f"got {r['findings']}")
+
 print()
 if failures:
     print(f"matcher: FAIL ({len(failures)})")

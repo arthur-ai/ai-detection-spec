@@ -61,3 +61,56 @@ docker tag alpine:3.20 paulgauthier/aider-fork:latest
 docker tag alpine:3.20 paulgauthier/aider2:latest
 echo "--- controls (one row, distinct id from aider):"
 docker image inspect alpine:3.20 --format '{{.RepoTags}}'
+
+# --- THE REST OF THE CONTAINER-ROUTE CATALOG ------------------------------------------
+#
+# THIS COSTS CI TIME AND THE TRADE IS DELIBERATE. These four images are ~5.7GB on top of
+# aider's 5.8GB, which roughly doubles this scenario's pull. The alternative was to
+# catalogue the names off a registry manifest and never fetch them, and that is the exact
+# shape of claim this repo has been wrong about twice -- `bot.molt.mac` and npm `aider`.
+# A signature nothing pulls is a guess with a comment beside it. Trim this list by
+# REMOVING SIGNATURES, never by leaving a signature untested.
+#
+# EACH PULL IS INDIVIDUALLY OPTIONAL, because one registry having a bad day must not lose
+# the other three. `try` reports and continues; the assertions below decide what was
+# actually proved, and expected.json holds the agents to `>=` rather than exact counts.
+for repo in \
+  ghcr.io/openhands/openhands:latest \
+  ghcr.io/all-hands-ai/openhands:latest \
+  ghcr.io/block/goose:latest \
+  sweagent/swe-agent:latest
+do
+  try "pull $repo" docker pull "$repo" || echo "  (continuing -- one registry is not the suite)"
+done
+echo "--- pulled agent images:"
+docker images --format '  {{.Repository}}:{{.Tag}} {{.ID}} {{.Size}}' \
+  | grep -Ei 'openhands|goose|swe-agent|aider' || true
+
+# --- A RUNNING CONTAINER, which is a different row and a different claim ---------------
+#
+# docker_containers lists RUNNING containers only -- measured 2026-09-11 on Docker 28.4.0,
+# where two exited containers produced zero rows. So an image pull alone can never exercise
+# the `container_images` route, and without this the whole branch would be dead code that
+# lint could not see.
+#
+# goose because it is the smallest catalogued agent image (455MB), and `sleep` because the
+# point is to make the daemon report a RUNNING container from a catalogued image, not to
+# run an agent that would want credentials and a model endpoint. The row's `extra` carries
+# the command, so the output records plainly that this is a probe rather than a real agent
+# session -- see docs/containers.md on why the command is corroboration and not identity.
+if docker image inspect ghcr.io/block/goose:latest >/dev/null 2>&1; then
+  docker rm -f goose-probe >/dev/null 2>&1 || true
+  try "run a catalogued agent image as a container" \
+    docker run -d --name goose-probe --entrypoint sleep ghcr.io/block/goose:latest 600
+  # THE NEGATIVE CONTROL FOR THE CONTAINER ROUTE, and it needs to be a running container
+  # rather than another tag: `paulgauthier/aider-fork` already proves the IMAGE route
+  # compares whole repository names, and this proves the container route does too. Without
+  # it, a container route that matched on a prefix would pass every assertion here.
+  docker rm -f impostor-probe >/dev/null 2>&1 || true
+  try "run the near-miss tag as a container, which must NOT be claimed" \
+    docker run -d --name impostor-probe --entrypoint sleep paulgauthier/aider-fork:latest 600
+  echo "--- running containers:"
+  docker ps --format '  {{.Names}} {{.Image}} {{.Status}}'
+else
+  echo "  goose image absent, so no container probe -- the container assertions will not be met"
+fi

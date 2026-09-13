@@ -358,12 +358,22 @@ jobs:
           if-no-files-found: error
 
   collect:
-    name: Commit observations
+    name: Coverage, and commit observations on main
     needs: [scenario, scenario-linux, scenario-linux-rpm]
     # always() so a green scenario's observation still lands when a DIFFERENT scenario
     # failed. Each observation is independent evidence, and discarding all of them because
     # one scenario broke would throw away the runs that worked.
-    if: always() && github.ref == 'refs/heads/main'
+    #
+    # IT RUNS ON EVERY REF NOW, and only the COMMIT is main-only. Those were one thing and
+    # had to become two. Recording coverage on a pull request would let a PR move its own
+    # figures, which is why the commit is gated -- but CHECKING coverage was gated with it
+    # by accident, leaving the check to test/lint.sh, which can only read observations
+    # committed before the branch existed. Every PR that added a signature was therefore
+    # red however correct it was, and the only way through was to merge it.
+    #
+    # So the check moved here, where this run's own observations exist, and lint keeps the
+    # half it can answer statically. tools/agent_status.py's _pending() has the split.
+    if: always()
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -421,8 +431,38 @@ jobs:
               plats = sorted({f"{r.get('platform') or '?'}/{r.get('os') or '?'}"
                               for r in rows})
               print(f"  {scen}: {len(rows)} records across {plats or ['(none recorded)']}")
+          # WHICH SCENARIOS REPORTED, for the gate below. A scenario that failed or exited
+          # 3 uploads no artifact and is therefore absent here -- which is exactly right:
+          # the gate must not read "this identifier did not appear" from a run that never
+          # happened, and a rate-limited Docker Hub pull is the case that would otherwise
+          # turn an unactionable skip into a red coverage figure.
+          pathlib.Path("/tmp/reported.txt").write_text(",".join(sorted(merged)))
+          print("reported:", ", ".join(sorted(merged)) or "(nothing)")
           PYEOF
+
+      # THE COVERAGE GATE, against THIS run's observations rather than the tree's.
+      #
+      # test/lint.sh asks the half of the question a static run can answer -- does some CI
+      # scenario claim this identifier -- and defers the other half here, because only a
+      # scenario that has just run can say whether the identifier actually appeared. Left
+      # in lint, that question could only ever be asked of observations committed before
+      # the branch existed, so every signature PR failed it however correct it was.
+      #
+      # NOT always(). If the matrix did not finish there is nothing to judge, and a second
+      # red on a build that is already red for a real reason is noise that trains people to
+      # skim. The `reported` list makes this safe rather than lenient: a scenario that
+      # failed or skipped is not in it, so its identifiers stay pending instead of being
+      # counted as missing.
+      - name: Coverage against this run
+        run: |
+          python3 tools/agent_status.py --gate --pending-ok \
+            --reported "$(cat /tmp/reported.txt)"
+
       - name: Regenerate the doc and commit if anything moved
+        # MAIN ONLY, and this is the line the gate above used to be trapped behind. A pull
+        # request must not be able to move its own recorded coverage; it must still be able
+        # to be CHECKED. Those are different statements and are now in different steps.
+        if: github.ref == 'refs/heads/main'
         run: |
           python3 tools/agent_status.py --write
           git add test/scenarios/*/observed.json docs/agents.md README.md

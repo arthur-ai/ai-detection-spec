@@ -402,7 +402,70 @@ agents:
     state_dirs: ["~/.aider"]
     # Read off a real row: "paulgauthier/aider:latest", id cd375f1ecbd1. ENTRYPOINT is
     # /venv/bin/aider, which is the same package the pypi route above names.
+    #
+    # NO OCI LABELS AT ALL, verified 2026-09-11 against the pulled image (id 0d54037f6c97,
+    # created 2026-02-12): docker_image_labels returns zero rows for it. So this agent is
+    # reachable only through the forgeable tag, and `image_labels` cannot corroborate it --
+    # which is the gap routes.yaml describes and not an omission here.
     images: [paulgauthier/aider]
+
+  - id: openhands
+    name: OpenHands
+    classification: Coding agent
+    platforms: [darwin, linux]
+    # TWO REPOSITORIES, AND BOTH ARE LIVE. The project moved GitHub organisation and
+    # publishes under the new one; the old path still serves an image, so a machine that
+    # pulled before the move still has it and must still be found. Read off real rows on
+    # 2026-09-11:
+    #
+    #   "ghcr.io/openhands/openhands:latest"       id 17d0648956f9, created 2026-07-21
+    #   "ghcr.io/all-hands-ai/openhands:latest"    id 00968de77a7b, created 2025-10-10
+    #
+    # The stale one is listed second because that is what it is -- nine months behind, and
+    # the reason its labels are absent while the current image's are complete. Dropping it
+    # would hide every machine that pulled during the old org's lifetime.
+    images: [ghcr.io/openhands/openhands, ghcr.io/all-hands-ai/openhands]
+    # THE VENDOR-CONTROLLED HALF, and the reason this agent is the strongest container
+    # finding in the catalog. Read off the current image's own manifest, same day:
+    # org.opencontainers.image.source = https://github.com/OpenHands/OpenHands, beside
+    # title=OpenHands and version=main-amd64. Retagging anything as openhands reproduces
+    # the `images` value and cannot reproduce this one.
+    #
+    # Case is the vendor's: the GitHub organisation renders `OpenHands`, and the label
+    # carries it verbatim. Matching is exact, so the case here is a fact rather than a
+    # style choice.
+    image_labels: ["https://github.com/OpenHands/OpenHands"]
+
+  - id: goose
+    name: goose
+    classification: Coding agent
+    platforms: [darwin, linux]
+    # Read off a real row on 2026-09-11: "ghcr.io/block/goose:latest", id d85a724ee487,
+    # created 2026-04-06, ENTRYPOINT /usr/local/bin/goose.
+    images: [ghcr.io/block/goose]
+    # org.opencontainers.image.source off the same image, beside title=goose and
+    # vendor=Block -- the only image measured that set `vendor` correctly rather than
+    # inheriting its base image's. Only `source` is matched; routes.yaml says why.
+    image_labels: ["https://github.com/block/goose"]
+
+  - id: swe-agent
+    name: SWE-agent
+    classification: Coding agent
+    platforms: [darwin, linux]
+    # Read off a real row on 2026-09-11: "sweagent/swe-agent:latest", id 11206d866593.
+    #
+    # STALE, AND CATALOGUED ANYWAY. The image was created 2024-12-07 -- twenty-one months
+    # before this was written -- and a `latest` tag that has not moved in that long usually
+    # means the project stopped publishing there. It is listed because the registry still
+    # serves it, so it is still pullable and still lands on machines; an agent nobody
+    # updates is not an agent nobody runs.
+    #
+    # ITS LABELS ARE A TRAP, and they are why `image_labels` matches `source` alone. This
+    # image carries exactly two: org.opencontainers.image.ref.name=ubuntu and
+    # version=22.04, both INHERITED FROM ITS BASE IMAGE. A route keyed on `title` or
+    # `ref.name` would read this agent as Ubuntu. It carries no `source`, so it has no
+    # image_labels entry rather than a guessed one.
+    images: [sweagent/swe-agent]
 
   - id: gemini-cli
     name: Gemini CLI

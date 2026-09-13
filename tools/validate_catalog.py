@@ -72,7 +72,7 @@ def validate_registry(reg):
     legal_platform = platforms | set(groups)
     modes = {"exact", "prefix", "exact-normalised", "home-dir", "home-prefix", "tool-dir"}
     required = {"platform", "kind", "match", "table", "min_osquery"}
-    optional = {"value_pattern", "retired"}
+    optional = {"value_pattern", "retired", "values_from"}
     for name, r in (reg.get("routes") or {}).items():
         if not isinstance(r, dict):
             errors.append(f"routes.yaml: {name} must be a mapping")
@@ -94,6 +94,16 @@ def validate_registry(reg):
             errors.append(f"routes.yaml: {name} declares no kind. bin/classify inverts "
                           f"kind -> routes, so rows of an unregistered kind are DROPPED, "
                           f"not unmatched -- invisible even under --show-unmatched.")
+        # A `values_from` naming a route that does not exist indexes NOTHING, in silence:
+        # build_index falls back to agent.get(<missing key>, []) and the route matches no
+        # row ever. That is the failure this file exists to end, so the target is checked.
+        src = r.get("values_from")
+        if src is not None and src not in (reg.get("routes") or {}):
+            errors.append(f"routes.yaml: {name} declares values_from {src!r}, which is "
+                          f"not a route. It would index nothing, silently.")
+        if src is not None and src == name:
+            errors.append(f"routes.yaml: {name} declares values_from itself; drop the "
+                          f"field, a route reads its own key by default")
         pattern = r.get("value_pattern")
         if pattern is not None:
             try:

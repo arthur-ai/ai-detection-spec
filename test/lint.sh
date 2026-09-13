@@ -390,9 +390,23 @@ for b in bad:
 sys.exit(1 if bad else 0)
 PYEOF
 
-python3 "$HERE/../tools/agent_status.py" --check || fail=1
+# --pending-ok ON BOTH, AND IT IS NOT A WEAKENING. This file is static: it reads the
+# observations committed to the tree, and those are written by scenarios.yml's `collect`
+# job, which is main-only so that a pull request cannot move recorded coverage. On the PR
+# that ADDS a signature the observations therefore predate it, and a correctly covered
+# identifier is indistinguishable here from one a scenario ran and failed to produce.
+#
+# Left strict, that made every signature PR red by construction, and the only available
+# fix was to merge it anyway -- which teaches people that this red means nothing, and the
+# next red is read the same way.
+#
+# What lint still refuses is the part it CAN answer: an identifier no CI scenario even
+# claims. What it defers is whether a claimed one appeared, which is settled by the
+# `coverage` job in scenarios.yml against that run's own observations. Both halves are
+# gates, neither is advisory, and tools/agent_status.py's _pending() carries the argument.
+python3 "$HERE/../tools/agent_status.py" --check --pending-ok || fail=1
 # Nothing ships in the catalog without a real test.
-python3 "$HERE/../tools/agent_status.py" --gate || fail=1
+python3 "$HERE/../tools/agent_status.py" --gate --pending-ok || fail=1
 # Prose goes stale silently; generated pages cannot. This checks the numbers a human wrote.
 python3 "$HERE/../tools/check_doc_numbers.py" || fail=1
 # --json separately, because it exercises a code path --check does not. An unquoted
