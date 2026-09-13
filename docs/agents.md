@@ -32,8 +32,8 @@ Coverage is counted **per identifier**, from what each scenario recorded in its 
 `observed.json`, and only from scenarios in the CI matrix — an agent can pass while
 carrying an identifier nothing exercised.
 
-`tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor
-carrying an `unverified` block, so an unverified signature cannot enter quietly.
+`tools/validate_catalog.py` refuses an agent no scenario installs. There is no block
+that buys an exception, so an unproved signature cannot enter at all.
 
 # Agents (19)
 
@@ -41,47 +41,47 @@ Software that acts on the user's behalf. This is what the catalog is for.
 
 ## Coding agent
 
-| name | evidence | identifiers | scenarios |
-|---|---|---|---|
-| **aider** | real install | **`aider`**, **`aider-chat`**, **`paulgauthier/aider`**, **`~/.aider`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
-| **Google Antigravity** | real install | **`com.google.antigravity`**, **`com.google.antigravity-ide`**, **`antigravity`**, **`antigravity-ide`** | 10-desktop-apps |
-| **Claude Code** | real install | **`@anthropic-ai/claude-code`**, **`~/.claude`**, **`~/.local/bin/claude`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 90-demo-fleet |
-| **Cline** | real install | **`cline`**, **`saoudrizwan.claude-dev`** | 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode |
-| **Codex CLI** | real install | **`codex`**, **`@openai/codex`**, **`~/.codex`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 90-demo-fleet |
-| **Continue** | real install | **`continue.continue`** | 78-linux-vscode |
-| **GitHub Copilot CLI** | real install | **`copilot-cli`**, **`@github/copilot`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents |
-| **Cursor** | real install | **`com.todesktop.230313mzl4w4u92`**, **`cursor`**, **`cursor`**, **`cursor`**, **`cursor.desktop`** | 10-desktop-apps, 73-linux-deb, 77-linux-rpm, 90-demo-fleet |
-| **Gemini CLI** | real install | **`gemini-cli`**, **`@google/gemini-cli`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents |
-| **Kiro** | real install | **`dev.kiro.desktop`**, **`kiro`** | 10-desktop-apps |
-| **Windsurf** | real install | **`com.exafunction.windsurf`**, **`devin-desktop`** | 10-desktop-apps |
+| name | identifiers | scenarios |
+|---|---|---|
+| **aider** | **`aider`**, **`aider-chat`**, **`paulgauthier/aider`**, **`~/.aider`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
+| **Google Antigravity** | **`com.google.antigravity`**, **`com.google.antigravity-ide`**, **`antigravity`**, **`antigravity-ide`** | 10-desktop-apps |
+| **Claude Code** | **`@anthropic-ai/claude-code`**, **`~/.claude`**, **`~/.local/bin/claude`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 90-demo-fleet |
+| **Cline** | **`cline`**, **`saoudrizwan.claude-dev`** | 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode |
+| **Codex CLI** | **`codex`**, **`@openai/codex`**, **`~/.codex`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 90-demo-fleet |
+| **Continue** | **`continue.continue`** | 78-linux-vscode |
+| **GitHub Copilot CLI** | **`copilot-cli`**, **`@github/copilot`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents |
+| **Cursor** | **`com.todesktop.230313mzl4w4u92`**, **`cursor`**, **`cursor`**, **`cursor`**, **`cursor.desktop`** | 10-desktop-apps, 73-linux-deb, 77-linux-rpm, 90-demo-fleet |
+| **Gemini CLI** | **`gemini-cli`**, **`@google/gemini-cli`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents |
+| **Kiro** | **`dev.kiro.desktop`**, **`kiro`** | 10-desktop-apps |
+| **Windsurf** | **`com.exafunction.windsurf`**, **`devin-desktop`** | 10-desktop-apps |
 
 ## Personal agent
 
-| name | evidence | identifiers | scenarios |
-|---|---|---|---|
-| **Hermes Agent** | real install | **`hermes-agent`**, **`hermes-agent`**, **`~/.hermes`**, **`~/.local/bin/hermes`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents |
-| **OpenClaw** | real install | **`ai.openclaw.mac`**, ~~`bot.molt.mac`~~, **`openclaw`**, **`ai.openclaw.`**, ~~`bot.molt.`~~, **`openclaw`**, **`clawdbot`**, **`moltbot`**, **`~/.openclaw`** | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 60-persistence, 90-demo-fleet |
+| name | identifiers | scenarios |
+|---|---|---|
+| **Hermes Agent** | **`hermes-agent`**, **`hermes-agent`**, **`~/.hermes`**, **`~/.local/bin/hermes`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents |
+| **OpenClaw** | **`ai.openclaw.mac`**, ~~`bot.molt.mac`~~, **`openclaw`**, **`ai.openclaw.`**, ~~`bot.molt.`~~, **`openclaw`**, **`clawdbot`**, **`moltbot`**, **`~/.openclaw`** | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 60-persistence, 90-demo-fleet |
 
 ## AI browser
 
-| name | evidence | identifiers | scenarios |
-|---|---|---|---|
-| **Orion** | real install | **`com.kagi.kagimacOS`**, **`orion`** | 10-desktop-apps |
-| **Perplexity Comet** | real install | **`ai.perplexity.comet`**, **`comet`** | 10-desktop-apps, 90-demo-fleet |
+| name | identifiers | scenarios |
+|---|---|---|
+| **Orion** | **`com.kagi.kagimacOS`**, **`orion`** | 10-desktop-apps |
+| **Perplexity Comet** | **`ai.perplexity.comet`**, **`comet`** | 10-desktop-apps, 90-demo-fleet |
 
 ## Browser agent
 
-| name | evidence | identifiers | scenarios |
-|---|---|---|---|
-| **Claude in Chrome** | real install | **`fcoeoabgfenejglbffodgkkbkcdhcgfn`** | 45-claude-extension |
+| name | identifiers | scenarios |
+|---|---|---|
+| **Claude in Chrome** | **`fcoeoabgfenejglbffodgkkbkcdhcgfn`** | 45-claude-extension |
 
 ## Desktop assistant
 
-| name | evidence | identifiers | scenarios |
-|---|---|---|---|
-| **ChatGPT Desktop** | real install | **`com.openai.codex`**, **`com.openai.chat`**, **`chatgpt`** | 10-desktop-apps, 90-demo-fleet |
-| **Claude Desktop** | real install | **`com.anthropic.claudefordesktop`**, **`claude`**, **`com.anthropic.claude_browser_extension.json`** | 10-desktop-apps, 90-demo-fleet |
-| **Perplexity** | real install | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
+| name | identifiers | scenarios |
+|---|---|---|
+| **ChatGPT Desktop** | **`com.openai.codex`**, **`com.openai.chat`**, **`chatgpt`** | 10-desktop-apps, 90-demo-fleet |
+| **Claude Desktop** | **`com.anthropic.claudefordesktop`**, **`claude`**, **`com.anthropic.claude_browser_extension.json`** | 10-desktop-apps, 90-demo-fleet |
+| **Perplexity** | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
 
 > **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = retired alias, uninstallable by design. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it.
 

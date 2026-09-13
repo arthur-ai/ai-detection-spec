@@ -6,17 +6,13 @@ the catalog that drifts from the first, and this repo's whole argument is that a
 plausible-looking wrong answer is the expensive kind. Everything here is read off
 catalog/agents.yaml, test/fixtures/ and test/scenarios/ at the moment it runs.
 
-Coverage is reported at two strengths, because they are not the same claim:
+COVERAGE MEANS ONE THING: a CI scenario installed the real software and the classifier
+found it. That is the only evidence that survives the bot.molt.mac failure -- a
+vendor-documented identifier that matched nothing on any Mac.
 
-  scenario   a VM installed the real software and the classifier found it. This is the
-             only evidence that survives the bot.molt.mac failure -- a vendor-documented
-             identifier that matched nothing on any Mac.
-  fixture    the classifier matched a row in test/fixtures/. The rows were captured from
-             real machines, but nothing re-checks them against a current install, so a
-             fixture proves the MATCHER works and cannot prove the IDENTIFIER is current.
-
-An identifier with neither is not necessarily wrong. It is unexercised, which is a
-different thing and is why it is named rather than hidden.
+A hand-written fixture proves the MATCHER and credits no coverage, because nothing on a
+row says whether a machine ever produced it. Only test/fixtures/captured/ can, and it
+holds rows from a named CI run. An identifier with neither is named rather than hidden.
 """
 import collections
 import importlib.machinery      # NOT implied by importlib.util. Importing only .util
@@ -79,14 +75,6 @@ ALL_ROUTES = list(ROUTES["routes"])
 # old name and it under-described itself -- launchd_prefixes is a prefix, not a glob.
 ROUTE_LEVEL_ONLY = {n for n, m in REGISTRY.match.items()
                     if m == "prefix" or m.startswith("home-")}
-
-
-def _plain(block):
-    """Make an `unverified` block JSON-safe without losing anything."""
-    if not isinstance(block, dict):
-        return block
-    return {k: (v if isinstance(v, (str, int, float, bool, type(None))) else str(v))
-            for k, v in block.items()}
 
 
 def replay(paths, catalog):
@@ -544,15 +532,6 @@ def collect():
             "id": aid, "name": agent["name"], "classification": agent["classification"],
             "scenarios": sorted(scenarios.get(aid, ())),
             "identifiers": idents,
-            # The recorded exception, when this agent is not backed by a real install.
-            # validate_catalog.py refuses an agent that has neither.
-            #
-            # `raised` is coerced to str because PyYAML resolves an unquoted YYYY-MM-DD to a
-            # datetime.date, which json.dumps cannot serialise -- so --json died while
-            # --write and --check, which never touch the field, both passed. Fixed here
-            # rather than by quoting the value in the catalog: a contributor writing a bare
-            # date is doing nothing wrong, and the tool should not break on it.
-            "unverified": _plain(agent.get("unverified")),
         })
     # What the suite cannot prove, carried alongside what it can. A coverage report that
     # lists only successes is the same failure mode as an empty result on a clean machine:
@@ -646,17 +625,6 @@ def rewrite_badge(data, text):
     return BADGE.sub(lambda m: f"{m.group(1)}{covered}{m.group(3)}{n}{m.group(5)}{colour}", text)
 
 
-def grade(agent):
-    """A real install is the STANDARD. Everything else is an exception.
-
-    Deliberately binary at the top level. Reporting three peer grades invited reading
-    "fixture only" as a second kind of pass, and it is not one: a fixture proves the
-    matcher works against a row somebody captured once, and says nothing about whether
-    the identifier is still what the software installs today.
-    """
-    return "standard" if agent["scenarios"] else "exception"
-
-
 def markdown(data):  # noqa: C901
     """Render docs/agents.md.
 
@@ -741,12 +709,6 @@ def markdown(data):  # noqa: C901
         + " Anything below complete is a red build, so there is no partial number to read"
           " here.",
         "",
-        (f"| | entries | |\n|---|---:|---|\n"
-         f"| **standard** | {n_scen} | a CI scenario installs the real software and asserts "
-         f"the classifier finds it |\n"
-         f"| **exception** | {len(agents) - n_scen} | recorded in the catalog with a reason, an "
-         f"evidence grade and the date it was raised |"
-         if len(agents) - n_scen else None),
         # Only describe a split when there IS one. Without one this restated the badges.
         (f"{len(agents)} entries carrying {n_ident} identifiers &mdash; "
          f"**{len(agents) - n_tools} agents** and **{n_tools} not**." if n_tools else None),
@@ -794,8 +756,8 @@ def markdown(data):  # noqa: C901
               "observation is not absence of a test, and the count corrects itself once "
               "each has run.", ""])
           if data.get("ci_unrecorded") and n_st("none") + n_st("tested-absent") else []),
-        "`tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor",
-        "carrying an `unverified` block, so an unverified signature cannot enter quietly.",
+        "`tools/validate_catalog.py` refuses an agent no scenario installs. There is no block",
+        "that buys an exception, so an unproved signature cannot enter at all.",
         "",
     ]
 
@@ -819,14 +781,16 @@ def markdown(data):  # noqa: C901
         out += [f"# {group} ({n})", "", blurb, ""]
         for cls in classes:
             out += [f"## {cls}", "",
-                    "| name | evidence | identifiers | scenarios |", "|---|---|---|---|"]
+                    # NO `evidence` COLUMN. It held "real install" for every row and could
+                    # hold nothing else once the exception register went -- a column with
+                    # one possible value reads as a distinction being drawn when none is.
+                    "| name | identifiers | scenarios |", "|---|---|---|"]
             for a in sorted(by_class[cls], key=lambda x: x["id"]):
                 MARK = {"ci-install": "**`%s`**", "ci-fixture": "`%s`", "alias": "~~`%s`~~",
                         "local-only": "_`%s`_", "tested-absent": "%s ⚠", "none": "%s"}
                 ids = ", ".join(MARK[i["state"]] % i["value"]
                                 for i in a["identifiers"]) or "--"
-                mark = "real install" if grade(a) == "standard" else "**exception**"
-                out.append(f"| **{a['name']}** | {mark} | {ids} | "
+                out.append(f"| **{a['name']}** | {ids} | "
                            f"{', '.join(a['scenarios']) or '--'} |")
             out.append("")
 
@@ -834,20 +798,6 @@ def markdown(data):  # noqa: C901
             "retired alias, uninstallable by design. ⚠ = a scenario installed this agent and "
             "the identifier did not appear. plain = nothing tests it.", ""]
 
-    exceptions = [a for a in sorted(agents, key=lambda x: x["id"]) if not a["scenarios"]]
-    if exceptions:
-        out += ["## The exception register", "",
-                "Every agent not backed by a real install, and why. `belongs_in` names the",
-                "scenario that should cover it, which makes this a work list rather than an",
-                "excuse list. `blocker` appears only where something genuinely stands in the way",
-                "-- its absence means the only thing missing is the work.", "",
-                "| agent | evidence held | reason | belongs in | blocker |",
-                "|---|---|---|---|---|"]
-        for a in exceptions:
-            e = a["unverified"] or {}
-            out.append(f"| **{a['name']}** | {e.get('evidence','?')} | {e.get('reason','?')} "
-                       f"| {e.get('belongs_in') or '--'} | {e.get('blocker') or '--'} |")
-        out.append("")
 
     unex = [(a, i) for a in sorted(agents, key=lambda x: x["id"])
             for i in a["identifiers"]
@@ -974,28 +924,18 @@ def main():
         # NOTHING SHIPS IN THE CATALOG WITHOUT A REAL TEST. Fails on any identifier no CI
         # test covers, unless the catalog carries a dated reason for it.
         #
-        # The exception list can shrink silently and never grow silently: an entry whose
-        # identifier IS now covered is itself a failure, so a reason cannot outlive the gap
-        # it excused. That is the property that stops such a list becoming a dumping ground.
-        catalog = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
-        excused = {(e["agent"], e["route"], str(e["value"])): e
-                   for e in catalog.get("untested", [])}
+        # NO EXCUSE LIST. `untested:` let an identifier no test covers ship on a reason
+        # and a date, and it held nothing for its entire life -- while remaining the one
+        # way past this gate that did not require a machine to have produced the value.
+        # An identifier is covered, or it is not here.
         bad = []
         for agent in data["agents"]:
             for i in agent["identifiers"]:
-                key = (agent["id"], i["route"], i["value"])
-                covered = i["state"] in ("ci-install", "ci-fixture", "alias")
-                if not covered and key not in excused:
+                if i["state"] not in ("ci-install", "ci-fixture", "alias"):
                     bad.append(f"{agent['id']}: {i['route']}:{i['value']} is {i['state']} "
-                               f"-- no CI test covers it. Cover it, remove it, or record "
-                               f"why under `untested:` with a reason and a raised date.")
-                if covered and key in excused:
-                    bad.append(f"{agent['id']}: {i['route']}:{i['value']} is listed under "
-                               f"`untested:` but IS covered ({i['state']}). Delete the "
-                               f"entry -- a reason must not outlive the gap it excused.")
-        for k in excused:
-            if not any(a["id"] == k[0] for a in data["agents"]):
-                bad.append(f"`untested:` names {k[0]}, which is not an agent in the catalog")
+                               f"-- no CI test covers it. Cover it, or remove it: an "
+                               f"identifier no test can produce is a guess with a comment "
+                               f"beside it, and the two are indistinguishable.")
         if bad:
             print("catalog-gate: FAIL")
             for b in bad:
@@ -1007,8 +947,7 @@ def main():
         aliases = sum(1 for a in data["agents"] for i in a["identifiers"]
                       if i["state"] == "alias")
         print(f"catalog-gate: ok, {covered}/{n} identifiers are covered by a CI test"
-              + (f", {aliases} retired alias(es) excluded" if aliases else "")
-              + (f", {len(excused)} excused" if excused else ""))
+              + (f", {aliases} retired alias(es) excluded" if aliases else ""))
         return
 
     if "--check" in sys.argv:
@@ -1074,25 +1013,14 @@ def main():
         for cls in classes:
             print(f"\n  {cls}")
             for a in sorted(by_class[cls], key=lambda x: x["id"]):
-                std = grade(a) == "standard"
-                mark = "real install" if std else "EXCEPTION"
-                print(f"    {a['name']:<22} {mark:<13} {len(a['identifiers'])} identifiers"
-                      + (f"  [{', '.join(a['scenarios'])}]" if std else ""))
-                if not std:
-                    exc = a["unverified"] or {}
-                    print(f"        {exc.get('evidence','?')}: {exc.get('reason','?')}")
-                    if exc.get("blocker"):
-                        print(f"        blocked: {exc['blocker']}")
-                    if exc.get("belongs_in"):
-                        print(f"        belongs in: {exc['belongs_in']}")
+                print(f"    {a['name']:<22} {len(a['identifiers'])} identifiers"
+                      + (f"  [{', '.join(a['scenarios'])}]" if a["scenarios"] else ""))
                 for i in a["identifiers"]:
                     print(f"        {STATE_LABEL[i['state']]:<17} {i['route']}: {i['value']}")
 
-    n_exc = len(agents) - n_scen
     print(f"\n{len(agents)} entries: {len(agents) - n_tools} agents and {n_tools} "
           f"supporting tools. {n_ident} identifiers.")
-    print(f"  standard  {n_scen:>3}  backed by a real install")
-    print(f"  exception {n_exc:>3}  recorded, with a reason")
+    print("  every one backed by a real install, or validate_catalog would have failed")
     n = lambda s: sum(1 for a in agents for i in a["identifiers"] if i["state"] == s)
     covered = n("ci-install") + n("ci-fixture")
     # Retired aliases are out of the denominator. No install produces them, so including
