@@ -11,15 +11,15 @@ and the CI test behind each one.
 
 ![agents](https://img.shields.io/badge/agents-22-1D4E89)
 ![identifiers](https://img.shields.io/badge/identifiers-62-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-54%2F60-A26A16)
-![real install](https://img.shields.io/badge/by_real_install-54-2E7D57)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-60%2F60-2E7D57)
+![real install](https://img.shields.io/badge/by_real_install-60-2E7D57)
 
 </div>
 
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 54 of 60. 2 retired alias(es) are excluded: nothing installs them any more. Anything below complete is a red build, so there is no partial number to read here.
+**Every identifier is proved by a real install in CI** — 60 of 60. 2 retired alias(es) are excluded: nothing installs them any more. Anything below complete is a red build, so there is no partial number to read here.
 
 ## 🧪 Why a real install is the bar
 
@@ -31,8 +31,6 @@ review.
 Coverage is counted **per identifier**, from what each scenario recorded in its own
 `observed.json`, and only from scenarios in the CI matrix — an agent can pass while
 carrying an identifier nothing exercised.
-
-> **This number is a floor.** `76-linux-systemd` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
 
 `tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor
 carrying an `unverified` block, so an unverified signature cannot enter quietly.
@@ -54,10 +52,10 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | **GitHub Copilot CLI** | real install | **`copilot-cli`**, **`@github/copilot`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents |
 | **Cursor** | real install | **`com.todesktop.230313mzl4w4u92`**, **`cursor`**, **`cursor`**, **`cursor`**, **`cursor.desktop`** | 10-desktop-apps, 73-linux-deb, 77-linux-rpm, 90-demo-fleet |
 | **Gemini CLI** | real install | **`gemini-cli`**, **`@google/gemini-cli`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents |
-| **goose** | real install | ghcr.io/block/goose ⚠, https://github.com/block/goose ⚠ | 79-linux-image |
+| **goose** | real install | **`ghcr.io/block/goose`**, **`https://github.com/block/goose`** | 79-linux-image |
 | **Kiro** | real install | **`dev.kiro.desktop`**, **`kiro`** | 10-desktop-apps |
-| **OpenHands** | real install | ghcr.io/openhands/openhands ⚠, ghcr.io/all-hands-ai/openhands ⚠, https://github.com/OpenHands/OpenHands ⚠ | 79-linux-image |
-| **SWE-agent** | real install | sweagent/swe-agent ⚠ | 79-linux-image |
+| **OpenHands** | real install | **`ghcr.io/openhands/openhands`**, **`ghcr.io/all-hands-ai/openhands`**, **`https://github.com/OpenHands/OpenHands`** | 79-linux-image |
+| **SWE-agent** | real install | **`sweagent/swe-agent`** | 79-linux-image |
 | **Windsurf** | real install | **`com.exafunction.windsurf`**, **`devin-desktop`** | 10-desktop-apps |
 
 ## Personal agent
@@ -89,19 +87,6 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | **Perplexity** | real install | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
 
 > **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = retired alias, uninstallable by design. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it.
-
-## ⚠️ Identifiers that did not pass
-
-Every one is work, and the middle column says what kind. **did not appear** means a scenario installed the agent and this identifier never showed up — the suite reached it and it did not reproduce, usually because the scenario installs by a different route, or because the artifact only exists once the agent has run.
-
-| agent | route | identifier | state | reached by |
-|---|---|---|---|---|
-| goose | image | `ghcr.io/block/goose` | did not appear | 79-linux-image |
-| goose | image_labels | `https://github.com/block/goose` | did not appear | 79-linux-image |
-| OpenHands | image | `ghcr.io/openhands/openhands` | did not appear | 79-linux-image |
-| OpenHands | image | `ghcr.io/all-hands-ai/openhands` | did not appear | 79-linux-image |
-| OpenHands | image_labels | `https://github.com/OpenHands/OpenHands` | did not appear | 79-linux-image |
-| SWE-agent | image | `sweagent/swe-agent` | did not appear | 79-linux-image |
 
 ## 🚧 What osquery cannot see
 
