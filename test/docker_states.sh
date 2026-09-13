@@ -233,8 +233,21 @@ elapsed=$(python3 -c "import time;print(f'{time.time()-$t0:.2f}')")
 noise="$(cat "$errf")"; rm -f "$errf"
 
 check "the bound reports a timeout (124)" "$([ "$rc" = 124 ] && echo 1 || echo 0)" "got $rc"
+# THE SAME ARGUMENT AS "killed promptly" BELOW, which was widened from 4 to 10 for exactly
+# this reason -- and this threshold was left behind because nothing had made it marginal yet.
+#
+# THE NOMINAL COST GREW, and it grew for a reason recorded in bin/container-scan: SIGTERM no
+# longer ends a wedged osqueryi once the query names docker_containers or
+# docker_image_labels, so the SIGKILL grace is now paid on EVERY bounded kill rather than
+# skipped when the child exits politely. 2s bound + 1s grace + ~0.5s startup is ~3.5s
+# nominal where it used to be ~2.5s.
+#
+# Against a 5s ceiling that is not much headroom, and CI proved it: 4.61s in one run and
+# 5.45s in the next, which failed for contention rather than for anything the test is about.
+# What this check exists to catch is a bound that never fires, and the fake sleeps 300s --
+# so 10 detects that just as decisively and stops the suite going red on a busy runner.
 check "bounded at 2s (${elapsed}s)" \
-      "$(python3 -c "print(1 if $elapsed < 5 else 0)")" "took ${elapsed}s"
+      "$(python3 -c "print(1 if $elapsed < 10 else 0)")" "took ${elapsed}s"
 # THE KILL IS THE ASSERTION. A wrapper that merely stopped waiting passes both checks above
 # and leaves an osqueryi holding the socket for the full 300s the fake sleeps.
 sleep 0.3
