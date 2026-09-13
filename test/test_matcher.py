@@ -597,6 +597,36 @@ check("a local run records NO run id rather than inventing one",
       _no_run and not any("run" in r for r in _no_run),
       f"got {[r.get('run') for r in _no_run]}")
 
+# --- a hand-written fixture must not credit COVERAGE -------------------------------
+#
+# THE ROW FOR bot.molt.mac WAS TYPED, NOT CAPTURED -- added in the same commit as
+# bin/classify, never read off a machine -- and nothing on a row distinguishes that from
+# one a runner produced. While fixtures credited coverage, that typed string was evidence.
+#
+# Provenance is the PATH now, so this asserts the predicate rather than the glob: a file
+# under captured/ may credit coverage, and a file beside it may not. Without this, widening
+# the glob back to `FIXTURES.glob("*.json")` is a one-character change that silently
+# restores a typed identifier to the status of a proved one.
+with _tf2.TemporaryDirectory() as _d:
+    _root = pathlib.Path(_d)
+    (_root / "captured").mkdir()
+    (_root / "captured" / "run-33702118455.json").write_text("[]")
+    (_root / "known-agents.json").write_text("[]")
+    _saved = (_st.FIXTURES, _st.FIXTURES_CAPTURED)
+    _st.FIXTURES, _st.FIXTURES_CAPTURED = _root, _root / "captured"
+    try:
+        _cov = {p.name for p in _st.coverage_fixtures()}
+    finally:
+        _st.FIXTURES, _st.FIXTURES_CAPTURED = _saved
+
+check("a captured row may credit coverage",
+      "run-33702118455.json" in _cov, f"got {sorted(_cov)}")
+check("a hand-written fixture may NOT credit coverage",
+      "known-agents.json" not in _cov,
+      "it proves the matcher; nothing says a machine ever produced it")
+check("the real hand-written fixtures credit no coverage either",
+      not any(p.name == "known-agents.json" for p in _st.coverage_fixtures()))
+
 # --- the coverage shrink guard is scoped per (platform, os, arch) -----------------
 #
 # THIS TEST EXISTS BECAUSE I MISREAD THE GUARD AND BLAMED IT. A CI job refused to record

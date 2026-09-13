@@ -54,6 +54,22 @@ _spec.loader.exec_module(classify_mod)
 # fixture that record() would accept as a scenario. test/test_matcher.py repoints this.
 SCENARIOS = ROOT / "test" / "scenarios"
 
+# THE TWO FIXTURE ROOTS, and the difference between them is evidentiary rather than tidy.
+# Named here for the same reason SCENARIOS is: test/test_matcher.py repoints them, which is
+# the only way to exercise a credit path whose directory is empty in the tree.
+FIXTURES = ROOT / "test" / "fixtures"
+FIXTURES_CAPTURED = FIXTURES / "captured"
+
+
+def coverage_fixtures():
+    """Fixture files whose rows may credit COVERAGE, not merely prove the matcher.
+
+    Only rows a named CI run really produced. See collect() for why provenance lives in
+    the path rather than on the row.
+    """
+    return sorted(FIXTURES_CAPTURED.glob("*.json")) if FIXTURES_CAPTURED.is_dir() else []
+
+
 ROUTES = classify_mod.load_routes()
 REGISTRY = classify_mod.Registry(ROUTES)
 # Declaration order, which is what the report renders in.
@@ -388,10 +404,24 @@ def collect():
         for aid in block.get("must_find", []):
             scenarios[aid].add(path.parent.name)
 
-    # Fixtures prove the MATCHER. A scenario's own output proves the IDENTIFIER, because
-    # those rows came off a machine where the software was really installed. Same replay,
-    # two sources, and the stronger one wins per identifier.
-    values, routes, _ = replay(sorted((ROOT / "test" / "fixtures").glob("*.json")), catalog)
+    # A FIXTURE PROVES THE MATCHER AND NO LONGER PROVES AN IDENTIFIER, and the difference
+    # is provenance the tree could not see. `test/fixtures/*.json` is hand-written: the row
+    # for `bot.molt.mac` was added with bin/classify itself, never captured from a machine,
+    # and there is no field on a row that tells that apart from one a runner produced. So
+    # counting fixtures as coverage credited an identifier on the strength of a string
+    # somebody typed -- the exact claim this repo refuses everywhere else.
+    #
+    # Provenance is the PATH, not a key on the row, because bin/classify echoes evidence
+    # rows verbatim and a `captured_from` key would leak into classifier output for
+    # something that has nothing to do with the payload contract. A file under
+    # `captured/` holds rows a named CI run really produced, so its rows may credit
+    # coverage; anything else may not.
+    #
+    # `captured/` is EMPTY today, and deliberately: nothing writes it yet. The flow that
+    # does -- a rename's successor landing as a reviewable pull request -- is
+    # docs/signature-lifecycle-v2.md's other half. The reader is here so the door it opens
+    # is the one the design describes, rather than a second mechanism invented later.
+    values, routes, _ = replay(coverage_fixtures(), catalog)
     # Keyed by scenario, so an identifier proved only outside CI can be told apart from
     # one a pull request would catch.
     seen_in = collections.defaultdict(set)      # (agent, route, value) -> {scenario}
