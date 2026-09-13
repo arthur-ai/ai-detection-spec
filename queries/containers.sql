@@ -85,11 +85,21 @@
 -- starting Docker, and the window between the probe and the query is small but not zero.
 -- The guard closes four states of six. The wall-clock kill closes the fifth.
 --
--- And the kill cannot trust what it killed. Measured on 5.23.1: an interrupted osqueryi
--- installs a SIGTERM handler, exits **0**, and prints "[\n\n]\n" -- a valid, parseable,
--- EMPTY JSON array. A wrapper reading the child's exit code and stdout would therefore
--- report a Mac with no containers about a daemon that never sent a byte. bin/container-scan
--- discards the output because IT fired the kill, and for no other reason.
+-- And the kill cannot trust what it killed -- for two different reasons now, depending on
+-- which arms are in the statement. Both measured on 5.23.1:
+--
+--   docker_images alone        SIGTERM ends it, it exits **0**, and it prints "[\n\n]\n" --
+--                              a valid, parseable, EMPTY JSON array. A wrapper reading the
+--                              child's exit code and stdout reports a Mac with no
+--                              containers about a daemon that never sent a byte.
+--   with either arm below      SIGTERM IS IGNORED. Only SIGKILL ends it, wait status 137,
+--                              and the output is zero bytes.
+--
+-- The first is a plausible lie and the second is a hang, and bin/container-scan is immune
+-- to both for the same reason: it discards the output because IT fired the kill, and for no
+-- other reason, and it escalates to SIGKILL on a deadline. Neither behaviour is inspected.
+-- test/docker_states.sh asserts both, and CLAUDE.md's "the kill decides, not the child" is
+-- exactly this.
 --
 -- test/docker_states.sh asserts every row of both tables above, with no Docker installed,
 -- against test/lib/fake_docker.py.
