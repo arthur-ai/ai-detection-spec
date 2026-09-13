@@ -25,6 +25,7 @@ import importlib.util              # left importlib.machinery resolvable on a de
                                    # AttributeError on a clean runner -- which is where it
                                    # failed: every scenario job, in the recording step.
 import json
+import os
 import pathlib
 import re
 import sys
@@ -168,12 +169,22 @@ def replay(paths, catalog):
     return values, routes, seen_ver
 
 
-def record(artifact, scenario_dir, os_version="", arch="", platform=""):
+def record(artifact, scenario_dir, os_version="", arch="", platform="", run_id=""):
     """Write scenario/observed.json: which identifiers a REAL run actually matched.
 
     test/artifacts/ is gitignored and per-machine, so the raw output cannot back a
     committed document. This is the compact, reviewable residue of a run -- the
     observations layer of docs/signature-lifecycle-v1.md, at its smallest useful size.
+
+    `run_id` IS THE FIELD THAT MAKES PROOF OUTLIVE THE RUN. Without it an observation
+    from a CI runner cannot be told from one a maintainer produced on their own Mac, and
+    that distinction is what a superseded record rests on: once CI stops reproducing an
+    identifier, the only thing standing behind the catalog entry is the record of the run
+    that last produced it. A record with no run names no run.
+
+    Empty off CI, and that is deliberate rather than a fallback -- a local `--record` has
+    no run to name, and inventing one would manufacture exactly the provenance this field
+    exists to carry.
     """
     catalog = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
     values, routes, seen_ver = replay([pathlib.Path(artifact)], catalog)
@@ -211,6 +222,12 @@ def record(artifact, scenario_dir, os_version="", arch="", platform=""):
                         rec["os"] = os_version
                     if arch:
                         rec["arch"] = arch
+                    # LAST, and outside the merge key on purpose. Two runs on the same
+                    # (platform, os, arch) are the same observation re-proved, not two
+                    # observations -- so the run id must not split them, or every nightly
+                    # run would append a duplicate record instead of refreshing one.
+                    if run_id:
+                        rec["run"] = str(run_id)
                     idents.append(rec)
     # Sort once, before either write path below can use it.
     idents.sort(key=lambda r: (r["agent"], r["route"], r["value"]))
@@ -899,8 +916,11 @@ def main():
         i = sys.argv.index("--record")
         def opt(flag):
             return sys.argv[sys.argv.index(flag) + 1] if flag in sys.argv else ""
+        # --run-id falls back to GITHUB_RUN_ID so a workflow that forgets the flag still
+        # records provenance. NOT the other way round: an explicit flag wins, because
+        # test/run.sh drives a VM whose run id is the host's, not the guest's.
         record(sys.argv[i + 1], sys.argv[i + 2], opt("--os"), opt("--arch"),
-               opt("--platform"))
+               opt("--platform"), opt("--run-id") or os.environ.get("GITHUB_RUN_ID", ""))
         return
     if "--json" in sys.argv:
         print(json.dumps(data, indent=2))

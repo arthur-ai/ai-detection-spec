@@ -572,6 +572,31 @@ check("recording does NOT credit a state dir the run never produced",
       "~/.aider appears in no row here; crediting it would report the strongest evidence "
       "for a path no machine produced")
 
+# --- an observation names the run that produced it --------------------------------
+#
+# THE FIELD THAT LETS PROOF OUTLIVE THE RUN. Without it, an observation from a CI runner
+# and one from a maintainer's Mac are the same record, so "this identifier was once proved
+# by CI" cannot be established after CI stops reproducing it -- which is the whole basis of
+# a superseded record.
+#
+# Asserted in BOTH directions. A run id that appears when none was supplied would be
+# manufactured provenance, which is worse than none: it would make a local run look like a
+# CI run, and the catalog entry standing on it would cite a run that never happened.
+with _tf2.TemporaryDirectory() as _d:
+    _st.record(_fh.name, _d, os_version="24.04", arch="arm64", platform="linux",
+               run_id="33702118455")
+    _with_run = json.loads((pathlib.Path(_d) / "observed.json").read_text())["identifiers"]
+with _tf2.TemporaryDirectory() as _d:
+    _st.record(_fh.name, _d)
+    _no_run = json.loads((pathlib.Path(_d) / "observed.json").read_text())["identifiers"]
+
+check("an observation records the run that produced it",
+      _with_run and all(r.get("run") == "33702118455" for r in _with_run),
+      f"got {[r.get('run') for r in _with_run]}")
+check("a local run records NO run id rather than inventing one",
+      _no_run and not any("run" in r for r in _no_run),
+      f"got {[r.get('run') for r in _no_run]}")
+
 # --- the coverage shrink guard is scoped per (platform, os, arch) -----------------
 #
 # THIS TEST EXISTS BECAUSE I MISREAD THE GUARD AND BLAMED IT. A CI job refused to record

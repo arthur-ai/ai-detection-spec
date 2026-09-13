@@ -81,14 +81,27 @@ EXCLUDED = {
 # is the entire reason the os matrix axis exists. That is exactly how it shipped: the edit
 # adding the flags aborted, the matrix edit landed, and eleven CI runs recorded no platform
 # at all while looking perfectly healthy.
+#
+# EVERY RECORDING STEP, not the first one. This checked `_sc.index("--record")` -- the
+# first occurrence only -- while three jobs record: macOS, Linux and Fedora. A flag dropped
+# from the second or third was invisible to it, which is the same shape as the bug it was
+# written for. Anchored on the invocation rather than the bare flag, because the commit
+# message at the foot of the collect job also contains the words "--record".
 _sc = (root / "scenarios.yml").read_text()
-if "--record" in _sc:
-    _step = _sc[_sc.index("--record"):][:400]
-    for _flag in ("--os", "--arch"):
+_steps = [m.end() for m in re.finditer(r"agent_status\.py --record \S+\.json", _sc)]
+if not _steps:
+    print("FAIL: scenarios.yml records no observations at all. Coverage would freeze at "
+          "whatever is committed, while every run looked green.")
+    failed = True
+for _n, _at in enumerate(_steps, 1):
+    _step = _sc[_at:][:400]
+    for _flag in ("--os", "--arch", "--run-id"):
         if _flag not in _step:
-            print(f"FAIL: scenarios.yml records observations without {_flag}. The step "
-                  f"succeeds and writes a record that cannot say which platform produced "
-                  f"it -- which is the whole point of the os matrix axis.")
+            print(f"FAIL: scenarios.yml recording step {_n} of {len(_steps)} omits "
+                  f"{_flag}. The step succeeds and writes a record that cannot say which "
+                  f"platform or which run produced it -- which is the whole point of the "
+                  f"os matrix axis, and of being able to prove an identifier was once "
+                  f"real after CI stops reproducing it.")
             failed = True
 
 _doc = yaml.safe_load((root / "scenarios.yml").read_text())

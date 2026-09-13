@@ -130,7 +130,8 @@ jobs:
         run: |
           python3 tools/agent_status.py --record /tmp/out.json \
             test/scenarios/${{ matrix.scenario }} \
-            --os "$(sw_vers -productVersion)" --arch "$(uname -m)"
+            --os "$(sw_vers -productVersion)" --arch "$(uname -m)" \
+            --run-id "${{ github.run_id }}"
       - name: Upload the observation
         if: steps.runnable.outputs.runnable == 'true'
         uses: actions/upload-artifact@v4
@@ -285,7 +286,7 @@ jobs:
           python3 tools/agent_status.py --record /tmp/out.json \
             test/scenarios/${{ matrix.scenario }} \
             --platform linux --os "$(. /etc/os-release && echo "$VERSION_ID")" \
-            --arch "$(uname -m)"
+            --arch "$(uname -m)" --run-id "${{ github.run_id }}"
       - name: Upload the observation
         if: steps.provision.outputs.runnable == 'true'
         uses: actions/upload-artifact@v4
@@ -348,7 +349,7 @@ jobs:
           python3 tools/agent_status.py --record /tmp/out.json \
             test/scenarios/${{ matrix.scenario }} \
             --platform linux --os "$(. /etc/os-release && echo "$VERSION_ID")" \
-            --arch "$(uname -m)"
+            --arch "$(uname -m)" --run-id "${{ github.run_id }}"
       - name: Upload the observation
         if: steps.provision.outputs.runnable == 'true'
         uses: actions/upload-artifact@v4
