@@ -126,13 +126,13 @@ UNION ALL
 -- is why the catalog needs no second list of names for this route.
 --
 -- `extra` is the COMMAND, and it is the point of the branch beyond liveness. An image name
--- is chosen by whoever tagged it; what a container actually runs is not cosmetic in the
+-- is chosen by whoever tagged it, but what a container actually runs is not cosmetic in the
 -- same way, so `docker tag alpine paulgauthier/aider` fakes the name and cannot fake
 -- `/venv/bin/aider`. It is corroboration the `images` route cannot supply for itself.
 --
 -- `perms` carries `privileged` because it is a capability fact, in the column this
 -- contract already reserves for capability facts. A privileged agent container can reach
--- the host; an unprivileged one cannot. env_variables is NOT selected here and must never
+-- the host, and an unprivileged one cannot. env_variables is NOT selected here and must never
 -- be: it holds ANTHROPIC_API_KEY and its like, and this payload leaves the machine.
 SELECT 'container' AS kind, c.image AS id, c.state AS ver, c.id AS loc,
        c.command AS extra,
