@@ -173,7 +173,22 @@ def replay(paths, catalog):
     return values, routes, seen_ver
 
 
-def record(artifact, scenario_dir, os_version="", arch="", platform="", run_id=""):
+def _obs_sort(rec):
+    """The committed order, shared by record() and tools/merge_observations.py."""
+    return (rec["agent"], rec["route"], rec["value"], rec.get("platform") or "",
+            rec.get("os") or "", rec.get("arch") or "")
+
+
+def _today():
+    """The date a supersession was recorded. Only ever written into printed output for a
+    person to paste -- never into a committed file, which must change only when what a run
+    observed changes."""
+    import datetime
+    return datetime.date.today().isoformat()
+
+
+def record(artifact, scenario_dir, os_version="", arch="", platform="", run_id="",
+           supersede=False):
     """Write scenario/observed.json: which identifiers a REAL run actually matched.
 
     test/artifacts/ is gitignored and per-machine, so the raw output cannot back a
@@ -243,10 +258,57 @@ def record(artifact, scenario_dir, os_version="", arch="", platform="", run_id="
     # mean the last job to finish decided what the whole scenario had ever proved.
     plat = (platform or None, os_version or None, arch or None)
     kept = []
+    # THE ARCHIVE IS CARRIED, NOT REBUILT. It holds the observations a superseded catalog
+    # record cites, so dropping it here would cut the evidence out from under an entry that
+    # stays green -- the record points at a run whose proof no longer exists in the tree.
+    archived = []
     if out_path.exists():
-        for r in json.loads(out_path.read_text()).get("identifiers", []):
+        _doc = json.loads(out_path.read_text())
+        archived = list(_doc.get("archived", []))
+        for r in _doc.get("identifiers", []):
             if (r.get("platform"), r.get("os"), r.get("arch")) != plat:
                 kept.append(r)
+
+    # SUPERSEDING MOVES THE EVIDENCE; --allow-shrink DISCARDS IT. That difference is the
+    # whole mechanism. The guard below fires whenever a run proves less than the committed
+    # record, and until now the only way past it was to forget what was lost -- so the
+    # observation that proved an identifier was destroyed by the same step that kept the
+    # identifier, and a catalog entry retained "for the machines that still carry it" had
+    # nothing behind it but a comment.
+    #
+    # This is a DELIBERATE MODE, never automatic, and it must stay that way: a vendor
+    # pulling a download for a week is indistinguishable from a rename for that week, and a
+    # guard that archived on its own would supersede a live signature on one bad afternoon.
+    if supersede and out_path.exists():
+        _committed = json.loads(out_path.read_text()).get("identifiers", [])
+        _now = {(r["agent"], r["route"], r["value"]) for r in idents}
+        _lost = [r for r in _committed
+                 if (r.get("platform"), r.get("os"), r.get("arch")) == plat
+                 and (r["agent"], r["route"], r["value"]) not in _now]
+        if _lost:
+            archived += _lost
+            print(f"superseding {len(_lost)} identifier(s) this run no longer produces.")
+            print("Paste into catalog/agents.yaml, under the agent that owns each value:\n")
+            for r in sorted(_lost, key=lambda x: (x["agent"], x["route"], x["value"])):
+                print(f"  # {r['agent']}")
+                print(f"  superseded:")
+                print(f"    - {{route: {r['route']}, value: {r['value']}, "
+                      f"last_version: {r.get('agent_version', '?')}, "
+                      f"last_proved: {_today()}, by: {pathlib.Path(scenario_dir).name}, "
+                      f"run: {r.get('run', '?')}}}")
+            print("\nThe value STAYS on its route. Supersession marks it; it never moves it.")
+            # A `?` IN THE BLOCK IS A REFUSAL WAITING TO HAPPEN. validate_catalog
+            # compares last_version and run against the archived observation field for
+            # field, so a record missing either produces an entry that cannot pass --
+            # and the reader would have pasted it without knowing why. Say so here.
+            _thin = [r for r in _lost if not r.get("run") or not r.get("agent_version")]
+            if _thin:
+                print(f"\nWARNING: {len(_thin)} record(s) above carry `?` for a field "
+                      f"validate_catalog checks, so the entry would be refused. A missing "
+                      f"`run` predates run identity; a missing version means the row "
+                      f"carried none. Re-record on CI before superseding.")
+        else:
+            print("nothing to supersede: this run proves everything the record holds.")
 
     # A RUN THAT PROVES LESS THAN THE COMMITTED RECORD IS ALMOST ALWAYS A STALE ARTIFACT,
     # not a regression. Re-recording from test/artifacts/ after the scenario had changed
@@ -256,7 +318,7 @@ def record(artifact, scenario_dir, os_version="", arch="", platform="", run_id="
     # Genuine shrinkage happens (an identifier removed from the catalog, a route that
     # stopped being produced) so this is refusable rather than forbidden -- but it has to be
     # said out loud, because the silent version costs coverage nobody notices losing.
-    if out_path.exists() and "--allow-shrink" not in sys.argv:
+    if out_path.exists() and not supersede and "--allow-shrink" not in sys.argv:
         committed = json.loads(out_path.read_text()).get("identifiers", [])
         was = {(r["agent"], r["route"], r["value"]) for r in committed
                if (r.get("platform"), r.get("os"), r.get("arch")) == plat}
@@ -298,19 +360,29 @@ def record(artifact, scenario_dir, os_version="", arch="", platform="", run_id="
     if scen.parent != SCENARIOS.resolve():
         print(f"recorded {len(idents)} identifiers observed by {scen.name} "
               f"(not a scenario directory)")
-        out_path.write_text(json.dumps({"scenario": scen.name, "identifiers": idents},
-                                       indent=2) + "\n")
+        _doc = {"scenario": scen.name, "identifiers": idents}
+        if archived:
+            _doc["archived"] = sorted(archived, key=_obs_sort)
+        out_path.write_text(json.dumps(_doc, indent=2) + "\n")
         return
 
     out = out_path
     # Sorted and undated: this file is committed and compared, so it must change only
     # when what the run OBSERVED changes.
     idents = kept + idents
-    idents.sort(key=lambda r: (r["agent"], r["route"], r["value"],
-                               r.get("platform") or "", r.get("os") or "",
-                               r.get("arch") or ""))
-    out.write_text(json.dumps({"scenario": pathlib.Path(scenario_dir).name,
-                               "identifiers": idents}, indent=2) + "\n")
+    idents.sort(key=_obs_sort)
+    # An archived record must not also be live. A run on another platform key re-uploads
+    # records verbatim, so without this the next merge hands a superseded value straight
+    # back to `identifiers` -- the same resurrection tools/merge_observations.py guards.
+    _arch_keys = {(r["agent"], r["route"], r["value"], r.get("platform"), r.get("os"),
+                   r.get("arch")) for r in archived}
+    idents = [r for r in idents
+              if (r["agent"], r["route"], r["value"], r.get("platform"), r.get("os"),
+                  r.get("arch")) not in _arch_keys]
+    _doc = {"scenario": pathlib.Path(scenario_dir).name, "identifiers": idents}
+    if archived:
+        _doc["archived"] = sorted(archived, key=_obs_sort)
+    out.write_text(json.dumps(_doc, indent=2) + "\n")
     print(f"recorded {len(idents)} identifiers observed by {out.parent.name}")
 
 
@@ -919,7 +991,8 @@ def main():
         # records provenance. NOT the other way round: an explicit flag wins, because
         # test/run.sh drives a VM whose run id is the host's, not the guest's.
         record(sys.argv[i + 1], sys.argv[i + 2], opt("--os"), opt("--arch"),
-               opt("--platform"), opt("--run-id") or os.environ.get("GITHUB_RUN_ID", ""))
+               opt("--platform"), opt("--run-id") or os.environ.get("GITHUB_RUN_ID", ""),
+               supersede="--supersede" in sys.argv)
         return
     if "--json" in sys.argv:
         print(json.dumps(data, indent=2))

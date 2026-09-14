@@ -748,6 +748,60 @@ check("an unsuperseded finding carries no label at all",
                            if f["id"] != "openclaw" for k in f},
       "the key is omitted rather than emitted false, so its absence is not a claim")
 
+# --- the collect job's merge, which used to be unreachable ------------------------
+#
+# This was ~45 lines of Python inside a YAML heredoc: check_workflows saw a string, no test
+# could reach it, and it is the step that decides what the committed record says. Two bugs
+# were sitting in it, neither observable anywhere but main after a full matrix run.
+_mspec = _ilu.spec_from_loader("merge_observations",
+    _ilm.SourceFileLoader("merge_observations", str(ROOT / "tools" / "merge_observations.py")))
+_mo = _ilu.module_from_spec(_mspec)
+_mspec.loader.exec_module(_mo)
+
+
+def _artifact(root, scen, os_ver, recs):
+    d = pathlib.Path(root) / f"observed-{scen}--{os_ver}"
+    d.mkdir(parents=True)
+    (d / "observed.json").write_text(json.dumps({"scenario": scen, "identifiers": recs}))
+
+
+def _rec(value, os_ver, run="1"):
+    return {"agent": "openclaw", "route": "npm", "value": value, "agent_version": "1.0",
+            "platform": "darwin", "os": os_ver, "arch": "arm64", "run": run}
+
+
+with _tf2.TemporaryDirectory() as _d:
+    _art, _scen = pathlib.Path(_d) / "art", pathlib.Path(_d) / "scen"
+    (_scen / "zz-merge").mkdir(parents=True)
+    _committed = _scen / "zz-merge" / "observed.json"
+
+    # A committed file carrying one live record and one ARCHIVED record.
+    _committed.write_text(json.dumps({
+        "scenario": "zz-merge",
+        "identifiers": [_rec("openclaw", "15.7.9")],
+        "archived": [_rec("moltbot", "14.8.9")]}, indent=2))
+
+    # Two runners upload. macos-14 still carries the archived record verbatim, because
+    # record()'s `kept` copies every other platform key's records into each job's upload --
+    # which is exactly how a resurrection happens.
+    _artifact(_art, "zz-merge", "15.7.9", [_rec("openclaw", "15.7.9")])
+    _artifact(_art, "zz-merge", "14.8.9", [_rec("openclaw", "15.7.9"), _rec("moltbot", "14.8.9")])
+
+    _mo.merge(_art, _scen)
+    _after = json.loads(_committed.read_text())
+
+_live = {r["value"] for r in _after.get("identifiers", [])}
+_arch = {r["value"] for r in _after.get("archived", [])}
+
+check("the merge carries the archived list through",
+      _arch == {"moltbot"},
+      "it rebuilt the document from scratch, so an archive survived until the next main run")
+check("...and does NOT resurrect an archived record from another runner's upload",
+      "moltbot" not in _live,
+      "record()'s `kept` re-uploads other platforms' records verbatim, and the union "
+      "handed them straight back to identifiers")
+check("a live record still merges normally", _live == {"openclaw"}, f"got {sorted(_live)}")
+
 # --- the coverage shrink guard is scoped per (platform, os, arch) -----------------
 #
 # THIS TEST EXISTS BECAUSE I MISREAD THE GUARD AND BLAMED IT. A CI job refused to record
@@ -824,6 +878,70 @@ check("...and it leaves every other key's records alone",
       {"aarch64", "x86_64"} <= _keys,
       f"kept arches {sorted(k for k in _keys if k)} -- overwriting would let the last job "
       f"to finish decide what the scenario had ever proved")
+
+# --- superseding MOVES the evidence; --allow-shrink destroys it -------------------
+#
+# The guard fires whenever a run proves less than the committed record, and until now the
+# only way past it was to forget what was lost -- so the observation that proved an
+# identifier was destroyed by the same step that kept the identifier, and a catalog entry
+# retained "for the machines that still carry it" had nothing behind it but a comment.
+#
+# This is the transition, and it only ever runs on a real vendor rename, which may be
+# months away. Driven synthetically so it is not first exercised on the day it matters.
+def _supersede_run(committed):
+    tmp = pathlib.Path(_tf2.mkdtemp())
+    try:
+        scen = tmp / "scenarios" / "zz-fixture"
+        scen.mkdir(parents=True)
+        (scen / "observed.json").write_text(json.dumps(committed))
+        art = tmp / "art.json"
+        art.write_text(json.dumps(_pypi_only))
+        old_root, _st.SCENARIOS = _st.SCENARIOS, tmp / "scenarios"
+        out = _io.StringIO()
+        try:
+            with _ctx.redirect_stdout(out):
+                _st.record(str(art), str(scen), "24.04", "aarch64", "linux",
+                           run_id="222", supersede=True)
+        finally:
+            _st.SCENARIOS = old_root
+        return out.getvalue(), json.loads((scen / "observed.json").read_text())
+    finally:
+        _sh.rmtree(tmp, ignore_errors=True)
+
+
+_one_key = _observed(("aider", "pypi", "aider-chat", "aarch64"),
+                     ("aider", "state_dirs", "~/.aider", "aarch64"))
+for _r in _one_key["identifiers"]:
+    _r["run"], _r["agent_version"] = "111", "0.90"
+_sup_out, _sup_after = _supersede_run(_one_key)
+_sup_live = {r["value"] for r in _sup_after.get("identifiers", [])}
+_sup_arch = {r["value"] for r in _sup_after.get("archived", [])}
+
+check("superseding moves the lost record into `archived`", _sup_arch == {"~/.aider"},
+      f"got {sorted(_sup_arch)}")
+check("...and drops it from the live identifiers", "~/.aider" not in _sup_live,
+      "an archived record that is also live would be handed back by the next merge")
+check("...while what the run DID prove stays live", _sup_live == {"aider-chat"},
+      f"got {sorted(_sup_live)}")
+check("the archived record keeps the run that proved it",
+      all(r.get("run") == "111" for r in _sup_after.get("archived", [])),
+      "validate_catalog cross-checks the catalog record against exactly this field")
+check("it prints the catalog block, with the value and its last version",
+      "superseded:" in _sup_out and "value: ~/.aider" in _sup_out
+      and "last_version: 0.90" in _sup_out,
+      _sup_out.strip()[-200:])
+check("...and says the value stays on its route",
+      "never moves it" in _sup_out,
+      "supersession marks a value; moving it off its route would stop it matching")
+
+# A run that proves everything says so rather than silently writing an empty archive.
+_full = _observed(("aider", "pypi", "aider-chat", "aarch64"))
+for _r in _full["identifiers"]:
+    _r["run"], _r["agent_version"] = "111", "0.90"
+_noop_out, _noop_after = _supersede_run(_full)
+check("--supersede on a run that lost nothing archives nothing",
+      not _noop_after.get("archived") and "nothing to supersede" in _noop_out,
+      _noop_out.strip()[:120])
 
 print()
 if failures:
