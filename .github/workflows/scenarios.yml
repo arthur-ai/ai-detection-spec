@@ -69,6 +69,7 @@ jobs:
           - 50-autonomous
           - 55-openclaw-npm
           - 56-openclaw-retired-names
+          - 57-clawdbot-era
           - 60-persistence
     steps:
       - uses: actions/checkout@v4
@@ -130,7 +131,8 @@ jobs:
         run: |
           python3 tools/agent_status.py --record /tmp/out.json \
             test/scenarios/${{ matrix.scenario }} \
-            --os "$(sw_vers -productVersion)" --arch "$(uname -m)"
+            --os "$(sw_vers -productVersion)" --arch "$(uname -m)" \
+            --run-id "${{ github.run_id }}"
       - name: Upload the observation
         if: steps.runnable.outputs.runnable == 'true'
         uses: actions/upload-artifact@v4
@@ -285,7 +287,7 @@ jobs:
           python3 tools/agent_status.py --record /tmp/out.json \
             test/scenarios/${{ matrix.scenario }} \
             --platform linux --os "$(. /etc/os-release && echo "$VERSION_ID")" \
-            --arch "$(uname -m)"
+            --arch "$(uname -m)" --run-id "${{ github.run_id }}"
       - name: Upload the observation
         if: steps.provision.outputs.runnable == 'true'
         uses: actions/upload-artifact@v4
@@ -348,7 +350,7 @@ jobs:
           python3 tools/agent_status.py --record /tmp/out.json \
             test/scenarios/${{ matrix.scenario }} \
             --platform linux --os "$(. /etc/os-release && echo "$VERSION_ID")" \
-            --arch "$(uname -m)"
+            --arch "$(uname -m)" --run-id "${{ github.run_id }}"
       - name: Upload the observation
         if: steps.provision.outputs.runnable == 'true'
         uses: actions/upload-artifact@v4
@@ -387,58 +389,20 @@ jobs:
           pattern: observed-*
           path: /tmp/observed
       - name: Merge every platform's observations
+        # EXTRACTED TO A FILE. This was ~45 lines of Python in a heredoc, which
+        # tools/check_workflows.py sees as a string and no test could reach -- and it is
+        # the step that decides what the committed record says. Two bugs were sitting in
+        # it, both invisible to every gate and both only observable on main: it erased the
+        # `archived` list on every run, and it resurrected archived records from another
+        # runner's upload. Both are asserted in test/test_matcher.py now.
+        #
+        # --reported-out carries what the heredoc used to write inline: the scenarios that
+        # actually uploaded, which the coverage gate below reads to tell PENDING from
+        # MISSING. A scenario that failed or exited 3 uploads nothing and is absent from
+        # the list, so its identifiers stay pending rather than counting as absent.
         run: |
-          # MERGE, NOT COPY. There is one artifact per (scenario, OS) now, and both describe
-          # the same observed.json. Copying meant whichever landed last decided what the
-          # scenario had ever proved, and the other platform's evidence vanished -- which is
-          # the exact thing the OS axis exists to make visible.
-          #
-          # Records carry their own platform, os and arch, so the union is keyed on
-          # (agent, route, value, platform, os, arch) and needs no cleverness.
-          #
-          # PLATFORM IS IN THE KEY AND IN THE SORT, and it has to match
-          # tools/agent_status.py's record() exactly -- that function writes these files
-          # locally and this job writes them in CI, so a different ordering means the
-          # committed file and a local `--record` run disagree about a file neither of
-          # them changed. Two records could not collide on the key today, because `os`
-          # holds "14.8.7" against "24.04", but that is a coincidence of version
-          # numbering rather than a property worth relying on.
-          python3 - <<'PYEOF'
-          import json, pathlib, collections
-          merged = collections.defaultdict(dict)
-          for d in sorted(pathlib.Path("/tmp/observed").glob("observed-*--*")):
-              f = d / "observed.json"
-              if not f.is_file():
-                  continue
-              doc = json.loads(f.read_text())
-              scen = doc.get("scenario") or d.name.split("--")[0].removeprefix("observed-")
-              for r in doc.get("identifiers", []):
-                  key = (r["agent"], r["route"], r["value"],
-                         r.get("platform"), r.get("os"), r.get("arch"))
-                  merged[scen][key] = r
-          for scen, recs in sorted(merged.items()):
-              out = pathlib.Path("test/scenarios") / scen / "observed.json"
-              if not out.parent.is_dir():
-                  continue
-              rows = sorted(recs.values(),
-                            key=lambda r: (r["agent"], r["route"], r["value"],
-                                           r.get("platform") or "", r.get("os") or "",
-                                           r.get("arch") or ""))
-              out.write_text(json.dumps({"scenario": scen, "identifiers": rows},
-                                        indent=2) + "\n")
-              # Was labelled "platforms" while printing `os`, which on a macOS-only
-              # suite looked the same and no longer does.
-              plats = sorted({f"{r.get('platform') or '?'}/{r.get('os') or '?'}"
-                              for r in rows})
-              print(f"  {scen}: {len(rows)} records across {plats or ['(none recorded)']}")
-          # WHICH SCENARIOS REPORTED, for the gate below. A scenario that failed or exited
-          # 3 uploads no artifact and is therefore absent here -- which is exactly right:
-          # the gate must not read "this identifier did not appear" from a run that never
-          # happened, and a rate-limited Docker Hub pull is the case that would otherwise
-          # turn an unactionable skip into a red coverage figure.
-          pathlib.Path("/tmp/reported.txt").write_text(",".join(sorted(merged)))
-          print("reported:", ", ".join(sorted(merged)) or "(nothing)")
-          PYEOF
+          python3 tools/merge_observations.py /tmp/observed test/scenarios \
+            --reported-out /tmp/reported.txt
 
       # THE COVERAGE GATE, against THIS run's observations rather than the tree's.
       #

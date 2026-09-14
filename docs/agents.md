@@ -10,8 +10,8 @@ Every AI agent this repo finds, every identifier it is matched on,
 and the CI test behind each one.
 
 ![agents](https://img.shields.io/badge/agents-22-1D4E89)
-![identifiers](https://img.shields.io/badge/identifiers-62-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-60%2F60-2E7D57)
+![identifiers](https://img.shields.io/badge/identifiers-61-1D4E89)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-60%2F61-A26A16)
 ![real install](https://img.shields.io/badge/by_real_install-60-2E7D57)
 
 </div>
@@ -19,7 +19,7 @@ and the CI test behind each one.
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 60 of 60. 2 retired alias(es) are excluded: nothing installs them any more. Anything below complete is a red build, so there is no partial number to read here.
+**Every identifier is proved by a real install in CI** — 60 of 61. Anything below complete is a red build, so there is no partial number to read here.
 
 ## 🧪 Why a real install is the bar
 
@@ -32,8 +32,10 @@ Coverage is counted **per identifier**, from what each scenario recorded in its 
 `observed.json`, and only from scenarios in the CI matrix — an agent can pass while
 carrying an identifier nothing exercised.
 
-`tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor
-carrying an `unverified` block, so an unverified signature cannot enter quietly.
+> **This number is a floor.** `57-clawdbot-era`, `76-linux-systemd` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
+
+`tools/validate_catalog.py` refuses an agent no scenario installs. There is no block
+that buys an exception, so an unproved signature cannot enter at all.
 
 # Agents (22)
 
@@ -41,52 +43,60 @@ Software that acts on the user's behalf. This is what the catalog is for.
 
 ## Coding agent
 
-| name | evidence | identifiers | scenarios |
-|---|---|---|---|
-| **aider** | real install | **`aider`**, **`aider-chat`**, **`paulgauthier/aider`**, **`~/.aider`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
-| **Google Antigravity** | real install | **`com.google.antigravity`**, **`com.google.antigravity-ide`**, **`antigravity`**, **`antigravity-ide`** | 10-desktop-apps |
-| **Claude Code** | real install | **`@anthropic-ai/claude-code`**, **`~/.claude`**, **`~/.local/bin/claude`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 90-demo-fleet |
-| **Cline** | real install | **`cline`**, **`saoudrizwan.claude-dev`** | 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode |
-| **Codex CLI** | real install | **`codex`**, **`@openai/codex`**, **`~/.codex`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 90-demo-fleet |
-| **Continue** | real install | **`continue.continue`** | 78-linux-vscode |
-| **GitHub Copilot CLI** | real install | **`copilot-cli`**, **`@github/copilot`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents |
-| **Cursor** | real install | **`com.todesktop.230313mzl4w4u92`**, **`cursor`**, **`cursor`**, **`cursor`**, **`cursor.desktop`** | 10-desktop-apps, 73-linux-deb, 77-linux-rpm, 90-demo-fleet |
-| **Gemini CLI** | real install | **`gemini-cli`**, **`@google/gemini-cli`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents |
-| **goose** | real install | **`ghcr.io/block/goose`**, **`https://github.com/block/goose`** | 79-linux-image |
-| **Kiro** | real install | **`dev.kiro.desktop`**, **`kiro`** | 10-desktop-apps |
-| **OpenHands** | real install | **`ghcr.io/openhands/openhands`**, **`ghcr.io/all-hands-ai/openhands`**, **`https://github.com/OpenHands/OpenHands`** | 79-linux-image |
-| **SWE-agent** | real install | **`sweagent/swe-agent`** | 79-linux-image |
-| **Windsurf** | real install | **`com.exafunction.windsurf`**, **`devin-desktop`** | 10-desktop-apps |
+| name | identifiers | scenarios |
+|---|---|---|
+| **aider** | **`aider`**, **`aider-chat`**, **`paulgauthier/aider`**, **`~/.aider`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
+| **Google Antigravity** | **`com.google.antigravity`**, **`com.google.antigravity-ide`**, **`antigravity`**, **`antigravity-ide`** | 10-desktop-apps |
+| **Claude Code** | **`@anthropic-ai/claude-code`**, **`~/.claude`**, **`~/.local/bin/claude`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 90-demo-fleet |
+| **Cline** | **`cline`**, **`saoudrizwan.claude-dev`** | 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode |
+| **Codex CLI** | **`codex`**, **`@openai/codex`**, **`~/.codex`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 90-demo-fleet |
+| **Continue** | **`continue.continue`** | 78-linux-vscode |
+| **GitHub Copilot CLI** | **`copilot-cli`**, **`@github/copilot`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents |
+| **Cursor** | **`com.todesktop.230313mzl4w4u92`**, **`cursor`**, **`cursor`**, **`cursor`**, **`cursor.desktop`** | 10-desktop-apps, 73-linux-deb, 77-linux-rpm, 90-demo-fleet |
+| **Gemini CLI** | **`gemini-cli`**, **`@google/gemini-cli`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents |
+| **goose** | **`ghcr.io/block/goose`**, **`https://github.com/block/goose`** | 79-linux-image |
+| **Kiro** | **`dev.kiro.desktop`**, **`kiro`** | 10-desktop-apps |
+| **OpenHands** | **`ghcr.io/openhands/openhands`**, **`ghcr.io/all-hands-ai/openhands`**, **`https://github.com/OpenHands/OpenHands`** | 79-linux-image |
+| **SWE-agent** | **`sweagent/swe-agent`** | 79-linux-image |
+| **Windsurf** | **`com.exafunction.windsurf`**, **`devin-desktop`** | 10-desktop-apps |
 
 ## Personal agent
 
-| name | evidence | identifiers | scenarios |
-|---|---|---|---|
-| **Hermes Agent** | real install | **`hermes-agent`**, **`hermes-agent`**, **`~/.hermes`**, **`~/.local/bin/hermes`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents |
-| **OpenClaw** | real install | **`ai.openclaw.mac`**, ~~`bot.molt.mac`~~, **`openclaw`**, **`ai.openclaw.`**, ~~`bot.molt.`~~, **`openclaw`**, **`clawdbot`**, **`moltbot`**, **`~/.openclaw`** | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 60-persistence, 90-demo-fleet |
+| name | identifiers | scenarios |
+|---|---|---|
+| **Hermes Agent** | **`hermes-agent`**, **`hermes-agent`**, **`~/.hermes`**, **`~/.local/bin/hermes`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents |
+| **OpenClaw** | **`ai.openclaw.mac`**, com.clawdbot.mac ⚠, **`openclaw`**, **`ai.openclaw.`**, **`openclaw`**, **`clawdbot`**, **`moltbot`**, **`~/.openclaw`** | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 57-clawdbot-era, 60-persistence, 90-demo-fleet |
 
 ## AI browser
 
-| name | evidence | identifiers | scenarios |
-|---|---|---|---|
-| **Orion** | real install | **`com.kagi.kagimacOS`**, **`orion`** | 10-desktop-apps |
-| **Perplexity Comet** | real install | **`ai.perplexity.comet`**, **`comet`** | 10-desktop-apps, 90-demo-fleet |
+| name | identifiers | scenarios |
+|---|---|---|
+| **Orion** | **`com.kagi.kagimacOS`**, **`orion`** | 10-desktop-apps |
+| **Perplexity Comet** | **`ai.perplexity.comet`**, **`comet`** | 10-desktop-apps, 90-demo-fleet |
 
 ## Browser agent
 
-| name | evidence | identifiers | scenarios |
-|---|---|---|---|
-| **Claude in Chrome** | real install | **`fcoeoabgfenejglbffodgkkbkcdhcgfn`** | 45-claude-extension |
+| name | identifiers | scenarios |
+|---|---|---|
+| **Claude in Chrome** | **`fcoeoabgfenejglbffodgkkbkcdhcgfn`** | 45-claude-extension |
 
 ## Desktop assistant
 
-| name | evidence | identifiers | scenarios |
-|---|---|---|---|
-| **ChatGPT Desktop** | real install | **`com.openai.codex`**, **`com.openai.chat`**, **`chatgpt`** | 10-desktop-apps, 90-demo-fleet |
-| **Claude Desktop** | real install | **`com.anthropic.claudefordesktop`**, **`claude`**, **`com.anthropic.claude_browser_extension.json`** | 10-desktop-apps, 90-demo-fleet |
-| **Perplexity** | real install | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
+| name | identifiers | scenarios |
+|---|---|---|
+| **ChatGPT Desktop** | **`com.openai.codex`**, **`com.openai.chat`**, **`chatgpt`** | 10-desktop-apps, 90-demo-fleet |
+| **Claude Desktop** | **`com.anthropic.claudefordesktop`**, **`claude`**, **`com.anthropic.claude_browser_extension.json`** | 10-desktop-apps, 90-demo-fleet |
+| **Perplexity** | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
 
-> **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = retired alias, uninstallable by design. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it.
+> **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = superseded: a run proved it and the current release no longer emits it. ∅ = no CI runner for its platform. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it.
+
+## ⚠️ Identifiers that did not pass
+
+Every one is work, and the middle column says what kind. **did not appear** means a scenario installed the agent and this identifier never showed up — the suite reached it and it did not reproduce, usually because the scenario installs by a different route, or because the artifact only exists once the agent has run.
+
+| agent | route | identifier | state | reached by |
+|---|---|---|---|---|
+| OpenClaw | bundle id | `com.clawdbot.mac` | did not appear | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 60-persistence |
 
 ## 🚧 What osquery cannot see
 
@@ -126,7 +136,9 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 10-desktop-apps | Kiro CLI is not installed here. It is a separate product whose app ships bundle id com.amazon.codewhisperer under cask `kiro-cli` (old tokens amazon-q, codewhisperer), and it is uncatalogued, so this run says nothing about it. Its dmg is 1.05GB, which is why. |
 | 45-claude-extension | The CRX is unpacked into a real profile rather than installed by Chrome, so the identifier is genuine but the browser's install, update and enterprise-policy paths are all untested. Whether ExtensionInstallForcelist needs an MDM-delivered profile on macOS is UNVERIFIED. |
 | 55-openclaw-npm | The gateway runs with --allow-unconfigured --auth none, which is not how a real deployment runs it: enough to open the listener this scenario asserts, with no channel connected and no model reachable. |
-| 56-openclaw-retired-names | The retired npm names only. bot.molt.mac (bundle id) and bot.molt. (launchd prefix) come from the old .app, and Homebrew keeps no versioned cask for it -- whether an old build is still downloadable is UNVERIFIED. |
+| 56-openclaw-retired-names | The npm names only. The macOS side of this lineage is 57-clawdbot-era, which installs the Clawdbot-era app and proves its bundle id. |
+| 57-clawdbot-era | The bundle id only. com.clawdbot. as a launchd prefix is NOT asserted: the binary contains com.clawdbot.gateway, but a LaunchAgent is registered when the app RUNS and this scenario only installs. Unverified, so not in the catalog either. |
+| 57-clawdbot-era | Clawdis, the generation before this one, ships its own macOS app and is not covered. Its bundle id has not been read off the artifact, so nothing is claimed about it. |
 | 70-linux-baseline | Runs on whatever base image the job uses, so it proves nothing about a loaded desktop. 00-baseline has the same limitation on macOS. |
 | 71-linux-cli-agents | Claude Code's npm identifier is not exercised here -- the native installer is its primary route and the two would fight over the same binary name. 21-cli-agents-homebrew makes the same argument on macOS. |
 | 72-linux-python-agents | Whether ~/.hermes appears depends on the install route: the vendor's curl installer creates it, a uv install does not until the agent runs. The run records what appeared rather than asserting it. |
@@ -146,7 +158,7 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 79-linux-image | Nothing here reads processes inside the container. docker_container_processes requires a constraint on the container id and can be reached through a join, but the cmdline it returns can carry an API key, so it is not collected until redaction is designed. |
 | 79-linux-image | swe-agent's `latest` tag was built 2024-12-07, twenty-one months before this scenario was written. The pull proves the registry still serves it; it does not prove anyone still publishes there. |
 
-`11-perplexity-desktop`, `50-autonomous` need macOS 15 or newer, so CI skips them on older runners rather than failing them. Each scenario's `requires.json` carries the reason.
+`11-perplexity-desktop`, `50-autonomous`, `57-clawdbot-era` need macOS 15 or newer, so CI skips them on older runners rather than failing them. Each scenario's `requires.json` carries the reason.
 
 ## 🎯 What counts as an agent
 

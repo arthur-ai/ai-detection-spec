@@ -1,0 +1,28 @@
+{
+  "description": "The Clawdbot-era macOS app, installed for real, so the predecessor bundle id is a fact rather than a zap-stanza transcription.",
+  "platform": "darwin",
+  "counts": {
+    "app": ">=1",
+    "brew": ">=0",
+    "npm": ">=0",
+    "file": ">=1",
+    "ext": ">=0",
+    "nmh": ">=0",
+    "daemon": ">=0",
+    "port": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "openclaw"
+    ]
+  },
+  "why": "The macOS app shipped as Clawdis, then Clawdbot, then OpenClaw. This scenario installs the Clawdbot generation so com.clawdbot.mac is proved by a real install like every other identifier. `must_find` names openclaw because the predecessor IS OpenClaw under its earlier name, and the raw probe pins the bundle id itself: must_find alone would pass on any other openclaw route, and this scenario installs none of them.",
+  "must_contain": [
+    "com.clawdbot.mac"
+  ],
+  "known_gaps": [
+    "The bundle id only. com.clawdbot. as a launchd prefix is NOT asserted: the binary contains com.clawdbot.gateway, but a LaunchAgent is registered when the app RUNS and this scenario only installs. Unverified, so not in the catalog either.",
+    "Clawdis, the generation before this one, ships its own macOS app and is not covered. Its bundle id has not been read off the artifact, so nothing is claimed about it."
+  ]
+}

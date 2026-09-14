@@ -9,14 +9,6 @@
   },
   {
     "kind": "app",
-    "id": "bot.molt.mac",
-    "ver": "2025.1.1",
-    "loc": "/Applications/Moltbot.app",
-    "extra": "",
-    "perms": ""
-  },
-  {
-    "kind": "app",
     "id": "com.openai.chat",
     "ver": "1.2026.160",
     "loc": "/Applications/ChatGPT.app",

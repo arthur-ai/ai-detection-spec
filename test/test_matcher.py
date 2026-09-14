@@ -43,11 +43,10 @@ r = run("known-agents.json")
 found = {f["id"]: f for f in r["findings"]}
 
 check("finds OpenClaw", "openclaw" in found)
-check("finds it across all four of its routes",
-      len(found.get("openclaw", {}).get("evidence", [])) == 4,
+check("finds it across all three of its routes",
+      len(found.get("openclaw", {}).get("evidence", [])) == 3,
       f"got {len(found.get('openclaw', {}).get('evidence', []))}")
-check("the retired bot.molt.mac alias still resolves to OpenClaw",
-      any(e["id"] == "bot.molt.mac" for e in found.get("openclaw", {}).get("evidence", [])))
+
 # THE ONLY EVIDENCE THAT CAN EXIST FOR THIS ONE. com.openai.chat is what ChatGPT Desktop
 # carried before the Codex rename, and no fresh install produces it any more -- every
 # variation of the current cask serves one 26.x build. A real install found it exactly
@@ -572,6 +571,191 @@ check("recording does NOT credit a state dir the run never produced",
       "~/.aider appears in no row here; crediting it would report the strongest evidence "
       "for a path no machine produced")
 
+# --- an observation names the run that produced it --------------------------------
+#
+# THE FIELD THAT LETS PROOF OUTLIVE THE RUN. Without it, an observation from a CI runner
+# and one from a maintainer's Mac are the same record, so "this identifier was once proved
+# by CI" cannot be established after CI stops reproducing it -- which is the whole basis of
+# a superseded record.
+#
+# Asserted in BOTH directions. A run id that appears when none was supplied would be
+# manufactured provenance, which is worse than none: it would make a local run look like a
+# CI run, and the catalog entry standing on it would cite a run that never happened.
+with _tf2.TemporaryDirectory() as _d:
+    _st.record(_fh.name, _d, os_version="24.04", arch="arm64", platform="linux",
+               run_id="33702118455")
+    _with_run = json.loads((pathlib.Path(_d) / "observed.json").read_text())["identifiers"]
+with _tf2.TemporaryDirectory() as _d:
+    _st.record(_fh.name, _d)
+    _no_run = json.loads((pathlib.Path(_d) / "observed.json").read_text())["identifiers"]
+
+check("an observation records the run that produced it",
+      _with_run and all(r.get("run") == "33702118455" for r in _with_run),
+      f"got {[r.get('run') for r in _with_run]}")
+check("a local run records NO run id rather than inventing one",
+      _no_run and not any("run" in r for r in _no_run),
+      f"got {[r.get('run') for r in _no_run]}")
+
+# --- a superseded record must be backed by an archived observation -----------------
+#
+# `superseded:` ships with NO records -- nothing in the catalog qualifies yet -- so every
+# branch of its validator is unexercised code until the first real rename. That is exactly
+# when you least want to discover it is wrong, so it is driven here with a synthetic
+# record instead.
+#
+# The check that matters is the last one: a record whose cited observation is not in the
+# tree is a guess wearing provenance-shaped fields, which is worse than a guess because it
+# reads as evidence. The old `retired:` list had no such check at all, which is how two
+# values naming a release that was never published stayed exempt from the coverage gate.
+_vspec = _ilu.spec_from_loader("validate_catalog",
+    _ilm.SourceFileLoader("validate_catalog", str(ROOT / "tools" / "validate_catalog.py")))
+_vc = _ilu.module_from_spec(_vspec)
+_vspec.loader.exec_module(_vc)
+
+_REC = {"route": "bundle_ids", "value": "com.example.old", "last_version": "1.2.3",
+        "last_proved": "2026-08-20", "by": "zz-probe", "run": "33511815638"}
+
+with _tf2.TemporaryDirectory() as _d:
+    _fake = pathlib.Path(_d)
+    (_fake / "test" / "scenarios" / "zz-probe").mkdir(parents=True)
+    _obs = _fake / "test" / "scenarios" / "zz-probe" / "observed.json"
+    _saved_root = _vc.ROOT
+    _vc.ROOT = _fake
+    try:
+        _obs.write_text(json.dumps({"scenario": "zz-probe", "identifiers": []}))
+        _no_archive = _vc.archived_match("probe-agent", _REC)
+
+        _obs.write_text(json.dumps({"scenario": "zz-probe", "identifiers": [], "archived": [
+            {"agent": "probe-agent", "route": "bundle_ids", "value": "com.example.old",
+             "agent_version": "1.2.3", "run": "33511815638"}]}))
+        _matched = _vc.archived_match("probe-agent", _REC)
+
+        # Same record, different run: the observation exists but is not the one cited.
+        _obs.write_text(json.dumps({"scenario": "zz-probe", "identifiers": [], "archived": [
+            {"agent": "probe-agent", "route": "bundle_ids", "value": "com.example.old",
+             "agent_version": "1.2.3", "run": "99999999999"}]}))
+        _wrong_run = _vc.archived_match("probe-agent", _REC)
+    finally:
+        _vc.ROOT = _saved_root
+
+check("a superseded record with no archived observation is refused", not _no_archive)
+check("a superseded record matching an archived observation is accepted", _matched)
+check("a superseded record citing the WRONG run is refused", not _wrong_run,
+      "the observation exists but did not come from the run the record names")
+
+# --- the classifier LABELS a superseded match, and never withholds it --------------
+#
+# The catalog carries no superseded records, so every branch of the label is unexercised
+# until the first real rename -- which is the worst moment to discover it drops findings
+# instead of marking them. Driven here with a synthetic catalog instead.
+#
+# The assertion that matters is the first: the agent is STILL FOUND. A superseded
+# identifier exists for the machines nothing else will match, so a label that filtered
+# would produce an empty result on exactly the fleet the record was kept for.
+_sup_cat = _yaml3.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
+for _a in _sup_cat["agents"]:
+    if _a["id"] == "openclaw":
+        _a["superseded"] = [{"route": "npm", "value": "moltbot", "last_version": "0.1.0",
+                             "last_proved": "2026-09-02", "by": "56-openclaw-retired-names",
+                             "run": "33702118455"}]
+with _tf3.NamedTemporaryFile("w", suffix=".yaml", delete=False) as _fh2:
+    _yaml3.safe_dump(_sup_cat, _fh2)
+
+_sup_rows = [{"kind": "npm", "id": "moltbot", "ver": "0.1.0", "loc": "/x", "extra": "", "perms": ""},
+             {"kind": "npm", "id": "openclaw", "ver": "2026.9.1", "loc": "/y", "extra": "", "perms": ""}]
+with _tf3.NamedTemporaryFile("w", suffix=".json", delete=False) as _fh3:
+    json.dump(_sup_rows, _fh3)
+
+_out = subprocess.run([sys.executable, str(ROOT / "bin" / "classify"), _fh3.name,
+                       "--json", "--catalog", _fh2.name],
+                      capture_output=True, text=True, check=True)
+_sup_found = {f["id"]: f for f in json.loads(_out.stdout)["findings"]}
+_oc = _sup_found.get("openclaw", {})
+
+check("a superseded match is still a FINDING, not filtered out", "openclaw" in _sup_found,
+      "the machines a superseded identifier exists for are the ones nothing else matches")
+check("both generations are still reported as evidence",
+      {e["id"] for e in _oc.get("evidence", [])} == {"moltbot", "openclaw"},
+      f"got {sorted(e['id'] for e in _oc.get('evidence', []))}")
+check("the superseded identifier is named", _oc.get("superseded") == ["moltbot"],
+      f"got {_oc.get('superseded')}")
+check("a finding with a current match is NOT only_superseded",
+      _oc.get("only_superseded") is False, f"got {_oc.get('only_superseded')}")
+
+# The same catalog, a payload carrying ONLY the superseded generation.
+with _tf3.NamedTemporaryFile("w", suffix=".json", delete=False) as _fh4:
+    json.dump([_sup_rows[0]], _fh4)
+_only = subprocess.run([sys.executable, str(ROOT / "bin" / "classify"), _fh4.name,
+                        "--json", "--catalog", _fh2.name],
+                       capture_output=True, text=True, check=True)
+_oc_only = {f["id"]: f for f in json.loads(_only.stdout)["findings"]}.get("openclaw", {})
+check("a machine matched only on an earlier release says so",
+      _oc_only.get("only_superseded") is True, f"got {_oc_only.get('only_superseded')}")
+
+_txt = subprocess.run([sys.executable, str(ROOT / "bin" / "classify"), _fh4.name,
+                       "--catalog", _fh2.name], capture_output=True, text=True, check=True)
+check("...and the human-readable output says it too",
+      "has not updated" in _txt.stdout and "earlier release" in _txt.stdout,
+      _txt.stdout.strip()[-120:])
+check("an unsuperseded finding carries no label at all",
+      "superseded" not in {k for f in json.loads(_out.stdout)["findings"]
+                           if f["id"] != "openclaw" for k in f},
+      "the key is omitted rather than emitted false, so its absence is not a claim")
+
+# --- the collect job's merge, which used to be unreachable ------------------------
+#
+# This was ~45 lines of Python inside a YAML heredoc: check_workflows saw a string, no test
+# could reach it, and it is the step that decides what the committed record says. Two bugs
+# were sitting in it, neither observable anywhere but main after a full matrix run.
+_mspec = _ilu.spec_from_loader("merge_observations",
+    _ilm.SourceFileLoader("merge_observations", str(ROOT / "tools" / "merge_observations.py")))
+_mo = _ilu.module_from_spec(_mspec)
+_mspec.loader.exec_module(_mo)
+
+
+def _artifact(root, scen, os_ver, recs):
+    d = pathlib.Path(root) / f"observed-{scen}--{os_ver}"
+    d.mkdir(parents=True)
+    (d / "observed.json").write_text(json.dumps({"scenario": scen, "identifiers": recs}))
+
+
+def _rec(value, os_ver, run="1"):
+    return {"agent": "openclaw", "route": "npm", "value": value, "agent_version": "1.0",
+            "platform": "darwin", "os": os_ver, "arch": "arm64", "run": run}
+
+
+with _tf2.TemporaryDirectory() as _d:
+    _art, _scen = pathlib.Path(_d) / "art", pathlib.Path(_d) / "scen"
+    (_scen / "zz-merge").mkdir(parents=True)
+    _committed = _scen / "zz-merge" / "observed.json"
+
+    # A committed file carrying one live record and one ARCHIVED record.
+    _committed.write_text(json.dumps({
+        "scenario": "zz-merge",
+        "identifiers": [_rec("openclaw", "15.7.9")],
+        "archived": [_rec("moltbot", "14.8.9")]}, indent=2))
+
+    # Two runners upload. macos-14 still carries the archived record verbatim, because
+    # record()'s `kept` copies every other platform key's records into each job's upload --
+    # which is exactly how a resurrection happens.
+    _artifact(_art, "zz-merge", "15.7.9", [_rec("openclaw", "15.7.9")])
+    _artifact(_art, "zz-merge", "14.8.9", [_rec("openclaw", "15.7.9"), _rec("moltbot", "14.8.9")])
+
+    _mo.merge(_art, _scen)
+    _after = json.loads(_committed.read_text())
+
+_live = {r["value"] for r in _after.get("identifiers", [])}
+_arch = {r["value"] for r in _after.get("archived", [])}
+
+check("the merge carries the archived list through",
+      _arch == {"moltbot"},
+      "it rebuilt the document from scratch, so an archive survived until the next main run")
+check("...and does NOT resurrect an archived record from another runner's upload",
+      "moltbot" not in _live,
+      "record()'s `kept` re-uploads other platforms' records verbatim, and the union "
+      "handed them straight back to identifiers")
+check("a live record still merges normally", _live == {"openclaw"}, f"got {sorted(_live)}")
+
 # --- the coverage shrink guard is scoped per (platform, os, arch) -----------------
 #
 # THIS TEST EXISTS BECAUSE I MISREAD THE GUARD AND BLAMED IT. A CI job refused to record
@@ -648,6 +832,148 @@ check("...and it leaves every other key's records alone",
       {"aarch64", "x86_64"} <= _keys,
       f"kept arches {sorted(k for k in _keys if k)} -- overwriting would let the last job "
       f"to finish decide what the scenario had ever proved")
+
+# --- superseding MOVES the evidence; --allow-shrink destroys it -------------------
+#
+# The guard fires whenever a run proves less than the committed record, and until now the
+# only way past it was to forget what was lost -- so the observation that proved an
+# identifier was destroyed by the same step that kept the identifier, and a catalog entry
+# retained "for the machines that still carry it" had nothing behind it but a comment.
+#
+# This is the transition, and it only ever runs on a real vendor rename, which may be
+# months away. Driven synthetically so it is not first exercised on the day it matters.
+def _supersede_run(committed):
+    tmp = pathlib.Path(_tf2.mkdtemp())
+    try:
+        scen = tmp / "scenarios" / "zz-fixture"
+        scen.mkdir(parents=True)
+        (scen / "observed.json").write_text(json.dumps(committed))
+        art = tmp / "art.json"
+        art.write_text(json.dumps(_pypi_only))
+        old_root, _st.SCENARIOS = _st.SCENARIOS, tmp / "scenarios"
+        out = _io.StringIO()
+        try:
+            with _ctx.redirect_stdout(out):
+                _st.record(str(art), str(scen), "24.04", "aarch64", "linux",
+                           run_id="222", supersede=True)
+        finally:
+            _st.SCENARIOS = old_root
+        return out.getvalue(), json.loads((scen / "observed.json").read_text())
+    finally:
+        _sh.rmtree(tmp, ignore_errors=True)
+
+
+_one_key = _observed(("aider", "pypi", "aider-chat", "aarch64"),
+                     ("aider", "state_dirs", "~/.aider", "aarch64"))
+for _r in _one_key["identifiers"]:
+    _r["run"], _r["agent_version"] = "111", "0.90"
+_sup_out, _sup_after = _supersede_run(_one_key)
+_sup_live = {r["value"] for r in _sup_after.get("identifiers", [])}
+_sup_arch = {r["value"] for r in _sup_after.get("archived", [])}
+
+check("superseding moves the lost record into `archived`", _sup_arch == {"~/.aider"},
+      f"got {sorted(_sup_arch)}")
+check("...and drops it from the live identifiers", "~/.aider" not in _sup_live,
+      "an archived record that is also live would be handed back by the next merge")
+check("...while what the run DID prove stays live", _sup_live == {"aider-chat"},
+      f"got {sorted(_sup_live)}")
+check("the archived record keeps the run that proved it",
+      all(r.get("run") == "111" for r in _sup_after.get("archived", [])),
+      "validate_catalog cross-checks the catalog record against exactly this field")
+check("it prints the catalog block, with the value and its last version",
+      "superseded:" in _sup_out and "value: ~/.aider" in _sup_out
+      and "last_version: 0.90" in _sup_out,
+      _sup_out.strip()[-200:])
+check("...and says the value stays on its route",
+      "never moves it" in _sup_out,
+      "supersession marks a value; moving it off its route would stop it matching")
+
+# A run that proves everything says so rather than silently writing an empty archive.
+_full = _observed(("aider", "pypi", "aider-chat", "aarch64"))
+for _r in _full["identifiers"]:
+    _r["run"], _r["agent_version"] = "111", "0.90"
+_noop_out, _noop_after = _supersede_run(_full)
+check("--supersede on a run that lost nothing archives nothing",
+      not _noop_after.get("archived") and "nothing to supersede" in _noop_out,
+      _noop_out.strip()[:120])
+
+# --- the other half of a rename: what arrived unclaimed ---------------------------
+#
+# Three guards fire when an identifier stops appearing and NOTHING fired when a new one
+# arrived -- though a rename does both, in one run, on one machine, in one payload. The
+# successor was computed on every scenario by assert.sh and thrown away.
+_scspec = _ilu.spec_from_loader("successor_candidates",
+    _ilm.SourceFileLoader("successor_candidates",
+                          str(ROOT / "tools" / "successor_candidates.py")))
+_sc = _ilu.module_from_spec(_scspec)
+_scspec.loader.exec_module(_sc)
+
+_sc_rows = [
+    {"kind": "app", "id": "com.vendor.brandnew", "ver": "2.0",
+     "loc": "/Applications/BrandNew.app", "extra": "", "perms": ""},
+    {"kind": "app", "id": "com.apple.Safari", "ver": "18.0",
+     "loc": "/Applications/Safari.app", "extra": "", "perms": ""},
+    {"kind": "npm", "id": "unrelated-pkg", "ver": "1.0", "loc": "/x",
+     "extra": "", "perms": ""},
+]
+# A bare machine shows Safari and nothing a scenario installed.
+_sc_base = [_sc_rows[1]]
+
+_cands = _sc.candidates(_sc_rows, {"app"})
+check("candidates are narrowed to the lost route's kind",
+      {c["id"] for c in _cands} == {"com.vendor.brandnew", "com.apple.Safari"},
+      f"got {sorted(c['id'] for c in _cands)}")
+check("...so a row of another kind is not offered as a successor",
+      "unrelated-pkg" not in {c["id"] for c in _cands})
+
+_narrowed = _sc.candidates(_sc_rows, {"app"}, baseline_rows=_sc_base)
+check("subtracting the baseline removes the runner's own furniture",
+      {c["id"] for c in _narrowed} == {"com.vendor.brandnew"},
+      f"got {sorted(c['id'] for c in _narrowed)}")
+
+check("the kind is resolved from the route, not typed",
+      _sc.kinds_for(_st.ROUTES, {"bundle_ids"}) == {"app"},
+      "routes.yaml already says which kind a route arrives on")
+
+# AN EMPTY LIST IS A FINDING, not a blank. An AppImage replacing a .deb leaves no package
+# record at all, so a lost value with no successor means the route went away.
+check("no candidate says the route went away rather than printing nothing",
+      "not a rename" in _sc.render([], "deb_packages:something"),
+      _sc.render([], "x"))
+check("a candidate list says an unclaimed row is not this agent's row",
+      "not the same as this agent" in _sc.render(_narrowed, "bundle_ids:old"))
+
+# And the guard itself reports both halves.
+_g_committed = {"scenario": "zz-fixture", "identifiers": [
+    {"agent": "chatgpt-desktop", "route": "bundle_ids", "value": "com.openai.chat",
+     "agent_version": "1.2026.160", "platform": "linux", "os": "24.04",
+     "arch": "aarch64", "run": "111"}]}
+_tmp = pathlib.Path(_tf2.mkdtemp())
+try:
+    _s = _tmp / "scenarios" / "zz-fixture"
+    _s.mkdir(parents=True)
+    (_s / "observed.json").write_text(json.dumps(_g_committed))
+    _a = _tmp / "art.json"
+    _a.write_text(json.dumps(_sc_rows))
+    _old_root, _st.SCENARIOS = _st.SCENARIOS, _tmp / "scenarios"
+    _gout = _io.StringIO()
+    try:
+        with _ctx.redirect_stdout(_gout):
+            _st.record(str(_a), str(_s), "24.04", "aarch64", "linux", run_id="222")
+    except SystemExit:
+        pass
+    finally:
+        _st.SCENARIOS = _old_root
+    _gtext = _gout.getvalue()
+finally:
+    _sh.rmtree(_tmp, ignore_errors=True)
+
+check("the shrink guard reports what arrived, not only what was lost",
+      "com.vendor.brandnew" in _gtext and "Lost: bundle_ids:com.openai.chat" in _gtext,
+      _gtext.strip()[-200:])
+check("...and offers --supersede beside --allow-shrink",
+      "--supersede" in _gtext and "--allow-shrink" in _gtext,
+      "the two exits differ: one keeps the evidence, one destroys it")
 
 # --- running containers and vendor labels ------------------------------------------
 # The two routes added beside `images`, and the reason both exist: a tag is chosen by

@@ -23,6 +23,6 @@
     "moltbot"
   ],
   "known_gaps": [
-    "The retired npm names only. bot.molt.mac (bundle id) and bot.molt. (launchd prefix) come from the old .app, and Homebrew keeps no versioned cask for it -- whether an old build is still downloadable is UNVERIFIED."
+    "The npm names only. The macOS side of this lineage is 57-clawdbot-era, which installs the Clawdbot-era app and proves its bundle id."
   ]
 }

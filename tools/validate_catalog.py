@@ -25,31 +25,45 @@ def load_routes():
 
 
 REQUIRED = {"id", "name", "classification", "platforms"}
-OPTIONAL = {"unverified", "retired"}
+OPTIONAL = {"superseded"}
+SUPERSEDED_REQUIRED = {"route", "value", "last_version", "last_proved", "by", "run"}
 
-# A REAL INSTALL IS THE STANDARD. An agent is verified when a VM scenario installs the
-# actual software and asserts the classifier finds it -- that is the only evidence that
-# survives the failure this catalog was built around: `bot.molt.mac` came from the vendor's
-# own Homebrew metadata and matched nothing on any Mac.
+
+def archived_match(aid, rec):
+    """Is this superseded record backed by an archived observation?
+
+    The catalog claims; the tests verify. A superseded record is written from the run that
+    stopped reproducing an identifier, and the observation it was written from moves into
+    that scenario's `archived` list rather than being discarded -- so the two can be
+    compared field for field, by reading a file, with no network and no git archaeology.
+    """
+    path = ROOT / "test" / "scenarios" / str(rec["by"]) / "observed.json"
+    if not path.exists():
+        return False
+    for obs in json.loads(path.read_text()).get("archived", []):
+        if (obs.get("agent") == aid
+                and str(obs.get("route")) == str(rec["route"])
+                and str(obs.get("value")) == str(rec["value"])
+                and str(obs.get("run")) == str(rec["run"])
+                and str(obs.get("agent_version", "")) == str(rec["last_version"])):
+            return True
+    return False
+
+# A REAL INSTALL IS THE STANDARD, AND IT IS NOW THE ONLY ONE. An agent is verified when a
+# VM scenario installs the actual software and asserts the classifier finds it.
 #
-# Anything less is an EXCEPTION and must say so in the tree. The gate below refuses an
-# agent that is neither covered by a scenario nor carrying an `unverified` block, because
-# the alternative is what we had before: verified and assumed identifiers sitting side by
-# side, indistinguishable, with nothing recording which was which.
+# THE `unverified:` BLOCK AND ITS EVIDENCE GRADES ARE GONE. Its weakest grade was
+# `vendor-documentation` -- the one this catalog's header names as how a wrong identifier
+# gets shipped -- and a guess carrying a reason and a date still entered on it. The
+# register was built so a guess could not hide, and nothing ever hid in it because nothing
+# was ever written to it: zero entries for its whole life, while remaining the one way in
+# that did not require a machine to have run the software. An unused door is still a door.
 #
-# The grades, weakest first. See docs/signature-lifecycle-v1.md.
-EVIDENCE = {
-    # What produced bot.molt.mac. The vendor says so and nothing else does.
-    "vendor-documentation",
-    # The artifact resolves under this exact name from its registry -- a Homebrew cask
-    # token, a published npm or PyPI package. Authoritative about the NAME, and silent
-    # about what an osquery row actually renders, which is a different question.
-    "registry-manifest",
-    # The artifact's own metadata confirms it: an image entrypoint, a bundle Info.plist.
-    "artifact-metadata",
-}
-UNVERIFIED_REQUIRED = {"reason", "evidence", "raised"}
-UNVERIFIED_OPTIONAL = {"blocker", "belongs_in"}
+# The gate below is unconditional now. `untested:`, the identifier-level version of the
+# same idea, went with it and was equally empty. What replaces them is a stricter question,
+# not another register -- see docs/signature-lifecycle-v2.md: an identifier that WAS proved
+# and can no longer be is superseded and carries the observation that proved it; one that
+# was never proved is not a signature.
 
 
 def validate_registry(reg):
@@ -188,14 +202,44 @@ def main():
                 errors.append(f"{aid}: images {value!r} must be lowercase; a registry "
                               f"rejects uppercase in a repository name.")
 
-        # A retired alias must actually BE one of this agent's identifiers. A typo here
-        # would quietly exempt nothing while marking a value that does not exist, and the
-        # coverage report would keep counting the real one as a gap.
-        listed = {str(v) for r in (ROUTES & set(agent)) for v in agent[r]}
-        for value in agent.get("retired", []):
-            if str(value) not in listed:
-                errors.append(f"{aid}: retired {value!r} is not one of its identifiers. "
-                              f"Mark a value that exists, or remove it.")
+        # A SUPERSEDED RECORD MUST BE BACKED BY AN ARCHIVED OBSERVATION. This replaces a
+        # flat `retired:` list of strings, which exempted every value it named from the
+        # coverage gate and asked for nothing in return.
+        #
+        # Four things are checked, and the last is the one that matters: the route must
+        # exist, the value must still be ON that route (leaving it there is what keeps the
+        # matcher matching it), the date must be a date, and `by`/`run`/`last_version` must
+        # line up with a record in that scenario's observed.json `archived` list. Without
+        # the last check the record is a guess wearing provenance-shaped fields, which is
+        # worse than a guess because it reads as evidence.
+        for rec in agent.get("superseded", []) or []:
+            if not isinstance(rec, dict):
+                errors.append(f"{aid}: superseded entries must be mappings, not bare "
+                              f"values -- a string cannot say which run proved it")
+                continue
+            missing = SUPERSEDED_REQUIRED - set(rec)
+            if missing:
+                errors.append(f"{aid}: superseded {rec.get('value')!r} missing "
+                              f"{sorted(missing)}")
+                continue
+            route, value = str(rec["route"]), str(rec["value"])
+            if route not in ROUTES:
+                errors.append(f"{aid}: superseded names route {route!r}, which is not in "
+                              f"catalog/routes.yaml")
+                continue
+            if value not in {str(v) for v in agent.get(route, [])}:
+                errors.append(
+                    f"{aid}: superseded {route}:{value!r} is not on that route's list. A "
+                    f"superseded value STAYS on its route -- that is what keeps it matched "
+                    f"on the machines it exists for. Supersession marks it, never moves it.")
+            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(rec["last_proved"])):
+                errors.append(f"{aid}: superseded {value!r} last_proved must be YYYY-MM-DD")
+            if not archived_match(aid, rec):
+                errors.append(
+                    f"{aid}: superseded {route}:{value!r} cites {rec['by']} run "
+                    f"{rec['run']}, and no archived observation there matches it. The "
+                    f"record is written from a run that stopped producing the identifier; "
+                    f"one nothing produced is a guess with a date on it.")
 
         # PER-ROUTE VALUE SHAPES COME FROM THE REGISTRY, not from a branch per route
         # here. The Chrome extension-id rule (32 characters from a-p: a base16 encoding
@@ -258,8 +302,9 @@ def main():
         if not re.fullmatch(r"[a-z0-9-]+", str(aid)):
             errors.append(f"{aid}: id should be lowercase kebab-case")
 
-    # THE STANDARD GATE. Every agent is either backed by a real install or carries a
-    # recorded exception. Nothing is allowed to be silently unverified.
+    # THE STANDARD GATE, AND IT IS UNCONDITIONAL. Every agent is backed by a real install
+    # or it does not ship. There is no longer a block that buys an exception, because the
+    # one that existed was never used -- see the note at the head of this file.
     covered = set()
     for path in sorted((ROOT / "test" / "scenarios").glob("*/expected.json")):
         for aid in json.loads(path.read_text()).get("classified", {}).get("must_find", []):
@@ -267,43 +312,12 @@ def main():
 
     for agent in doc["agents"]:
         aid = agent.get("id", "<missing id>")
-        exc = agent.get("unverified")
-        if aid in covered:
-            # A scenario installs it AND an exception claims it cannot be verified. One of
-            # the two is out of date, and leaving both means the doc contradicts itself.
-            if exc:
-                errors.append(f"{aid}: has an `unverified` block but IS covered by a "
-                              f"scenario. Delete the block -- it is now verified.")
-            continue
-        if not exc:
+        if aid not in covered:
             errors.append(
-                f"{aid}: NOT backed by a real install and carries no `unverified` block. "
-                f"A real install is the standard. Either add it to a VM scenario's "
-                f"classified.must_find, or record the exception:\n"
-                f"      unverified:\n"
-                f"        reason: <why there is no scenario yet>\n"
-                f"        evidence: {'|'.join(sorted(EVIDENCE))}\n"
-                f"        raised: YYYY-MM-DD")
-            continue
-        if not isinstance(exc, dict):
-            errors.append(f"{aid}: `unverified` must be a mapping")
-            continue
-        missing = UNVERIFIED_REQUIRED - set(exc)
-        if missing:
-            errors.append(f"{aid}: `unverified` missing {sorted(missing)}")
-        extra = set(exc) - UNVERIFIED_REQUIRED - UNVERIFIED_OPTIONAL
-        if extra:
-            errors.append(f"{aid}: `unverified` has unknown field(s) {sorted(extra)}")
-        if exc.get("evidence") not in EVIDENCE:
-            errors.append(f"{aid}: `unverified.evidence` is {exc.get('evidence')!r}, "
-                          f"not one of {sorted(EVIDENCE)}. `real-install` is not a value "
-                          f"here -- an agent with a real install does not need this block.")
-        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(exc.get("raised", ""))):
-            errors.append(f"{aid}: `unverified.raised` must be YYYY-MM-DD, so an exception "
-                          f"that has sat for a year is visible as one")
-        if len(str(exc.get("reason", ""))) < 20:
-            errors.append(f"{aid}: `unverified.reason` is too short to be a reason. Say "
-                          f"what stands between this agent and a real install.")
+                f"{aid}: NOT backed by a real install. A real install is the standard and "
+                f"the only one -- add it to a VM scenario's classified.must_find. If no "
+                f"scenario can install it, it is not a signature yet; say so in "
+                f"docs/blind-spots.yaml rather than shipping it.")
 
     # Scenario expectations name catalog agents by id. Those run on dispatch and on a
     # schedule, not per pull request, so a typo'd id would sit undetected for as long as
@@ -349,24 +363,19 @@ def main():
             errors.append(f"{r['id']} is listed under `removed:` and is also a live agent. "
                           f"One of the two is wrong.")
 
-    # `untested:` entries must be well-formed. tools/agent_status.py --gate decides whether
-    # each one is still warranted; this only checks it can be read.
-    for e in doc.get("untested", []) or []:
-        missing = {"agent", "route", "value", "reason", "raised"} - set(e)
-        if missing:
-            errors.append(f"untested entry {e!r} missing {sorted(missing)}")
-        elif not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(e["raised"])):
-            errors.append(f"untested {e['value']!r}: raised must be YYYY-MM-DD")
-        elif len(str(e["reason"])) < 20:
-            errors.append(f"untested {e['value']!r}: reason too short to be a reason")
+    # `untested:` IS NO LONGER A KEY, and a catalog still carrying one is refused rather
+    # than ignored. Silently dropping it would leave a contributor believing an excuse had
+    # been recorded when nothing reads it -- which is how a register becomes decorative.
+    if doc.get("untested"):
+        errors.append("catalog carries `untested:`, which no longer exists. An identifier "
+                      "no CI test covers is not excused by a reason any more: cover it, "
+                      "supersede it if a run once proved it, or remove it.")
 
     if errors:
         print("catalog: FAIL")
         for e in errors:
             print(f"  {e}")
         sys.exit(1)
-    n_exc = sum(1 for a in doc["agents"] if a.get("unverified"))
-    n_real = len(doc["agents"]) - n_exc
     # `not_agents` is empty now that the scope is agents only. The machinery stays,
     # because the argument that produced it will be had again: something detectable and
     # AI-adjacent will be proposed, and the question will be whether it ACTS on anyone's
@@ -376,8 +385,11 @@ def main():
     split = f" ({len(doc['agents']) - n_tools} agents, {n_tools} not)" if n_tools else ""
     print(f"catalog: ok, {len(doc['agents'])} agents{split}, "
           f"{len(seen_route_values)} identifiers, scenario references resolve")
-    print(f"  real install: {n_real}/{len(doc['agents'])} entries. "
-          f"{n_exc} recorded exception(s).")
+    # No exception count, because there is no longer a way to be an exception. Every agent
+    # above passed the unconditional gate, so the number could only ever have been the
+    # total -- and a line reporting "19/19, 0 exceptions" every run is a scoreboard for a
+    # game with one possible score.
+    print("  real install: every entry, or the gate above would have failed.")
 
 
 if __name__ == "__main__":

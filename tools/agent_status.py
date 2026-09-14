@@ -6,25 +6,23 @@ the catalog that drifts from the first, and this repo's whole argument is that a
 plausible-looking wrong answer is the expensive kind. Everything here is read off
 catalog/agents.yaml, test/fixtures/ and test/scenarios/ at the moment it runs.
 
-Coverage is reported at two strengths, because they are not the same claim:
+COVERAGE MEANS ONE THING: a CI scenario installed the real software and the classifier
+found it. That is the only evidence that survives an identifier taken from a vendor's
+own metadata, which is the failure this catalog was built around.
 
-  scenario   a VM installed the real software and the classifier found it. This is the
-             only evidence that survives the bot.molt.mac failure -- a vendor-documented
-             identifier that matched nothing on any Mac.
-  fixture    the classifier matched a row in test/fixtures/. The rows were captured from
-             real machines, but nothing re-checks them against a current install, so a
-             fixture proves the MATCHER works and cannot prove the IDENTIFIER is current.
-
-An identifier with neither is not necessarily wrong. It is unexercised, which is a
-different thing and is why it is named rather than hidden.
+A hand-written fixture proves the MATCHER and credits no coverage, because nothing on a
+row says whether a machine ever produced it. Only test/fixtures/captured/ can, and it
+holds rows from a named CI run. An identifier with neither is named rather than hidden.
 """
 import collections
+import datetime
 import importlib.machinery      # NOT implied by importlib.util. Importing only .util
 import importlib.util              # left importlib.machinery resolvable on a developer Mac,
                                    # where something else had already imported it, and
                                    # AttributeError on a clean runner -- which is where it
                                    # failed: every scenario job, in the recording step.
 import json
+import os
 import pathlib
 import re
 import sys
@@ -62,14 +60,6 @@ ALL_ROUTES = list(ROUTES["routes"])
 # old name and it under-described itself -- launchd_prefixes is a prefix, not a glob.
 ROUTE_LEVEL_ONLY = {n for n, m in REGISTRY.match.items()
                     if m == "prefix" or m.startswith("home-")}
-
-
-def _plain(block):
-    """Make an `unverified` block JSON-safe without losing anything."""
-    if not isinstance(block, dict):
-        return block
-    return {k: (v if isinstance(v, (str, int, float, bool, type(None))) else str(v))
-            for k, v in block.items()}
 
 
 def replay(paths, catalog):
@@ -168,12 +158,44 @@ def replay(paths, catalog):
     return values, routes, seen_ver
 
 
-def record(artifact, scenario_dir, os_version="", arch="", platform=""):
+def _successors():
+    """tools/successor_candidates.py, imported lazily.
+
+    Lazily because the shrink guard is the only caller and it fires rarely: a module-level
+    import would load bin/classify a second time on every --record, for a branch almost no
+    run takes.
+    """
+    loader = importlib.machinery.SourceFileLoader(
+        "successor_candidates", str(ROOT / "tools" / "successor_candidates.py"))
+    spec = importlib.util.spec_from_loader("successor_candidates", loader)
+    mod = importlib.util.module_from_spec(spec)
+    loader.exec_module(mod)
+    return mod
+
+
+def _obs_sort(rec):
+    """The committed order, shared by record() and tools/merge_observations.py."""
+    return (rec["agent"], rec["route"], rec["value"], rec.get("platform") or "",
+            rec.get("os") or "", rec.get("arch") or "")
+
+
+def record(artifact, scenario_dir, os_version="", arch="", platform="", run_id="",
+           supersede=False):
     """Write scenario/observed.json: which identifiers a REAL run actually matched.
 
     test/artifacts/ is gitignored and per-machine, so the raw output cannot back a
     committed document. This is the compact, reviewable residue of a run -- the
-    observations layer of docs/signature-lifecycle-v1.md, at its smallest useful size.
+    observations layer of docs/signature-lifecycle-v2.md, at its smallest useful size.
+
+    `run_id` IS THE FIELD THAT MAKES PROOF OUTLIVE THE RUN. Without it an observation
+    from a CI runner cannot be told from one a maintainer produced on their own Mac, and
+    that distinction is what a superseded record rests on: once CI stops reproducing an
+    identifier, the only thing standing behind the catalog entry is the record of the run
+    that last produced it. A record with no run names no run.
+
+    Empty off CI, and that is deliberate rather than a fallback -- a local `--record` has
+    no run to name, and inventing one would manufacture exactly the provenance this field
+    exists to carry.
     """
     catalog = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
     values, routes, seen_ver = replay([pathlib.Path(artifact)], catalog)
@@ -211,6 +233,12 @@ def record(artifact, scenario_dir, os_version="", arch="", platform=""):
                         rec["os"] = os_version
                     if arch:
                         rec["arch"] = arch
+                    # LAST, and outside the merge key on purpose. Two runs on the same
+                    # (platform, os, arch) are the same observation re-proved, not two
+                    # observations -- so the run id must not split them, or every nightly
+                    # run would append a duplicate record instead of refreshing one.
+                    if run_id:
+                        rec["run"] = str(run_id)
                     idents.append(rec)
     # Sort once, before either write path below can use it.
     idents.sort(key=lambda r: (r["agent"], r["route"], r["value"]))
@@ -222,10 +250,58 @@ def record(artifact, scenario_dir, os_version="", arch="", platform=""):
     # mean the last job to finish decided what the whole scenario had ever proved.
     plat = (platform or None, os_version or None, arch or None)
     kept = []
+    # THE ARCHIVE IS CARRIED, NOT REBUILT. It holds the observations a superseded catalog
+    # record cites, so dropping it here would cut the evidence out from under an entry that
+    # stays green -- the record points at a run whose proof no longer exists in the tree.
+    archived = []
     if out_path.exists():
-        for r in json.loads(out_path.read_text()).get("identifiers", []):
+        _doc = json.loads(out_path.read_text())
+        archived = list(_doc.get("archived", []))
+        for r in _doc.get("identifiers", []):
             if (r.get("platform"), r.get("os"), r.get("arch")) != plat:
                 kept.append(r)
+
+    # SUPERSEDING MOVES THE EVIDENCE; --allow-shrink DISCARDS IT. That difference is the
+    # whole mechanism. The guard below fires whenever a run proves less than the committed
+    # record, and until now the only way past it was to forget what was lost -- so the
+    # observation that proved an identifier was destroyed by the same step that kept the
+    # identifier, and a catalog entry retained "for the machines that still carry it" had
+    # nothing behind it but a comment.
+    #
+    # This is a DELIBERATE MODE, never automatic, and it must stay that way: a vendor
+    # pulling a download for a week is indistinguishable from a rename for that week, and a
+    # guard that archived on its own would supersede a live signature on one bad afternoon.
+    if supersede and out_path.exists():
+        _committed = json.loads(out_path.read_text()).get("identifiers", [])
+        _now = {(r["agent"], r["route"], r["value"]) for r in idents}
+        _lost = [r for r in _committed
+                 if (r.get("platform"), r.get("os"), r.get("arch")) == plat
+                 and (r["agent"], r["route"], r["value"]) not in _now]
+        if _lost:
+            archived += _lost
+            print(f"superseding {len(_lost)} identifier(s) this run no longer produces.")
+            print("Paste into catalog/agents.yaml, under the agent that owns each value:\n")
+            for r in sorted(_lost, key=lambda x: (x["agent"], x["route"], x["value"])):
+                print(f"  # {r['agent']}")
+                print(f"  superseded:")
+                print(f"    - {{route: {r['route']}, value: {r['value']}, "
+                      f"last_version: {r.get('agent_version', '?')}, "
+                      f"last_proved: {datetime.date.today().isoformat()}, "
+                      f"by: {pathlib.Path(scenario_dir).name}, "
+                      f"run: {r.get('run', '?')}}}")
+            print("\nThe value STAYS on its route. Supersession marks it; it never moves it.")
+            # A `?` IN THE BLOCK IS A REFUSAL WAITING TO HAPPEN. validate_catalog
+            # compares last_version and run against the archived observation field for
+            # field, so a record missing either produces an entry that cannot pass --
+            # and the reader would have pasted it without knowing why. Say so here.
+            _thin = [r for r in _lost if not r.get("run") or not r.get("agent_version")]
+            if _thin:
+                print(f"\nWARNING: {len(_thin)} record(s) above carry `?` for a field "
+                      f"validate_catalog checks, so the entry would be refused. A missing "
+                      f"`run` predates run identity; a missing version means the row "
+                      f"carried none. Re-record on CI before superseding.")
+        else:
+            print("nothing to supersede: this run proves everything the record holds.")
 
     # A RUN THAT PROVES LESS THAN THE COMMITTED RECORD IS ALMOST ALWAYS A STALE ARTIFACT,
     # not a regression. Re-recording from test/artifacts/ after the scenario had changed
@@ -235,7 +311,7 @@ def record(artifact, scenario_dir, os_version="", arch="", platform=""):
     # Genuine shrinkage happens (an identifier removed from the catalog, a route that
     # stopped being produced) so this is refusable rather than forbidden -- but it has to be
     # said out loud, because the silent version costs coverage nobody notices losing.
-    if out_path.exists() and "--allow-shrink" not in sys.argv:
+    if out_path.exists() and not supersede and "--allow-shrink" not in sys.argv:
         committed = json.loads(out_path.read_text()).get("identifiers", [])
         was = {(r["agent"], r["route"], r["value"]) for r in committed
                if (r.get("platform"), r.get("os"), r.get("arch")) == plat}
@@ -268,7 +344,27 @@ def record(artifact, scenario_dir, os_version="", arch="", platform=""):
             print(f"  compared on (platform, os, arch) = {plat}, against "
                   f"{len(was)} of {len(committed)} committed record(s)")
             print(f"  keys in the committed file: {keys}")
-            print("If the artifact is current and the loss is real, pass --allow-shrink.")
+
+            # THE OTHER HALF OF A RENAME, SAID HERE BECAUSE THIS IS WHERE SOMEONE IS
+            # LOOKING. A rename loses an identifier and gains an unclaimed row in the same
+            # run, on the same machine, in the payload this function was just handed --
+            # and until now the loss was reported and the arrival thrown away. The kinds
+            # come from the lost values' own routes, so the list is the handful of rows
+            # that could be a successor rather than every row nothing claimed.
+            try:
+                _sc = _successors()
+                _kinds = _sc.kinds_for(ROUTES, {r for _, r, _ in lost})
+                _cands = _sc.candidates(json.loads(pathlib.Path(artifact).read_text()),
+                                        _kinds, catalog=catalog, routes=ROUTES)
+                print("\n" + _sc.render(_cands, ", ".join(f"{r}:{v}" for _, r, v in lost)))
+            except Exception as exc:                        # noqa: BLE001
+                # NEVER let the enrichment take down the report. The loss is the finding;
+                # candidates are a convenience, and a convenience that turns a clear
+                # failure into a traceback has made things worse.
+                print(f"\n(could not compute successor candidates: {exc})")
+
+            print("\nIf the artifact is current and the loss is real, pass --allow-shrink. "
+                  "If the release genuinely stopped producing it, pass --supersede.")
             sys.exit(1)
 
     # record() is called directly by test/test_matcher.py against a TemporaryDirectory, which
@@ -277,19 +373,29 @@ def record(artifact, scenario_dir, os_version="", arch="", platform=""):
     if scen.parent != SCENARIOS.resolve():
         print(f"recorded {len(idents)} identifiers observed by {scen.name} "
               f"(not a scenario directory)")
-        out_path.write_text(json.dumps({"scenario": scen.name, "identifiers": idents},
-                                       indent=2) + "\n")
+        _doc = {"scenario": scen.name, "identifiers": idents}
+        if archived:
+            _doc["archived"] = sorted(archived, key=_obs_sort)
+        out_path.write_text(json.dumps(_doc, indent=2) + "\n")
         return
 
     out = out_path
     # Sorted and undated: this file is committed and compared, so it must change only
     # when what the run OBSERVED changes.
     idents = kept + idents
-    idents.sort(key=lambda r: (r["agent"], r["route"], r["value"],
-                               r.get("platform") or "", r.get("os") or "",
-                               r.get("arch") or ""))
-    out.write_text(json.dumps({"scenario": pathlib.Path(scenario_dir).name,
-                               "identifiers": idents}, indent=2) + "\n")
+    idents.sort(key=_obs_sort)
+    # An archived record must not also be live. A run on another platform key re-uploads
+    # records verbatim, so without this the next merge hands a superseded value straight
+    # back to `identifiers` -- the same resurrection tools/merge_observations.py guards.
+    _arch_keys = {(r["agent"], r["route"], r["value"], r.get("platform"), r.get("os"),
+                   r.get("arch")) for r in archived}
+    idents = [r for r in idents
+              if (r["agent"], r["route"], r["value"], r.get("platform"), r.get("os"),
+                  r.get("arch")) not in _arch_keys]
+    _doc = {"scenario": pathlib.Path(scenario_dir).name, "identifiers": idents}
+    if archived:
+        _doc["archived"] = sorted(archived, key=_obs_sort)
+    out.write_text(json.dumps(_doc, indent=2) + "\n")
     print(f"recorded {len(idents)} identifiers observed by {out.parent.name}")
 
 
@@ -371,10 +477,14 @@ def collect():
         for aid in block.get("must_find", []):
             scenarios[aid].add(path.parent.name)
 
-    # Fixtures prove the MATCHER. A scenario's own output proves the IDENTIFIER, because
-    # those rows came off a machine where the software was really installed. Same replay,
-    # two sources, and the stronger one wins per identifier.
-    values, routes, _ = replay(sorted((ROOT / "test" / "fixtures").glob("*.json")), catalog)
+    # A FIXTURE PROVES THE MATCHER AND NOTHING ELSE, so nothing here replays one. Fixture
+    # rows are hand-written, and no field on one tells that apart from a row a runner
+    # produced -- so while fixtures credited coverage, a typed string was evidence.
+    #
+    # A `captured/` directory stood here briefly, holding rows attributable to a named CI
+    # run so those alone could credit coverage. Nothing ever wrote it: a reader for a
+    # producer that did not exist, which is the shape this repo refuses everywhere else.
+    # Coverage comes from observations only.
     # Keyed by scenario, so an identifier proved only outside CI can be told apart from
     # one a pull request would catch.
     seen_in = collections.defaultdict(set)      # (agent, route, value) -> {scenario}
@@ -410,20 +520,24 @@ def collect():
     unrecorded = sorted(in_ci - recorded)
 
     agents = []
-    retired_of = {a["id"]: {str(v) for v in a.get("retired", [])} for a in catalog["agents"]}
+    # SUPERSEDED VALUES COME FROM AN ARCHIVED OBSERVATION, not from a label. `retired:`
+    # was a list of strings a person typed, and it exempted every one of them from the
+    # coverage gate -- which is how two identifiers naming a release that was never
+    # published sat excluded from the badge for months. A value is superseded here only if
+    # a run once produced it and that record was archived when it stopped.
+    #
+    # Keyed on (route, value), never value alone: OpenClaw ships an npm package and a
+    # Homebrew cask both called `openclaw`, so a value-keyed label would supersede one by
+    # superseding the other. Same lesson as the coverage credits.
+    superseded_of = {a["id"]: {(str(s["route"]), str(s["value"]))
+                               for s in a.get("superseded", [])}
+                     for a in catalog["agents"]}
     for agent in catalog["agents"]:
         aid = agent["id"]
         idents = []
         for route in ALL_ROUTES:
             for value in agent.get(route, []):
                 value = str(value)
-                if route in ROUTE_LEVEL_ONLY or value.endswith("*"):
-                    proven = route in routes[aid]       # route-level only
-                    precision = "route"
-                else:
-                    key = classify_mod.image_repo(value) if route == "images" else value
-                    proven = (route, key) in values[aid]
-                    precision = "exact"
                 scens = sorted(seen_in.get((aid, route, value), ()))
                 ci_scens = [s for s in scens if s in in_ci]
                 # A fixture IS a CI test: ci.yml runs test/lint.sh, which runs
@@ -455,10 +569,8 @@ def collect():
                 # identifiers still uncovered.
                 if ci_scens:
                     state = "ci-install"
-                elif str(value) in retired_of.get(aid, ()):
-                    state = "alias"
-                elif proven:
-                    state = "ci-fixture"
+                elif (route, str(value)) in superseded_of.get(aid, ()):
+                    state = "superseded"
                 elif not (route_platforms.get(route, set()) & in_ci_platforms):
                     state = "no-ci-platform"
                 elif scens:
@@ -473,9 +585,14 @@ def collect():
                     state = "tested-absent"
                 else:
                     state = "none"
+                # ONLY WHAT SOMETHING READS. `fixture`, `real`, `ci_scenarios`,
+                # `platforms`, `observed_on` and `precision` were written here and read
+                # nowhere -- six keys maintained by this function and consumed by no
+                # renderer, no gate and no test. One of them carried a comment claiming
+                # the per-platform detail had "moved to the per-identifier table below",
+                # which by then had no platform column.
                 idents.append({"route": route, "value": value,
-                               "fixture": proven, "real": bool(scens),
-                               "scenarios": scens, "ci_scenarios": ci_scens,
+                               "scenarios": scens,
                                "reached_by": sorted(asserted_by[aid] - set(unrecorded)),
                                # EVERY CI scenario that asserts this agent, including ones
                                # with no recorded observation yet. `reached_by` above drops
@@ -484,35 +601,11 @@ def collect():
                                # the gate has to tell apart from one that ran and found
                                # nothing. See _pending().
                                "asserted_by_ci": sorted(asserted_by[aid]),
-                               # The platforms this identifier can be observed on --
-                               # its route's platforms, because that is the only place
-                               # the information exists. This is what makes per-platform
-                               # coverage countable without a new catalog field.
-                               "platforms": sorted(route_platforms.get(route, ())),
-                               # WHICH PLATFORMS ACTUALLY OBSERVED IT, as opposed to
-                               # which could. A `posix` identifier proved on macOS says
-                               # nothing about Linux -- the route is portable, the
-                               # observation is not -- so crediting it to both would put
-                               # a confident face on an untested platform. That is the
-                               # whole failure mode the per-platform breakdown exists to
-                               # expose, so it must not be the thing computing it.
-                               "observed_on": sorted(
-                                   {scenario_platform.get(sc) for sc in ci_scens}
-                                   - {None}),
-                               "state": state, "precision": precision})
+                               "state": state})
         agents.append({
             "id": aid, "name": agent["name"], "classification": agent["classification"],
             "scenarios": sorted(scenarios.get(aid, ())),
             "identifiers": idents,
-            # The recorded exception, when this agent is not backed by a real install.
-            # validate_catalog.py refuses an agent that has neither.
-            #
-            # `raised` is coerced to str because PyYAML resolves an unquoted YYYY-MM-DD to a
-            # datetime.date, which json.dumps cannot serialise -- so --json died while
-            # --write and --check, which never touch the field, both passed. Fixed here
-            # rather than by quoting the value in the catalog: a contributor writing a bare
-            # date is doing nothing wrong, and the tool should not break on it.
-            "unverified": _plain(agent.get("unverified")),
         })
     # What the suite cannot prove, carried alongside what it can. A coverage report that
     # lists only successes is the same failure mode as an empty result on a clean machine:
@@ -542,8 +635,7 @@ def collect():
 
 STATE_LABEL = {
     "ci-install": "CI: real install",
-    "ci-fixture": "CI: fixture",
-    "alias": "alias (fixture)",
+    "superseded": "superseded",
     # Not a failure to observe: there is no runner for that platform. Named rather than
     # folded into NO TEST, because the two need different actions -- one is a test to
     # write, the other is a platform to add to the matrix.
@@ -593,8 +685,8 @@ def badge_for(data):
     # complete for a reason nobody can act on. It is counted and named in the breakdown
     # instead: the identifier table below names every route and the platforms it was
     # observed on, which is a fact someone can act on rather than a score to read.
-    n = sum(1 for i in ids if i["state"] not in ("alias", "no-ci-platform"))
-    covered = sum(1 for i in ids if i["state"] in ("ci-install", "ci-fixture"))
+    n = sum(1 for i in ids if i["state"] not in ("superseded", "no-ci-platform"))
+    covered = sum(1 for i in ids if i["state"] == "ci-install")
     # Green only at complete. Anything less is amber -- a badge that reads green at 90%
     # trains the reader to stop looking at the number beside it.
     colour = "2E7D57" if covered == n else "A26A16"
@@ -604,17 +696,6 @@ def badge_for(data):
 def rewrite_badge(data, text):
     covered, n, colour = badge_for(data)
     return BADGE.sub(lambda m: f"{m.group(1)}{covered}{m.group(3)}{n}{m.group(5)}{colour}", text)
-
-
-def grade(agent):
-    """A real install is the STANDARD. Everything else is an exception.
-
-    Deliberately binary at the top level. Reporting three peer grades invited reading
-    "fixture only" as a second kind of pass, and it is not one: a fixture proves the
-    matcher works against a row somebody captured once, and says nothing about whether
-    the identifier is still what the software installs today.
-    """
-    return "standard" if agent["scenarios"] else "exception"
 
 
 def markdown(data):  # noqa: C901
@@ -627,26 +708,11 @@ def markdown(data):  # noqa: C901
     """
     agents = data["agents"]
     n_ident = sum(len(a["identifiers"]) for a in agents)
-    n_fix = sum(1 for a in agents for i in a["identifiers"] if i["fixture"])
     n_scen = sum(1 for a in agents if a["scenarios"])
     na = set(data.get("not_agents", ()))
     n_tools = sum(1 for a in agents if a["classification"] in na)
     n_st = lambda s: sum(1 for a in agents for i in a["identifiers"] if i["state"] == s)
-    n_ci = n_st("ci-install") + n_st("ci-fixture")
-
-    # DISTINCT identifiers that only a fixture proves, counted once. The first version of
-    # this summed the per-platform fixture counts and divided by the number of rows, which
-    # gave the right answer only because the single fixture-only identifier happens to sit
-    # on a portable route and so appeared in both rows. A platform-specific fixture would
-    # have made it wrong, and silently.
-    n_fixture_only = n_st("ci-fixture")
-    _fx_phrase = ("identifier is fixture-only, so it sits" if n_fixture_only == 1
-                  else "identifiers are fixture-only, so they sit")
-
-    _fx = [i["value"] for a in agents for i in a["identifiers"]
-           if i["state"] == "ci-fixture"]
-    _fx_is = "is" if len(_fx) == 1 else "are"
-    _fx_names = ", ".join(f"`{v}`" for v in sorted(_fx))
+    n_ci = n_st("ci-install")
 
     out = [
         "<!-- GENERATED BY tools/agent_status.py -- DO NOT EDIT.",
@@ -691,22 +757,14 @@ def markdown(data):  # noqa: C901
         # installs the real software -- 48 of 48" directly above "47 are proved by a real
         # install", which is a contradiction of exactly one: the headline was counting
         # every covered identifier and describing only the real-install ones.
-        ((f"**Every identifier is proved by a real install in CI** — {n_ci} of "
-          f"{n_ident - n_st('alias')}.")
-         if n_ci == n_st("ci-install") else
-         (f"**Every identifier is covered by a CI test** — {n_ci} of "
-          f"{n_ident - n_st('alias')}, {n_st('ci-install')} of them by a real install."))
-        + (f" {n_st('alias')} retired alias(es) are excluded: nothing installs them any more."
-           if n_st("alias") else "")
+        (f"**Every identifier is proved by a real install in CI** — {n_ci} of "
+         f"{n_ident - n_st('superseded')}.")
+        + (f" {n_st('superseded')} superseded identifier(s) are excluded: the release that "
+           f"produced them is gone, and each names the run that last did."
+           if n_st("superseded") else "")
         + " Anything below complete is a red build, so there is no partial number to read"
           " here.",
         "",
-        (f"| | entries | |\n|---|---:|---|\n"
-         f"| **standard** | {n_scen} | a CI scenario installs the real software and asserts "
-         f"the classifier finds it |\n"
-         f"| **exception** | {len(agents) - n_scen} | recorded in the catalog with a reason, an "
-         f"evidence grade and the date it was raised |"
-         if len(agents) - n_scen else None),
         # Only describe a split when there IS one. Without one this restated the badges.
         (f"{len(agents)} entries carrying {n_ident} identifiers &mdash; "
          f"**{len(agents) - n_tools} agents** and **{n_tools} not**." if n_tools else None),
@@ -738,13 +796,6 @@ def markdown(data):  # noqa: C901
         # bin/discover --deep. A generated page is the wrong place for a standing excuse:
         # this names the identifier and where its evidence comes from, and the sentence
         # disappears on its own when a real install records one.
-        *([f"**The remaining {n_st('ci-fixture')} {_fx_is} {_fx_names}**, whose recorded "
-           f"evidence is a captured row rather than a live install -- "
-           f"`test/docker_states.sh` serves real images through a fake socket and asserts "
-           f"the real runner and matcher claim the catalogued one and decline the rest. "
-           f"A CI scenario that installs it for real has not recorded an observation yet.",
-           ""]
-          if n_st("ci-fixture") else []),
         # The floor note names scenarios in CI that have recorded nothing yet -- but only
         # where that actually costs coverage. It used to fire for ANY unrecorded scenario,
         # including `76-linux-systemd`, which asserts no identifiers at all, so it warned
@@ -754,8 +805,8 @@ def markdown(data):  # noqa: C901
               "observation is not absence of a test, and the count corrects itself once "
               "each has run.", ""])
           if data.get("ci_unrecorded") and n_st("none") + n_st("tested-absent") else []),
-        "`tools/validate_catalog.py` refuses an agent that is neither covered by a scenario nor",
-        "carrying an `unverified` block, so an unverified signature cannot enter quietly.",
+        "`tools/validate_catalog.py` refuses an agent no scenario installs. There is no block",
+        "that buys an exception, so an unproved signature cannot enter at all.",
         "",
     ]
 
@@ -779,35 +830,29 @@ def markdown(data):  # noqa: C901
         out += [f"# {group} ({n})", "", blurb, ""]
         for cls in classes:
             out += [f"## {cls}", "",
-                    "| name | evidence | identifiers | scenarios |", "|---|---|---|---|"]
+                    # NO `evidence` COLUMN. It held "real install" for every row and could
+                    # hold nothing else once the exception register went -- a column with
+                    # one possible value reads as a distinction being drawn when none is.
+                    "| name | identifiers | scenarios |", "|---|---|---|"]
             for a in sorted(by_class[cls], key=lambda x: x["id"]):
-                MARK = {"ci-install": "**`%s`**", "ci-fixture": "`%s`", "alias": "~~`%s`~~",
-                        "local-only": "_`%s`_", "tested-absent": "%s ⚠", "none": "%s"}
+                # `no-ci-platform` WAS MISSING FROM THIS DICT, and would have raised a
+                # KeyError the first time an identifier reached that state -- the page that
+                # describes the catalog, crashed by a catalog entry. It never fired only
+                # because every route has a runner today.
+                MARK = {"ci-install": "**`%s`**",
+                        "superseded": "~~`%s`~~", "local-only": "_`%s`_",
+                        "no-ci-platform": "%s ∅", "tested-absent": "%s ⚠", "none": "%s"}
                 ids = ", ".join(MARK[i["state"]] % i["value"]
                                 for i in a["identifiers"]) or "--"
-                mark = "real install" if grade(a) == "standard" else "**exception**"
-                out.append(f"| **{a['name']}** | {mark} | {ids} | "
+                out.append(f"| **{a['name']}** | {ids} | "
                            f"{', '.join(a['scenarios']) or '--'} |")
             out.append("")
 
     out += ["> **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = "
-            "retired alias, uninstallable by design. ⚠ = a scenario installed this agent and "
+"superseded: a run proved it and the current release no longer emits it. "
+            "∅ = no CI runner for its platform. ⚠ = a scenario installed this agent and "
             "the identifier did not appear. plain = nothing tests it.", ""]
 
-    exceptions = [a for a in sorted(agents, key=lambda x: x["id"]) if not a["scenarios"]]
-    if exceptions:
-        out += ["## The exception register", "",
-                "Every agent not backed by a real install, and why. `belongs_in` names the",
-                "scenario that should cover it, which makes this a work list rather than an",
-                "excuse list. `blocker` appears only where something genuinely stands in the way",
-                "-- its absence means the only thing missing is the work.", "",
-                "| agent | evidence held | reason | belongs in | blocker |",
-                "|---|---|---|---|---|"]
-        for a in exceptions:
-            e = a["unverified"] or {}
-            out.append(f"| **{a['name']}** | {e.get('evidence','?')} | {e.get('reason','?')} "
-                       f"| {e.get('belongs_in') or '--'} | {e.get('blocker') or '--'} |")
-        out.append("")
 
     unex = [(a, i) for a in sorted(agents, key=lambda x: x["id"])
             for i in a["identifiers"]
@@ -900,7 +945,7 @@ def markdown(data):  # noqa: C901
     return "\n".join(x for x in out if x is not None).rstrip() + "\n"
 
 
-COVERED_STATES = ("ci-install", "ci-fixture", "alias")
+COVERED_STATES = ("ci-install", "superseded")
 
 
 def _pending(data, argv):
@@ -978,8 +1023,12 @@ def main():
         i = sys.argv.index("--record")
         def opt(flag):
             return sys.argv[sys.argv.index(flag) + 1] if flag in sys.argv else ""
+        # --run-id falls back to GITHUB_RUN_ID so a workflow that forgets the flag still
+        # records provenance. NOT the other way round: an explicit flag wins, because
+        # test/run.sh drives a VM whose run id is the host's, not the guest's.
         record(sys.argv[i + 1], sys.argv[i + 2], opt("--os"), opt("--arch"),
-               opt("--platform"))
+               opt("--platform"), opt("--run-id") or os.environ.get("GITHUB_RUN_ID", ""),
+               supersede="--supersede" in sys.argv)
         return
     if "--json" in sys.argv:
         print(json.dumps(data, indent=2))
@@ -1006,30 +1055,25 @@ def main():
         # NOTHING SHIPS IN THE CATALOG WITHOUT A REAL TEST. Fails on any identifier no CI
         # test covers, unless the catalog carries a dated reason for it.
         #
-        # The exception list can shrink silently and never grow silently: an entry whose
-        # identifier IS now covered is itself a failure, so a reason cannot outlive the gap
-        # it excused. That is the property that stops such a list becoming a dumping ground.
-        catalog = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
-        excused = {(e["agent"], e["route"], str(e["value"])): e
-                   for e in catalog.get("untested", [])}
+        # NO EXCUSE LIST. `untested:` let an identifier no test covers ship on a reason
+        # and a date, and it held nothing for its entire life -- while remaining the one
+        # way past this gate that did not require a machine to have produced the value.
+        # An identifier is covered, or it is not here.
         bad = []
         for agent in data["agents"]:
             for i in agent["identifiers"]:
-                key = (agent["id"], i["route"], i["value"])
-                covered = i["state"] in COVERED_STATES
+                # PENDING IS NOT COVERED, AND IT IS NOT A FAILURE EITHER. A scenario
+                # commits to this identifier's agent but no run has reported yet -- the
+                # only state where "we cannot know here" is the honest answer. There is no
+                # `excused` branch any more: `untested:` let an identifier ship on a reason
+                # and was deleted, so the remaining question is whether a run has spoken.
                 if (agent["id"], i["route"], str(i["value"])) in PENDING_KEYS:
                     continue
-                if not covered and key not in excused:
+                if i["state"] not in COVERED_STATES:
                     bad.append(f"{agent['id']}: {i['route']}:{i['value']} is {i['state']} "
-                               f"-- no CI test covers it. Cover it, remove it, or record "
-                               f"why under `untested:` with a reason and a raised date.")
-                if covered and key in excused:
-                    bad.append(f"{agent['id']}: {i['route']}:{i['value']} is listed under "
-                               f"`untested:` but IS covered ({i['state']}). Delete the "
-                               f"entry -- a reason must not outlive the gap it excused.")
-        for k in excused:
-            if not any(a["id"] == k[0] for a in data["agents"]):
-                bad.append(f"`untested:` names {k[0]}, which is not an agent in the catalog")
+                               f"-- no CI test covers it. Cover it, or remove it: an "
+                               f"identifier no test can produce is a guess with a comment "
+                               f"beside it, and the two are indistinguishable.")
         if bad:
             print("catalog-gate: FAIL")
             for b in bad:
@@ -1039,10 +1083,9 @@ def main():
         # while the page beside it says 38/38.
         covered, n, _ = badge_for(data)
         aliases = sum(1 for a in data["agents"] for i in a["identifiers"]
-                      if i["state"] == "alias")
+                      if i["state"] == "superseded")
         print(f"catalog-gate: ok, {covered}/{n} identifiers are covered by a CI test"
-              + (f", {aliases} retired alias(es) excluded" if aliases else "")
-              + (f", {len(excused)} excused" if excused else "")
+              + (f", {aliases} superseded excluded" if aliases else "")
               + (f", {len(PENDING_KEYS)} pending" if PENDING_KEYS else ""))
         if PENDING_MSGS:
             _pending_note(PENDING_MSGS, "--reported" in sys.argv)
@@ -1095,7 +1138,6 @@ def main():
 
     agents = data["agents"]
     n_ident = sum(len(a["identifiers"]) for a in agents)
-    n_fix = sum(1 for a in agents for i in a["identifiers"] if i["fixture"])
     n_scen = sum(1 for a in agents if a["scenarios"])
     na = set(data.get("not_agents", ()))
     n_tools = sum(1 for a in agents if a["classification"] in na)
@@ -1116,30 +1158,19 @@ def main():
         for cls in classes:
             print(f"\n  {cls}")
             for a in sorted(by_class[cls], key=lambda x: x["id"]):
-                std = grade(a) == "standard"
-                mark = "real install" if std else "EXCEPTION"
-                print(f"    {a['name']:<22} {mark:<13} {len(a['identifiers'])} identifiers"
-                      + (f"  [{', '.join(a['scenarios'])}]" if std else ""))
-                if not std:
-                    exc = a["unverified"] or {}
-                    print(f"        {exc.get('evidence','?')}: {exc.get('reason','?')}")
-                    if exc.get("blocker"):
-                        print(f"        blocked: {exc['blocker']}")
-                    if exc.get("belongs_in"):
-                        print(f"        belongs in: {exc['belongs_in']}")
+                print(f"    {a['name']:<22} {len(a['identifiers'])} identifiers"
+                      + (f"  [{', '.join(a['scenarios'])}]" if a["scenarios"] else ""))
                 for i in a["identifiers"]:
                     print(f"        {STATE_LABEL[i['state']]:<17} {i['route']}: {i['value']}")
 
-    n_exc = len(agents) - n_scen
     print(f"\n{len(agents)} entries: {len(agents) - n_tools} agents and {n_tools} "
           f"supporting tools. {n_ident} identifiers.")
-    print(f"  standard  {n_scen:>3}  backed by a real install")
-    print(f"  exception {n_exc:>3}  recorded, with a reason")
+    print("  every one backed by a real install, or validate_catalog would have failed")
     n = lambda s: sum(1 for a in agents for i in a["identifiers"] if i["state"] == s)
-    covered = n("ci-install") + n("ci-fixture")
-    # Retired aliases are out of the denominator. No install produces them, so including
-    # them would cap the number below 100% for a reason nobody can act on.
-    coverable = n_ident - n("alias")
+    covered = n("ci-install")
+    # Superseded identifiers are out of the denominator. No install produces them, so
+    # including them would cap the number below complete for a reason nobody can act on.
+    coverable = n_ident - n("superseded")
     print(f"\nIDENTIFIERS COVERED BY A CI TEST   {covered}/{coverable}"
           f"   ({100 * covered // coverable}%)")
     # ONLY THE STATES THAT ARE ACTUALLY POPULATED, for the same reason the page no longer
@@ -1149,16 +1180,13 @@ def main():
     for state, note in (
             ("ci-install", "a scenario in the scenarios.yml matrix installs the software\n"
                            f"{'':>21}  and asserts the classifier finds it"),
-            ("ci-fixture", "evidence is a captured row, not a live install. "
-                           "test/docker_states.sh\n"
-                           f"{'':>21}  asserts it on both platforms on every pull request"),
             ("local-only", "proved only by a scenario CI does not run"),
             ("tested-absent", "a CI scenario installed the agent and it never showed up"),
             ("none", "nothing exercises it")):
         if n(state):
             print(f"  {STATE_LABEL[state]:<17}{n(state):>3}  {note}")
-    if n("alias"):
-        print(f"\n  {n('alias')} retired alias(es) are excluded: nothing installs them any "
+    if n("superseded"):
+        print(f"\n  {n('superseded')} superseded identifier(s) are excluded: nothing installs them any "
               f"more, so no\n  scenario can cover one. Their fixture rows are the only "
               f"evidence there is.")
     # Only where an unrecorded scenario actually costs coverage. It used to fire for any

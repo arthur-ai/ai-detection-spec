@@ -28,8 +28,7 @@ import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DOCS = ["README.md", "CLAUDE.md", "CONTRIBUTING.md",
-        "docs/signature-lifecycle-v1.md", "docs/signature-lifecycle-v2.md",
-        "queries/COST.md"]
+        "docs/signature-lifecycle-v2.md", "queries/COST.md"]
 EXEMPT = "<!--fixed-number-->"
 
 
@@ -47,8 +46,20 @@ def truth():
         sys.exit(1)
     st = json.loads(proc.stdout)
     idents = [i for a in st["agents"] for i in a["identifiers"]]
-    covered = sum(1 for i in idents if i["state"] in ("ci-install", "ci-fixture"))
-    coverable = sum(1 for i in idents if i["state"] != "alias")
+    # THE COVERAGE FORMULA IS BORROWED, NOT REPEATED. This file carried its own copy --
+    # excluding only `alias` from the denominator while agent_status.badge_for() also
+    # excluded `no-ci-platform`. The two agreed purely because no identifier had ever
+    # reached that state, so a disagreement would have shipped the day one did: this gate
+    # would pass while telling the README a number the page beside it contradicts.
+    #
+    # That is the five-copies-that-must-agree shape, one copy short of the `ext` bug. One
+    # definition, imported from the module that owns it.
+    loader = importlib.machinery.SourceFileLoader(
+        "agent_status", str(ROOT / "tools" / "agent_status.py"))
+    spec = importlib.util.spec_from_loader("agent_status", loader)
+    status_mod = importlib.util.module_from_spec(spec)
+    loader.exec_module(status_mod)
+    covered, coverable, _ = status_mod.badge_for(st)
     wf = yaml.safe_load((ROOT / ".github" / "workflows" / "scenarios.yml").read_text())
     return {
         "agents": len(cat["agents"]),
@@ -97,9 +108,44 @@ def telemetry_fields():
     return bad
 
 
+def dangling_doc_links():
+    """A cited document must exist.
+
+    THE ONE CLASS OF DRIFT NOTHING HERE CAUGHT. `bin/classify` went on citing the
+    lifecycle document by its pre-split name after that file was renamed, and lint stayed
+    green the whole time -- a reader following the pointer found nothing, which is worse
+    than no pointer at all because it reads as a promise the tree makes.
+
+    It survived a deliberate sweep for references, too: the sweep filtered by
+    `--include=*.py`, and `bin/classify` has no extension. So this walks files by content
+    rather than by name, which is the only version that cannot miss the same way.
+
+    Note what this means for prose: naming a deleted file, even to describe its deletion,
+    fails here. That is the right trade -- a check that could tell a citation from a
+    reminiscence would be guessing, and the cost is one rephrasing.
+    """
+    bad = []
+    for path in sorted(ROOT.rglob("*")):
+        if not path.is_file() or ".git" in path.parts:
+            continue
+        if path.suffix not in (".md", ".py", ".yaml", ".yml", ".sh", ""):
+            continue
+        try:
+            text = path.read_text()
+        except (UnicodeDecodeError, OSError):
+            continue
+        for m in re.finditer(r"docs/[\w.-]+\.(?:md|yaml)", text):
+            if not (ROOT / m.group(0)).exists():
+                n = text[:m.start()].count("\n") + 1
+                bad.append(f"{path.relative_to(ROOT)}:{n}: cites {m.group(0)}, which does "
+                           f"not exist. Repoint it or drop it -- a pointer to nothing "
+                           f"reads as a promise the tree is making.")
+    return bad
+
+
 def main():
     facts = truth()
-    bad = telemetry_fields()
+    bad = telemetry_fields() + dangling_doc_links()
     for name in DOCS:
         path = ROOT / name
         if not path.exists():

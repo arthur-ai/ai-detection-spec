@@ -74,8 +74,14 @@
 # liveness, not identity, and if it is ever wanted it should be built as that and named as
 # that.
 
-# Old identifiers are kept as aliases rather than removed: machines that installed an
-# earlier version still carry them.
+# AN OLD IDENTIFIER IS KEPT, AND KEEPING IT COSTS EVIDENCE. Machines on an earlier release
+# still report it, so removing one blinds the fleet to those machines -- but "an earlier
+# release reported it" is a claim, and the `retired:` list it used to be written in
+# exempted a value from the coverage gate on nothing but a person's say-so.
+#
+# So `superseded:` carries the observation instead: which run produced it, which scenario,
+# and at what version. The tooling writes the record when a run stops reproducing an
+# identifier; nobody types one. See docs/signature-lifecycle-v2.md.
 
 # Four kinds of query literal are deliberately NOT catalog entries, because they are
 # structural rather than tool-specific:
@@ -184,7 +190,7 @@ agents:
   # neither id was confirmed, so neither is a fact. Note this is a claim about the IDS, not
   # about testability -- 45-claude-extension verifies an id by fetching the Web Store's
   # signed CRX and deriving the id from its manifest key, so a confirmed id could be
-  # verified in minutes. See docs/signature-lifecycle-v1.md: a catalog may carry a guess, but
+  # verified in minutes. See docs/signature-lifecycle-v2.md: a catalog may carry a guess, but
   # it may not hide one.
   - id: claude-in-chrome
     name: Claude in Chrome
@@ -207,22 +213,20 @@ agents:
     name: OpenClaw
     classification: Personal agent
     platforms: [darwin, linux]
-    # ai.openclaw.mac is the shipped identifier, read off a live 2026.7.1 install.
-    # bot.molt.mac comes from the Moltbot lineage and is retained for machines that
-    # installed the earlier version. The Homebrew cask's zap stanza still lists the old
-    # paths, which is exactly how the wrong one got shipped.
-    bundle_ids: [ai.openclaw.mac, bot.molt.mac]
+    # THE LINEAGE, read off the release assets rather than the cask. This project's macOS
+    # app has shipped under exactly three names across 243 releases:
+    #
+    #   Clawdis     v2.0.0-beta2 .. beta5
+    #   Clawdbot    v2026.1.x         com.clawdbot.mac, 57-clawdbot-era installs it
+    #   OpenClaw    v2026.2 onward    ai.openclaw.mac, read off a live 2026.7.1 install
+    #
+    # Both were read from the artifact's own Info.plist. The cask's zap stanza names other
+    # identifiers and is not a source: it is where the wrong one came from once.
+    bundle_ids: [ai.openclaw.mac, com.clawdbot.mac]
     homebrew: [openclaw]
     npm: [openclaw, clawdbot, moltbot]
     state_dirs: ["~/.openclaw"]
-    launchd_prefixes: [ai.openclaw., bot.molt.]
-    # RETIRED ALIASES. Kept because machines that installed the earlier version still
-    # carry them, and NOT reachable by installing anything today -- which makes them the
-    # one class of identifier a real-install scenario can never cover. A fixture row is
-    # not a weaker grade for these, it is the only possible evidence, and it earns its
-    # place: it proves the alias still resolves to this agent, so a later tidy-up of the
-    # catalog or a refactor of the matcher cannot drop them silently.
-    retired: [bot.molt.mac, bot.molt., clawdbot, moltbot]
+    launchd_prefixes: [ai.openclaw.]
 
   - id: chatgpt-desktop
     name: ChatGPT Desktop
@@ -244,12 +248,15 @@ agents:
     # it -- so a direct download, which is how most people install this app, was invisible.
     bundle_ids: [com.openai.codex, com.openai.chat]
     homebrew: [chatgpt]
-    # Retired for the same reason as OpenClaw's aliases: it belongs to an earlier release
-    # and a fresh install cannot produce it today -- every variation of the current cask
-    # serves one 26.x URL. Listed so that the day the runner image catches up and the id
-    # stops appearing, it is recorded as "kept for machines that still carry it" rather
-    # than quietly failing coverage and inviting someone to delete it.
-    retired: [com.openai.chat]
+    # com.openai.chat IS NOT SUPERSEDED YET, and the distinction is the whole point of the
+    # field being evidence-backed. It was labelled retired on the reasoning that a fresh
+    # install cannot produce it -- and 10-desktop-apps produces it on every run, because
+    # one runner image's Homebrew is still stale enough to resolve the pre-rename build.
+    # An identifier CI proves today is current, whatever era it belongs to.
+    #
+    # The day that runner updates, the shrink guard will fire, the observation will be
+    # archived, and a `superseded:` record will land here carrying the run that last saw
+    # it. That is a fact the tooling will write, not a label someone types in advance.
 
   - id: codex-cli
     name: Codex CLI
