@@ -193,7 +193,7 @@ def record(artifact, scenario_dir, os_version="", arch="", platform="", run_id="
 
     test/artifacts/ is gitignored and per-machine, so the raw output cannot back a
     committed document. This is the compact, reviewable residue of a run -- the
-    observations layer of docs/signature-lifecycle-v1.md, at its smallest useful size.
+    observations layer of docs/signature-lifecycle-v2.md, at its smallest useful size.
 
     `run_id` IS THE FIELD THAT MAKES PROOF OUTLIVE THE RUN. Without it an observation
     from a CI runner cannot be told from one a maintainer produced on their own Mac, and

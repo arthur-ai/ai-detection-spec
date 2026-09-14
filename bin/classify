@@ -118,7 +118,7 @@ class Registry:
 # of itself and reported the rest as unmatched.
 #
 # One alternation rather than one pattern per platform, because path routes are compared
-# against every candidate row -- docs/signature-lifecycle-v1.md's scaling note -- so a
+# against every candidate row -- docs/signature-lifecycle-v2.md's scaling note -- so a
 # per-platform list would multiply the glob count by three for no gain.
 #
 # /root gets its own alternative: root's home is not under /home, and a `[^/]+`

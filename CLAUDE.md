@@ -90,7 +90,7 @@ That means one of five things, and they are worth telling apart —
 | the artifact only exists once the agent **runs** | invoke it; a state directory does not exist until first run |
 | **the identifier is wrong** | remove it. This is how both catalog bugs surfaced |
 | **the route cannot identify at all** | remove the route. A listening port only matches when the process holding it already names the agent, so it is a second opinion from the same witness — `ports` was retired for that |
-| **the identifier is right and is no longer installable** | **keep it** — add it to the agent's `retired:` list. Machines on the old build still report it. Told apart from a wrong identifier by whether any run ever produced it; `docs/signature-lifecycle-v1.md` has the workflow |
+| **the identifier is right and is no longer installable** | **keep it** — add it to the agent's `retired:` list. Machines on the old build still report it. Told apart from a wrong identifier by whether any run ever produced it; `docs/signature-lifecycle-v2.md` has the workflow |
 
 An identifier that genuinely cannot be covered goes under `untested:` with a reason and a
 date. That list can shrink silently and never grow silently: an entry whose identifier *is*
@@ -105,7 +105,7 @@ is not a weaker pass but a different claim, because it proves the matcher works 
 about whether the identifier is what the software ships today.
 
 When something genuinely cannot be verified, say so in the tree rather than guessing —
-`docs/signature-lifecycle-v1.md` covers how, and the standing rule is that **a catalog may carry a
+`docs/signature-lifecycle-v2.md` covers how, and the standing rule is that **a catalog may carry a
 guess but may not hide one.** `docs/signature-lifecycle-v2.md` is the successor design for that
 whole lifecycle and is NOT built — do not write code against it without reading its marker.
 

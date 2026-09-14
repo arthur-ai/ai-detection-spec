@@ -28,8 +28,7 @@ import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DOCS = ["README.md", "CLAUDE.md", "CONTRIBUTING.md",
-        "docs/signature-lifecycle-v1.md", "docs/signature-lifecycle-v2.md",
-        "queries/COST.md"]
+        "docs/signature-lifecycle-v2.md", "queries/COST.md"]
 EXEMPT = "<!--fixed-number-->"
 
 
