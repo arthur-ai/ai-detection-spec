@@ -1,0 +1,4 @@
+{
+  "min_macos": 15,
+  "why": "Clawdbot.app declares LSMinimumSystemVersion 15.0, read off Contents/Info.plist inside the shipped Clawdbot-2026.1.23.zip on 2026-09-13 -- not off the Homebrew cask, which is the source that produced the wrong identifier this scenario exists to replace. Below Sequoia the app will not launch and the apps table would still list it, so the skip is about asserting on a build the runner can actually host rather than about whether the row appears."
+}

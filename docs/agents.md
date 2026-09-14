@@ -10,7 +10,7 @@ Every AI agent this repo finds, every identifier it is matched on,
 and the CI test behind each one.
 
 ![agents](https://img.shields.io/badge/agents-19-1D4E89)
-![identifiers](https://img.shields.io/badge/identifiers-56-1D4E89)
+![identifiers](https://img.shields.io/badge/identifiers-54-1D4E89)
 ![covered](https://img.shields.io/badge/covered_by_a_CI_test-54%2F54-2E7D57)
 ![real install](https://img.shields.io/badge/by_real_install-54-2E7D57)
 
@@ -19,7 +19,7 @@ and the CI test behind each one.
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 54 of 54. 2 retired alias(es) are excluded: nothing installs them any more. Anything below complete is a red build, so there is no partial number to read here.
+**Every identifier is proved by a real install in CI** — 54 of 54. Anything below complete is a red build, so there is no partial number to read here.
 
 ## 🧪 Why a real install is the bar
 
@@ -60,7 +60,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | name | identifiers | scenarios |
 |---|---|---|
 | **Hermes Agent** | **`hermes-agent`**, **`hermes-agent`**, **`~/.hermes`**, **`~/.local/bin/hermes`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents |
-| **OpenClaw** | **`ai.openclaw.mac`**, ~~`bot.molt.mac`~~, **`openclaw`**, **`ai.openclaw.`**, ~~`bot.molt.`~~, **`openclaw`**, **`clawdbot`**, **`moltbot`**, **`~/.openclaw`** | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 60-persistence, 90-demo-fleet |
+| **OpenClaw** | **`ai.openclaw.mac`**, **`openclaw`**, **`ai.openclaw.`**, **`openclaw`**, **`clawdbot`**, **`moltbot`**, **`~/.openclaw`** | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 60-persistence, 90-demo-fleet |
 
 ## AI browser
 
@@ -121,7 +121,9 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 10-desktop-apps | Kiro CLI is not installed here. It is a separate product whose app ships bundle id com.amazon.codewhisperer under cask `kiro-cli` (old tokens amazon-q, codewhisperer), and it is uncatalogued, so this run says nothing about it. Its dmg is 1.05GB, which is why. |
 | 45-claude-extension | The CRX is unpacked into a real profile rather than installed by Chrome, so the identifier is genuine but the browser's install, update and enterprise-policy paths are all untested. Whether ExtensionInstallForcelist needs an MDM-delivered profile on macOS is UNVERIFIED. |
 | 55-openclaw-npm | The gateway runs with --allow-unconfigured --auth none, which is not how a real deployment runs it: enough to open the listener this scenario asserts, with no channel connected and no model reachable. |
-| 56-openclaw-retired-names | The retired npm names only. bot.molt.mac (bundle id) and bot.molt. (launchd prefix) come from the old .app, and Homebrew keeps no versioned cask for it -- whether an old build is still downloadable is UNVERIFIED. |
+| 56-openclaw-retired-names | The npm names only. The macOS side of this lineage is 57-clawdbot-era: the app shipped as Clawdis, then Clawdbot (com.clawdbot.mac), then OpenClaw, and never as Moltbot -- bot.molt.mac and bot.molt. were carried for months as aliases for a release that does not exist, and are removed. |
+| 57-clawdbot-era | The bundle id only. com.clawdbot. as a launchd prefix is NOT asserted: the binary contains com.clawdbot.gateway, but a LaunchAgent is registered when the app RUNS, and this scenario only installs. Whether an unlaunched install produces a daemon row is unverified, which is why the prefix is not in the catalog either. |
+| 57-clawdbot-era | Clawdis, the generation before this one, ships its own macOS app and is not covered. Its bundle id has not been read off the artifact, so nothing is claimed about it. |
 | 70-linux-baseline | Runs on whatever base image the job uses, so it proves nothing about a loaded desktop. 00-baseline has the same limitation on macOS. |
 | 71-linux-cli-agents | Claude Code's npm identifier is not exercised here -- the native installer is its primary route and the two would fight over the same binary name. 21-cli-agents-homebrew makes the same argument on macOS. |
 | 72-linux-python-agents | Whether ~/.hermes appears depends on the install route: the vendor's curl installer creates it, a uv install does not until the agent runs. The run records what appeared rather than asserting it. |
@@ -139,7 +141,7 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 79-linux-image | A pull proves the registry still serves this repository under this name. It does not prove the image is the vendor's: an image name is chosen by whoever tags it, so `docker tag alpine paulgauthier/aider` produces the same finding. That is a property of container images and is recorded in the blind spots, not something a scenario can close. |
 | 79-linux-image | Nothing here runs the image. `docker_containers` needs a per-container inspect document osquery reads strictly, so what a running container is doing stays out of scope. |
 
-`11-perplexity-desktop`, `50-autonomous` need macOS 15 or newer, so CI skips them on older runners rather than failing them. Each scenario's `requires.json` carries the reason.
+`11-perplexity-desktop`, `50-autonomous`, `57-clawdbot-era` need macOS 15 or newer, so CI skips them on older runners rather than failing them. Each scenario's `requires.json` carries the reason.
 
 ## 🎯 What counts as an agent
 

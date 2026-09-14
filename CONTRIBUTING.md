@@ -95,7 +95,7 @@ ships through**:
 - id: openclaw
   name: OpenClaw
   classification: Personal agent
-  bundle_ids: [ai.openclaw.mac, bot.molt.mac]   # current, and a retained alias
+  bundle_ids: [ai.openclaw.mac]                # read off a live install, never a zap stanza
   homebrew: [openclaw]
   npm: [openclaw, clawdbot, moltbot]
   state_dirs: ["~/.openclaw"]
@@ -142,34 +142,27 @@ errors this catalog exists to avoid: `bot.molt.mac` came from OpenClaw's own Hom
 metadata and matched nothing on any Mac, and `aider` installs as `aider-chat` while its
 state directory is `~/.aider`, so evidence and signature never met. Both passed review.
 
-So add the agent to a scenario's `classified.must_find`. If you cannot, **record the
-exception in the catalog** — `tools/validate_catalog.py` fails on an agent that has neither:
+So add the agent to a scenario's `classified.must_find`. **There is no longer a way to record
+an exception instead** — `tools/validate_catalog.py` refuses an agent no scenario installs,
+unconditionally.
 
-```yaml
-- id: some-agent
-  name: Some Agent
-  classification: Coding agent
-  bundle_ids: [com.example.someagent]
-  homebrew: [some-agent]
-  unverified:
-    reason: "the `lm-studio` Homebrew cask resolves, so an unattended install exists; no scenario installs it yet"
-    evidence: vendor-documentation     # the weakest grade any of its identifiers rests on
-    belongs_in: 30-local-models        # where the scenario should go, when written
-    raised: 2026-08-31                 # so an exception that has sat for a year looks like one
+There used to be. An `unverified:` block let an agent enter on an `evidence:` grade, and the
+weakest grade it accepted was `vendor-documentation` — which is, by name, what produced
+`bot.molt.mac`. The register existed so a guess could not hide, and it worked: nothing ever
+hid in it, because nothing was ever written to it. It held zero entries for its whole life
+while remaining the one way in that did not require a machine to have run the software.
+
+If no scenario can install your agent, it is not a signature yet. Say so in
+[`docs/blind-spots.yaml`](docs/blind-spots.yaml), which is the file for what this repo cannot
+see, rather than shipping the identifier with a note attached.
+
+**An identifier that WAS proved and can no longer be is a different case**, and it keeps its
+place — see [`docs/signature-lifecycle-v2.md`](docs/signature-lifecycle-v2.md). The test is
+whether any run ever produced it:
+
+```console
+$ grep -rl '"value": "<the value>"' test/scenarios/*/observed.json
 ```
-
-`evidence` grades what you actually hold, weakest first. `real-install` is **not** a value
-here — an agent with one does not need this block.
-
-| grade | meaning |
-|---|---|
-| `vendor-documentation` | the vendor says so and nothing else does. This is what produced `bot.molt.mac` |
-| `registry-manifest` | the artifact resolves under this exact name from its registry — a cask token, a published npm or PyPI package. Authoritative about the **name**, silent about what an osquery row renders |
-| `artifact-metadata` | the artifact's own metadata confirms it: an image entrypoint, a bundle `Info.plist` |
-
-Omit `blocker` unless something genuinely stands in the way. Its absence says the only
-thing missing is the work, which is what turns [`docs/agents.md`](docs/agents.md)'s
-exception register into a work list rather than an excuse list.
 
 ### Regenerate the doc in the same commit
 

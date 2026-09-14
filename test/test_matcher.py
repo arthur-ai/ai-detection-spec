@@ -43,11 +43,26 @@ r = run("known-agents.json")
 found = {f["id"]: f for f in r["findings"]}
 
 check("finds OpenClaw", "openclaw" in found)
-check("finds it across all four of its routes",
-      len(found.get("openclaw", {}).get("evidence", [])) == 4,
+check("finds it across all three of its routes",
+      len(found.get("openclaw", {}).get("evidence", [])) == 3,
       f"got {len(found.get('openclaw', {}).get('evidence', []))}")
-check("the retired bot.molt.mac alias still resolves to OpenClaw",
-      any(e["id"] == "bot.molt.mac" for e in found.get("openclaw", {}).get("evidence", [])))
+
+# THE INVERTED ASSERTION, AND THE ROW STAYS IN THE FIXTURE ON PURPOSE. `bot.molt.mac` was
+# carried for months as an alias "machines from the earlier version still report", and no
+# such version was ever published: this project's app shipped as Clawdis, then Clawdbot,
+# then OpenClaw, across 243 releases, and never as Moltbot. The value came from the
+# Homebrew zap stanza -- the source the catalog itself names as how the wrong identifier
+# got shipped in the first place.
+#
+# Deleting the row with the signature would leave nothing to tell CORRECTLY DECLINED from
+# ROUTE QUIETLY BROKEN, which is the ambiguity the dropped `ext` kind hid behind. So it is
+# kept as a negative control, and asserted twice: not claimed, and not silently dropped.
+check("bot.molt.mac is NOT claimed by OpenClaw",
+      not any(e["id"] == "bot.molt.mac" for e in found.get("openclaw", {}).get("evidence", [])),
+      "no release ever carried it; it was read off a zap stanza, never off a machine")
+check("...and it is reported UNMATCHED rather than dropped",
+      "bot.molt.mac" in unmatched_ids(r),
+      "a row no signature claims must still be visible under --show-unmatched")
 # THE ONLY EVIDENCE THAT CAN EXIST FOR THIS ONE. com.openai.chat is what ChatGPT Desktop
 # carried before the Codex rename, and no fresh install produces it any more -- every
 # variation of the current cask serves one 26.x build. A real install found it exactly

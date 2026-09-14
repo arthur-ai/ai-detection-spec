@@ -69,6 +69,7 @@ jobs:
           - 50-autonomous
           - 55-openclaw-npm
           - 56-openclaw-retired-names
+          - 57-clawdbot-era
           - 60-persistence
     steps:
       - uses: actions/checkout@v4
