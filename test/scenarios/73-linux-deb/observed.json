@@ -14,7 +14,7 @@
       "agent": "cursor",
       "route": "deb_packages",
       "value": "cursor",
-      "agent_version": "3.20.10-1789077235",
+      "agent_version": "3.20.17-1789185857",
       "platform": "linux",
       "os": "24.04",
       "arch": "x86_64"

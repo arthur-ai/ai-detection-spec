@@ -20,10 +20,10 @@ and this one writes them in CI, so a different ordering means the committed file
 on the key today, because `os` holds "14.8.7" against "24.04", but that is a coincidence of
 version numbering rather than a property worth relying on.
 """
+import argparse
 import collections
 import json
 import pathlib
-import sys
 
 # The merge key. `run` is deliberately NOT in it: two runs on the same (platform, os, arch)
 # are one observation re-proved, not two, so including the run id would append a duplicate
@@ -85,10 +85,39 @@ def merge(artifacts, scenarios):
     return written
 
 
+def seen_scenarios(artifacts):
+    """Every scenario that uploaded an artifact for this run.
+
+    NOT the same as the scenarios written: a scenario whose directory is absent is skipped
+    by the merge but still reported, and that difference is load-bearing. The coverage gate
+    reads this list to decide which identifiers are merely PENDING -- a scenario that failed
+    or exited 3 uploads nothing and must stay pending, or an unactionable skip turns into a
+    red coverage figure.
+    """
+    out = set()
+    for d in sorted(pathlib.Path(artifacts).glob("observed-*--*")):
+        f = d / "observed.json"
+        if not f.is_file():
+            continue
+        doc = json.loads(f.read_text())
+        out.add(doc.get("scenario") or d.name.split("--")[0].removeprefix("observed-"))
+    return out
+
+
 def main():
-    artifacts = sys.argv[1] if len(sys.argv) > 1 else "/tmp/observed"
-    scenarios = sys.argv[2] if len(sys.argv) > 2 else "test/scenarios"
+    ap = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("artifacts", nargs="?", default="/tmp/observed")
+    ap.add_argument("scenarios", nargs="?", default="test/scenarios")
+    ap.add_argument("--reported-out",
+                    help="write the comma-separated list of scenarios that reported")
+    args = ap.parse_args()
+    artifacts, scenarios = args.artifacts, args.scenarios
     written = merge(artifacts, scenarios)
+    if args.reported_out:
+        reported = sorted(seen_scenarios(artifacts))
+        pathlib.Path(args.reported_out).write_text(",".join(reported))
+        print("reported:", ", ".join(reported) or "(nothing)")
     for scen, n in sorted(written.items()):
         doc = json.loads((pathlib.Path(scenarios) / scen / "observed.json").read_text())
         plats = sorted({f"{r.get('platform') or '?'}/{r.get('os') or '?'}"

@@ -9,7 +9,7 @@ Which coding agents, chat clients, AI browsers and browser extensions are instal
 
 [![CI](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/ci.yml/badge.svg)](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/ci.yml)
 [![Scenarios](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/scenarios.yml/badge.svg)](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/scenarios.yml)
-[![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-54%2F54-2E7D57)](docs/agents.md)
+[![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-60%2F61-A26A16)](docs/agents.md)
 [![osquery](https://img.shields.io/badge/osquery-5.23.1-1D4E89)](https://osquery.io)
 [![macOS](https://img.shields.io/badge/macOS-shipping-2E7D57)](#requirements)
 [![Linux](https://img.shields.io/badge/Linux-shipping-2E7D57)](#requirements)
@@ -53,7 +53,7 @@ per run: counts, never identifiers, described field by field in
 | | | |
 |---|---|---|
 | 🗂 | **`dist/discovery-darwin.sql`**<br>**`dist/discovery-linux.sql`** | One SQL file to run on the endpoint, per platform — the tables are disjoint, so there is no single file that runs on both, and no unqualified name pretending otherwise. **No agent name appears in anything they match on** — the queries look for shapes (an app bundle, a deb, an npm global, a state dotdir), never for "Cursor" or "OpenClaw" — so you never edit them when a new agent appears. About **760 rows** on a developer Mac, 17.9 KB gzipped |
-| 🧭 | **`catalog/agents.yaml`** | The 19 agents and 54 identifiers those rows are matched **against**, off the machine. Add a signature here and it re-matches evidence you already collected — no going back to the fleet |
+| 🧭 | **`catalog/agents.yaml`** | The 22 agents and 61 identifiers those rows are matched **against**, off the machine. Add a signature here and it re-matches evidence you already collected — no going back to the fleet |
 | 🧱 | **`catalog/routes.yaml`** | The route registry: every way an identifier can arrive, which platform it exists on and how it is matched. The matcher, the validator, the coverage report and lint all derive from this one file |
 | 🔎 | **`bin/classify`** | Does that matching, wherever you keep the output |
 | 🐳 | **`bin/container-scan`** | The container half, run separately and on a hard time bound, because a wedged Docker daemon blocks forever |

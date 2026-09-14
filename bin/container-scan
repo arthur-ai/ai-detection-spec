@@ -63,11 +63,20 @@ CACHE=""
 # Set by run_bounded. A global rather than a command substitution, because the output has
 # to be discardable without ever being parsed.
 BOUNDED_OUT=""
-# The wait status of a killed query. Measured on 5.23.1: it is **0**. osqueryi installs a
-# SIGTERM handler and shuts down cleanly, so a query we killed mid-stall is
-# indistinguishable by exit code from one that succeeded. Nothing branches on this --
-# test/docker_states.sh prints it every run so an osquery upgrade that changes it is
-# visible rather than discovered.
+# The wait status of a killed query, and it is NOT one number. Both measured on 5.23.1:
+#
+#   docker_images alone            **0**. osqueryi installs a SIGTERM handler and shuts
+#                                  down cleanly, so a query we killed mid-stall is
+#                                  indistinguishable by exit code from one that succeeded.
+#   with docker_containers or      **137**. SIGTERM is ignored outright against a wedged
+#   docker_image_labels            daemon and run_bounded's SIGKILL is what ends it.
+#
+# Either of those arms alone is enough; it is not an interaction between them. Measured
+# 2026-09-13 against test/lib/fake_docker.py's wedge state on both platforms.
+#
+# Nothing branches on this -- test/docker_states.sh prints it every run so an osquery
+# upgrade that changes it is visible rather than discovered. It matters anyway, because it
+# is what makes the escalation below load-bearing rather than defensive.
 BOUNDED_SIGNAL=""
 
 need_arg() {
@@ -200,9 +209,18 @@ run_bounded() {
 
   if kill -0 "$pid" 2>/dev/null; then
     kill -TERM "$pid" 2>/dev/null
-    # Escalate on a deadline of its own. SIGTERM was enough in every state measured, but a
-    # process wedged in the kernel is not obliged to honour it, and waiting indefinitely
-    # for it to would defeat the bound we just imposed.
+    # ESCALATE ON A DEADLINE OF ITS OWN, AND THIS IS NOW THE ONLY THING THAT ENDS THE QUERY.
+    #
+    # It was written as a precaution -- SIGTERM was enough in every state measured then, and
+    # a process wedged in the kernel is merely "not obliged" to honour it. That is no longer
+    # the case: measured 2026-09-13, a wedged osqueryi reading docker_containers or
+    # docker_image_labels IGNORES SIGTERM completely and only SIGKILL ends it.
+    #
+    # So deleting this loop does not lose a safety net, it leaves an unkillable osqueryi on
+    # every Mac whose Docker is wedged -- and the wall-clock bound above, which is the whole
+    # reason this branch runs in its own process, would bound nothing.
+    # test/docker_states.sh asserts SIGTERM's failure directly so the day it starts working
+    # again is a visible test result rather than an assumption nobody rechecked.
     grace=0
     while [ "$grace" -lt 10 ] && kill -0 "$pid" 2>/dev/null; do
       sleep 0.1

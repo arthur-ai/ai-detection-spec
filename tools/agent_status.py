@@ -630,6 +630,13 @@ def collect():
                                "fixture": proven, "real": bool(scens),
                                "scenarios": scens, "ci_scenarios": ci_scens,
                                "reached_by": sorted(asserted_by[aid] - set(unrecorded)),
+                               # EVERY CI scenario that asserts this agent, including ones
+                               # with no recorded observation yet. `reached_by` above drops
+                               # those, which is right for the report and wrong for the
+                               # gate: a scenario that has never run is exactly the case
+                               # the gate has to tell apart from one that ran and found
+                               # nothing. See _pending().
+                               "asserted_by_ci": sorted(asserted_by[aid]),
                                # The platforms this identifier can be observed on --
                                # its route's platforms, because that is the only place
                                # the information exists. This is what makes per-platform
@@ -1016,6 +1023,78 @@ def markdown(data):  # noqa: C901
     return "\n".join(x for x in out if x is not None).rstrip() + "\n"
 
 
+COVERED_STATES = ("ci-install", "ci-fixture", "superseded")
+
+
+def _pending(data, argv):
+    """Identifiers a CI scenario commits to, that no scenario has REPORTED ON YET.
+
+    WHY THIS EXISTS. Coverage is counted from what scenarios actually emitted, recorded in
+    each scenario's observed.json -- and those files are written by the `collect` job,
+    which is main-only because a pull request must not be able to move recorded coverage.
+    The consequence went unnoticed until a branch added six identifiers: on the PR that
+    adds a signature, the observations are necessarily from BEFORE it, so a correctly
+    covered identifier reads as `tested-absent` and the gate fails. Every signature PR was
+    red by construction, and the fix for the developer was to merge it anyway.
+
+    A GATE THAT IS RED ON EVERY CORRECT CHANGE IS WORSE THAN NO GATE. It teaches people
+    that this particular red means nothing, and the next red -- the real one -- is read the
+    same way. That is the same argument test/run.sh's `exit 3` SKIP contract makes about
+    scenarios failing where nobody can act.
+
+    SO THE QUESTION IS SPLIT IN TWO, along the line of what can actually be known where:
+
+      statically, at lint time   does SOME CI scenario commit to this identifier's agent?
+                                 A scenario's expected.json is a promise enforced by
+                                 assert.sh -- if the identifier does not appear, THE
+                                 SCENARIO fails, loudly, on its own name.
+      after the matrix runs      did the identifier actually appear? Only observations can
+                                 answer that, and only after the scenarios that produce
+                                 them have run.
+
+    `--pending-ok` turns the first question on. `--reported` names the scenarios whose
+    observations are current in this evaluation -- so the coverage job passes the list it
+    just downloaded, and an identifier whose scenario DID report and still did not produce
+    it is not pending, it is missing, and it fails. Bare `--gate` stays strict for anyone
+    running it against a tree whose observations are current.
+    """
+    if "--pending-ok" not in argv:
+        return set(), []
+    reported = set()
+    if "--reported" in argv:
+        raw = argv[argv.index("--reported") + 1] if argv.index("--reported") + 1 < len(argv) else ""
+        reported = {s.strip() for s in raw.split(",") if s.strip()}
+    keys, msgs = set(), []
+    for agent in data["agents"]:
+        for i in agent["identifiers"]:
+            if i["state"] in COVERED_STATES:
+                continue
+            asserts = set(i.get("asserted_by_ci") or ())
+            if not asserts:
+                # Nothing in CI even claims this agent, so no run will ever settle it.
+                # That IS statically knowable and stays a hard failure.
+                continue
+            if asserts & reported:
+                # A scenario that asserts this agent reported in this evaluation and the
+                # identifier still did not appear. That is the finding, not a wait.
+                continue
+            keys.add((agent["id"], i["route"], str(i["value"])))
+            msgs.append(f"{agent['id']}: {i['route']}:{i['value']} awaits "
+                        f"{', '.join(sorted(asserts))}")
+    return keys, msgs
+
+
+def _pending_note(msgs, reported_any):
+    print(f"  {len(msgs)} identifier(s) await their first scenario run:")
+    for m in msgs:
+        print(f"    {m}")
+    print("  Not a pass. The scenario named beside each one asserts it and FAILS if it "
+          "does not appear,")
+    print("  and the coverage job re-runs this gate against that run's own observations.")
+    if not reported_any:
+        print("  Nothing reported in this evaluation, which is expected for a static run.")
+
+
 def main():
     data = collect()
     if "--record" in sys.argv:
@@ -1047,6 +1126,9 @@ def main():
                 out.append("README.md badge")
         print("wrote " + ", ".join(out))
         return
+    if "--gate" in sys.argv or "--check" in sys.argv:
+        PENDING_KEYS, PENDING_MSGS = _pending(data, sys.argv)
+
     if "--gate" in sys.argv:
         # NOTHING SHIPS IN THE CATALOG WITHOUT A REAL TEST. Fails on any identifier no CI
         # test covers, unless the catalog carries a dated reason for it.
@@ -1058,7 +1140,14 @@ def main():
         bad = []
         for agent in data["agents"]:
             for i in agent["identifiers"]:
-                if i["state"] not in ("ci-install", "ci-fixture", "superseded"):
+                # PENDING IS NOT COVERED, AND IT IS NOT A FAILURE EITHER. A scenario
+                # commits to this identifier's agent but no run has reported yet -- the
+                # only state where "we cannot know here" is the honest answer. There is no
+                # `excused` branch any more: `untested:` let an identifier ship on a reason
+                # and was deleted, so the remaining question is whether a run has spoken.
+                if (agent["id"], i["route"], str(i["value"])) in PENDING_KEYS:
+                    continue
+                if i["state"] not in COVERED_STATES:
                     bad.append(f"{agent['id']}: {i['route']}:{i['value']} is {i['state']} "
                                f"-- no CI test covers it. Cover it, or remove it: an "
                                f"identifier no test can produce is a guess with a comment "
@@ -1074,7 +1163,10 @@ def main():
         aliases = sum(1 for a in data["agents"] for i in a["identifiers"]
                       if i["state"] == "superseded")
         print(f"catalog-gate: ok, {covered}/{n} identifiers are covered by a CI test"
-              + (f", {aliases} superseded excluded" if aliases else ""))
+              + (f", {aliases} superseded excluded" if aliases else "")
+              + (f", {len(PENDING_KEYS)} pending" if PENDING_KEYS else ""))
+        if PENDING_MSGS:
+            _pending_note(PENDING_MSGS, "--reported" in sys.argv)
         return
 
     if "--check" in sys.argv:
@@ -1091,10 +1183,15 @@ def main():
         # which is the part worth keeping: the failure below names the identifiers, and
         # `untested:` says why each one is there for whoever reads it.
         covered, coverable, _ = badge_for(data)
-        if covered != coverable:
-            short = [(a["id"], i["route"], i["value"], i["state"])
-                     for a in data["agents"] for i in a["identifiers"]
-                     if i["state"] not in ("ci-install", "ci-fixture", "superseded")]
+        # PENDING IS NOT SHORTFALL. Same split as the gate above and for the same reason:
+        # on a signature PR the observations predate the signature, so an identifier a
+        # scenario is about to prove is indistinguishable here from one it already failed
+        # to. _pending() explains which side of the line each question lives on.
+        short = [(a["id"], i["route"], i["value"], i["state"])
+                 for a in data["agents"] for i in a["identifiers"]
+                 if i["state"] not in COVERED_STATES
+                 and (a["id"], i["route"], str(i["value"])) not in PENDING_KEYS]
+        if short:
             print(f"agent-status: FAIL -- coverage is {covered}/{coverable}, not complete.")
             for aid, route, value, state in short:
                 print(f"  {aid}: {route}:{value} is {state}")

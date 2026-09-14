@@ -41,6 +41,12 @@
 #   value_pattern optional regex every catalog value on this route must fullmatch
 #   retired       optional. The route no longer identifies anything, but rows of its
 #                 kind are still collected and MUST stay registered -- see `ports`
+#   values_from   optional. Index ANOTHER route's catalog values instead of a key of this
+#                 route's own name. For a route that matches the same identifiers through
+#                 a different row kind -- `container_images` reads `images:`, because a
+#                 running container and a pulled image name the same repository. Read by
+#                 bin/classify's build_index; deliberately NOT by tools/agent_status.py,
+#                 so an identifier reachable two ways is still counted once
 #
 # MATCH MODES
 #   exact             the value equals the row's id
@@ -166,6 +172,70 @@ routes:
     match: exact-normalised
     table: docker_images
     min_osquery: 5.10.0
+  container_images:
+    # THE SAME VALUES AS `images`, REACHED THROUGH A RUNNING CONTAINER. Catalogued under
+    # `images:` on the agent -- an agent does not need a second list -- and separate here
+    # only because the ROW KIND differs, which is what the registry keys on.
+    #
+    # WHY IT IS WORTH A SECOND ROUTE. docker_images answers "is this pulled", which is a
+    # fact about the disk. This answers "is it RUNNING", which no other route in this repo
+    # can answer about anything: every other one reports presence. A pulled-and-forgotten
+    # image and a live agent are different findings and were previously the same row.
+    #
+    # Measured 2026-09-11, Docker 28.4.0 / osquery 5.23.1: docker_containers lists RUNNING
+    # containers only -- two exited containers on the probe host produced ZERO rows. So
+    # this route never supersedes `images`, it corroborates it, and an agent that is
+    # installed but stopped is still seen by `images` alone.
+    #
+    # `image` on this table carries the full tag ("paulgauthier/aider:latest"), verified on
+    # that same host, so image_repo() normalises it exactly as it does a docker_images tag
+    # and the two routes cannot disagree about what a repository name is.
+    platform: posix
+    kind: container
+    match: exact-normalised
+    table: docker_containers
+    min_osquery: 5.10.0
+    # Reads `images:` off each agent rather than a list of its own. See bin/classify's
+    # Registry for why duplication was rejected, and note the consequence for coverage:
+    # an aliased route contributes no catalog key, so tools/agent_status.py counts the
+    # identifier ONCE, under `images`. One image, reached two ways, is one identifier.
+    values_from: images
+  image_labels:
+    # THE ONE CONTAINER IDENTIFIER A RETAGGER DOES NOT CONTROL. An image TAG is chosen by
+    # whoever ran `docker tag`, which makes `images` the only route here whose identifier
+    # is not vendor-controlled. An OCI label is written by the vendor in their own
+    # Dockerfile and travels in the image manifest, so it is the container equivalent of a
+    # bundle id: `docker tag alpine ghcr.io/block/goose` renames a local reference and adds
+    # no labels to anything.
+    #
+    # WHY IT MATCHES `org.opencontainers.image.source` AND NOTHING ELSE. Measured across
+    # eighteen real images on 2026-09-11: every image carrying `source` carried a correct
+    # vendor URL, while `title`, `vendor` and `ref.name` are INHERITED FROM THE BASE IMAGE
+    # and routinely wrong. litellm's own image reports title=wolfi-base, vendor=Chainguard
+    # while its source is correctly https://github.com/BerriAI/litellm; sweagent/swe-agent
+    # reports ref.name=ubuntu, version=22.04 and nothing else. A route keyed on `title`
+    # would offer "ubuntu" as an agent's identity, which is the confident wrong answer this
+    # repo exists to avoid. `version` is unreliable for the same reason -- goose reports
+    # "main", OpenHands "main-amd64" -- and is not emitted.
+    #
+    # WHAT CARRIES A LABEL IS A FACT ABOUT PUBLISHING, NOT ABOUT BEING AN AGENT, and that
+    # was worth learning the hard way. A first pass over stale images concluded agents do
+    # not set labels at all: paulgauthier/aider has NONE, sweagent/swe-agent only inherited
+    # Ubuntu ones, significantgravitas/auto-gpt only GIT_REVISION. Every one of those
+    # images was between seven months and two and a half years old. The CURRENTLY published
+    # agent images set them properly -- ghcr.io/openhands/openhands (2026-07-21) and
+    # ghcr.io/block/goose (2026-04-06) both carry a correct `source` -- because a modern
+    # release pipeline injects them. So this route covers the agents a fleet is most likely
+    # to be running NOW, and misses the abandoned ones, which is the opposite of the usual
+    # staleness problem and is why `images` stays beside it rather than being replaced.
+    platform: posix
+    kind: ilabel
+    match: exact
+    table: docker_image_labels
+    min_osquery: 5.10.0
+    # A URL, because that is what `source` holds. Anchored at both ends so a bare project
+    # name cannot be written here by someone reaching for `title` instead.
+    value_pattern: '^https?://[A-Za-z0-9.-]+/[A-Za-z0-9._~:/?#@!$&()*+,;=%-]+$'
   state_dirs:
     platform: posix
     kind: file

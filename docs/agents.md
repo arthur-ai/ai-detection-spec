@@ -9,17 +9,17 @@
 Every AI agent this repo finds, every identifier it is matched on,
 and the CI test behind each one.
 
-![agents](https://img.shields.io/badge/agents-19-1D4E89)
-![identifiers](https://img.shields.io/badge/identifiers-54-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-54%2F54-2E7D57)
-![real install](https://img.shields.io/badge/by_real_install-54-2E7D57)
+![agents](https://img.shields.io/badge/agents-22-1D4E89)
+![identifiers](https://img.shields.io/badge/identifiers-61-1D4E89)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-60%2F61-A26A16)
+![real install](https://img.shields.io/badge/by_real_install-60-2E7D57)
 
 </div>
 
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 54 of 54. Anything below complete is a red build, so there is no partial number to read here.
+**Every identifier is proved by a real install in CI** — 60 of 61. Anything below complete is a red build, so there is no partial number to read here.
 
 ## 🧪 Why a real install is the bar
 
@@ -32,10 +32,12 @@ Coverage is counted **per identifier**, from what each scenario recorded in its 
 `observed.json`, and only from scenarios in the CI matrix — an agent can pass while
 carrying an identifier nothing exercised.
 
+> **This number is a floor.** `57-clawdbot-era`, `76-linux-systemd` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
+
 `tools/validate_catalog.py` refuses an agent no scenario installs. There is no block
 that buys an exception, so an unproved signature cannot enter at all.
 
-# Agents (19)
+# Agents (22)
 
 Software that acts on the user's behalf. This is what the catalog is for.
 
@@ -52,7 +54,10 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | **GitHub Copilot CLI** | **`copilot-cli`**, **`@github/copilot`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents |
 | **Cursor** | **`com.todesktop.230313mzl4w4u92`**, **`cursor`**, **`cursor`**, **`cursor`**, **`cursor.desktop`** | 10-desktop-apps, 73-linux-deb, 77-linux-rpm, 90-demo-fleet |
 | **Gemini CLI** | **`gemini-cli`**, **`@google/gemini-cli`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents |
+| **goose** | **`ghcr.io/block/goose`**, **`https://github.com/block/goose`** | 79-linux-image |
 | **Kiro** | **`dev.kiro.desktop`**, **`kiro`** | 10-desktop-apps |
+| **OpenHands** | **`ghcr.io/openhands/openhands`**, **`ghcr.io/all-hands-ai/openhands`**, **`https://github.com/OpenHands/OpenHands`** | 79-linux-image |
+| **SWE-agent** | **`sweagent/swe-agent`** | 79-linux-image |
 | **Windsurf** | **`com.exafunction.windsurf`**, **`devin-desktop`** | 10-desktop-apps |
 
 ## Personal agent
@@ -60,7 +65,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | name | identifiers | scenarios |
 |---|---|---|
 | **Hermes Agent** | **`hermes-agent`**, **`hermes-agent`**, **`~/.hermes`**, **`~/.local/bin/hermes`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents |
-| **OpenClaw** | **`ai.openclaw.mac`**, **`openclaw`**, **`ai.openclaw.`**, **`openclaw`**, **`clawdbot`**, **`moltbot`**, **`~/.openclaw`** | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 60-persistence, 90-demo-fleet |
+| **OpenClaw** | **`ai.openclaw.mac`**, com.clawdbot.mac ⚠, **`openclaw`**, **`ai.openclaw.`**, **`openclaw`**, **`clawdbot`**, **`moltbot`**, **`~/.openclaw`** | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 57-clawdbot-era, 60-persistence, 90-demo-fleet |
 
 ## AI browser
 
@@ -85,6 +90,14 @@ Software that acts on the user's behalf. This is what the catalog is for.
 
 > **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = superseded: a run proved it and the current release no longer emits it. ∅ = no CI runner for its platform. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it.
 
+## ⚠️ Identifiers that did not pass
+
+Every one is work, and the middle column says what kind. **did not appear** means a scenario installed the agent and this identifier never showed up — the suite reached it and it did not reproduce, usually because the scenario installs by a different route, or because the artifact only exists once the agent has run.
+
+| agent | route | identifier | state | reached by |
+|---|---|---|---|---|
+| OpenClaw | bundle id | `com.clawdbot.mac` | did not appear | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 60-persistence |
+
 ## 🚧 What osquery cannot see
 
 These are properties of the platform and the tables, not of any one scenario, so
@@ -92,9 +105,11 @@ they are stated once. No amount of test coverage moves them.
 
 | blind spot | why |
 |---|---|
-| Anything inside a VM, a container, a Codespace or a cloud dev box | The scanner sees the machine it runs on. `--deep` lists container **images**; what a running container is doing needs `docker_containers`, which reads a per-container inspect document osquery will not accept a hand-built copy of |
+| Anything inside a VM, a Codespace or a cloud dev box | The scanner sees the machine it runs on. Containers are the exception and only partly: `--deep` reads images, running containers and their vendor labels, so an agent IN a container is now visible from outside it |
+| What a process inside a container is doing | `docker_containers` gives the container's own command and entrypoint, which is what it was started as. The processes actually running inside it are in `docker_container_processes`, which requires a constraint on the container id -- reachable through a join, verified -- and is not collected, because a cmdline can carry `--api-key` and redaction is not designed yet |
+| A container that is not running | `docker_containers` lists RUNNING containers only. Measured 2026-09-11 on Docker 28.4.0: two exited containers produced zero rows. A stopped agent container is seen through its image and not as a container, so an empty container list is not an empty machine |
 | Containers outside Docker Desktop, and Podman anywhere | Colima, Rancher Desktop and Podman keep their sockets elsewhere, and `docker_images` cannot read containerd or Podman image stores. `--deep` reports "did not scan" rather than "none". Podman's socket is deliberately not probed: it would pass the health check and return zero images, which reads as "we looked" |
-| Whether an image is really the vendor's | An image name is chosen by whoever tags it, so `docker tag alpine paulgauthier/aider` produces the same finding. Every other route matches a name a vendor controls; this one does not |
+| Whether an image is really the vendor's, when the vendor sets no label | An image name is chosen by whoever tags it, so `docker tag alpine paulgauthier/aider` produces the same finding. The `image_labels` route closes this for vendors who set `org.opencontainers.image.source`, which a retagger cannot forge -- but that is a fact about a project's release pipeline, not about being an agent. Measured 2026-09-11: the currently published ghcr.io/openhands/openhands and ghcr.io/block/goose carry it; paulgauthier/aider carries no labels at all and sweagent/swe-agent only its base image's, so for those two a finding is exactly as forgeable as the tag |
 | An untagged (dangling) image | Untested -- no dangling image existed on the machine this was measured on. Unknown, not covered |
 | Snap and Flatpak packages | osquery has no `snap_packages` or `flatpak_packages` table at any version, checked against the source at 5.10.0 and 5.23.1. A snap- or flatpak-installed agent is invisible on every package route |
 | AppImage and tarball installs on Linux | Neither leaves a package record, and Cursor's primary Linux download is an AppImage. Only `desktop_ids` can see one, and only if the install writes a `.desktop` entry |
@@ -138,8 +153,10 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 78-linux-vscode | min-osquery for this branch is 5.11.0, above the 5.10.0 the rest of the repo declares. On a 5.10.x endpoint the query returns [] and exits 1, which is why it is its own pack entry and its own composed branch. |
 | 78-linux-vscode | Neither agent's state directory is exercised. ~/.continue does not exist after `code --install-extension` -- verified on a real install -- because it appears on first activation in the editor, and nothing here opens a GUI session. So this proves the extension route and says nothing about the path routes for either. |
 | 78-linux-vscode | vscode_edition is reported but not asserted beyond the forbid: this installs into VS Code only, so the cursor, windsurf, vscodium and trae editions the column can report are unexercised. |
-| 79-linux-image | A pull proves the registry still serves this repository under this name. It does not prove the image is the vendor's: an image name is chosen by whoever tags it, so `docker tag alpine paulgauthier/aider` produces the same finding. That is a property of container images and is recorded in the blind spots, not something a scenario can close. |
-| 79-linux-image | Nothing here runs the image. `docker_containers` needs a per-container inspect document osquery reads strictly, so what a running container is doing stays out of scope. |
+| 79-linux-image | A pull proves the registry still serves this repository under this name. It does not prove the image is the vendor's: an image name is chosen by whoever tags it, so `docker tag alpine paulgauthier/aider` produces the same finding. The `image_labels` route is the answer to that for the agents whose vendors set labels, and aider and swe-agent are exactly the ones who do not -- so for those two the finding remains as forgeable as the tag. |
+| 79-linux-image | The container probe runs `sleep`, not the agent. It proves the daemon reports a running container from a catalogued image and that the route matches it; it proves nothing about an agent actually working, which would need credentials and a model endpoint this scenario deliberately does not hold. |
+| 79-linux-image | Nothing here reads processes inside the container. docker_container_processes requires a constraint on the container id and can be reached through a join, but the cmdline it returns can carry an API key, so it is not collected until redaction is designed. |
+| 79-linux-image | swe-agent's `latest` tag was built 2024-12-07, twenty-one months before this scenario was written. The pull proves the registry still serves it; it does not prove anyone still publishes there. |
 
 `11-perplexity-desktop`, `50-autonomous`, `57-clawdbot-era` need macOS 15 or newer, so CI skips them on older runners rather than failing them. Each scenario's `requires.json` carries the reason.
 

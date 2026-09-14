@@ -5,9 +5,13 @@ Homebrew entry, no npm global, no dotdir on the host. This is the only branch th
 and it is opt-in because it is the only part of this that talks to a daemon.
 
 ```console
-$ sudo bin/discover --deep | bin/classify     # base inventory plus container images
+$ sudo bin/discover --deep | bin/classify     # base inventory plus containers
 $ sudo bin/container-scan --pretty            # containers alone
 ```
+
+It reads three things: **images** on disk, **containers** running from them, and the
+**vendor labels** in each image's manifest. What each is worth as evidence differs, and the
+table below says how.
 
 ## Why it is opt-in
 
@@ -29,7 +33,18 @@ That row is not decoration: an interrupted `osqueryi` exits 0 having printed a v
 array, so without it a wedged daemon and a machine with no containers produce the same value.
 `bin/classify` prints it as `COULD NOT LOOK` above the findings.
 
-## An image name is weaker evidence than a bundle id
+## Three rows, three strengths of claim
+
+The branch emits three kinds, and they are not interchangeable. A reader who treats them as
+one number will over-trust the weakest.
+
+| kind | route | what it means | who controls the value |
+|---|---|---|---|
+| `image` | `images` | the image is **pulled** | whoever ran `docker tag` |
+| `container` | `container_images` | a container from it is **running** | whoever ran `docker tag` |
+| `ilabel` | `image_labels` | the image's own manifest says whose it is | **the vendor** |
+
+### An image name is weaker evidence than a bundle id
 
 Image names resolve through the `images:` catalog route — exact match on the repository, tag
 stripped, `docker.io/` and Docker Hub's implicit `library/` removed, registry host kept for
@@ -38,6 +53,45 @@ everything else.
 **An image name is chosen by whoever tagged it**, which no other route here is true of:
 `docker tag alpine paulgauthier/aider` produces an aider finding and nothing can tell it from
 the real image. Read an image row accordingly.
+
+### A vendor label is the one a retagger cannot forge
+
+`org.opencontainers.image.source` is written by the vendor in their own Dockerfile and
+travels in the image manifest. Retagging renames a local reference and adds no labels, so
+this is the container equivalent of a bundle id.
+
+**Only `source` is matched, and that is a measurement rather than a preference.** Across
+eighteen real images on 2026-09-11, every image carrying `source` carried a correct vendor
+URL — while `title`, `vendor` and `ref.name` are inherited from the base image and routinely
+wrong. litellm's own image reports `title=wolfi-base`; `sweagent/swe-agent` reports
+`ref.name=ubuntu` and nothing else. A route keyed on `title` would offer Ubuntu as an
+agent's identity.
+
+**Carrying a label is a fact about a project's release pipeline, not about being an agent.**
+The currently published `ghcr.io/openhands/openhands` and `ghcr.io/block/goose` set `source`
+properly; `paulgauthier/aider` sets **no labels at all**, and `sweagent/swe-agent` only its
+base image's. Those two images are between seven months and two years old, which is the
+pattern: modern pipelines inject OCI labels and abandoned ones never did. So this route
+covers the agents a fleet is most likely to be running now and misses the stale ones —
+which is why `images` stays beside it rather than being replaced by it.
+
+### A running container says something no other route here can
+
+Every other route in this repo — every one — reports **presence**: a bundle on disk, a
+package in a manifest, a dotdir. `docker_containers` reports that something is **executing**.
+
+Its `extra` carries the container's command, and that is corroboration the image name cannot
+supply for itself: `docker tag alpine paulgauthier/aider` fakes the name and cannot make
+`/venv/bin/aider` the thing that runs.
+
+**It lists running containers only.** Measured 2026-09-11 on Docker 28.4.0: two exited
+containers produced zero rows. So an agent that is installed but stopped appears as an
+`image` and not as a `container`, and an empty container list is not an empty machine.
+
+`perms` carries `privileged`, because a privileged agent container can reach the host and an
+unprivileged one cannot. **Environment variables are never collected** — `env_variables` and
+the whole `docker_container_envs` table hold `ANTHROPIC_API_KEY` and its like, and this
+payload leaves the machine.
 
 ## Whether it is worth enabling
 

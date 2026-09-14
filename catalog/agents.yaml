@@ -233,13 +233,15 @@ agents:
     # file's own words, "exactly how the wrong one got shipped". The note saying so sat
     # directly above them for months.
     #
-    # THE REAL PREDECESSOR IS com.clawdbot.mac AND IT IS NOT HERE YET, deliberately. The
-    # artifact is still downloadable and 57-clawdbot-era installs it, but an identifier
-    # enters this file when a CI RUN has produced it -- not when a maintainer has read it
-    # off a dmg. That run can be this pull request's own: the value lands alongside the row
-    # its run produced, committed under test/fixtures/captured/, which is what carries the
-    # coverage gate until main records the install itself.
-    bundle_ids: [ai.openclaw.mac]
+    # com.clawdbot.mac IS THE REAL PREDECESSOR, and 57-clawdbot-era installs the artifact
+    # it was read off: Clawdbot.app/Contents/Info.plist inside the shipped 2026.1.23 zip,
+    # which is still downloadable under the renamed repo. Read off the artifact, never off
+    # the cask -- the cask's zap stanza is what produced bot.molt.mac in the first place.
+    #
+    # It lands here BEFORE a run has reported it, which the coverage gate now allows and
+    # did not before: a scenario commits to this agent, so the identifier is PENDING at
+    # lint time and the coverage job after the matrix decides whether it actually appeared.
+    bundle_ids: [ai.openclaw.mac, com.clawdbot.mac]
     homebrew: [openclaw]
     npm: [openclaw, clawdbot, moltbot]
     state_dirs: ["~/.openclaw"]
@@ -426,7 +428,70 @@ agents:
     state_dirs: ["~/.aider"]
     # Read off a real row: "paulgauthier/aider:latest", id cd375f1ecbd1. ENTRYPOINT is
     # /venv/bin/aider, which is the same package the pypi route above names.
+    #
+    # NO OCI LABELS AT ALL, verified 2026-09-11 against the pulled image (id 0d54037f6c97,
+    # created 2026-02-12): docker_image_labels returns zero rows for it. So this agent is
+    # reachable only through the forgeable tag, and `image_labels` cannot corroborate it --
+    # which is the gap routes.yaml describes and not an omission here.
     images: [paulgauthier/aider]
+
+  - id: openhands
+    name: OpenHands
+    classification: Coding agent
+    platforms: [darwin, linux]
+    # TWO REPOSITORIES, AND BOTH ARE LIVE. The project moved GitHub organisation and
+    # publishes under the new one; the old path still serves an image, so a machine that
+    # pulled before the move still has it and must still be found. Read off real rows on
+    # 2026-09-11:
+    #
+    #   "ghcr.io/openhands/openhands:latest"       id 17d0648956f9, created 2026-07-21
+    #   "ghcr.io/all-hands-ai/openhands:latest"    id 00968de77a7b, created 2025-10-10
+    #
+    # The stale one is listed second because that is what it is -- nine months behind, and
+    # the reason its labels are absent while the current image's are complete. Dropping it
+    # would hide every machine that pulled during the old org's lifetime.
+    images: [ghcr.io/openhands/openhands, ghcr.io/all-hands-ai/openhands]
+    # THE VENDOR-CONTROLLED HALF, and the reason this agent is the strongest container
+    # finding in the catalog. Read off the current image's own manifest, same day:
+    # org.opencontainers.image.source = https://github.com/OpenHands/OpenHands, beside
+    # title=OpenHands and version=main-amd64. Retagging anything as openhands reproduces
+    # the `images` value and cannot reproduce this one.
+    #
+    # Case is the vendor's: the GitHub organisation renders `OpenHands`, and the label
+    # carries it verbatim. Matching is exact, so the case here is a fact rather than a
+    # style choice.
+    image_labels: ["https://github.com/OpenHands/OpenHands"]
+
+  - id: goose
+    name: goose
+    classification: Coding agent
+    platforms: [darwin, linux]
+    # Read off a real row on 2026-09-11: "ghcr.io/block/goose:latest", id d85a724ee487,
+    # created 2026-04-06, ENTRYPOINT /usr/local/bin/goose.
+    images: [ghcr.io/block/goose]
+    # org.opencontainers.image.source off the same image, beside title=goose and
+    # vendor=Block -- the only image measured that set `vendor` correctly rather than
+    # inheriting its base image's. Only `source` is matched; routes.yaml says why.
+    image_labels: ["https://github.com/block/goose"]
+
+  - id: swe-agent
+    name: SWE-agent
+    classification: Coding agent
+    platforms: [darwin, linux]
+    # Read off a real row on 2026-09-11: "sweagent/swe-agent:latest", id 11206d866593.
+    #
+    # STALE, AND CATALOGUED ANYWAY. The image was created 2024-12-07 -- twenty-one months
+    # before this was written -- and a `latest` tag that has not moved in that long usually
+    # means the project stopped publishing there. It is listed because the registry still
+    # serves it, so it is still pullable and still lands on machines; an agent nobody
+    # updates is not an agent nobody runs.
+    #
+    # ITS LABELS ARE A TRAP, and they are why `image_labels` matches `source` alone. This
+    # image carries exactly two: org.opencontainers.image.ref.name=ubuntu and
+    # version=22.04, both INHERITED FROM ITS BASE IMAGE. A route keyed on `title` or
+    # `ref.name` would read this agent as Ubuntu. It carries no `source`, so it has no
+    # image_labels entry rather than a guessed one.
+    images: [sweagent/swe-agent]
 
   - id: gemini-cli
     name: Gemini CLI

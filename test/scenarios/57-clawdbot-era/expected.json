@@ -13,12 +13,11 @@
     "vscodeext": ">=0"
   },
   "classified": {
-    "must_find": [],
-    "forbid": [
+    "must_find": [
       "openclaw"
     ]
   },
-  "why": "bot.molt.mac and bot.molt. were carried as aliases for a release that never shipped -- the app has only ever been Clawdis, Clawdbot and OpenClaw across 243 releases. This scenario installs the real predecessor so its identifier can enter the catalog the way every other one does. `must_find` is EMPTY and `openclaw` is FORBIDDEN deliberately: com.clawdbot.mac is not in the catalog yet, so the classifier must not claim OpenClaw from this app, and asserting that is what proves the raw probe below is testing the row rather than a signature that already exists. The catalog entry and the must_find land once a CI run has produced the row -- this pull request's own run will do, with the row committed under test/fixtures/captured/ to carry the coverage gate. An identifier enters when a run produced it, not when a maintainer read it off a dmg.",
+  "why": "bot.molt.mac and bot.molt. were carried as aliases for a release that never shipped -- the app has only ever been Clawdis, Clawdbot and OpenClaw across 243 releases. This scenario installs the real predecessor, so com.clawdbot.mac is proved the way every other identifier is. `must_find` names openclaw because the predecessor IS OpenClaw under its earlier name, and the raw probe below pins the bundle id itself: must_find alone would pass on any other openclaw route, and this scenario installs none of them.",
   "must_contain": [
     "com.clawdbot.mac"
   ],
