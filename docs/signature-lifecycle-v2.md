@@ -148,25 +148,16 @@ observation re-proved, not two.
 somebody typed — `bot.molt.mac`'s row was added in the same commit as `bin/classify` and never
 read off a machine — so while fixtures credited coverage, a typed string was evidence.
 
-Provenance is the **path**: `test/fixtures/captured/run-<id>.json` holds rows a named CI run
-produced and may credit coverage; anything beside it may not. A path cannot be got wrong by
-accident, and it beats the alternatives — a `captured_from` key on the row would leak into
-classifier output, since `bin/classify` echoes evidence rows verbatim, and a sidecar map would
-be a second file that has to agree with the first.
+So nothing replays a fixture into coverage. **Coverage comes from observations only** — what
+a run recorded, with the run named on the record.
 
-**This is also what lets a new signature land in one pull request.** The catalog value and a
-captured row from that PR's own run go in together; the gate reads `ci-fixture` and goes green;
-the next main run upgrades it to a real install. Measured:
-
-```
-catalog value alone            state=tested-absent   gate: FAIL
-+ captured row from that run   state=ci-fixture      gate: ok
-```
-
-**A stated weakness:** `captured/` is *attributable, not verified*. Nothing checks that the run
-id names a real run that produced that row. It is strictly better than an unprovenanced
-fixture — which is how `bot.molt.mac` stayed credible — but it is trust plus a paper trail.
-Closing it needs network in lint, which the fast-checks job deliberately avoids.
+A `captured/` directory stood here briefly, holding rows attributable to a named CI run so
+those alone could credit coverage. Nothing ever wrote it. It was a reader for a producer that
+did not exist, which is the shape this repo refuses everywhere else, and the gate's
+`--pending-ok` split removed the case it was built for: a signature now lands **pending** on
+the pull request that adds it, and the coverage job after the matrix decides whether it
+appeared. That is a better answer than an interim fixture, because it is the run itself
+speaking rather than a row copied out of one.
 
 ## One route grades stronger than observation
 
@@ -285,9 +276,15 @@ the same `observed.json`, keeps the live list to what the run actually proved, a
 catalog block to paste. `--allow-shrink` keeps its old meaning: *the artifact was stale, forget
 it*.
 
-It is **deliberate, never automatic**, and must stay that way: a vendor pulling a download for
-a week is indistinguishable from a rename for that week, and a guard that archived on its own
-would supersede a live signature on one bad afternoon.
+It is **deliberate, never automatic**. At the moment the guard fires, a vendor pulling a
+download for a week and a rename are the same event: one run, one absence. A guard that
+archived on its own would supersede a live signature on one bad afternoon.
+
+**They are distinguishable over time, and the record now carries what that needs.** Every
+observation names the run that produced it and the date it was proved, so "absent across N
+consecutive runs spanning M days" is computable from the tree. That does not automate the
+decision and should not — but it turns a coin-flip into evidence, and it is the obvious next
+thing to build here. What is missing is not data, only the arithmetic over it.
 
 Two drop sites had to be handled, not one — the guard, and the per-platform merge, which
 discards same-key records before the guard runs. A third lived in the collect job: its merge

@@ -15,6 +15,7 @@ row says whether a machine ever produced it. Only test/fixtures/captured/ can, a
 holds rows from a named CI run. An identifier with neither is named rather than hidden.
 """
 import collections
+import datetime
 import importlib.machinery      # NOT implied by importlib.util. Importing only .util
 import importlib.util              # left importlib.machinery resolvable on a developer Mac,
                                    # where something else had already imported it, and
@@ -49,22 +50,6 @@ _spec.loader.exec_module(classify_mod)
 # guard at all -- so the guard could not be tested, because a test had nowhere to put a
 # fixture that record() would accept as a scenario. test/test_matcher.py repoints this.
 SCENARIOS = ROOT / "test" / "scenarios"
-
-# THE TWO FIXTURE ROOTS, and the difference between them is evidentiary rather than tidy.
-# Named here for the same reason SCENARIOS is: test/test_matcher.py repoints them, which is
-# the only way to exercise a credit path whose directory is empty in the tree.
-FIXTURES = ROOT / "test" / "fixtures"
-FIXTURES_CAPTURED = FIXTURES / "captured"
-
-
-def coverage_fixtures():
-    """Fixture files whose rows may credit COVERAGE, not merely prove the matcher.
-
-    Only rows a named CI run really produced. See collect() for why provenance lives in
-    the path rather than on the row.
-    """
-    return sorted(FIXTURES_CAPTURED.glob("*.json")) if FIXTURES_CAPTURED.is_dir() else []
-
 
 ROUTES = classify_mod.load_routes()
 REGISTRY = classify_mod.Registry(ROUTES)
@@ -194,14 +179,6 @@ def _obs_sort(rec):
             rec.get("os") or "", rec.get("arch") or "")
 
 
-def _today():
-    """The date a supersession was recorded. Only ever written into printed output for a
-    person to paste -- never into a committed file, which must change only when what a run
-    observed changes."""
-    import datetime
-    return datetime.date.today().isoformat()
-
-
 def record(artifact, scenario_dir, os_version="", arch="", platform="", run_id="",
            supersede=False):
     """Write scenario/observed.json: which identifiers a REAL run actually matched.
@@ -309,7 +286,8 @@ def record(artifact, scenario_dir, os_version="", arch="", platform="", run_id="
                 print(f"  superseded:")
                 print(f"    - {{route: {r['route']}, value: {r['value']}, "
                       f"last_version: {r.get('agent_version', '?')}, "
-                      f"last_proved: {_today()}, by: {pathlib.Path(scenario_dir).name}, "
+                      f"last_proved: {datetime.date.today().isoformat()}, "
+                      f"by: {pathlib.Path(scenario_dir).name}, "
                       f"run: {r.get('run', '?')}}}")
             print("\nThe value STAYS on its route. Supersession marks it; it never moves it.")
             # A `?` IN THE BLOCK IS A REFUSAL WAITING TO HAPPEN. validate_catalog
@@ -499,24 +477,16 @@ def collect():
         for aid in block.get("must_find", []):
             scenarios[aid].add(path.parent.name)
 
-    # A FIXTURE PROVES THE MATCHER AND NO LONGER PROVES AN IDENTIFIER, and the difference
-    # is provenance the tree could not see. `test/fixtures/*.json` is hand-written: the row
-    # for `bot.molt.mac` was added with bin/classify itself, never captured from a machine,
-    # and there is no field on a row that tells that apart from one a runner produced. So
-    # counting fixtures as coverage credited an identifier on the strength of a string
-    # somebody typed -- the exact claim this repo refuses everywhere else.
+    # A FIXTURE PROVES THE MATCHER AND NOTHING ELSE, so nothing here replays one. The row
+    # for `bot.molt.mac` was written by hand in the same commit as bin/classify and never
+    # read off a machine, and no field on a row tells that apart from one a runner
+    # produced -- so while fixtures credited coverage, a typed string was evidence.
     #
-    # Provenance is the PATH, not a key on the row, because bin/classify echoes evidence
-    # rows verbatim and a `captured_from` key would leak into classifier output for
-    # something that has nothing to do with the payload contract. A file under
-    # `captured/` holds rows a named CI run really produced, so its rows may credit
-    # coverage; anything else may not.
-    #
-    # `captured/` is EMPTY today, and deliberately: nothing writes it yet. The flow that
-    # does -- a rename's successor landing as a reviewable pull request -- is
-    # docs/signature-lifecycle-v2.md's other half. The reader is here so the door it opens
-    # is the one the design describes, rather than a second mechanism invented later.
-    values, routes, _ = replay(coverage_fixtures(), catalog)
+    # A `captured/` directory stood here briefly, holding rows attributable to a named CI
+    # run so that those alone could credit coverage. Nothing ever wrote it. It was a reader
+    # for a producer that did not exist, which is the shape this repo refuses everywhere
+    # else, and the gate's `--pending-ok` split removed the case it was built for. Coverage
+    # now comes from observations only.
     # Keyed by scenario, so an identifier proved only outside CI can be told apart from
     # one a pull request would catch.
     seen_in = collections.defaultdict(set)      # (agent, route, value) -> {scenario}
@@ -570,13 +540,6 @@ def collect():
         for route in ALL_ROUTES:
             for value in agent.get(route, []):
                 value = str(value)
-                if route in ROUTE_LEVEL_ONLY or value.endswith("*"):
-                    proven = route in routes[aid]       # route-level only
-                    precision = "route"
-                else:
-                    key = classify_mod.image_repo(value) if route == "images" else value
-                    proven = (route, key) in values[aid]
-                    precision = "exact"
                 scens = sorted(seen_in.get((aid, route, value), ()))
                 ci_scens = [s for s in scens if s in in_ci]
                 # A fixture IS a CI test: ci.yml runs test/lint.sh, which runs
@@ -610,8 +573,6 @@ def collect():
                     state = "ci-install"
                 elif (route, str(value)) in superseded_of.get(aid, ()):
                     state = "superseded"
-                elif proven:
-                    state = "ci-fixture"
                 elif not (route_platforms.get(route, set()) & in_ci_platforms):
                     state = "no-ci-platform"
                 elif scens:
@@ -626,9 +587,14 @@ def collect():
                     state = "tested-absent"
                 else:
                     state = "none"
+                # ONLY WHAT SOMETHING READS. `fixture`, `real`, `ci_scenarios`,
+                # `platforms`, `observed_on` and `precision` were written here and read
+                # nowhere -- six keys maintained by this function and consumed by no
+                # renderer, no gate and no test. One of them carried a comment claiming
+                # the per-platform detail had "moved to the per-identifier table below",
+                # which by then had no platform column.
                 idents.append({"route": route, "value": value,
-                               "fixture": proven, "real": bool(scens),
-                               "scenarios": scens, "ci_scenarios": ci_scens,
+                               "scenarios": scens,
                                "reached_by": sorted(asserted_by[aid] - set(unrecorded)),
                                # EVERY CI scenario that asserts this agent, including ones
                                # with no recorded observation yet. `reached_by` above drops
@@ -637,22 +603,7 @@ def collect():
                                # the gate has to tell apart from one that ran and found
                                # nothing. See _pending().
                                "asserted_by_ci": sorted(asserted_by[aid]),
-                               # The platforms this identifier can be observed on --
-                               # its route's platforms, because that is the only place
-                               # the information exists. This is what makes per-platform
-                               # coverage countable without a new catalog field.
-                               "platforms": sorted(route_platforms.get(route, ())),
-                               # WHICH PLATFORMS ACTUALLY OBSERVED IT, as opposed to
-                               # which could. A `posix` identifier proved on macOS says
-                               # nothing about Linux -- the route is portable, the
-                               # observation is not -- so crediting it to both would put
-                               # a confident face on an untested platform. That is the
-                               # whole failure mode the per-platform breakdown exists to
-                               # expose, so it must not be the thing computing it.
-                               "observed_on": sorted(
-                                   {scenario_platform.get(sc) for sc in ci_scens}
-                                   - {None}),
-                               "state": state, "precision": precision})
+                               "state": state})
         agents.append({
             "id": aid, "name": agent["name"], "classification": agent["classification"],
             "scenarios": sorted(scenarios.get(aid, ())),
@@ -686,7 +637,6 @@ def collect():
 
 STATE_LABEL = {
     "ci-install": "CI: real install",
-    "ci-fixture": "CI: fixture",
     "superseded": "superseded",
     # Not a failure to observe: there is no runner for that platform. Named rather than
     # folded into NO TEST, because the two need different actions -- one is a test to
@@ -738,7 +688,7 @@ def badge_for(data):
     # instead: the identifier table below names every route and the platforms it was
     # observed on, which is a fact someone can act on rather than a score to read.
     n = sum(1 for i in ids if i["state"] not in ("superseded", "no-ci-platform"))
-    covered = sum(1 for i in ids if i["state"] in ("ci-install", "ci-fixture"))
+    covered = sum(1 for i in ids if i["state"] == "ci-install")
     # Green only at complete. Anything less is amber -- a badge that reads green at 90%
     # trains the reader to stop looking at the number beside it.
     colour = "2E7D57" if covered == n else "A26A16"
@@ -760,26 +710,11 @@ def markdown(data):  # noqa: C901
     """
     agents = data["agents"]
     n_ident = sum(len(a["identifiers"]) for a in agents)
-    n_fix = sum(1 for a in agents for i in a["identifiers"] if i["fixture"])
     n_scen = sum(1 for a in agents if a["scenarios"])
     na = set(data.get("not_agents", ()))
     n_tools = sum(1 for a in agents if a["classification"] in na)
     n_st = lambda s: sum(1 for a in agents for i in a["identifiers"] if i["state"] == s)
-    n_ci = n_st("ci-install") + n_st("ci-fixture")
-
-    # DISTINCT identifiers that only a fixture proves, counted once. The first version of
-    # this summed the per-platform fixture counts and divided by the number of rows, which
-    # gave the right answer only because the single fixture-only identifier happens to sit
-    # on a portable route and so appeared in both rows. A platform-specific fixture would
-    # have made it wrong, and silently.
-    n_fixture_only = n_st("ci-fixture")
-    _fx_phrase = ("identifier is fixture-only, so it sits" if n_fixture_only == 1
-                  else "identifiers are fixture-only, so they sit")
-
-    _fx = [i["value"] for a in agents for i in a["identifiers"]
-           if i["state"] == "ci-fixture"]
-    _fx_is = "is" if len(_fx) == 1 else "are"
-    _fx_names = ", ".join(f"`{v}`" for v in sorted(_fx))
+    n_ci = n_st("ci-install")
 
     out = [
         "<!-- GENERATED BY tools/agent_status.py -- DO NOT EDIT.",
@@ -824,12 +759,8 @@ def markdown(data):  # noqa: C901
         # installs the real software -- 48 of 48" directly above "47 are proved by a real
         # install", which is a contradiction of exactly one: the headline was counting
         # every covered identifier and describing only the real-install ones.
-        ((f"**Every identifier is proved by a real install in CI** — {n_ci} of "
-          f"{n_ident - n_st('superseded')}.")
-         if n_ci == n_st("ci-install") else
-         (f"**Every identifier is covered by a CI test** — {n_ci} of "
-          f"{n_ident - n_st('superseded')}, {n_st('ci-install')} of them by a real "
-          f"install."))
+        (f"**Every identifier is proved by a real install in CI** — {n_ci} of "
+         f"{n_ident - n_st('superseded')}.")
         + (f" {n_st('superseded')} superseded identifier(s) are excluded: the release that "
            f"produced them is gone, and each names the run that last did."
            if n_st("superseded") else "")
@@ -867,13 +798,6 @@ def markdown(data):  # noqa: C901
         # bin/discover --deep. A generated page is the wrong place for a standing excuse:
         # this names the identifier and where its evidence comes from, and the sentence
         # disappears on its own when a real install records one.
-        *([f"**The remaining {n_st('ci-fixture')} {_fx_is} {_fx_names}**, whose recorded "
-           f"evidence is a captured row rather than a live install -- "
-           f"`test/docker_states.sh` serves real images through a fake socket and asserts "
-           f"the real runner and matcher claim the catalogued one and decline the rest. "
-           f"A CI scenario that installs it for real has not recorded an observation yet.",
-           ""]
-          if n_st("ci-fixture") else []),
         # The floor note names scenarios in CI that have recorded nothing yet -- but only
         # where that actually costs coverage. It used to fire for ANY unrecorded scenario,
         # including `76-linux-systemd`, which asserts no identifiers at all, so it warned
@@ -917,7 +841,7 @@ def markdown(data):  # noqa: C901
                 # KeyError the first time an identifier reached that state -- the page that
                 # describes the catalog, crashed by a catalog entry. It never fired only
                 # because every route has a runner today.
-                MARK = {"ci-install": "**`%s`**", "ci-fixture": "`%s`",
+                MARK = {"ci-install": "**`%s`**",
                         "superseded": "~~`%s`~~", "local-only": "_`%s`_",
                         "no-ci-platform": "%s ∅", "tested-absent": "%s ⚠", "none": "%s"}
                 ids = ", ".join(MARK[i["state"]] % i["value"]
@@ -1023,7 +947,7 @@ def markdown(data):  # noqa: C901
     return "\n".join(x for x in out if x is not None).rstrip() + "\n"
 
 
-COVERED_STATES = ("ci-install", "ci-fixture", "superseded")
+COVERED_STATES = ("ci-install", "superseded")
 
 
 def _pending(data, argv):
@@ -1216,7 +1140,6 @@ def main():
 
     agents = data["agents"]
     n_ident = sum(len(a["identifiers"]) for a in agents)
-    n_fix = sum(1 for a in agents for i in a["identifiers"] if i["fixture"])
     n_scen = sum(1 for a in agents if a["scenarios"])
     na = set(data.get("not_agents", ()))
     n_tools = sum(1 for a in agents if a["classification"] in na)
@@ -1246,9 +1169,9 @@ def main():
           f"supporting tools. {n_ident} identifiers.")
     print("  every one backed by a real install, or validate_catalog would have failed")
     n = lambda s: sum(1 for a in agents for i in a["identifiers"] if i["state"] == s)
-    covered = n("ci-install") + n("ci-fixture")
-    # Retired aliases are out of the denominator. No install produces them, so including
-    # them would cap the number below 100% for a reason nobody can act on.
+    covered = n("ci-install")
+    # Superseded identifiers are out of the denominator. No install produces them, so
+    # including them would cap the number below complete for a reason nobody can act on.
     coverable = n_ident - n("superseded")
     print(f"\nIDENTIFIERS COVERED BY A CI TEST   {covered}/{coverable}"
           f"   ({100 * covered // coverable}%)")
@@ -1259,9 +1182,6 @@ def main():
     for state, note in (
             ("ci-install", "a scenario in the scenarios.yml matrix installs the software\n"
                            f"{'':>21}  and asserts the classifier finds it"),
-            ("ci-fixture", "evidence is a captured row, not a live install. "
-                           "test/docker_states.sh\n"
-                           f"{'':>21}  asserts it on both platforms on every pull request"),
             ("local-only", "proved only by a scenario CI does not run"),
             ("tested-absent", "a CI scenario installed the agent and it never showed up"),
             ("none", "nothing exercises it")):

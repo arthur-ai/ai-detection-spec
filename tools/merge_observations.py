@@ -40,18 +40,28 @@ def _sort_key(rec):
             rec.get("platform") or "", rec.get("os") or "", rec.get("arch") or "")
 
 
+def uploaded(artifacts):
+    """(scenario, document) for every artifact this run uploaded.
+
+    One reader, because the two callers must agree on what counts as an artifact: the merge
+    and the reported list are read by different steps and a disagreement between them would
+    show up as an identifier counted missing when its scenario simply did not run.
+    """
+    for d in sorted(pathlib.Path(artifacts).glob("observed-*--*")):
+        f = d / "observed.json"
+        if not f.is_file():
+            continue
+        doc = json.loads(f.read_text())
+        yield doc.get("scenario") or d.name.split("--")[0].removeprefix("observed-"), doc
+
+
 def merge(artifacts, scenarios):
     """Union every artifact's identifiers into the scenario files under `scenarios`.
 
     Returns {scenario: record count} for the files it wrote.
     """
     incoming = collections.defaultdict(dict)
-    for d in sorted(pathlib.Path(artifacts).glob("observed-*--*")):
-        f = d / "observed.json"
-        if not f.is_file():
-            continue
-        doc = json.loads(f.read_text())
-        scen = doc.get("scenario") or d.name.split("--")[0].removeprefix("observed-")
+    for scen, doc in uploaded(artifacts):
         for rec in doc.get("identifiers", []):
             incoming[scen][_key(rec)] = rec
 
@@ -88,20 +98,12 @@ def merge(artifacts, scenarios):
 def seen_scenarios(artifacts):
     """Every scenario that uploaded an artifact for this run.
 
-    NOT the same as the scenarios written: a scenario whose directory is absent is skipped
-    by the merge but still reported, and that difference is load-bearing. The coverage gate
-    reads this list to decide which identifiers are merely PENDING -- a scenario that failed
-    or exited 3 uploads nothing and must stay pending, or an unactionable skip turns into a
-    red coverage figure.
+    NOT the same as the scenarios written: one whose directory is absent is skipped by the
+    merge but still reported. The coverage gate reads this to tell PENDING from MISSING --
+    a scenario that failed or exited 3 uploads nothing, and must stay pending or an
+    unactionable skip reads as a missing identifier.
     """
-    out = set()
-    for d in sorted(pathlib.Path(artifacts).glob("observed-*--*")):
-        f = d / "observed.json"
-        if not f.is_file():
-            continue
-        doc = json.loads(f.read_text())
-        out.add(doc.get("scenario") or d.name.split("--")[0].removeprefix("observed-"))
-    return out
+    return {scen for scen, _ in uploaded(artifacts)}
 
 
 def main():

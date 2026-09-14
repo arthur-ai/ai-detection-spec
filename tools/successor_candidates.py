@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """When an identifier stops appearing, say what arrived in its place.
 
-    python3 tools/successor_candidates.py /tmp/out.json --kind app
-    python3 tools/successor_candidates.py /tmp/out.json --kind app --baseline base.json
+    python3 tools/successor_candidates.py /tmp/out.json --route bundle_ids
+    python3 tools/successor_candidates.py /tmp/out.json --route bundle_ids --baseline base.json
 
 A RENAME HAS TWO HALVES AND ONLY ONE WAS WATCHED. Three separate guards fire when an
 identifier stops appearing -- the shrink guard, `tested-absent`, and a `must_contain`
@@ -31,7 +31,6 @@ import importlib.machinery
 import importlib.util
 import json
 import pathlib
-import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -102,22 +101,19 @@ def render(cands, lost_desc=""):
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
+    # ONE WAY TO SAY WHAT WAS LOST. A --kind flag stood beside this and was redundant:
+    # the route is what you know when an identifier stops appearing, and routes.yaml maps
+    # it to the kind. An "every kind" default stood here too, which returns the machine.
     ap.add_argument("payload", help="the run's osquery JSON")
-    ap.add_argument("--kind", action="append", default=[],
-                    help="row kind to consider; repeatable. Omit for every kind")
-    ap.add_argument("--route", action="append", default=[],
-                    help="resolve the kind from a route name instead")
+    ap.add_argument("--route", action="append", required=True,
+                    help="the route whose value went missing; repeatable")
     ap.add_argument("--baseline", help="a bare machine's payload, subtracted as noise")
     args = ap.parse_args()
 
-    routes_doc = classify_mod.load_routes()
-    kinds = set(args.kind) | kinds_for(routes_doc, args.route)
-    if not kinds:
-        kinds = {r["kind"] for r in routes_doc["routes"].values()}
-
+    kinds = kinds_for(classify_mod.load_routes(), args.route)
     base = _rows(args.baseline) if args.baseline else None
     print(render(candidates(_rows(args.payload), kinds, base),
-                 lost_desc=", ".join(sorted(args.route)) or ", ".join(sorted(kinds))))
+                 lost_desc=", ".join(sorted(args.route))))
 
 
 if __name__ == "__main__":
