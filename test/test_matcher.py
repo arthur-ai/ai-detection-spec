@@ -689,6 +689,65 @@ check("a superseded record matching an archived observation is accepted", _match
 check("a superseded record citing the WRONG run is refused", not _wrong_run,
       "the observation exists but did not come from the run the record names")
 
+# --- the classifier LABELS a superseded match, and never withholds it --------------
+#
+# The catalog carries no superseded records, so every branch of the label is unexercised
+# until the first real rename -- which is the worst moment to discover it drops findings
+# instead of marking them. Driven here with a synthetic catalog instead.
+#
+# The assertion that matters is the first: the agent is STILL FOUND. A superseded
+# identifier exists for the machines nothing else will match, so a label that filtered
+# would produce an empty result on exactly the fleet the record was kept for.
+_sup_cat = _yaml3.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
+for _a in _sup_cat["agents"]:
+    if _a["id"] == "openclaw":
+        _a["superseded"] = [{"route": "npm", "value": "moltbot", "last_version": "0.1.0",
+                             "last_proved": "2026-09-02", "by": "56-openclaw-retired-names",
+                             "run": "33702118455"}]
+with _tf3.NamedTemporaryFile("w", suffix=".yaml", delete=False) as _fh2:
+    _yaml3.safe_dump(_sup_cat, _fh2)
+
+_sup_rows = [{"kind": "npm", "id": "moltbot", "ver": "0.1.0", "loc": "/x", "extra": "", "perms": ""},
+             {"kind": "npm", "id": "openclaw", "ver": "2026.9.1", "loc": "/y", "extra": "", "perms": ""}]
+with _tf3.NamedTemporaryFile("w", suffix=".json", delete=False) as _fh3:
+    json.dump(_sup_rows, _fh3)
+
+_out = subprocess.run([sys.executable, str(ROOT / "bin" / "classify"), _fh3.name,
+                       "--json", "--catalog", _fh2.name],
+                      capture_output=True, text=True, check=True)
+_sup_found = {f["id"]: f for f in json.loads(_out.stdout)["findings"]}
+_oc = _sup_found.get("openclaw", {})
+
+check("a superseded match is still a FINDING, not filtered out", "openclaw" in _sup_found,
+      "the machines a superseded identifier exists for are the ones nothing else matches")
+check("both generations are still reported as evidence",
+      {e["id"] for e in _oc.get("evidence", [])} == {"moltbot", "openclaw"},
+      f"got {sorted(e['id'] for e in _oc.get('evidence', []))}")
+check("the superseded identifier is named", _oc.get("superseded") == ["moltbot"],
+      f"got {_oc.get('superseded')}")
+check("a finding with a current match is NOT only_superseded",
+      _oc.get("only_superseded") is False, f"got {_oc.get('only_superseded')}")
+
+# The same catalog, a payload carrying ONLY the superseded generation.
+with _tf3.NamedTemporaryFile("w", suffix=".json", delete=False) as _fh4:
+    json.dump([_sup_rows[0]], _fh4)
+_only = subprocess.run([sys.executable, str(ROOT / "bin" / "classify"), _fh4.name,
+                        "--json", "--catalog", _fh2.name],
+                       capture_output=True, text=True, check=True)
+_oc_only = {f["id"]: f for f in json.loads(_only.stdout)["findings"]}.get("openclaw", {})
+check("a machine matched only on an earlier release says so",
+      _oc_only.get("only_superseded") is True, f"got {_oc_only.get('only_superseded')}")
+
+_txt = subprocess.run([sys.executable, str(ROOT / "bin" / "classify"), _fh4.name,
+                       "--catalog", _fh2.name], capture_output=True, text=True, check=True)
+check("...and the human-readable output says it too",
+      "has not updated" in _txt.stdout and "earlier release" in _txt.stdout,
+      _txt.stdout.strip()[-120:])
+check("an unsuperseded finding carries no label at all",
+      "superseded" not in {k for f in json.loads(_out.stdout)["findings"]
+                           if f["id"] != "openclaw" for k in f},
+      "the key is omitted rather than emitted false, so its absence is not a claim")
+
 # --- the coverage shrink guard is scoped per (platform, os, arch) -----------------
 #
 # THIS TEST EXISTS BECAUSE I MISREAD THE GUARD AND BLAMED IT. A CI job refused to record

@@ -160,9 +160,34 @@ def build_index(catalog, registry):
     """
     exact, prefix, glob = {}, [], []
     for agent in catalog["agents"]:
-        meta = {k: agent[k] for k in ("id", "name", "classification")}
+        base = {k: agent[k] for k in ("id", "name", "classification")}
+        # WHICH GENERATION A VALUE BELONGS TO, CARRIED ON THE VALUE ITSELF. `meta` was one
+        # dict shared by every route value of an agent, so a finding could say WHICH agent
+        # was found and never which identifier era found it -- a match on the current
+        # bundle id and a match on one the vendor replaced rendered identically.
+        #
+        # Per-value rather than threading the matched route/value out of classify(): the
+        # flag then arrives with the hit, through every match mode, with no extra plumbing
+        # in the loop that does the matching. The shared dict is reused where there is no
+        # flag to add, so this costs one dict per superseded value and nothing otherwise.
+        #
+        # Keyed on (route, value): OpenClaw ships an npm package and a Homebrew cask both
+        # called `openclaw`, so keying on the value alone would label one for the other.
+        superseded = {(str(s["route"]), str(s["value"]))
+                      for s in agent.get("superseded", []) or []}
+
+        def meta_for(route, value, _base=base, _sup=superseded):
+            # A LABEL, NEVER A FILTER. This marks a finding; it must never withhold one.
+            # The machines a superseded identifier exists for are exactly the ones nothing
+            # else will find, so anything that dropped them here would be the empty result
+            # this repo is built to refuse, wearing a new name.
+            if (route, str(value)) in _sup:
+                return {**_base, "superseded": True}
+            return _base
+
         for route, mode in registry.match.items():
             for value in agent.get(route, []):
+                meta = meta_for(route, value)
                 if mode in ("exact", "tool-dir"):
                     # A trailing `*` is a prefix, e.g. @modelcontextprotocol/*. No agent
                     # uses one today; the form is kept because removing it would silently
@@ -760,10 +785,22 @@ def _run(state, started):
     state["phase"] = "render"
     if args.json:
         json.dump({
+            # `superseded` NAMES THE ROWS, and does not touch them. The evidence list is
+            # raw rows passed through verbatim -- a consumer diffs them against its own
+            # collection -- so the label rides beside it rather than being written into
+            # rows that no osquery payload would ever carry it in.
+            #
+            # `only_superseded` is the fleet-actionable one: every identifier that matched
+            # belongs to a release the vendor has moved past, which says this machine has
+            # not updated. A finding with a mix is an ordinary current install that also
+            # still carries an old artefact.
             "findings": [
                 {"id": aid, "name": hits[0][0]["name"],
                  "classification": hits[0][0]["classification"],
-                 "evidence": [r for _, r in hits]}
+                 "evidence": [r for _, r in hits],
+                 **({"superseded": [r.get("id") for m, r in hits if m.get("superseded")],
+                     "only_superseded": all(m.get("superseded") for m, _ in hits)}
+                    if any(m.get("superseded") for m, _ in hits) else {})}
                 for aid, hits in sorted(findings.items())
             ],
             # Omitted rather than emitted empty when it was not computed. An empty
@@ -849,12 +886,22 @@ def _run(state, started):
     for aid, hits in sorted(findings.items()):
         meta = hits[0][0]
         print(f"\n{meta['name']}  [{meta['classification']}]")
-        for _, row in hits:
+        for hit, row in hits:
             detail = row.get("loc") or row.get("id")
             ver = f"  {row['ver']}" if row.get("ver") else ""
-            print(f"    {row['kind']:7} {row.get('id','')}{ver}")
+            # Marked on the row, because the row is where a reader is looking when they
+            # wonder why an identifier looks unfamiliar.
+            old = "   <- earlier release" if hit.get("superseded") else ""
+            print(f"    {row['kind']:7} {row.get('id','')}{ver}{old}")
             if detail and detail != row.get("id"):
                 print(f"            {detail}")
+        # SAID ONCE, WHEN IT IS THE WHOLE FINDING. A machine matched only on identifiers
+        # the vendor has replaced is a machine that has not updated, and that is a fact
+        # about the fleet rather than about this agent -- invisible while every row
+        # rendered the same way.
+        if all(h.get("superseded") for h, _ in hits):
+            print("    Every identifier that matched belongs to an earlier release. "
+                  "This machine has not updated.")
 
     if args.show_unmatched and unmatched:
         print(f"\nUnmatched ({len(unmatched)} rows no signature claimed):")

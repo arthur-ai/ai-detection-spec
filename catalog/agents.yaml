@@ -235,8 +235,10 @@ agents:
     #
     # THE REAL PREDECESSOR IS com.clawdbot.mac AND IT IS NOT HERE YET, deliberately. The
     # artifact is still downloadable and 57-clawdbot-era installs it, but an identifier
-    # enters this file when a CI run has produced it -- not when a maintainer has read it
-    # off a dmg. It lands in the commit after that scenario first records.
+    # enters this file when a CI RUN has produced it -- not when a maintainer has read it
+    # off a dmg. That run can be this pull request's own: the value lands alongside the row
+    # its run produced, committed under test/fixtures/captured/, which is what carries the
+    # coverage gate until main records the install itself.
     bundle_ids: [ai.openclaw.mac]
     homebrew: [openclaw]
     npm: [openclaw, clawdbot, moltbot]
