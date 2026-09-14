@@ -11,15 +11,15 @@ and the CI test behind each one.
 
 ![agents](https://img.shields.io/badge/agents-22-1D4E89)
 ![identifiers](https://img.shields.io/badge/identifiers-61-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-60%2F61-A26A16)
-![real install](https://img.shields.io/badge/by_real_install-60-2E7D57)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-61%2F61-2E7D57)
+![real install](https://img.shields.io/badge/by_real_install-61-2E7D57)
 
 </div>
 
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 60 of 61. Anything below complete is a red build, so there is no partial number to read here.
+**Every identifier is proved by a real install in CI** — 61 of 61. Anything below complete is a red build, so there is no partial number to read here.
 
 ## 🧪 Why a real install is the bar
 
@@ -31,8 +31,6 @@ review.
 Coverage is counted **per identifier**, from what each scenario recorded in its own
 `observed.json`, and only from scenarios in the CI matrix — an agent can pass while
 carrying an identifier nothing exercised.
-
-> **This number is a floor.** `57-clawdbot-era`, `76-linux-systemd` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
 
 `tools/validate_catalog.py` refuses an agent no scenario installs. There is no block
 that buys an exception, so an unproved signature cannot enter at all.
@@ -65,7 +63,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | name | identifiers | scenarios |
 |---|---|---|
 | **Hermes Agent** | **`hermes-agent`**, **`hermes-agent`**, **`~/.hermes`**, **`~/.local/bin/hermes`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents |
-| **OpenClaw** | **`ai.openclaw.mac`**, com.clawdbot.mac ⚠, **`openclaw`**, **`ai.openclaw.`**, **`openclaw`**, **`clawdbot`**, **`moltbot`**, **`~/.openclaw`** | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 57-clawdbot-era, 60-persistence, 90-demo-fleet |
+| **OpenClaw** | **`ai.openclaw.mac`**, **`com.clawdbot.mac`**, **`openclaw`**, **`ai.openclaw.`**, **`openclaw`**, **`clawdbot`**, **`moltbot`**, **`~/.openclaw`** | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 57-clawdbot-era, 60-persistence, 90-demo-fleet |
 
 ## AI browser
 
@@ -89,14 +87,6 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | **Perplexity** | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
 
 > **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = superseded: a run proved it and the current release no longer emits it. ∅ = no CI runner for its platform. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it.
-
-## ⚠️ Identifiers that did not pass
-
-Every one is work, and the middle column says what kind. **did not appear** means a scenario installed the agent and this identifier never showed up — the suite reached it and it did not reproduce, usually because the scenario installs by a different route, or because the artifact only exists once the agent has run.
-
-| agent | route | identifier | state | reached by |
-|---|---|---|---|---|
-| OpenClaw | bundle id | `com.clawdbot.mac` | did not appear | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 60-persistence |
 
 ## 🚧 What osquery cannot see
 

@@ -27,7 +27,8 @@
       "route": "pypi",
       "value": "aider-chat",
       "os": "15.7.9",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "34809689283"
     },
     {
       "agent": "aider",
@@ -55,7 +56,8 @@
       "route": "state_dirs",
       "value": "~/.aider",
       "os": "15.7.9",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "34809689283"
     },
     {
       "agent": "hermes",
@@ -83,7 +85,8 @@
       "route": "binaries",
       "value": "~/.local/bin/hermes",
       "os": "15.7.9",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "34809689283"
     },
     {
       "agent": "hermes",
@@ -111,7 +114,8 @@
       "route": "pypi",
       "value": "hermes-agent",
       "os": "15.7.9",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "34809689283"
     },
     {
       "agent": "hermes",
@@ -139,7 +143,8 @@
       "route": "state_dirs",
       "value": "~/.hermes",
       "os": "15.7.9",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "34809689283"
     }
   ]
 }

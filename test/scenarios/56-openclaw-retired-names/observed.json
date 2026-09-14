@@ -31,7 +31,8 @@
       "value": "clawdbot",
       "agent_version": "2026.1.24-3",
       "os": "15.7.9",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "34809689283"
     },
     {
       "agent": "openclaw",
@@ -63,7 +64,8 @@
       "value": "moltbot",
       "agent_version": "0.1.0",
       "os": "15.7.9",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "34809689283"
     }
   ]
 }

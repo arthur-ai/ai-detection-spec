@@ -1,0 +1,14 @@
+{
+  "scenario": "57-clawdbot-era",
+  "identifiers": [
+    {
+      "agent": "openclaw",
+      "route": "bundle_ids",
+      "value": "com.clawdbot.mac",
+      "agent_version": "2026.1.23",
+      "os": "15.7.9",
+      "arch": "arm64",
+      "run": "34809689283"
+    }
+  ]
+}

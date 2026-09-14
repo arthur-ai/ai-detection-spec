@@ -15,7 +15,8 @@
       "value": "cursor.desktop",
       "platform": "linux",
       "os": "41",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "34809689283"
     },
     {
       "agent": "cursor",
@@ -33,7 +34,8 @@
       "agent_version": "3.20.17",
       "platform": "linux",
       "os": "41",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "34809689283"
     }
   ]
 }

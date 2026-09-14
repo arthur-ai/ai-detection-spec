@@ -17,7 +17,8 @@
       "agent_version": "4.1.17",
       "platform": "linux",
       "os": "24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "34809689283"
     },
     {
       "agent": "continue",
@@ -35,7 +36,8 @@
       "agent_version": "2.0.0",
       "platform": "linux",
       "os": "24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "34809689283"
     }
   ]
 }

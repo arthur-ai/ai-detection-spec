@@ -7,7 +7,8 @@
       "value": "paulgauthier/aider",
       "platform": "linux",
       "os": "24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "34809689283"
     },
     {
       "agent": "goose",
@@ -15,7 +16,8 @@
       "value": "https://github.com/block/goose",
       "platform": "linux",
       "os": "24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "34809689283"
     },
     {
       "agent": "goose",
@@ -23,7 +25,8 @@
       "value": "ghcr.io/block/goose",
       "platform": "linux",
       "os": "24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "34809689283"
     },
     {
       "agent": "openhands",
@@ -31,7 +34,8 @@
       "value": "https://github.com/OpenHands/OpenHands",
       "platform": "linux",
       "os": "24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "34809689283"
     },
     {
       "agent": "openhands",
@@ -39,7 +43,8 @@
       "value": "ghcr.io/all-hands-ai/openhands",
       "platform": "linux",
       "os": "24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "34809689283"
     },
     {
       "agent": "openhands",
@@ -47,7 +52,8 @@
       "value": "ghcr.io/openhands/openhands",
       "platform": "linux",
       "os": "24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "34809689283"
     },
     {
       "agent": "swe-agent",
@@ -55,7 +61,8 @@
       "value": "sweagent/swe-agent",
       "platform": "linux",
       "os": "24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "34809689283"
     }
   ]
 }

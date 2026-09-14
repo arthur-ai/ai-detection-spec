@@ -15,7 +15,8 @@
       "value": "~/.local/bin/claude",
       "platform": "linux",
       "os": "24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "34809689283"
     },
     {
       "agent": "claude-code",
@@ -31,7 +32,8 @@
       "value": "~/.claude",
       "platform": "linux",
       "os": "24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "34809689283"
     },
     {
       "agent": "cline",
@@ -49,7 +51,8 @@
       "agent_version": "3.0.61",
       "platform": "linux",
       "os": "24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "34809689283"
     },
     {
       "agent": "codex-cli",
@@ -67,7 +70,8 @@
       "agent_version": "0.154.0",
       "platform": "linux",
       "os": "24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "34809689283"
     },
     {
       "agent": "codex-cli",
@@ -83,7 +87,8 @@
       "value": "~/.codex",
       "platform": "linux",
       "os": "24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "34809689283"
     },
     {
       "agent": "copilot-cli",
@@ -101,7 +106,8 @@
       "agent_version": "1.0.83",
       "platform": "linux",
       "os": "24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "34809689283"
     },
     {
       "agent": "gemini-cli",
@@ -119,7 +125,8 @@
       "agent_version": "0.59.0",
       "platform": "linux",
       "os": "24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "34809689283"
     }
   ]
 }

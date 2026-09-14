@@ -31,7 +31,8 @@
       "value": "aider",
       "agent_version": "0.86.2",
       "os": "15.7.9",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "34809689283"
     },
     {
       "agent": "claude-code",
@@ -63,7 +64,8 @@
       "value": "@anthropic-ai/claude-code",
       "agent_version": "2.1.270",
       "os": "15.7.9",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "34809689283"
     },
     {
       "agent": "codex-cli",
@@ -95,7 +97,8 @@
       "value": "codex",
       "agent_version": "0.153.4",
       "os": "15.7.9",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "34809689283"
     },
     {
       "agent": "copilot-cli",
@@ -127,7 +130,8 @@
       "value": "copilot-cli",
       "agent_version": "1.0.83",
       "os": "15.7.9",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "34809689283"
     },
     {
       "agent": "gemini-cli",
@@ -159,7 +163,8 @@
       "value": "gemini-cli",
       "agent_version": "0.46.0",
       "os": "15.7.9",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "34809689283"
     },
     {
       "agent": "hermes",
@@ -191,7 +196,8 @@
       "value": "hermes-agent",
       "agent_version": "2026.8.31_1",
       "os": "15.7.9",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "34809689283"
     }
   ]
 }

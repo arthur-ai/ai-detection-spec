@@ -31,7 +31,8 @@
       "value": "openclaw",
       "agent_version": "2026.9.4",
       "os": "15.7.9",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "34809689283"
     },
     {
       "agent": "openclaw",
@@ -59,7 +60,8 @@
       "route": "state_dirs",
       "value": "~/.openclaw",
       "os": "15.7.9",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "34809689283"
     }
   ]
 }

@@ -15,7 +15,8 @@
       "value": "ai.perplexity.macv3",
       "agent_version": "26.35.0",
       "os": "15.7.9",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "34809689283"
     },
     {
       "agent": "perplexity-desktop",
@@ -31,7 +32,8 @@
       "value": "perplexity",
       "agent_version": "26.35.0",
       "os": "15.7.9",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "34809689283"
     }
   ]
 }

@@ -31,7 +31,8 @@
       "value": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
       "agent_version": "1.0.93",
       "os": "15.7.9",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "34809689283"
     }
   ]
 }
