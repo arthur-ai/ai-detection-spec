@@ -1,22 +1,10 @@
 #!/bin/zsh
-# THE PREDECESSOR APP, INSTALLED FOR REAL, BECAUSE THE ALIAS IT REPLACES WAS A PHANTOM.
+# THE PREDECESSOR APP, INSTALLED FOR REAL.
 #
-# catalog/agents.yaml carried `bot.molt.mac` and `bot.molt.` for months as identifiers
-# "machines that installed the earlier version still report". No such version was ever
-# published. Read off the project's own release assets, 243 releases deep, the macOS app
-# has shipped under exactly three names:
-#
-#   Clawdis     v2.0.0-beta2 .. beta5
-#   Clawdbot    v2026.1.x            <- this scenario
-#   OpenClaw    v2026.2 onward
-#
-# Never Moltbot. `moltbot` is real as an NPM name and 56-openclaw-retired-names installs
-# it, but no .app ever carried that bundle id. The value came from the Homebrew cask's zap
-# stanza -- which still lists `bot.molt.*` paths today, and which catalog/agents.yaml
-# already names as "exactly how the wrong one got shipped".
-#
-# So this scenario exists to replace a guess with a fact. The identifier it proves was read
-# off Clawdbot.app/Contents/Info.plist inside the shipped 2026.1.23 zip:
+# This project's macOS app has shipped under three names -- Clawdis, then Clawdbot, then
+# OpenClaw -- and the catalog carries the bundle id of each generation it can prove. This
+# scenario proves the middle one. Read off Clawdbot.app/Contents/Info.plist inside the
+# shipped 2026.1.23 zip, never off the cask:
 #
 #   CFBundleIdentifier         com.clawdbot.mac
 #   CFBundleShortVersionString 2026.1.23

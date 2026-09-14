@@ -74,12 +74,10 @@
 # liveness, not identity, and if it is ever wanted it should be built as that and named as
 # that.
 
-# AN OLD IDENTIFIER IS KEPT, AND KEEPING IT NOW COSTS EVIDENCE. Machines that installed an
-# earlier version still report it, so removing one blinds the fleet to those machines --
-# but "an earlier version reported it" is a claim, and it was wrong twice under the old
-# `retired:` list, which exempted a value from the coverage gate on nothing but a person's
-# say-so. `bot.molt.mac` and `bot.molt.` sat there for months naming a release this project
-# never published.
+# AN OLD IDENTIFIER IS KEPT, AND KEEPING IT COSTS EVIDENCE. Machines on an earlier release
+# still report it, so removing one blinds the fleet to those machines -- but "an earlier
+# release reported it" is a claim, and the `retired:` list it used to be written in
+# exempted a value from the coverage gate on nothing but a person's say-so.
 #
 # So `superseded:` carries the observation instead: which run produced it, which scenario,
 # and at what version. The tooling writes the record when a run stops reproducing an
@@ -215,32 +213,15 @@ agents:
     name: OpenClaw
     classification: Personal agent
     platforms: [darwin, linux]
-    # ai.openclaw.mac is the shipped identifier, read off a live 2026.7.1 install.
-    #
-    # `bot.molt.mac` AND `bot.molt.` WERE HERE AND ARE REMOVED. They were retained on the
-    # reasoning that machines from the earlier release still carry them -- and the release
-    # they name never existed. This project's macOS app has shipped under exactly three
-    # names across 243 releases, read off the release assets themselves:
+    # THE LINEAGE, read off the release assets rather than the cask. This project's macOS
+    # app has shipped under exactly three names across 243 releases:
     #
     #   Clawdis     v2.0.0-beta2 .. beta5
-    #   Clawdbot    v2026.1.x         com.clawdbot.mac, read from the artifact's Info.plist
-    #   OpenClaw    v2026.2 onward    ai.openclaw.mac
+    #   Clawdbot    v2026.1.x         com.clawdbot.mac, 57-clawdbot-era installs it
+    #   OpenClaw    v2026.2 onward    ai.openclaw.mac, read off a live 2026.7.1 install
     #
-    # There is no Moltbot build. `moltbot` is real as an NPM name -- 56-openclaw-retired-names
-    # installs it -- but no .app ever carried `bot.molt.mac`, and nothing ever produced
-    # either value in any run: no fixture, no scenario, no observation. They came from the
-    # Homebrew cask's zap stanza, which still lists `bot.molt.*` paths today and is, in this
-    # file's own words, "exactly how the wrong one got shipped". The note saying so sat
-    # directly above them for months.
-    #
-    # com.clawdbot.mac IS THE REAL PREDECESSOR, and 57-clawdbot-era installs the artifact
-    # it was read off: Clawdbot.app/Contents/Info.plist inside the shipped 2026.1.23 zip,
-    # which is still downloadable under the renamed repo. Read off the artifact, never off
-    # the cask -- the cask's zap stanza is what produced bot.molt.mac in the first place.
-    #
-    # It lands here BEFORE a run has reported it, which the coverage gate now allows and
-    # did not before: a scenario commits to this agent, so the identifier is PENDING at
-    # lint time and the coverage job after the matrix decides whether it actually appeared.
+    # Both were read from the artifact's own Info.plist. The cask's zap stanza names other
+    # identifiers and is not a source: it is where the wrong one came from once.
     bundle_ids: [ai.openclaw.mac, com.clawdbot.mac]
     homebrew: [openclaw]
     npm: [openclaw, clawdbot, moltbot]

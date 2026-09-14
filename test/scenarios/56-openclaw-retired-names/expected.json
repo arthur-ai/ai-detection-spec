@@ -23,6 +23,6 @@
     "moltbot"
   ],
   "known_gaps": [
-    "The npm names only. The macOS side of this lineage is 57-clawdbot-era: the app shipped as Clawdis, then Clawdbot (com.clawdbot.mac), then OpenClaw, and never as Moltbot -- bot.molt.mac and bot.molt. were carried for months as aliases for a release that does not exist, and are removed."
+    "The npm names only. The macOS side of this lineage is 57-clawdbot-era, which installs the Clawdbot-era app and proves its bundle id."
   ]
 }

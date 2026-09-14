@@ -7,8 +7,8 @@ plausible-looking wrong answer is the expensive kind. Everything here is read of
 catalog/agents.yaml, test/fixtures/ and test/scenarios/ at the moment it runs.
 
 COVERAGE MEANS ONE THING: a CI scenario installed the real software and the classifier
-found it. That is the only evidence that survives the bot.molt.mac failure -- a
-vendor-documented identifier that matched nothing on any Mac.
+found it. That is the only evidence that survives an identifier taken from a vendor's
+own metadata, which is the failure this catalog was built around.
 
 A hand-written fixture proves the MATCHER and credits no coverage, because nothing on a
 row says whether a machine ever produced it. Only test/fixtures/captured/ can, and it
@@ -477,16 +477,14 @@ def collect():
         for aid in block.get("must_find", []):
             scenarios[aid].add(path.parent.name)
 
-    # A FIXTURE PROVES THE MATCHER AND NOTHING ELSE, so nothing here replays one. The row
-    # for `bot.molt.mac` was written by hand in the same commit as bin/classify and never
-    # read off a machine, and no field on a row tells that apart from one a runner
+    # A FIXTURE PROVES THE MATCHER AND NOTHING ELSE, so nothing here replays one. Fixture
+    # rows are hand-written, and no field on one tells that apart from a row a runner
     # produced -- so while fixtures credited coverage, a typed string was evidence.
     #
     # A `captured/` directory stood here briefly, holding rows attributable to a named CI
-    # run so that those alone could credit coverage. Nothing ever wrote it. It was a reader
-    # for a producer that did not exist, which is the shape this repo refuses everywhere
-    # else, and the gate's `--pending-ok` split removed the case it was built for. Coverage
-    # now comes from observations only.
+    # run so those alone could credit coverage. Nothing ever wrote it: a reader for a
+    # producer that did not exist, which is the shape this repo refuses everywhere else.
+    # Coverage comes from observations only.
     # Keyed by scenario, so an identifier proved only outside CI can be told apart from
     # one a pull request would catch.
     seen_in = collections.defaultdict(set)      # (agent, route, value) -> {scenario}

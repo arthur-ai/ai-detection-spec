@@ -14,12 +14,11 @@ about it*.
 
 This repo has been bitten three times, and the third is why the rest of this document exists:
 
-- **`bot.molt.mac`** was carried for months as an identifier "machines that installed the
-  earlier version still report". No such version was ever published. Read off the project's
-  own release assets, 243 releases deep, the macOS app shipped as **Clawdis** → **Clawdbot**
-  (`com.clawdbot.mac`) → **OpenClaw** (`ai.openclaw.mac`), never as Moltbot. The value came
-  from a Homebrew zap stanza — and the comment directly above it in the catalog had said for
-  months that the zap stanza is "exactly how the wrong one got shipped".
+- **An OpenClaw bundle id taken from a Homebrew zap stanza** was carried for months as an
+  identifier "machines on the earlier release still report". No such release was ever
+  published: read off the project's own assets, 243 releases deep, the macOS app shipped as
+  **Clawdis** → **Clawdbot** (`com.clawdbot.mac`) → **OpenClaw** (`ai.openclaw.mac`). The
+  comment directly above it already said a zap stanza is how the wrong one gets shipped.
 - **`aider`** installs as `aider-chat` under `uv` and `pipx` while its state directory is
   `~/.aider`, so evidence and signature never met.
 - **npm `mcp`** is Mintlify's package and npm **`aider`** is a static-site component by an
@@ -144,9 +143,8 @@ observation re-proved, not two.
 
 ## Fixtures prove the matcher, not the identifier
 
-`test/fixtures/*.json` is hand-written. Nothing on a row distinguishes a captured one from one
-somebody typed — `bot.molt.mac`'s row was added in the same commit as `bin/classify` and never
-read off a machine — so while fixtures credited coverage, a typed string was evidence.
+`test/fixtures/*.json` is hand-written. Nothing on a row distinguishes a captured one from
+one somebody typed, so while fixtures credited coverage, a typed string was evidence.
 
 So nothing replays a fixture into coverage. **Coverage comes from observations only** — what
 a run recorded, with the run named on the record.
@@ -430,7 +428,7 @@ admit a third is gone:
 were built so a guess could not hide, and they worked: nothing ever hid in them, because
 nothing was ever written to them. They held zero entries for their entire lives while remaining
 the only ways in that did not require a machine to have run the software. The weakest grade
-`unverified:` accepted was `vendor-documentation` — by name, what produced `bot.molt.mac`.
+`unverified:` accepted was `vendor-documentation` — the source this repo exists to distrust.
 
 **What was not deleted:** the Chromium extension-id derivation above. Removing the `evidence`
 enum does not touch the fact that a CRX-derived id is stronger than an observation.
@@ -453,11 +451,10 @@ Two consequences, both deliberate:
 - **An identifier that never appeared stays red.** It cannot be superseded, because
   supersession requires a prior observation.
 
-And a third the tree has already exercised: **an identifier that was never real is removed, not
-superseded.** `bot.molt.mac` and `bot.molt.` had no observation anywhere, so neither qualified.
-Their fixture rows stay as negative controls — asserted *not claimed*, and *reported unmatched
-rather than dropped* — because deleting the evidence with the signature leaves nothing to tell
-correctly-declined from route-quietly-broken.
+And a third the tree has already exercised: **an identifier that was never real is removed,
+not superseded.** Supersession is for a value a run once produced. Two OpenClaw values had no
+observation anywhere — no fixture, no scenario, no run — so neither qualified for it, and both
+were deleted outright.
 
 ---
 
@@ -518,14 +515,14 @@ and it is marked because a vocabulary term with no producer is the `stale:<n>` m
 documented in three places, emitted by nobody, and accepted by a lint check the whole time.
 
 Deciding *which* candidate is the renamed product needs knowledge the rows do not carry:
-nothing in a payload says `ai.openclaw.mac` succeeds `bot.molt.mac`.
+nothing in a payload says `ai.openclaw.mac` succeeds `com.clawdbot.mac`.
 
 **The boundary that decides whether this is safe** is where the identifier string comes from:
 
 | | what the model does | verdict |
 |---|---|---|
 | **correlate** | reads the unmatched rows **from the same run** and says which is the successor | fine. The fact still comes from a real install |
-| **recall** | answers *what is the new bundle id* from training data or the web | **this is how `bot.molt.mac` got in.** Refused |
+| **recall** | answers *what is the new bundle id* from training data or the web | **this is how a wrong identifier gets in.** Refused |
 
 Enforcement is mechanical rather than prompt discipline: **the request carries no tools at
 all**, so with the evidence supplied in the prompt, recall has nowhere to enter from.

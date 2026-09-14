@@ -146,11 +146,11 @@ So add the agent to a scenario's `classified.must_find`. **There is no longer a 
 an exception instead** — `tools/validate_catalog.py` refuses an agent no scenario installs,
 unconditionally.
 
-There used to be. An `unverified:` block let an agent enter on an `evidence:` grade, and the
-weakest grade it accepted was `vendor-documentation` — which is, by name, what produced
-`bot.molt.mac`. The register existed so a guess could not hide, and it worked: nothing ever
-hid in it, because nothing was ever written to it. It held zero entries for its whole life
-while remaining the one way in that did not require a machine to have run the software.
+There used to be. An `unverified:` block let an agent enter on an `evidence:` grade, and its
+weakest grade was `vendor-documentation` — the source this repo exists to distrust. The
+register was built so a guess could not hide, and nothing ever hid in it because nothing was
+ever written to it: zero entries for its whole life, while remaining the one way in that did
+not require a machine to have run the software.
 
 If no scenario can install your agent, it is not a signature yet. Say so in
 [`docs/blind-spots.yaml`](docs/blind-spots.yaml), which is the file for what this repo cannot

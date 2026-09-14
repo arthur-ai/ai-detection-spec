@@ -50,25 +50,20 @@ def archived_match(aid, rec):
     return False
 
 # A REAL INSTALL IS THE STANDARD, AND IT IS NOW THE ONLY ONE. An agent is verified when a
-# VM scenario installs the actual software and asserts the classifier finds it -- the only
-# evidence that survives the failure this catalog was built around: `bot.molt.mac` came
-# from the vendor's own Homebrew metadata and matched nothing on any Mac.
+# VM scenario installs the actual software and asserts the classifier finds it.
 #
-# THE `unverified:` BLOCK AND ITS EVIDENCE GRADES ARE GONE. They let an agent enter on
-# `vendor-documentation` -- which is, precisely and by name, the grade that produced
-# bot.molt.mac -- provided the guess carried a reason and a date. The register was built to
-# stop a guess hiding, and it worked: nothing ever hid in it, because nothing was ever
-# written to it. It held zero entries for its entire life while remaining the one way into
-# the catalog that did not require a machine to have run the software.
+# THE `unverified:` BLOCK AND ITS EVIDENCE GRADES ARE GONE. Its weakest grade was
+# `vendor-documentation` -- the one this catalog's header names as how a wrong identifier
+# gets shipped -- and a guess carrying a reason and a date still entered on it. The
+# register was built so a guess could not hide, and nothing ever hid in it because nothing
+# was ever written to it: zero entries for its whole life, while remaining the one way in
+# that did not require a machine to have run the software. An unused door is still a door.
 #
-# So the exception was not managing a real tension; it was an unused door. The gate below
-# is unconditional now: an agent no scenario installs does not ship. `untested:`, the
-# identifier-level version of the same idea, went with it and was equally empty.
-#
-# What replaces it is not another register but a stricter question -- see
-# docs/signature-lifecycle-v2.md. An identifier that WAS proved and can no longer be is
-# superseded, and carries the observation that proved it. An identifier that was never
-# proved is not a signature.
+# The gate below is unconditional now. `untested:`, the identifier-level version of the
+# same idea, went with it and was equally empty. What replaces them is a stricter question,
+# not another register -- see docs/signature-lifecycle-v2.md: an identifier that WAS proved
+# and can no longer be is superseded and carries the observation that proved it; one that
+# was never proved is not a signature.
 
 
 def validate_registry(reg):
@@ -209,9 +204,7 @@ def main():
 
         # A SUPERSEDED RECORD MUST BE BACKED BY AN ARCHIVED OBSERVATION. This replaces a
         # flat `retired:` list of strings, which exempted every value it named from the
-        # coverage gate and asked for nothing in return -- which is how `bot.molt.mac` and
-        # `bot.molt.` sat excluded from the badge for months while naming a release that
-        # was never published.
+        # coverage gate and asked for nothing in return.
         #
         # Four things are checked, and the last is the one that matters: the route must
         # exist, the value must still be ON that route (leaving it there is what keeps the
@@ -311,8 +304,7 @@ def main():
 
     # THE STANDARD GATE, AND IT IS UNCONDITIONAL. Every agent is backed by a real install
     # or it does not ship. There is no longer a block that buys an exception, because the
-    # one that existed was never used and its weakest grade was the one that produced
-    # bot.molt.mac -- see the note at the head of this file.
+    # one that existed was never used -- see the note at the head of this file.
     covered = set()
     for path in sorted((ROOT / "test" / "scenarios").glob("*/expected.json")):
         for aid in json.loads(path.read_text()).get("classified", {}).get("must_find", []):
