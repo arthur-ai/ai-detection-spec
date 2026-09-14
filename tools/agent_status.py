@@ -445,7 +445,18 @@ def collect():
     unrecorded = sorted(in_ci - recorded)
 
     agents = []
-    retired_of = {a["id"]: {str(v) for v in a.get("retired", [])} for a in catalog["agents"]}
+    # SUPERSEDED VALUES COME FROM AN ARCHIVED OBSERVATION, not from a label. `retired:`
+    # was a list of strings a person typed, and it exempted every one of them from the
+    # coverage gate -- which is how two identifiers naming a release that was never
+    # published sat excluded from the badge for months. A value is superseded here only if
+    # a run once produced it and that record was archived when it stopped.
+    #
+    # Keyed on (route, value), never value alone: OpenClaw ships an npm package and a
+    # Homebrew cask both called `openclaw`, so a value-keyed label would supersede one by
+    # superseding the other. Same lesson as the coverage credits.
+    superseded_of = {a["id"]: {(str(s["route"]), str(s["value"]))
+                               for s in a.get("superseded", [])}
+                     for a in catalog["agents"]}
     for agent in catalog["agents"]:
         aid = agent["id"]
         idents = []
@@ -490,8 +501,8 @@ def collect():
                 # identifiers still uncovered.
                 if ci_scens:
                     state = "ci-install"
-                elif str(value) in retired_of.get(aid, ()):
-                    state = "alias"
+                elif (route, str(value)) in superseded_of.get(aid, ()):
+                    state = "superseded"
                 elif proven:
                     state = "ci-fixture"
                 elif not (route_platforms.get(route, set()) & in_ci_platforms):
@@ -562,7 +573,7 @@ def collect():
 STATE_LABEL = {
     "ci-install": "CI: real install",
     "ci-fixture": "CI: fixture",
-    "alias": "alias (fixture)",
+    "superseded": "superseded",
     # Not a failure to observe: there is no runner for that platform. Named rather than
     # folded into NO TEST, because the two need different actions -- one is a test to
     # write, the other is a platform to add to the matrix.
@@ -612,7 +623,7 @@ def badge_for(data):
     # complete for a reason nobody can act on. It is counted and named in the breakdown
     # instead: the identifier table below names every route and the platforms it was
     # observed on, which is a fact someone can act on rather than a score to read.
-    n = sum(1 for i in ids if i["state"] not in ("alias", "no-ci-platform"))
+    n = sum(1 for i in ids if i["state"] not in ("superseded", "no-ci-platform"))
     covered = sum(1 for i in ids if i["state"] in ("ci-install", "ci-fixture"))
     # Green only at complete. Anything less is amber -- a badge that reads green at 90%
     # trains the reader to stop looking at the number beside it.
@@ -700,12 +711,14 @@ def markdown(data):  # noqa: C901
         # install", which is a contradiction of exactly one: the headline was counting
         # every covered identifier and describing only the real-install ones.
         ((f"**Every identifier is proved by a real install in CI** — {n_ci} of "
-          f"{n_ident - n_st('alias')}.")
+          f"{n_ident - n_st('superseded')}.")
          if n_ci == n_st("ci-install") else
          (f"**Every identifier is covered by a CI test** — {n_ci} of "
-          f"{n_ident - n_st('alias')}, {n_st('ci-install')} of them by a real install."))
-        + (f" {n_st('alias')} retired alias(es) are excluded: nothing installs them any more."
-           if n_st("alias") else "")
+          f"{n_ident - n_st('superseded')}, {n_st('ci-install')} of them by a real "
+          f"install."))
+        + (f" {n_st('superseded')} superseded identifier(s) are excluded: the release that "
+           f"produced them is gone, and each names the run that last did."
+           if n_st("superseded") else "")
         + " Anything below complete is a red build, so there is no partial number to read"
           " here.",
         "",
@@ -786,8 +799,13 @@ def markdown(data):  # noqa: C901
                     # one possible value reads as a distinction being drawn when none is.
                     "| name | identifiers | scenarios |", "|---|---|---|"]
             for a in sorted(by_class[cls], key=lambda x: x["id"]):
-                MARK = {"ci-install": "**`%s`**", "ci-fixture": "`%s`", "alias": "~~`%s`~~",
-                        "local-only": "_`%s`_", "tested-absent": "%s ⚠", "none": "%s"}
+                # `no-ci-platform` WAS MISSING FROM THIS DICT, and would have raised a
+                # KeyError the first time an identifier reached that state -- the page that
+                # describes the catalog, crashed by a catalog entry. It never fired only
+                # because every route has a runner today.
+                MARK = {"ci-install": "**`%s`**", "ci-fixture": "`%s`",
+                        "superseded": "~~`%s`~~", "local-only": "_`%s`_",
+                        "no-ci-platform": "%s ∅", "tested-absent": "%s ⚠", "none": "%s"}
                 ids = ", ".join(MARK[i["state"]] % i["value"]
                                 for i in a["identifiers"]) or "--"
                 out.append(f"| **{a['name']}** | {ids} | "
@@ -795,7 +813,8 @@ def markdown(data):  # noqa: C901
             out.append("")
 
     out += ["> **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = "
-            "retired alias, uninstallable by design. ⚠ = a scenario installed this agent and "
+"superseded: a run proved it and the current release no longer emits it. "
+            "∅ = no CI runner for its platform. ⚠ = a scenario installed this agent and "
             "the identifier did not appear. plain = nothing tests it.", ""]
 
 
@@ -931,7 +950,7 @@ def main():
         bad = []
         for agent in data["agents"]:
             for i in agent["identifiers"]:
-                if i["state"] not in ("ci-install", "ci-fixture", "alias"):
+                if i["state"] not in ("ci-install", "ci-fixture", "superseded"):
                     bad.append(f"{agent['id']}: {i['route']}:{i['value']} is {i['state']} "
                                f"-- no CI test covers it. Cover it, or remove it: an "
                                f"identifier no test can produce is a guess with a comment "
@@ -945,9 +964,9 @@ def main():
         # while the page beside it says 38/38.
         covered, n, _ = badge_for(data)
         aliases = sum(1 for a in data["agents"] for i in a["identifiers"]
-                      if i["state"] == "alias")
+                      if i["state"] == "superseded")
         print(f"catalog-gate: ok, {covered}/{n} identifiers are covered by a CI test"
-              + (f", {aliases} retired alias(es) excluded" if aliases else ""))
+              + (f", {aliases} superseded excluded" if aliases else ""))
         return
 
     if "--check" in sys.argv:
@@ -967,7 +986,7 @@ def main():
         if covered != coverable:
             short = [(a["id"], i["route"], i["value"], i["state"])
                      for a in data["agents"] for i in a["identifiers"]
-                     if i["state"] not in ("ci-install", "ci-fixture", "alias")]
+                     if i["state"] not in ("ci-install", "ci-fixture", "superseded")]
             print(f"agent-status: FAIL -- coverage is {covered}/{coverable}, not complete.")
             for aid, route, value, state in short:
                 print(f"  {aid}: {route}:{value} is {state}")
@@ -1025,7 +1044,7 @@ def main():
     covered = n("ci-install") + n("ci-fixture")
     # Retired aliases are out of the denominator. No install produces them, so including
     # them would cap the number below 100% for a reason nobody can act on.
-    coverable = n_ident - n("alias")
+    coverable = n_ident - n("superseded")
     print(f"\nIDENTIFIERS COVERED BY A CI TEST   {covered}/{coverable}"
           f"   ({100 * covered // coverable}%)")
     # ONLY THE STATES THAT ARE ACTUALLY POPULATED, for the same reason the page no longer
@@ -1043,8 +1062,8 @@ def main():
             ("none", "nothing exercises it")):
         if n(state):
             print(f"  {STATE_LABEL[state]:<17}{n(state):>3}  {note}")
-    if n("alias"):
-        print(f"\n  {n('alias')} retired alias(es) are excluded: nothing installs them any "
+    if n("superseded"):
+        print(f"\n  {n('superseded')} superseded identifier(s) are excluded: nothing installs them any "
               f"more, so no\n  scenario can cover one. Their fixture rows are the only "
               f"evidence there is.")
     # Only where an unrecorded scenario actually costs coverage. It used to fire for any

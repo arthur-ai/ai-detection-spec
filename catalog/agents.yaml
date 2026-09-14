@@ -74,8 +74,16 @@
 # liveness, not identity, and if it is ever wanted it should be built as that and named as
 # that.
 
-# Old identifiers are kept as aliases rather than removed: machines that installed an
-# earlier version still carry them.
+# AN OLD IDENTIFIER IS KEPT, AND KEEPING IT NOW COSTS EVIDENCE. Machines that installed an
+# earlier version still report it, so removing one blinds the fleet to those machines --
+# but "an earlier version reported it" is a claim, and it was wrong twice under the old
+# `retired:` list, which exempted a value from the coverage gate on nothing but a person's
+# say-so. `bot.molt.mac` and `bot.molt.` sat there for months naming a release this project
+# never published.
+#
+# So `superseded:` carries the observation instead: which run produced it, which scenario,
+# and at what version. The tooling writes the record when a run stops reproducing an
+# identifier; nobody types one. See docs/signature-lifecycle-v2.md.
 
 # Four kinds of query literal are deliberately NOT catalog entries, because they are
 # structural rather than tool-specific:
@@ -234,12 +242,6 @@ agents:
     npm: [openclaw, clawdbot, moltbot]
     state_dirs: ["~/.openclaw"]
     launchd_prefixes: [ai.openclaw.]
-    # `clawdbot` and `moltbot` are NOT retired in the sense this field means. Both are
-    # installed for real on every pull request by 56-openclaw-retired-names, so both are
-    # current evidence -- the label claimed they could not be tested, and a scenario
-    # disproved that. The field is empty rather than deleted because the schema is about
-    # to change; see docs/signature-lifecycle-v2.md.
-    retired: []
 
   - id: chatgpt-desktop
     name: ChatGPT Desktop
@@ -261,12 +263,15 @@ agents:
     # it -- so a direct download, which is how most people install this app, was invisible.
     bundle_ids: [com.openai.codex, com.openai.chat]
     homebrew: [chatgpt]
-    # Retired for the same reason as OpenClaw's aliases: it belongs to an earlier release
-    # and a fresh install cannot produce it today -- every variation of the current cask
-    # serves one 26.x URL. Listed so that the day the runner image catches up and the id
-    # stops appearing, it is recorded as "kept for machines that still carry it" rather
-    # than quietly failing coverage and inviting someone to delete it.
-    retired: [com.openai.chat]
+    # com.openai.chat IS NOT SUPERSEDED YET, and the distinction is the whole point of the
+    # field being evidence-backed. It was labelled retired on the reasoning that a fresh
+    # install cannot produce it -- and 10-desktop-apps produces it on every run, because
+    # one runner image's Homebrew is still stale enough to resolve the pre-rename build.
+    # An identifier CI proves today is current, whatever era it belongs to.
+    #
+    # The day that runner updates, the shrink guard will fire, the observation will be
+    # archived, and a `superseded:` record will land here carrying the run that last saw
+    # it. That is a fact the tooling will write, not a label someone types in advance.
 
   - id: codex-cli
     name: Codex CLI

@@ -25,7 +25,29 @@ def load_routes():
 
 
 REQUIRED = {"id", "name", "classification", "platforms"}
-OPTIONAL = {"retired"}
+OPTIONAL = {"superseded"}
+SUPERSEDED_REQUIRED = {"route", "value", "last_version", "last_proved", "by", "run"}
+
+
+def archived_match(aid, rec):
+    """Is this superseded record backed by an archived observation?
+
+    The catalog claims; the tests verify. A superseded record is written from the run that
+    stopped reproducing an identifier, and the observation it was written from moves into
+    that scenario's `archived` list rather than being discarded -- so the two can be
+    compared field for field, by reading a file, with no network and no git archaeology.
+    """
+    path = ROOT / "test" / "scenarios" / str(rec["by"]) / "observed.json"
+    if not path.exists():
+        return False
+    for obs in json.loads(path.read_text()).get("archived", []):
+        if (obs.get("agent") == aid
+                and str(obs.get("route")) == str(rec["route"])
+                and str(obs.get("value")) == str(rec["value"])
+                and str(obs.get("run")) == str(rec["run"])
+                and str(obs.get("agent_version", "")) == str(rec["last_version"])):
+            return True
+    return False
 
 # A REAL INSTALL IS THE STANDARD, AND IT IS NOW THE ONLY ONE. An agent is verified when a
 # VM scenario installs the actual software and asserts the classifier finds it -- the only
@@ -175,14 +197,46 @@ def main():
                 errors.append(f"{aid}: images {value!r} must be lowercase; a registry "
                               f"rejects uppercase in a repository name.")
 
-        # A retired alias must actually BE one of this agent's identifiers. A typo here
-        # would quietly exempt nothing while marking a value that does not exist, and the
-        # coverage report would keep counting the real one as a gap.
-        listed = {str(v) for r in (ROUTES & set(agent)) for v in agent[r]}
-        for value in agent.get("retired", []):
-            if str(value) not in listed:
-                errors.append(f"{aid}: retired {value!r} is not one of its identifiers. "
-                              f"Mark a value that exists, or remove it.")
+        # A SUPERSEDED RECORD MUST BE BACKED BY AN ARCHIVED OBSERVATION. This replaces a
+        # flat `retired:` list of strings, which exempted every value it named from the
+        # coverage gate and asked for nothing in return -- which is how `bot.molt.mac` and
+        # `bot.molt.` sat excluded from the badge for months while naming a release that
+        # was never published.
+        #
+        # Four things are checked, and the last is the one that matters: the route must
+        # exist, the value must still be ON that route (leaving it there is what keeps the
+        # matcher matching it), the date must be a date, and `by`/`run`/`last_version` must
+        # line up with a record in that scenario's observed.json `archived` list. Without
+        # the last check the record is a guess wearing provenance-shaped fields, which is
+        # worse than a guess because it reads as evidence.
+        for rec in agent.get("superseded", []) or []:
+            if not isinstance(rec, dict):
+                errors.append(f"{aid}: superseded entries must be mappings, not bare "
+                              f"values -- a string cannot say which run proved it")
+                continue
+            missing = SUPERSEDED_REQUIRED - set(rec)
+            if missing:
+                errors.append(f"{aid}: superseded {rec.get('value')!r} missing "
+                              f"{sorted(missing)}")
+                continue
+            route, value = str(rec["route"]), str(rec["value"])
+            if route not in ROUTES:
+                errors.append(f"{aid}: superseded names route {route!r}, which is not in "
+                              f"catalog/routes.yaml")
+                continue
+            if value not in {str(v) for v in agent.get(route, [])}:
+                errors.append(
+                    f"{aid}: superseded {route}:{value!r} is not on that route's list. A "
+                    f"superseded value STAYS on its route -- that is what keeps it matched "
+                    f"on the machines it exists for. Supersession marks it, never moves it.")
+            if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(rec["last_proved"])):
+                errors.append(f"{aid}: superseded {value!r} last_proved must be YYYY-MM-DD")
+            if not archived_match(aid, rec):
+                errors.append(
+                    f"{aid}: superseded {route}:{value!r} cites {rec['by']} run "
+                    f"{rec['run']}, and no archived observation there matches it. The "
+                    f"record is written from a run that stopped producing the identifier; "
+                    f"one nothing produced is a guess with a date on it.")
 
         # PER-ROUTE VALUE SHAPES COME FROM THE REGISTRY, not from a branch per route
         # here. The Chrome extension-id rule (32 characters from a-p: a base16 encoding

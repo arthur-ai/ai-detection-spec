@@ -642,6 +642,53 @@ check("a hand-written fixture may NOT credit coverage",
 check("the real hand-written fixtures credit no coverage either",
       not any(p.name == "known-agents.json" for p in _st.coverage_fixtures()))
 
+# --- a superseded record must be backed by an archived observation -----------------
+#
+# `superseded:` ships with NO records -- nothing in the catalog qualifies yet -- so every
+# branch of its validator is unexercised code until the first real rename. That is exactly
+# when you least want to discover it is wrong, so it is driven here with a synthetic
+# record instead.
+#
+# The check that matters is the last one: a record whose cited observation is not in the
+# tree is a guess wearing provenance-shaped fields, which is worse than a guess because it
+# reads as evidence. The old `retired:` list had no such check at all, which is how two
+# values naming a release that was never published stayed exempt from the coverage gate.
+_vspec = _ilu.spec_from_loader("validate_catalog",
+    _ilm.SourceFileLoader("validate_catalog", str(ROOT / "tools" / "validate_catalog.py")))
+_vc = _ilu.module_from_spec(_vspec)
+_vspec.loader.exec_module(_vc)
+
+_REC = {"route": "bundle_ids", "value": "com.example.old", "last_version": "1.2.3",
+        "last_proved": "2026-08-20", "by": "zz-probe", "run": "33511815638"}
+
+with _tf2.TemporaryDirectory() as _d:
+    _fake = pathlib.Path(_d)
+    (_fake / "test" / "scenarios" / "zz-probe").mkdir(parents=True)
+    _obs = _fake / "test" / "scenarios" / "zz-probe" / "observed.json"
+    _saved_root = _vc.ROOT
+    _vc.ROOT = _fake
+    try:
+        _obs.write_text(json.dumps({"scenario": "zz-probe", "identifiers": []}))
+        _no_archive = _vc.archived_match("probe-agent", _REC)
+
+        _obs.write_text(json.dumps({"scenario": "zz-probe", "identifiers": [], "archived": [
+            {"agent": "probe-agent", "route": "bundle_ids", "value": "com.example.old",
+             "agent_version": "1.2.3", "run": "33511815638"}]}))
+        _matched = _vc.archived_match("probe-agent", _REC)
+
+        # Same record, different run: the observation exists but is not the one cited.
+        _obs.write_text(json.dumps({"scenario": "zz-probe", "identifiers": [], "archived": [
+            {"agent": "probe-agent", "route": "bundle_ids", "value": "com.example.old",
+             "agent_version": "1.2.3", "run": "99999999999"}]}))
+        _wrong_run = _vc.archived_match("probe-agent", _REC)
+    finally:
+        _vc.ROOT = _saved_root
+
+check("a superseded record with no archived observation is refused", not _no_archive)
+check("a superseded record matching an archived observation is accepted", _matched)
+check("a superseded record citing the WRONG run is refused", not _wrong_run,
+      "the observation exists but did not come from the run the record names")
+
 # --- the coverage shrink guard is scoped per (platform, os, arch) -----------------
 #
 # THIS TEST EXISTS BECAUSE I MISREAD THE GUARD AND BLAMED IT. A CI job refused to record

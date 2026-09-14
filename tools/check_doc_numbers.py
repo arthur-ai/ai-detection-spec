@@ -47,8 +47,20 @@ def truth():
         sys.exit(1)
     st = json.loads(proc.stdout)
     idents = [i for a in st["agents"] for i in a["identifiers"]]
-    covered = sum(1 for i in idents if i["state"] in ("ci-install", "ci-fixture"))
-    coverable = sum(1 for i in idents if i["state"] != "alias")
+    # THE COVERAGE FORMULA IS BORROWED, NOT REPEATED. This file carried its own copy --
+    # excluding only `alias` from the denominator while agent_status.badge_for() also
+    # excluded `no-ci-platform`. The two agreed purely because no identifier had ever
+    # reached that state, so a disagreement would have shipped the day one did: this gate
+    # would pass while telling the README a number the page beside it contradicts.
+    #
+    # That is the five-copies-that-must-agree shape, one copy short of the `ext` bug. One
+    # definition, imported from the module that owns it.
+    loader = importlib.machinery.SourceFileLoader(
+        "agent_status", str(ROOT / "tools" / "agent_status.py"))
+    spec = importlib.util.spec_from_loader("agent_status", loader)
+    status_mod = importlib.util.module_from_spec(spec)
+    loader.exec_module(status_mod)
+    covered, coverable, _ = status_mod.badge_for(st)
     wf = yaml.safe_load((ROOT / ".github" / "workflows" / "scenarios.yml").read_text())
     return {
         "agents": len(cat["agents"]),

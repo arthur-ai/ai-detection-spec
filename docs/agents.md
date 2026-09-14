@@ -83,7 +83,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | **Claude Desktop** | **`com.anthropic.claudefordesktop`**, **`claude`**, **`com.anthropic.claude_browser_extension.json`** | 10-desktop-apps, 90-demo-fleet |
 | **Perplexity** | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
 
-> **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = retired alias, uninstallable by design. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it.
+> **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = superseded: a run proved it and the current release no longer emits it. ∅ = no CI runner for its platform. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it.
 
 ## 🚧 What osquery cannot see
 
