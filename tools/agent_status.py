@@ -173,6 +173,21 @@ def replay(paths, catalog):
     return values, routes, seen_ver
 
 
+def _successors():
+    """tools/successor_candidates.py, imported lazily.
+
+    Lazily because the shrink guard is the only caller and it fires rarely: a module-level
+    import would load bin/classify a second time on every --record, for a branch almost no
+    run takes.
+    """
+    loader = importlib.machinery.SourceFileLoader(
+        "successor_candidates", str(ROOT / "tools" / "successor_candidates.py"))
+    spec = importlib.util.spec_from_loader("successor_candidates", loader)
+    mod = importlib.util.module_from_spec(spec)
+    loader.exec_module(mod)
+    return mod
+
+
 def _obs_sort(rec):
     """The committed order, shared by record() and tools/merge_observations.py."""
     return (rec["agent"], rec["route"], rec["value"], rec.get("platform") or "",
@@ -351,7 +366,27 @@ def record(artifact, scenario_dir, os_version="", arch="", platform="", run_id="
             print(f"  compared on (platform, os, arch) = {plat}, against "
                   f"{len(was)} of {len(committed)} committed record(s)")
             print(f"  keys in the committed file: {keys}")
-            print("If the artifact is current and the loss is real, pass --allow-shrink.")
+
+            # THE OTHER HALF OF A RENAME, SAID HERE BECAUSE THIS IS WHERE SOMEONE IS
+            # LOOKING. A rename loses an identifier and gains an unclaimed row in the same
+            # run, on the same machine, in the payload this function was just handed --
+            # and until now the loss was reported and the arrival thrown away. The kinds
+            # come from the lost values' own routes, so the list is the handful of rows
+            # that could be a successor rather than every row nothing claimed.
+            try:
+                _sc = _successors()
+                _kinds = _sc.kinds_for(ROUTES, {r for _, r, _ in lost})
+                _cands = _sc.candidates(json.loads(pathlib.Path(artifact).read_text()),
+                                        _kinds, catalog=catalog, routes=ROUTES)
+                print("\n" + _sc.render(_cands, ", ".join(f"{r}:{v}" for _, r, v in lost)))
+            except Exception as exc:                        # noqa: BLE001
+                # NEVER let the enrichment take down the report. The loss is the finding;
+                # candidates are a convenience, and a convenience that turns a clear
+                # failure into a traceback has made things worse.
+                print(f"\n(could not compute successor candidates: {exc})")
+
+            print("\nIf the artifact is current and the loss is real, pass --allow-shrink. "
+                  "If the release genuinely stopped producing it, pass --supersede.")
             sys.exit(1)
 
     # record() is called directly by test/test_matcher.py against a TemporaryDirectory, which

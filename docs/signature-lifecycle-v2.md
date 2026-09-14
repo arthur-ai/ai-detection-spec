@@ -464,42 +464,61 @@ correctly-declined from route-quietly-broken.
 
 ---
 
-# NOT BUILT: finding the successor
+# The other half of a rename: what arrived
 
-**Everything above this line is implemented. Nothing below it is.** It is a design record, and
-it is marked because a vocabulary term with no producer is the `stale:<n>` mistake — documented
-in three places, emitted by nobody, and accepted by a lint check the whole time.
-
-Everything above handles the identifier that **left**. A rename has two halves, and the second
-is not built.
+Everything above handles the identifier that **left**. A rename has two halves, and until
+recently only one was watched.
 
 When a vendor renames, one run loses an identifier *and* gains a row nothing claims — same
-machine, same payload, same agent. `com.openai.chat` did not merely vanish; `com.openai.codex`
-arrived in its place, on the same runner, in the same JSON. **That correlation is the strongest
-signal this repo could have, and nothing uses it.**
+machine, same payload, same agent. `com.openai.chat` did not merely vanish;
+`com.openai.codex` arrived in its place, on the same runner, in the same JSON. **That
+correlation is the strongest signal this repo has**, and it was being computed and thrown
+away: `test/lib/assert.sh` runs `bin/classify --json --show-unmatched` on every scenario,
+an `unmatched_max` assertion exists that no scenario sets, and `replay()` keeps findings
+while discarding the unmatched list in the same call.
 
-What exists today, and what happens to it:
+**The shrink guard now reports both halves.** When it refuses a run, it names the loss and
+then the rows that arrived unclaimed, narrowed two ways — neither of them clever:
 
-| piece | state |
-|---|---|
-| `test/lib/assert.sh` runs `bin/classify --json --show-unmatched` on **every scenario** | the successor row is already computed, on every run |
-| an `unmatched_max` assertion exists in that file | **no scenario sets it** |
-| `agent_status.replay()` calls `classify(...)[0]` | findings only. The unmatched list is discarded in the same call |
+- **By kind.** A lost `bundle_ids` value means the successor is an `app` row, and
+  `catalog/routes.yaml` already says which kind a route arrives on. Nothing is typed.
+- **By baseline.** `tools/successor_candidates.py --baseline` subtracts a bare machine's
+  unmatched set, which is the runner's own furniture rather than anything a scenario
+  installed. That turns several hundred rows into a few.
 
-So the new identifier arrives in CI, is computed, is not looked at, and is thrown away. The old
-one leaving is caught by three guards; the new one arriving is caught by none.
+```
+Lost: bundle_ids:com.openai.chat
+  2 unclaimed row(s) of that kind arrived in the same run. A successor, if there is
+  one, is among them:
+    app       com.vendor.brandnew  2.0.0
+              /Applications/BrandNew.app
+  Confirm one is the renamed product before cataloguing it: an unclaimed row is not
+  the same as this agent's row.
+```
 
-**The design: the guard that reports a loss also reports the candidates**, narrowed by the lost
-route's kind and by subtracting the baseline scenario's unmatched set. Two things the design
-assumed that are not true, and would have to be handled: **only the macOS job uploads the raw
-payload**, and the raw artifacts are named such that an obvious glob also matches the
-observation artifacts.
+The guard has only its own scenario's payload, so the baseline subtraction is available to
+the standalone tool rather than applied automatically — which is why furniture can still
+appear in that list. The enrichment is wrapped: if it fails for any reason it says so and
+the refusal still prints. The loss is the finding; candidates are a convenience, and a
+convenience that turns a clear failure into a traceback has made things worse.
 
-**No candidate is information too.** If an identifier is lost and nothing unclaimed arrives,
-this was not a rename: the route went away. An AppImage replacing a `.deb` leaves no package
-record at all.
+**What this is not.** It proposes candidates; it does not identify anything. An unmatched
+row is a row nothing claimed, which is not the same as a row belonging to the agent that
+just lost an identifier — a scenario installs one agent onto a machine carrying many other
+things. Narrowing is not deciding, and a candidate becomes a signature the way every other
+one does: a scenario installs the software and a run produces the row.
 
-## Naming the successor with a model
+**An empty list is information.** If an identifier is lost and nothing unclaimed arrives,
+this was not a rename — the route went away. An AppImage replacing a `.deb` leaves no
+package record at all.
+
+---
+
+# NOT BUILT: naming the successor with a model
+
+**Everything above this line is implemented. Nothing below it is.** It is a design record,
+and it is marked because a vocabulary term with no producer is the `stale:<n>` mistake —
+documented in three places, emitted by nobody, and accepted by a lint check the whole time.
 
 Deciding *which* candidate is the renamed product needs knowledge the rows do not carry:
 nothing in a payload says `ai.openclaw.mac` succeeds `bot.molt.mac`.
@@ -541,6 +560,7 @@ ambiguous, and add the model against that measurement.
 | regenerating `docs/agents.md` and the README badge | `--write`, plus `docs.yml` as a safety net |
 | computing coverage per identifier and per platform, against the CI matrix | `tools/agent_status.py` |
 | refusing a run that proves less than the committed record | the shrink guard |
+| listing what arrived unclaimed when a run loses an identifier | `tools/successor_candidates.py`, called by the guard |
 | moving a lost observation into `archived` and printing the catalog record | `--supersede` |
 | failing the build on an identifier no CI test covers | `--gate` and `--check` |
 | refusing a superseded record whose archived observation is missing or does not match | `tools/validate_catalog.py` |
@@ -549,6 +569,7 @@ ambiguous, and add the model against that measurement.
 | stays manual | why |
 |---|---|
 | triaging **why** an identifier stopped appearing | five causes, five actions, and only two are separable from the record alone |
+| confirming a candidate **is** the renamed product | an unclaimed row is a row nothing claimed, which is not the same as this agent's row |
 | deciding to supersede, rather than accepting the first red run | a week-long outage and a rename look identical for that week |
 | widening an assertion to an alternation list | which generations a runner may produce is read off runs, not predicted |
 | deciding a signature cannot be proved at all | the one decision that removes a signature, so it should cost a person |

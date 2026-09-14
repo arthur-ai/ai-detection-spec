@@ -943,6 +943,84 @@ check("--supersede on a run that lost nothing archives nothing",
       not _noop_after.get("archived") and "nothing to supersede" in _noop_out,
       _noop_out.strip()[:120])
 
+# --- the other half of a rename: what arrived unclaimed ---------------------------
+#
+# Three guards fire when an identifier stops appearing and NOTHING fired when a new one
+# arrived -- though a rename does both, in one run, on one machine, in one payload. The
+# successor was computed on every scenario by assert.sh and thrown away.
+_scspec = _ilu.spec_from_loader("successor_candidates",
+    _ilm.SourceFileLoader("successor_candidates",
+                          str(ROOT / "tools" / "successor_candidates.py")))
+_sc = _ilu.module_from_spec(_scspec)
+_scspec.loader.exec_module(_sc)
+
+_sc_rows = [
+    {"kind": "app", "id": "com.vendor.brandnew", "ver": "2.0",
+     "loc": "/Applications/BrandNew.app", "extra": "", "perms": ""},
+    {"kind": "app", "id": "com.apple.Safari", "ver": "18.0",
+     "loc": "/Applications/Safari.app", "extra": "", "perms": ""},
+    {"kind": "npm", "id": "unrelated-pkg", "ver": "1.0", "loc": "/x",
+     "extra": "", "perms": ""},
+]
+# A bare machine shows Safari and nothing a scenario installed.
+_sc_base = [_sc_rows[1]]
+
+_cands = _sc.candidates(_sc_rows, {"app"})
+check("candidates are narrowed to the lost route's kind",
+      {c["id"] for c in _cands} == {"com.vendor.brandnew", "com.apple.Safari"},
+      f"got {sorted(c['id'] for c in _cands)}")
+check("...so a row of another kind is not offered as a successor",
+      "unrelated-pkg" not in {c["id"] for c in _cands})
+
+_narrowed = _sc.candidates(_sc_rows, {"app"}, baseline_rows=_sc_base)
+check("subtracting the baseline removes the runner's own furniture",
+      {c["id"] for c in _narrowed} == {"com.vendor.brandnew"},
+      f"got {sorted(c['id'] for c in _narrowed)}")
+
+check("the kind is resolved from the route, not typed",
+      _sc.kinds_for(_st.ROUTES, {"bundle_ids"}) == {"app"},
+      "routes.yaml already says which kind a route arrives on")
+
+# AN EMPTY LIST IS A FINDING, not a blank. An AppImage replacing a .deb leaves no package
+# record at all, so a lost value with no successor means the route went away.
+check("no candidate says the route went away rather than printing nothing",
+      "not a rename" in _sc.render([], "deb_packages:something"),
+      _sc.render([], "x"))
+check("a candidate list says an unclaimed row is not this agent's row",
+      "not the same as this agent" in _sc.render(_narrowed, "bundle_ids:old"))
+
+# And the guard itself reports both halves.
+_g_committed = {"scenario": "zz-fixture", "identifiers": [
+    {"agent": "chatgpt-desktop", "route": "bundle_ids", "value": "com.openai.chat",
+     "agent_version": "1.2026.160", "platform": "linux", "os": "24.04",
+     "arch": "aarch64", "run": "111"}]}
+_tmp = pathlib.Path(_tf2.mkdtemp())
+try:
+    _s = _tmp / "scenarios" / "zz-fixture"
+    _s.mkdir(parents=True)
+    (_s / "observed.json").write_text(json.dumps(_g_committed))
+    _a = _tmp / "art.json"
+    _a.write_text(json.dumps(_sc_rows))
+    _old_root, _st.SCENARIOS = _st.SCENARIOS, _tmp / "scenarios"
+    _gout = _io.StringIO()
+    try:
+        with _ctx.redirect_stdout(_gout):
+            _st.record(str(_a), str(_s), "24.04", "aarch64", "linux", run_id="222")
+    except SystemExit:
+        pass
+    finally:
+        _st.SCENARIOS = _old_root
+    _gtext = _gout.getvalue()
+finally:
+    _sh.rmtree(_tmp, ignore_errors=True)
+
+check("the shrink guard reports what arrived, not only what was lost",
+      "com.vendor.brandnew" in _gtext and "Lost: bundle_ids:com.openai.chat" in _gtext,
+      _gtext.strip()[-200:])
+check("...and offers --supersede beside --allow-shrink",
+      "--supersede" in _gtext and "--allow-shrink" in _gtext,
+      "the two exits differ: one keeps the evidence, one destroys it")
+
 print()
 if failures:
     print(f"matcher: FAIL ({len(failures)})")
