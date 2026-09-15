@@ -28,7 +28,7 @@
       "value": "~/.local/bin/claude",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "34840592589"
+      "run": "34961855857"
     },
     {
       "agent": "claude-code",
@@ -57,7 +57,7 @@
       "value": "~/.claude",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "34840592589"
+      "run": "34961855857"
     },
     {
       "agent": "cline",
@@ -87,10 +87,10 @@
       "agent": "cline",
       "route": "npm",
       "value": "cline",
-      "agent_version": "3.0.61",
+      "agent_version": "3.0.62",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "34840592589"
+      "run": "34961855857"
     },
     {
       "agent": "codex-cli",
@@ -123,7 +123,7 @@
       "agent_version": "0.154.0",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "34840592589"
+      "run": "34961855857"
     },
     {
       "agent": "codex-cli",
@@ -152,7 +152,7 @@
       "value": "~/.codex",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "34840592589"
+      "run": "34961855857"
     },
     {
       "agent": "copilot-cli",
@@ -185,7 +185,7 @@
       "agent_version": "1.0.83",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "34840592589"
+      "run": "34961855857"
     },
     {
       "agent": "gemini-cli",
@@ -218,7 +218,7 @@
       "agent_version": "0.59.0",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "34840592589"
+      "run": "34961855857"
     }
   ]
 }

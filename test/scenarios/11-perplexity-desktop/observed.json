@@ -13,10 +13,10 @@
       "agent": "perplexity-desktop",
       "route": "bundle_ids",
       "value": "ai.perplexity.macv3",
-      "agent_version": "26.35.0",
+      "agent_version": "26.36.0",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "34840592589"
+      "run": "34961855857"
     },
     {
       "agent": "perplexity-desktop",
@@ -33,7 +33,7 @@
       "agent_version": "26.35.0",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "34840592589"
+      "run": "34961855857"
     }
   ]
 }
