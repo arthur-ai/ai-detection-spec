@@ -108,13 +108,15 @@ An identifier that genuinely cannot be covered goes under `untested:` with a rea
 date. That list can shrink silently and never grow silently: an entry whose identifier *is*
 covered fails the gate, so a reason cannot outlive the gap it excused.
 
-**A real install is the standard, and the catalog enforces it.** An agent is verified when a VM
-scenario installs the real software and asserts the classifier finds it. Anything less is an
-exception carrying a `reason`, an `evidence` grade and the date it was raised;
-`tools/validate_catalog.py` fails on an agent that has neither. `docs/agents.md` is generated
-from that, so the exception register is a work list rather than an excuse list — and a fixture
-is not a weaker pass but a different claim, because it proves the matcher works and says nothing
-about whether the identifier is what the software ships today.
+**A real install is the standard, and it is now the only one.** An agent is verified when a VM
+scenario installs the real software and asserts the classifier finds it, and
+`tools/validate_catalog.py` refuses an agent no scenario installs — unconditionally. **There is
+no exception register any more.** The `unverified:` block and its `evidence` grades are gone;
+its weakest grade was `vendor-documentation`, the source this repo exists to distrust, and
+nothing was ever written to it in its whole life. What `docs/agents.md` generates instead is
+**Identifiers that did not pass**, which is a work list with no way to write an excuse into it.
+A fixture is not a weaker pass but a different claim: it proves the matcher works and says
+nothing about whether the identifier is what the software ships today.
 
 When something genuinely cannot be verified, say so in the tree rather than guessing —
 `docs/signature-lifecycle-v2.md` covers how, and the standing rule is that **a catalog may carry a
