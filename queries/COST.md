@@ -225,21 +225,48 @@ is the case to measure before trusting this figure, and it has not been measured
 `bin/container-scan` is the only supported way to run `dist/discovery-deep.sql`. It carries
 the two things SQL cannot express: a round trip demanding HTTP 200, and a wall-clock kill.
 
-Measured against `test/lib/fake_docker.py`, default bound (`CONTAINER_SCAN_TIMEOUT=6`):
+Measured against `test/lib/fake_docker.py` on 2026-09-14, shipped defaults
+(`CONTAINER_SCAN_TIMEOUT=6`, `DOCKER_PING_TIMEOUT=8`):
 
 | daemon state | `bin/container-scan` | exit | value |
 |---|---|---|---|
-| no socket anywhere | 0.18s | 2 | one `scan` row, `extra=absent` |
-| stale socket / not a socket | 0.19s | 2 | one `scan` row, `extra=absent` |
-| accepts, never replies | 0.19s | 2 | one `scan` row, `extra=unhealthy:000` |
-| answers 500 | 0.20s | 2 | one `scan` row, `extra=unhealthy:500` |
-| **pings 200, then never serves** | **7.36s** | **3** | one `scan` row, `extra=timeout:6` |
-| healthy, 3 images | 0.51s | 0 | the image rows |
+| no socket anywhere | 0.10s | 2 | one `scan` row, `extra=absent` |
+| stale socket / not a socket | 0.12s | 2 | one `scan` row, `extra=absent` |
+| answers 500 | 0.12s | 2 | one `scan` row, `extra=unhealthy:500` |
+| asleep, wakes in 3s (`nap`) | 3.62s | 0 | the image rows |
+| **accepts, never replies** | **8.17s** | **2** | one `scan` row, `extra=unhealthy:000` |
+| **pings 200, then never serves** | **7.88s** | **3** | one `scan` row, `extra=timeout:6` |
+| healthy, 6 images | 0.58s | 0 | 8 rows plus the `ok` marker |
 
-7.36s is 0.04s probe + the 6s bound (osqueryi's 0.5s startup is *inside* it, so do not add
-them) + 0.35s to die + polling slop. Against a ten-second budget that leaves 2.6s; a bound
-above 8 does not fit. Raise it only with a measurement showing the daemon is slow rather than
-wedged.
+**Two rows of this table were wrong, and both in the direction that makes a budget look
+affordable.** Accepts-never-replies was recorded as 0.19s: it is the one state that waits out
+the WHOLE ping budget, so it was 1.16s at the old 1s budget and is 8.2s now — six times the
+documented figure at the time it was documented, and it is the row anyone deciding whether
+that budget can be raised would read first. Pings-200-then-never-serves was recorded as 7.36s
+and measures 7.88s here and 8.00s through the suite, because the SIGKILL escalation added
+since pays its grace on every bounded kill rather than only when SIGTERM is ignored.
+
+~8s is 0.04s probe + the 6s bound (osqueryi's 0.5s startup is *inside* it, so do not add
+them) + up to 1s of SIGKILL grace + polling slop. Against a ten-second budget that leaves 2s;
+a bound above 8 does not fit. Raise it only with a measurement showing the daemon is slow
+rather than wedged — and note that a slow daemon is measured in the ping budget below, not
+here, because the probe is what waits for a wake.
+
+**The ping budget is a ceiling, not a cost, which is why 8 is affordable.** Every state that
+answers returns in about a tenth of a second whatever it is set to; only accepts-never-replies
+pays the whole of it. It was 1s, and a Docker Desktop wake does not fit in 1s: Resource Saver
+parks the VM after five idle minutes and holds the first request while it comes back — 2.60s
+and 2.49s measured on macOS 15 / Docker 28.4.0 after a 340s pause, with the query behind it
+then running warm at 0.13s per engine request. At 1s the guard rejected the daemon it had just
+woken and reported `unhealthy:000`, and the next scan succeeded on the engine the last one had
+started. **A nap longer than 8s is not measured**: one Mac, one nap length.
+
+**What costs inside the wall clock is daemon latency, not inventory size.** Against a daemon
+answering instantly, osquery's own side of the scan is 0.23s at 18 images and 0.55s at 10,000
+images / 40,000 label rows. One scan makes three engine requests — `/images/json`,
+`/containers/json`, `/images/json` again for the labels — so a daemon costing *t* per request
+needs ~3*t* to fit: measured against a fake answering late, 1s per request scans in 3.53s and
+3s per request does not fit at all.
 
 **Two attributes, not one.** Folded together, `bin/discover --deep` against a wedged daemon
 measures **8.64s**: it fits today and stops fitting the first time either half grows.

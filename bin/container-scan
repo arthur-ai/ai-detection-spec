@@ -18,6 +18,10 @@
 # machine with no containers. Only a full round trip requiring 200 separates "nothing
 # there" from "we could not look".
 #
+# The guard must also OUTLAST A WAKE: Resource Saver parks the engine after five idle
+# minutes and holds the first request ~2.5s. Too short a budget reports a sleeping Mac as
+# unreachable. See TIMEOUT below.
+#
 # The wall clock. The guard is a check at one instant, and a daemon that answers /_ping
 # with 200 can wedge on /images/json a moment later -- so the query still needs a hard
 # bound. osquery has no flag for it (5.23.1: --docker_socket is the only docker flag,
@@ -48,12 +52,24 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DEEP="$ROOT/dist/discovery-deep.sql"
-TIMEOUT="${DOCKER_PING_TIMEOUT:-1}"
+# Seconds to wait for /_ping. A CEILING, NOT A COST: anything that answers returns in about
+# 0.1s whatever this is, so only a daemon that never answers pays it.
+#
+# It was 1, and a Docker Desktop wake does not fit in 1. Resource Saver parks the VM after
+# five idle minutes and HOLDS the first request while it resumes -- 2.6s measured -- so the
+# guard rejected a daemon it had itself just woken, and the next scan succeeded. 8 covers
+# the wake and keeps the worst case (accepts-never-replies, 8.2s) inside the 10s budget.
+# A longer nap is unmeasured; raise this if a fleet shows unhealthy:000 on idle Macs.
+# queries/COST.md has the per-state table.
+TIMEOUT="${DOCKER_PING_TIMEOUT:-8}"
 
-# Whole seconds of wall clock for the query itself, against a ~10s budget on a synchronous
-# reporting path: ~1s guard + ~0.5s osqueryi startup + 6s here is ~7.5s worst case, and
-# the healthy path finishes in about half a second regardless. Raise it for an interactive
-# scan of a machine with hundreds of images; do not raise it inside an EA.
+# Whole seconds of wall clock for the query itself. ~8s worst case on `wedge`: 6s here plus
+# osqueryi's startup inside it, plus 1s of SIGKILL grace. Healthy finishes in about 0.5s.
+#
+# WHAT EATS THIS IS DAEMON LATENCY, NOT IMAGE COUNT -- the comment here used to say the
+# opposite. osquery's own side is 0.23s at 18 images and 0.55s at 10,000. But one scan makes
+# three engine requests, so a daemon costing t each needs ~3t: 1s each fits, 3s each does
+# not. Do not raise it inside an EA.
 SCAN_TIMEOUT="${CONTAINER_SCAN_TIMEOUT:-6}"
 PRETTY=0
 SOCKET=""
@@ -144,10 +160,11 @@ docker_socket_path() {
 }
 
 # ONE round trip, and everything else reads what it saw. The guard and the message used to
-# make the same request twice, so the did-not-scan path cost 2x TIMEOUT -- 2.3s measured at
-# the default, and thirty seconds at the --timeout 15 the message itself recommends. A
-# probe is a fact about a moment; asking twice does not get a better fact, it just doubles
-# the wait on the path where we already know the answer is no.
+# make the same request twice, costing 2x TIMEOUT -- 16.4s at today's budget. A probe is a
+# fact about a moment; asking twice does not get a better fact.
+#
+# It is also why a longer budget is affordable: this one trip both wakes a napping daemon
+# and waits for it, so the query behind it runs warm.
 DOCKER_CODE=""
 DOCKER_SECS=""
 docker_probe() {
@@ -165,15 +182,15 @@ docker_healthy() {
 }
 
 # What the probe saw, in words: which state we are in changes what the operator should do,
-# and "not 200" does not say. curl gives 000 both for a daemon that never replies and for
-# one still thinking at the deadline -- Docker Desktop with a wedged engine answers 500,
-# but ten seconds later, so a one-second budget sees silence. Either way it is not
-# scannable; the difference is whether restarting Docker is the fix.
+# and "not 200" does not say. curl gives 000 both for a daemon that never replies and for one
+# still thinking at the deadline -- a wedged engine answers 500, but ten seconds later. A
+# budget that outlasts a wake takes the third case out of this bucket: a paused engine now
+# answers 200. Both that remain are unscannable; the difference is whether a restart helps.
 docker_state() {
   [ -n "$DOCKER_CODE" ] || docker_probe "$1"
   case "$DOCKER_CODE" in
     200) echo "healthy (200 in ${DOCKER_SECS}s)" ;;
-    000) echo "no reply within ${TIMEOUT}s -- hung, or mid-startup. Retry with --timeout 15: a wedged Docker Desktop engine answers 500 after about ten seconds" ;;
+    000) echo "no reply within ${TIMEOUT}s -- hung, or mid-startup. A paused engine wakes in about 3s, so this is neither. Retry with --timeout 20 to wait out a wedged Docker Desktop, which answers 500 after about ten seconds" ;;
     *)   echo "answered $DOCKER_CODE in ${DOCKER_SECS}s -- the daemon is up but its engine is not serving. Restart Docker" ;;
   esac
 }
@@ -405,14 +422,14 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --socket)       need_arg "$@"; SOCKET="$2"; shift 2 ;;
     # --timeout is the /_ping round trip and keeps its name: docker_state's own message
-    # tells the operator to "Retry with --timeout 15" and that text ships. --ping-timeout
+    # tells the operator to "Retry with --timeout 20" and that text ships. --ping-timeout
     # is the same thing said unambiguously, for anyone writing a new invocation.
     --timeout|--ping-timeout) need_arg "$@"; TIMEOUT="$2"; shift 2 ;;
     --scan-timeout) need_arg "$@"; SCAN_TIMEOUT="$2"; shift 2 ;;
     --pretty)       PRETTY=1; shift ;;
     --no-marker)    MARKER=0; shift ;;
     --cache)        need_arg "$@"; CACHE="$2"; shift 2 ;;
-    -h|--help)      sed -n '2,46p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help)      sed -n '2,50p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "container-scan: unknown argument: $1" >&2; exit 1 ;;
   esac
 done

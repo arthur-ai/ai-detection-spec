@@ -16,6 +16,12 @@ States, and why each one exists:
              is not SUFFICIENT, and it is the only state that reaches the wall-clock bound
              in bin/container-scan. Without it that bound would ship untested, because the
              guard turns every other blocking state away before osqueryi is ever started.
+  nap        silent for FAKE_DOCKER_NAP_SECONDS, then serves, as if the first request had
+             woken it. Docker Desktop's default: Resource Saver stops the VM after five
+             idle minutes and holds the first request while it resumes -- 2.6s measured.
+             IT IS `hang` UNTIL IT IS NOT, which is the point: for those seconds the two
+             are the same observation and only patience separates them. At the old 1s
+             budget the guard called every napping Mac hung, having woken it itself.
   hang       accepts the connection and never replies. THE IMPORTANT ONE. connect()
              succeeds in 0.000s, so a liveness probe built on connect() reports the
              daemon up, and osquery then blocks on the READ. Measured: osquery does not
@@ -213,7 +219,24 @@ def body_for(path):
     return IMAGES
 
 
+# 3s sits between the old 1s ping budget and today's 8s, so the assertion fails if the
+# default goes back and fails if it is cut below the measured wake. Overridable: one test
+# wants a nap longer than the budget.
+NAP_SECONDS = float(os.environ.get("FAKE_DOCKER_NAP_SECONDS", "3"))
+# None until the first request triggers the resume -- idle parks the VM, a request wakes it.
+WOKE_AT = None
+
+
 def respond(conn, state, path=""):
+    # A paused engine, resuming. Falls through to `healthy` rather than returning, because a
+    # woken daemon is an ordinary one. The loop is serial, so holding here holds every later
+    # request too -- which is what the real daemon does while the VM comes back.
+    if state == "nap":
+        global WOKE_AT
+        if WOKE_AT is None:
+            time.sleep(NAP_SECONDS)
+            WOKE_AT = time.time()
+        state = "healthy"
     # Before the hang check, because wedge IS hang for everything except /_ping.
     if state == "wedge":
         if path.startswith("/_ping"):
