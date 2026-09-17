@@ -5,14 +5,17 @@
 #
 # Usage: test/docker_states.sh
 #
-# Runs in about twenty-five seconds and needs no Docker: osquery's --docker_socket flag is
+# Runs in about forty-seven seconds and needs no Docker: osquery's --docker_socket flag is
 # pointed at a fake daemon (test/lib/fake_docker.py). That matters because the states
 # that break things cannot be produced on demand from a real install, and a hosted macOS
 # runner has no Docker at all -- so a test that needed one would simply never run.
 #
-# TWO THINGS ARE UNDER TEST AND THE SECOND IS NEWER. The guard turns away four states of
-# six. `wedge` -- 200 on /_ping, silence on /images/json -- is the fifth, it passes every
-# probe there is, and only the wall-clock kill in bin/container-scan closes it.
+# THREE THINGS ARE UNDER TEST AND THE THIRD IS NEWEST. The guard turns away four states of
+# seven. `wedge` -- 200 on /_ping, silence on /images/json -- is the fifth, it passes every
+# probe there is, and only the wall-clock kill in bin/container-scan closes it. `nap` is the
+# sixth, and what it tests is neither the guard's rule nor the bound but the guard's BUDGET:
+# it is `hang` for three seconds and healthy afterwards, so a guard too impatient to wait out
+# a Docker Desktop wake reports a sleeping Mac as an unreachable one.
 set -uo pipefail
 
 # A TEST RUN IS NOT A USE, and bin/classify sends one usage event per run. `CI` already
@@ -51,8 +54,12 @@ fail=0
 # which is the failure mode this repo cares most about. The individual bounds cannot help
 # there, since they are the thing that broke.
 #
-# 120s against a 25s healthy run. Wide enough that a slow hosted runner never trips it, tight
-# enough that CI reports a red build in two minutes instead of burning a job timeout.
+# 120s against a 47s healthy run, measured on a developer Mac. That margin is thinner than
+# the 120-against-25 this line used to claim, and it was already thinner than it read: the
+# suite measured 38s before `nap` was added, so 25 had been wrong for some time. Wide enough
+# that a slow hosted runner never trips it, tight enough that CI reports a red build in two
+# minutes instead of burning a job timeout. Raise DOCKER_STATES_TIMEOUT rather than trimming
+# a state if a runner starts flapping -- a state dropped for time is a state nothing covers.
 SUITE_TIMEOUT="${DOCKER_STATES_TIMEOUT:-120}"
 (
   n=0
@@ -87,9 +94,10 @@ trap '{ kill "$SUITE_WATCHDOG" 2>/dev/null; } 2>/dev/null; pkill -f "$SOCK" 2>/d
 # only reason the line is there.
 #
 # Sourcing brings ROOT, DEEP, TIMEOUT, SCAN_TIMEOUT, PRETTY, SOCKET, MARKER, DOCKER_CODE,
-# BOUNDED_OUT and BOUNDED_SIGNAL into this shell, along with `set -uo pipefail`. TIMEOUT=1
-# is exactly the ping budget this test wants, and it is inherited rather than restated so
-# that a change to the shipped default shows up here.
+# BOUNDED_OUT and BOUNDED_SIGNAL into this shell, along with `set -uo pipefail`. The ping
+# budget is INHERITED rather than restated, so that a change to the shipped default shows up
+# here -- and the `nap` checks below are where it shows up, because they are the ones whose
+# answer it changes. Two rows override it deliberately and say why.
 . "$ROOT/bin/container-scan"
 
 start_fake() {
@@ -145,7 +153,17 @@ print(len(m.IMAGES))")
 # want_guard: 1 if the guard should admit this state. want_rows: expected row count when
 # the guard admits. Only 'healthy' may ever produce rows.
 run_state() {
+  # A fourth argument overrides the ping budget for this row, and only `hang` passes one.
+  # These rows are about the guard's RULE -- which states it admits -- and the rule is the
+  # same at any budget, while `hang` is the one state that waits out the whole of it. At the
+  # shipped 8s that is seven seconds of nothing on every run, the same argument that took the
+  # unguarded-stall probe below from 12s to 5s. The BUDGET is tested where it matters, on
+  # `nap`, which is the state whose answer it changes.
+  #
+  # `local TIMEOUT` shadows the value sourced from bin/container-scan for the life of this
+  # function, and docker_healthy reads it from there.
   local state="$1" want_guard="$2" want_rows="$3"
+  local TIMEOUT="${4:-$TIMEOUT}"
   printf "  %s\n" "$state"
   start_fake "$state"
 
@@ -182,7 +200,7 @@ run_state() {
 echo "container query against every daemon state"
 run_state absent  0 0
 run_state refuse  0 0
-run_state hang    0 0
+run_state hang    0 0 1
 run_state error   0 0
 run_state healthy 1 "$FAKE_IMAGE_COUNT"
 
@@ -208,6 +226,70 @@ check "the unguarded query stalls past 5s, 10x the healthy time" \
       "$([ "$stalled" = stalled ] && echo 1 || echo 0)" \
       "got '$stalled' -- if this stops failing, the stall is gone and the guard may be removable"
 stop_fake
+
+# --- the guard's BUDGET, which is not the guard's RULE ------------------------------------
+# Everything above asks whether the guard demands the right thing. This asks whether it waits
+# long enough to be told. `nap` answers nothing for three seconds and then serves: Docker
+# Desktop's Resource Saver, which parks the VM after five idle minutes with the socket still
+# up and holds the first request while it comes back -- 2.60s and 2.49s measured on a real
+# Mac after a 340s pause. For those seconds a nap IS `hang`, and at the shipped budget of 1s
+# the guard called every napping Mac hung, having woken it itself with the very probe it then
+# rejected. The next scan succeeded on the engine the last one had started, which is how this
+# reaches a maintainer as "it works when I run it by hand" and a fleet as containers=absent
+# on every Mac with Docker installed and idle.
+
+# A FRESH DAEMON PER READING, because a nap ends at the first request that reaches it --
+# the fake wakes permanently, as the real one does. Reusing one instance would measure the
+# woken daemon twice and every assertion below would pass on a fake that never napped.
+echo "  nap: the old 1s budget rejects it"
+start_fake nap
+nap_short=$(OSQI="$OSQI" "$ROOT/bin/container-scan" --socket "$SOCK" --timeout 1 2>/dev/null)
+# THE MUTATION, WRITTEN INTO THE SUITE. 1s was the shipped default and is the value that
+# produced the bug; if this ever scans, the fake is serving immediately and the check below
+# proves nothing.
+check "a 1s budget calls a sleeping daemon unreachable" \
+      "$(printf '%s' "$nap_short" | python3 -c 'import json,sys
+try: r = json.load(sys.stdin)
+except Exception: print(0); raise SystemExit
+print(1 if len(r) == 1 and r[0]["extra"] == "unhealthy:000" else 0)' 2>/dev/null)" \
+      "got: $nap_short -- if this scanned, the nap is not napping and the next check is vacuous"
+stop_fake
+
+echo "  nap: the shipped budget waits it out"
+start_fake nap
+t0=$(python3 -c 'import time;print(time.time())')
+nap_out=$(OSQI="$OSQI" "$ROOT/bin/container-scan" --socket "$SOCK" 2>/dev/null); nap_rc=$?
+nap_elapsed=$(python3 -c "import time;print(f'{time.time()-$t0:.2f}')")
+check "the guard waits out the wake and scans (${nap_elapsed}s)" \
+      "$([ "$nap_rc" = 0 ] && echo 1 || echo 0)" \
+      "got exit $nap_rc -- at a ping budget under the wake this is 2, extra=unhealthy:000"
+# Rows, not just a 0. A guard that admitted it and a query that then returned nothing would
+# pass the check above while reporting a napping Mac as an empty one -- which is the shape
+# of failure this whole file exists for.
+check "and the rows are images, not a marker on its own" \
+      "$(printf '%s' "$nap_out" | python3 -c 'import json,sys
+try: r = json.load(sys.stdin)
+except Exception: print(0); raise SystemExit
+print(1 if any(x["kind"] == "image" for x in r) else 0)' 2>/dev/null)" \
+      "got: $(printf '%s' "$nap_out" | head -c 120)"
+stop_fake
+
+# PATIENCE IS BOUNDED, and the vocabulary does not change at the far end of it. A daemon
+# that outsleeps the budget is reported exactly as a hung one, because at that point it is
+# indistinguishable from one: waiting longer is a choice about how long to wait, never a way
+# to tell the two apart. A 30s nap against a 2s budget makes the point in two seconds.
+echo "  a nap longer than the budget is still unreachable"
+export FAKE_DOCKER_NAP_SECONDS=30
+start_fake nap
+over=$(OSQI="$OSQI" "$ROOT/bin/container-scan" --socket "$SOCK" --timeout 2 2>/dev/null)
+check "reports unhealthy:000, and claims no rows" \
+      "$(printf '%s' "$over" | python3 -c 'import json,sys
+try: r = json.load(sys.stdin)
+except Exception: print(0); raise SystemExit
+print(1 if len(r) == 1 and r[0]["extra"] == "unhealthy:000" else 0)' 2>/dev/null)" \
+      "got: $over"
+stop_fake
+unset FAKE_DOCKER_NAP_SECONDS
 
 # --- the bound ---------------------------------------------------------------------------
 # Everything above proves a health check is NECESSARY. Everything below proves it is not

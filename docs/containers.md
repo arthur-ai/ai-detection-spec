@@ -24,6 +24,27 @@ process: bounded there, it costs the container rows; bounded inside the composed
 costs six of the ten seconds and reports success anyway. `queries/COST.md` has the
 measurements.
 
+## A sleeping Docker is not a broken one
+
+Docker Desktop's Resource Saver — on by default — stops the Linux VM after five idle minutes.
+The socket stays, the API proxy stays, and the first request that arrives triggers a resume
+and is **held** until it finishes: 2.60s and 2.49s measured on macOS 15 / Docker 28.4.0 after
+a 340s pause.
+
+For those seconds a napping daemon is indistinguishable from a hung one, and only patience
+tells them apart. The health probe's budget used to be 1s, so it declared every idle Mac
+unreachable — having woken it with the very probe it then rejected. Run by hand that looks
+like a flake, because the *second* run scans the engine the first one started. On a schedule
+it is not a flake at all: the machine naps between every run, so the branch reports
+`unhealthy:000` forever on exactly the Macs that have Docker installed and are not using it
+right now.
+
+The budget is `DOCKER_PING_TIMEOUT`, or `--timeout`, and it is **8s**. It is a ceiling rather
+than a cost — every daemon that answers is read in about a tenth of a second whatever it is
+set to — so the only machine that pays it is one whose daemon never answers at all. A nap
+longer than 8s has not been measured; `test/lib/fake_docker.py`'s `nap` state is where that
+assumption is pinned.
+
 ## Every outcome carries a reason
 
 `bin/container-scan` reports which happened in its exit code — `0` scanned, `2` did not scan,
