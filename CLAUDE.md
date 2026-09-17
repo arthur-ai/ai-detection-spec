@@ -90,7 +90,19 @@ That means one of five things, and they are worth telling apart —
 | the artifact only exists once the agent **runs** | invoke it; a state directory does not exist until first run |
 | **the identifier is wrong** | remove it. This is how both catalog bugs surfaced |
 | **the route cannot identify at all** | remove the route. A listening port only matches when the process holding it already names the agent, so it is a second opinion from the same witness — `ports` was retired for that |
-| **the identifier is right and is no longer installable** | **keep it** — add it to the agent's `retired:` list. Machines on the old build still report it. Told apart from a wrong identifier by whether any run ever produced it; `docs/signature-lifecycle-v2.md` has the workflow |
+| **the identifier is right and is no longer installable** | **keep it** — re-record with `tools/agent_status.py --record <payload> <scenario> --supersede`, which moves the lost observation into that scenario's `archived` list and prints the `superseded:` record to paste into `catalog/agents.yaml`. Told apart from a wrong identifier by whether any run ever produced it; `docs/signature-lifecycle-v2.md` has the workflow |
+
+**There is no `retired:` list on an agent any more, and reaching for one fails the build.** It
+was a flat list of strings that exempted every value it named from the coverage gate and asked
+for nothing in return. `superseded:` replaced it and carries the observation instead — route,
+value, `last_version`, `last_proved`, `by`, `run` — and `tools/validate_catalog.py` refuses a
+record that no archived observation backs field for field, so the provenance cannot be typed.
+**The value STAYS on its route**: supersession marks a signature, it never moves it, and that
+is what keeps the old build's machines matching. `--supersede` is a deliberate mode and must
+stay one — a vendor pulling a download for a week is indistinguishable from a rename for that
+week, and a guard that archived on its own would supersede a live signature on one bad
+afternoon. Unknown agent fields are an error, so the old habit fails loudly rather than
+shipping a value nothing checks.
 
 An identifier that genuinely cannot be covered goes under `untested:` with a reason and a
 date. That list can shrink silently and never grow silently: an entry whose identifier *is*
@@ -106,8 +118,11 @@ about whether the identifier is what the software ships today.
 
 When something genuinely cannot be verified, say so in the tree rather than guessing —
 `docs/signature-lifecycle-v2.md` covers how, and the standing rule is that **a catalog may carry a
-guess but may not hide one.** `docs/signature-lifecycle-v2.md` is the successor design for that
-whole lifecycle and is NOT built — do not write code against it without reading its marker.
+guess but may not hide one.** That document describes the lifecycle **as the tree runs it
+today**, and it used to be a design for one that did not exist — the `-v2` in its name is a
+leftover from when a `-v1` described the tree beside it. One section is still a design record
+and it is marked where it begins: `NOT BUILT: naming the successor with a model`. Read that
+marker before writing code against anything below it, and do not widen the claim above it.
 
 Two numbers this project treats as conventions, because Jamf documents neither: the **10s EA
 timeout** and the **30KB EA value cap**. Both are self-imposed. Do not restate them as platform
