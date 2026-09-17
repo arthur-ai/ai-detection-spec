@@ -26,8 +26,9 @@ these shows up in a diff of the six-column contract:
 |---|---|
 | an **entry** leaves | its findings stop appearing, and nothing errors |
 | a **classification** empties | a consumer mapping it to a UI loses a value |
-| a **route key** falls out of use | `ports` and `model_stores` are still *accepted* by `validate_catalog.py` with no entry carrying either, so the route just never fires |
+| a **route key** falls out of use | `model_stores` is still *accepted* by `validate_catalog.py` with no entry carrying it, so the route just never fires. `ports` was the other, and is now declared `retired: true` in `routes.yaml` — that one is visible, the silent case is the undeclared one |
 | a **row kind** stops being emitted | `kind='model'` left with the model runners |
+| an identifier is **superseded** | it stays in the catalog and stays matched, but leaves continuous testing — and `agent_status.py` drops it from the coverage denominator, so the identifier count falls with nothing removed. Say which value, and that machines on the old build still report it |
 
 ```console
 $ python3 - <<'EOF'
@@ -53,8 +54,9 @@ $ for p in darwin linux; do
 platform and they name disjoint tables, so diffing just one hides half the answer — and the
 half it hides is whichever platform you are not sitting on.
 
-`catalog/agents.yaml`'s own `version:` key does not track the release. It reading `1` is not
-evidence the schema held.
+`catalog/agents.yaml`'s own `version:` key does not track the release, and it moves for its own
+reasons — it read `2` at v0.3.0 and reads `2` now, across a release that removed a schema key.
+Reading it unchanged is not evidence the schema held. Diff the keys.
 
 **On `0.x` the rule above over-fires**: it was written for a stable tag, and pre-1.0 a break
 conventionally rides the minor. Say which convention you followed, and lead with the breaks
@@ -130,8 +132,33 @@ $ gh run list --workflow=scenarios.yml --branch=main --limit=6 \
 ```
 
 A run that is **queued has no jobs yet**, and an empty job list is not the same as nothing
-failing. If that prints nothing, the suite has not run for this commit — wait, do not read the
-previous one.
+failing. If that prints nothing for a commit someone pushed, the suite has not run for it —
+wait, do not read the previous one.
+
+**With one exception, and you will hit it on almost every release: the `collect` commit can
+never have a run of its own.** A push made by a workflow with the default `GITHUB_TOKEN` does
+not trigger further workflow runs, and `collect` pushes with it. So the "record identifier
+coverage" commits get no `push` run — the runs that appear against those SHAs are the next
+*scheduled* one, which merely started there. Read the `event` field and you can see it:
+
+```console
+$ gh run list --workflow=scenarios.yml --branch=main --limit=6 \
+    --json headSha,event,conclusion,databaseId \
+    --jq '.[] | "\(.databaseId) \(.headSha[0:7]) \(.event) \(.conclusion)"'
+```
+
+Taken with the next section — which tells you to move to the post-`collect` commit — waiting
+for a run there deadlocks. What resolves it is that `collect` commits **generated files only**.
+Verify that rather than assume it, then tag it on the strength of the run at the commit it sits
+on top of:
+
+```console
+$ git diff --name-only <verified-sha> HEAD | grep -v 'observed.json\|docs/agents.md'
+```
+
+Empty output means the code, queries and catalog are byte-identical to the commit the suite
+actually ran on. Anything else printed means this is not just a `collect` commit and the run
+you were about to rely on does not describe it.
 
 ### Confirm the observations landed, or the coverage figures are a merge behind
 
@@ -154,7 +181,18 @@ $ tools/gates.sh                              # agent_status --check fails on a 
 
 `gates.sh` catches the stale page but not the *pending* one: a tree whose `agents.md` matches its
 own uncommitted observations is internally consistent and still a merge behind. Pull `main` again
-after collect lands.
+after collect lands, and tag the commit it produced — checking, per the section above, that it
+holds nothing but generated files.
+
+**`collect` also fails on a push race, and that failure is not a gate failure.** Two runs
+finishing close together both try to push to `main` and the loser reports
+`! [rejected] main -> main (fetch first)`. It is self-healing — the next run commits what the
+loser could not — but it puts a red Scenarios run on `main` that a releaser will read as a
+broken suite. Check which job failed before concluding anything:
+
+```console
+$ gh run view <id> --json jobs --jq '.jobs[] | select(.conclusion=="failure") | .name'
+```
 
 ## 3. Write the notes
 
@@ -203,7 +241,7 @@ quoting a second one against it is how the notes and the docs come to disagree:
 
 | source | what to take from it |
 |---|---|
-| `tools/agent_status.py` | *generated* — entry and identifier counts, per-identifier CI coverage, the exception register. Its `did not appear` and `no test` states are the honest gaps |
+| `tools/agent_status.py` | *generated* — entry and identifier counts, per-identifier CI coverage, and the **Identifiers that did not pass** table. Its `did not appear` and `no test` states are the honest gaps. There is no longer an exception register to quote: the `unverified:` block and its evidence grades are gone, and an agent no scenario installs now fails `validate_catalog.py` outright |
 | `docs/agents.md` | *generated* — the page a reader checks the notes against. Take figures from the tool, not by re-counting this |
 | `docs/blind-spots.yaml` | hand-maintained; "the canonical list, and the only copy". It lived in the README too, and which copy a reader met depended on which page they opened |
 | `queries/COST.md` | measured costs, **and the machine they came from**. A cost without its machine is not a measurement — and on Linux, without saying whether it is the warm floor or the cold run, which differ by 8x |
