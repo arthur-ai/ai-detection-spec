@@ -236,7 +236,7 @@ identifier never showed up. It means one of four things, and telling them apart 
 | the scenario installs by another route | install that route in a **separate** scenario — two routes claiming one binary name cannot share a machine, which is why `21-cli-agents-homebrew` exists beside `20-cli-agents` |
 | the artifact only exists once the agent **runs** | invoke it. A state directory does not exist until first run |
 | **the identifier is wrong** | remove it, and keep its row as a negative control |
-| **the identifier is right and is no longer installable** | **keep it.** The software moved on and the machines on the old build still report it — add the value to that agent's `retired:` list |
+| **the identifier is right and is no longer installable** | **keep it.** The software moved on and the machines on the old build still report it — supersede it, which is the next section |
 
 The last two look identical in the report and take opposite actions, so tell them apart
 before you edit anything. The discriminator is whether any run has ever produced the value:
@@ -245,11 +245,48 @@ no such record, because nothing can produce a name that belongs to other softwar
 
 Neither case is hypothetical. Both catalog bugs found so far were the wrong-identifier one:
 npm `mcp` is Mintlify's package, and npm `aider` is *"Lightweight website popular article
-component for static website"*. `docs/signature-lifecycle-v2.md` is the full lifecycle as the
-tree runs it today — how coverage is proved, how several generations of one signature coexist,
-what fires when one stops appearing, and how something genuinely unverifiable is recorded
-rather than guessed at. `docs/signature-lifecycle-v2.md` is the successor design, and is **not
-built**.
+component for static website"*. [`docs/signature-lifecycle-v2.md`](docs/signature-lifecycle-v2.md)
+is the full lifecycle as the tree runs it today — how coverage is proved, how several
+generations of one signature coexist, what fires when one stops appearing, and how something
+genuinely unverifiable is recorded rather than guessed at. Its closing section, `NOT BUILT:
+naming the successor with a model`, is the one part that is a design record rather than a
+description of the tree, and it is marked where it begins and nowhere else.
+
+### Superseding an identifier
+
+Re-record the scenario against a run that no longer produces the value, and ask for it:
+
+```console
+$ python3 tools/agent_status.py --record /tmp/out.json test/scenarios/<scenario> --supersede
+```
+
+That moves the lost observation into that scenario's `observed.json` `archived` list and
+prints the record to paste under the agent that owns the value:
+
+```yaml
+    superseded:
+      - {route: bundle_ids, value: com.example.old, last_version: 1.4.2,
+         last_proved: 2026-09-14, by: 57-example-era, run: 34840592589}
+```
+
+Three things about that block are not stylistic:
+
+- **The value STAYS on its route.** Supersession marks a signature; it never moves it. Leaving
+  it on the route is the whole point — it is what keeps the machines on the old build matching,
+  and they are the machines an inventory most wants to name.
+- **The provenance cannot be typed.** `by` names the scenario whose `observed.json` is read,
+  and `route`, `value`, `run` and `last_version` must all match an entry in that file's
+  `archived` list — `tools/validate_catalog.py` refuses a record nothing backs. A `?` in the
+  printed block is therefore a refusal waiting to happen, and `--supersede` warns when it emits
+  one: re-record on CI rather than filling the gap in by hand.
+- **It is a deliberate mode and must stay one.** A vendor pulling a download for a week is
+  indistinguishable from a rename for that week, so nothing archives on its own. Accepting the
+  first red run is how a live signature gets superseded on one bad afternoon.
+
+**The `retired:` list this used to be written in is gone.** It was a flat list of strings that
+exempted every value it named from the coverage gate and asked for nothing in return. Unknown
+agent fields are an error, so an out-of-date habit fails the build rather than quietly shipping
+a value nothing checks.
 
 ### The `images` route
 
