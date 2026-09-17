@@ -16,20 +16,12 @@ States, and why each one exists:
              is not SUFFICIENT, and it is the only state that reaches the wall-clock bound
              in bin/container-scan. Without it that bound would ship untested, because the
              guard turns every other blocking state away before osqueryi is ever started.
-  nap        answers nothing for FAKE_DOCKER_NAP_SECONDS, then serves normally, as if the
-             first request had woken it. DOCKER DESKTOP'S DEFAULT BEHAVIOUR, not an edge
-             case: Resource Saver (`UseResourceSaver`, on by default) stops the Linux VM
-             after `AutoPauseTimeoutSeconds` -- 300 by default -- of idle, leaving the
-             socket and the API proxy up. Measured on macOS 15 / Docker 28.4.0 after a 340s
-             pause: /_ping was held 2.60s and 2.49s on two runs while the VM came back, and
-             everything behind it then answered in 0.13s.
-
-             IT IS `hang` UNTIL IT IS NOT, and that is the whole point of having it. For the
-             first few seconds the two states are the same observation -- a connection
-             accepted and no reply -- and only patience tells them apart. A guard whose
-             budget is shorter than the wake calls every napping Mac hung, having woken it
-             itself, and the next scan succeeds because the first one paid. That was the
-             shipped behaviour at DOCKER_PING_TIMEOUT=1.
+  nap        silent for FAKE_DOCKER_NAP_SECONDS, then serves, as if the first request had
+             woken it. Docker Desktop's default: Resource Saver stops the VM after five
+             idle minutes and holds the first request while it resumes -- 2.6s measured.
+             IT IS `hang` UNTIL IT IS NOT, which is the point: for those seconds the two
+             are the same observation and only patience separates them. At the old 1s
+             budget the guard called every napping Mac hung, having woken it itself.
   hang       accepts the connection and never replies. THE IMPORTANT ONE. connect()
              succeeds in 0.000s, so a liveness probe built on connect() reports the
              daemon up, and osquery then blocks on the READ. Measured: osquery does not
@@ -227,22 +219,18 @@ def body_for(path):
     return IMAGES
 
 
-# How long `nap` holds its first request, and 3s is chosen to sit BETWEEN the old shipped
-# ping budget of 1s and the current 8s -- so the assertion fails if the default goes back
-# and fails if it is cut below the measured wake. Overridable because one test wants a nap
-# LONGER than the budget, to prove that patience is bounded and the vocabulary unchanged.
+# 3s sits between the old 1s ping budget and today's 8s, so the assertion fails if the
+# default goes back and fails if it is cut below the measured wake. Overridable: one test
+# wants a nap longer than the budget.
 NAP_SECONDS = float(os.environ.get("FAKE_DOCKER_NAP_SECONDS", "3"))
-# When the resume finished. None until the first request triggers it, exactly as a paused
-# engine behaves: it is idle time that parks the VM and a request that brings it back.
+# None until the first request triggers the resume -- idle parks the VM, a request wakes it.
 WOKE_AT = None
 
 
 def respond(conn, state, path=""):
-    # A paused engine, resuming. Before every other branch, and it FALLS THROUGH to the
-    # healthy path rather than returning: a woken daemon is an ordinary healthy daemon, and
-    # a `nap` that answered differently afterwards would be testing a state Docker does not
-    # have. The server loop is serial, so holding here holds every later request too --
-    # which is what the real one does while the VM is coming back.
+    # A paused engine, resuming. Falls through to `healthy` rather than returning, because a
+    # woken daemon is an ordinary one. The loop is serial, so holding here holds every later
+    # request too -- which is what the real daemon does while the VM comes back.
     if state == "nap":
         global WOKE_AT
         if WOKE_AT is None:

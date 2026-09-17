@@ -18,10 +18,9 @@
 # machine with no containers. Only a full round trip requiring 200 separates "nothing
 # there" from "we could not look".
 #
-# AND THE GUARD MUST OUTLAST A WAKE. Docker Desktop's Resource Saver parks the engine after
-# five idle minutes with the socket still up, and holds the first request for ~2.5s while it
-# comes back. A budget shorter than that rejects a daemon it has itself just woken, and says
-# `unhealthy:000` about a machine that is merely asleep -- every run, on a schedule.
+# The guard must also OUTLAST A WAKE: Resource Saver parks the engine after five idle
+# minutes and holds the first request ~2.5s. Too short a budget reports a sleeping Mac as
+# unreachable. See TIMEOUT below.
 #
 # The wall clock. The guard is a check at one instant, and a daemon that answers /_ping
 # with 200 can wedge on /images/json a moment later -- so the query still needs a hard
@@ -53,44 +52,24 @@ set -uo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DEEP="$ROOT/dist/discovery-deep.sql"
-# Seconds to wait for /_ping, and IT IS A CEILING, NOT A COST. Every state that answers
-# returns in about a tenth of a second whatever this is set to -- absent 0.10s, a stale
-# socket 0.12s, an HTTP 500 0.12s, healthy 0.59s. Only a daemon that never answers pays
-# the whole of it, and that is the entire price of raising this number.
+# Seconds to wait for /_ping. A CEILING, NOT A COST: anything that answers returns in about
+# 0.1s whatever this is, so only a daemon that never answers pays it.
 #
-# IT WAS 1, AND 1 IS SHORTER THAN A DOCKER DESKTOP WAKE. Resource Saver stops the Linux VM
-# after AutoPauseTimeoutSeconds of idle -- both on by default, 300s by default -- and the
-# socket and the API proxy stay up while the engine is gone. The first request triggers the
-# resume and is HELD until it finishes: measured 2.60s and 2.49s on macOS 15 / Docker
-# 28.4.0, 18 images, two runs after a 340s pause. The query behind it then ran warm, 0.13s
-# per engine request, so the wake is paid once and paid here.
-#
-# At 1s the guard turned away the daemon it had just woken, reported `unhealthy:000` and
-# exited 2, and the NEXT scan succeeded because the first had paid for the wake. On a
-# schedule that is not one bad reading: the machine naps between every run, so the branch
-# reports "could not look" on every run while a human who runs it twice by hand sees it
-# work. It is also the ordinary state of a developer Mac that has not run a container in
-# five minutes, which is the population this branch exists for.
-#
-# 8 KEEPS EVERY BUDGET THIS REPO DOCUMENTS. It is 3x the measured wake, and the state that
-# pays it -- accepts, never replies -- then costs 8.2s, inside the self-imposed 10s. A nap
-# longer than 8s is NOT measured: one Mac, one nap length, and an older machine or a bigger
-# VM could be slower. If a fleet still shows unhealthy:000 on Macs that are merely asleep,
-# this is the knob, and 15 is the figure docker_state's own message has always named.
+# It was 1, and a Docker Desktop wake does not fit in 1. Resource Saver parks the VM after
+# five idle minutes and HOLDS the first request while it resumes -- 2.6s measured -- so the
+# guard rejected a daemon it had itself just woken, and the next scan succeeded. 8 covers
+# the wake and keeps the worst case (accepts-never-replies, 8.2s) inside the 10s budget.
+# A longer nap is unmeasured; raise this if a fleet shows unhealthy:000 on idle Macs.
+# queries/COST.md has the per-state table.
 TIMEOUT="${DOCKER_PING_TIMEOUT:-8}"
 
-# Whole seconds of wall clock for the query itself: ~0.05s guard on a daemon that answers
-# + ~0.5s osqueryi startup + 6s here + 1s SIGKILL grace is ~8s worst case on `wedge`, and
-# the healthy path finishes in about half a second regardless.
+# Whole seconds of wall clock for the query itself. ~8s worst case on `wedge`: 6s here plus
+# osqueryi's startup inside it, plus 1s of SIGKILL grace. Healthy finishes in about 0.5s.
 #
-# THE VARIABLE THAT COSTS IS DAEMON LATENCY, NOT INVENTORY SIZE, and this comment used to
-# say the opposite -- "raise it for a machine with hundreds of images". Measured against a
-# daemon that answers instantly, osquery's own side of the scan is 0.23s at 18 images and
-# 0.55s at 10,000 images / 40,000 label rows. What eats the bound is a slow daemon, and
-# one scan makes THREE engine requests -- /images/json, /containers/json, /images/json
-# again for the labels -- so a daemon costing t per request needs ~3t to fit in here.
-# Measured against a fake that answers late: 1s per request scans in 3.53s, 3s per request
-# does not fit. Do not raise it inside an EA.
+# WHAT EATS THIS IS DAEMON LATENCY, NOT IMAGE COUNT -- the comment here used to say the
+# opposite. osquery's own side is 0.23s at 18 images and 0.55s at 10,000. But one scan makes
+# three engine requests, so a daemon costing t each needs ~3t: 1s each fits, 3s each does
+# not. Do not raise it inside an EA.
 SCAN_TIMEOUT="${CONTAINER_SCAN_TIMEOUT:-6}"
 PRETTY=0
 SOCKET=""
@@ -181,15 +160,11 @@ docker_socket_path() {
 }
 
 # ONE round trip, and everything else reads what it saw. The guard and the message used to
-# make the same request twice, so the did-not-scan path cost 2x TIMEOUT -- and that is a
-# bigger deal now the budget is 8 rather than 1: 16.4s of waiting to say the same thing
-# twice. A probe is a fact about a moment; asking twice does not get a better fact, it
-# just doubles the wait on the path where we already know the answer is no.
+# make the same request twice, costing 2x TIMEOUT -- 16.4s at today's budget. A probe is a
+# fact about a moment; asking twice does not get a better fact.
 #
-# ONE TRIP IS ALSO WHAT MAKES A LONGER BUDGET AFFORDABLE. A napping daemon is woken by the
-# first request that reaches it, so this probe both wakes the engine and waits for it, and
-# the query behind it runs warm -- see TIMEOUT. Two probes would wake it on the first and
-# wait again on the second.
+# It is also why a longer budget is affordable: this one trip both wakes a napping daemon
+# and waits for it, so the query behind it runs warm.
 DOCKER_CODE=""
 DOCKER_SECS=""
 docker_probe() {
@@ -207,12 +182,10 @@ docker_healthy() {
 }
 
 # What the probe saw, in words: which state we are in changes what the operator should do,
-# and "not 200" does not say. curl gives 000 both for a daemon that never replies and for
-# one still thinking at the deadline -- Docker Desktop with a wedged engine answers 500,
-# but ten seconds later, so a short budget sees silence where there is an answer. A budget
-# that outlasts a Resource Saver wake takes the THIRD reading out of this bucket: a paused
-# engine now answers 200 rather than reading as a daemon that is never coming back. Either
-# of the two that remain is unscannable; the difference is whether restarting Docker helps.
+# and "not 200" does not say. curl gives 000 both for a daemon that never replies and for one
+# still thinking at the deadline -- a wedged engine answers 500, but ten seconds later. A
+# budget that outlasts a wake takes the third case out of this bucket: a paused engine now
+# answers 200. Both that remain are unscannable; the difference is whether a restart helps.
 docker_state() {
   [ -n "$DOCKER_CODE" ] || docker_probe "$1"
   case "$DOCKER_CODE" in
@@ -456,7 +429,7 @@ while [ $# -gt 0 ]; do
     --pretty)       PRETTY=1; shift ;;
     --no-marker)    MARKER=0; shift ;;
     --cache)        need_arg "$@"; CACHE="$2"; shift 2 ;;
-    -h|--help)      sed -n '2,51p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+    -h|--help)      sed -n '2,50p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
     *) echo "container-scan: unknown argument: $1" >&2; exit 1 ;;
   esac
 done
