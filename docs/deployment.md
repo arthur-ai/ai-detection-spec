@@ -21,6 +21,11 @@ $ cat /var/lib/ai-discovery/inventory.json
 $ cat /var/lib/ai-discovery/status.txt
 ```
 
+**`cat` is the integration, and it is the one to reach for.** `bin/discover --cache` does the
+same thing with a parse check in front of it, so a half-written file is caught rather than
+forwarded as a machine that reported nothing — but the parser is `osqueryi`, and a collector
+that has no osquery on it should just read the file. That is what the payload is shaped for.
+
 Each branch runs in its own bounded process on the write path, which is a reliability choice:
 one unavailable table costs one branch rather than the whole inventory. Composed into a single
 statement it returns zero rows and a valid empty JSON array, which a consumer cannot tell from
@@ -66,11 +71,27 @@ unchanged. Three things differ and are worth knowing before you deploy:
   produces. Read it the way you read the container marker, because "no agent units" and
   "we could not read the unit list" are different answers.
 
-## The `python3` stub, which bites only on a fleet
+## The `python3` stub, which used to bite only on a fleet
 
-On a Mac without Command Line Tools installed, `/usr/bin/python3` is a **stub**. The scheduled
-writer produces nothing at all there, and that surfaces as `no-cache` rather than as an error.
-Worth knowing before you read a fleet-wide `no-cache` as a fleet-wide absence of agents.
+On a Mac without Command Line Tools installed, `/usr/bin/python3` is a **stub**: it prints an
+install prompt on stderr and exits 1 with empty stdout. The scheduled writer was built on it
+and produced nothing at all there.
+
+**This page said that surfaced as `no-cache`. It did not.** The `no-cache` marker row — the
+one thing that tells a reader the writer never ran — was itself emitted by `python3`, so on
+the machine this section describes it surfaced as **silence**, which a collector that records
+stdout and discards the exit status reads as a machine with nothing on it. The reason and the
+failure shared an interpreter, and the reason lost.
+
+Neither endpoint script uses `python3` now. `bin/discover` and `bin/container-scan` are bash
+and `osqueryi`; marker rows are built by `printf`, so the row that says the writer never ran
+needs nothing that could have been what stopped it, and the documents they read are parsed by
+the same SQLite that wrote them. `test/lint.sh` greps for a reintroduction, and
+`test/docker_states.sh` runs every mode with `python3` and `python` stubbed out and asserts
+neither was called.
+
+`bin/classify` is still Python and still runs off the endpoint, where a missing interpreter
+is one operator's problem rather than a fleet-wide condition.
 
 ## What a deployment has to supply
 

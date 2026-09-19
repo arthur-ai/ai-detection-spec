@@ -149,6 +149,19 @@ payload full of home directories and agent identifiers comes back out. `--teleme
 prints what would be sent without sending or creating anything, because a field list you
 cannot print is one the reader has to take on trust.
 
+**The endpoint is bash and `osqueryi`, and that is a second property of the same boundary.**
+`bin/discover` and `bin/container-scan` shell out to nothing else — `json_str`/`json_row`
+build rows with `printf`, and `osq_run`, `json_concat` and `merge_sql` parse documents with
+the SQLite that wrote them. It was not always true, and the cost of it not being true was not
+an error: on a managed Mac `/usr/bin/python3` is a **stub** — no Command Line Tools, so it
+prints an install prompt on stderr and exits 1 with empty stdout — and the `no-cache` row
+that exists to say the writer never ran was built by the interpreter that stopped the writer.
+It printed nothing, and nothing reads as a clean machine. **A marker row may not depend on
+anything that could be the thing it is reporting.** `test/lint.sh` greps for a
+reintroduction, excluding comments so the explanation does not fail its own check, and
+`bin/classify` is deliberately outside the rule for the same reason telemetry is: it runs off
+the machine.
+
 **`catalog/routes.yaml` is the route registry, and adding a route there is the whole edit.** The
 vocabulary used to live in five hardcoded lists that had to agree — `validate_catalog`'s
 `ROUTES`, `classify`'s `KIND_ROUTES`, `agent_status`'s `EXACT_KINDS`/`GLOB_ROUTES`/`ALL_ROUTES`,
@@ -205,7 +218,16 @@ in both directions — a stale artifact and an artifact nothing generates are th
   a package that has conffiles: `cowsay` has none, so its record vanishes on remove and a broken
   query looks correct.
 - **Bash 3.2** is what a managed Mac has. No `timeout(1)`, and an empty array under `set -u` is an
-  unbound-variable error: append with `+=` and expand as `${a[@]+"${a[@]}"}`.
+  unbound-variable error: append with `+=` and expand as `${a[@]+"${a[@]}"}`. A heredoc inside
+  `$( )` is scanned for the closing paren *without* respecting its quoted delimiter, so one
+  apostrophe in a comment swallows the `)` and the file stops parsing — and `python3 - <<'X'`
+  reads the **script** from stdin, so a pipe into it is discarded in silence. `bash -n` catches
+  the first. Nothing catches the second: every assertion simply reads as failed.
+- **A parse failure prints `[\n\n]` too.** Fed malformed JSON, `osqueryi` writes
+  `Error: malformed JSON` to stderr, exits 1, and **still prints five bytes of valid, empty
+  JSON on stdout**. The kill decides, not the child — and neither does the parser. Every
+  `osqueryi` call that parses a document goes through `osq_run`, which prints nothing on a
+  non-zero exit, because that guard belongs in one place rather than at every call site.
 - **`identifier` is derived from the manifest `key`.** That is why a planted or unpacked
   extension reports an EMPTY one — it has no key. The consequence is not that ids are
   untestable: the Web Store's signed CRX *does* carry the key, so unpacking one into a real
