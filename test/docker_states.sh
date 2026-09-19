@@ -90,8 +90,9 @@ trap '{ kill "$SUITE_WATCHDOG" 2>/dev/null; } 2>/dev/null; pkill -f "$SOCK" 2>/d
 # true: bin/container-scan stops before its argument parser when sourced, and that is the
 # only reason the line is there.
 #
-# Sourcing brings ROOT, DEEP, TIMEOUT, SCAN_TIMEOUT, PRETTY, SOCKET, MARKER, DOCKER_CODE,
-# BOUNDED_OUT and BOUNDED_SIGNAL into this shell, along with `set -uo pipefail`. The ping
+# Sourcing brings ROOT, DEEP, TIMEOUT, SCAN_TIMEOUT, SOCKET, MARKER, CACHE, DOCKER_CODE,
+# DOCKER_SECS, BOUNDED_OUT and BOUNDED_SIGNAL into this shell, along with `set -uo pipefail`,
+# and the JSON helpers json_str, json_row, osq_run, json_concat and merge_*. The ping
 # budget is INHERITED rather than restated, so that a change to the shipped default shows up
 # here -- and the `nap` checks below are where it shows up, because they are the ones whose
 # answer it changes. Two rows override it deliberately and say why.
@@ -616,6 +617,268 @@ gaps = [r for r in rows if r['kind'] == 'scan' and r['extra'] != 'ok']
 print(1 if imgs and not gaps else 0)" 2>/dev/null)" \
       "got: $(printf '%s' "$stripped" | head -c 120)"
 stop_fake
+
+echo "  a marker row survives a socket path that is trying to break it"
+# THE REASON marker() WAS AN INTERPRETER. A socket path is input, and a quote in one emits
+# malformed JSON -- which a collector reads as "this machine reported nothing", the exact
+# outcome the row exists to prevent. The objection was never printf, it was un-escaped
+# interpolation, so this pins the escaper against every byte JSON cares about at once:
+# apostrophe, double quote, backslash, newline, tab, and UTF-8 that must survive untouched.
+#
+# Asserted by PARSING, not by grepping the output: a test that matched the escaped text
+# would pass on a string that no parser accepts, which is the bug itself.
+weird_sock='/tmp/it'"'"'s "weird"\back'$'\n''sock'$'\t''tab/ünï'
+weird_row="$(. "$ROOT/bin/container-scan"; MARKER=1 marker 'timeout:6' "$weird_sock")"
+check "a hostile socket path round-trips byte-exact" \
+      "$(printf '%s' "$weird_row" | python3 -c "
+import json, sys
+try: r = json.load(sys.stdin)[0]
+except Exception: print(0); raise SystemExit
+print(1 if r['loc'] == sys.argv[1] and r['extra'] == 'timeout:6'
+      and sorted(r) == ['extra','id','kind','loc','perms','ver'] else 0)" "$weird_sock" 2>/dev/null)" \
+      "got: $(printf '%s' "$weird_row" | head -c 160)"
+
+echo "  the row that says the writer never ran does not need the writer's interpreter"
+# THE MANAGED MAC THIS EXISTS FOR. Without Command Line Tools /usr/bin/python3 is a STUB: it
+# prints an install prompt on stderr and exits 1 with EMPTY STDOUT. docs/deployment.md said
+# that state surfaces as `no-cache`. It did not -- the no-cache marker was itself built with
+# python3, so the one row whose whole job is to say the writer never ran was built by the
+# interpreter that stopped the writer, and printed nothing. A collector that records stdout
+# and discards the status reads nothing as a machine with nothing on it.
+#
+# THE STUB LEAVES A BREADCRUMB, so this asserts python was NEVER CALLED rather than that the
+# run happened to survive calling it -- a fallback would pass the second and not the first.
+# `python` as well as `python3`, because a reintroduction could reach for either.
+PYSTUB="$(mktemp -d "${TMPDIR:-/tmp}/pystub.XXXXXX")"
+printf '#!/bin/sh\necho "$0" >> "%s/called"\nexit 1\n' "$PYSTUB" > "$PYSTUB/python3"
+cp "$PYSTUB/python3" "$PYSTUB/python"
+chmod +x "$PYSTUB/python3" "$PYSTUB/python"
+
+nocache="$(PATH="$PYSTUB:$PATH" "$ROOT/bin/discover" --cache "$PYSTUB/absent.json" 2>/dev/null)"; rc=$?
+check "--cache on a missing file still exits 1" "$([ "$rc" = 1 ] && echo 1 || echo 0)" "got $rc"
+check "...and still prints the no-cache row on STDOUT" \
+      "$(printf '%s' "$nocache" | python3 -c "
+import json, sys
+try: rows = json.load(sys.stdin)
+except Exception: print(0); raise SystemExit
+print(1 if len(rows) == 1 and rows[0]['kind'] == 'scan' and rows[0]['id'] == 'inventory'
+      and rows[0]['extra'] == 'no-cache' else 0)" 2>/dev/null)" \
+      "got: $(printf '%s' "$nocache" | head -c 160) -- empty here is the bug this closes"
+
+# A PRESENT cache is `cat` with a parse check, and the check is what tells a half-written
+# file from a machine with nothing on it. Both halves are asserted: the good file must come
+# back byte-for-byte -- the old implementation re-encoded, which silently normalised whatever
+# the writer had put there -- and the truncated one must be caught rather than forwarded.
+printf '[{"kind":"app","id":"com.x","ver":"1","loc":"/A/it'"'"'s \\"q\\"","extra":"","perms":""}]' \
+  > "$PYSTUB/good.json"
+echoed="$(PATH="$PYSTUB:$PATH" "$ROOT/bin/discover" --cache "$PYSTUB/good.json" 2>/dev/null)"
+check "a valid cache comes back byte-for-byte" \
+      "$([ "$echoed" = "$(cat "$PYSTUB/good.json")" ] && echo 1 || echo 0)" \
+      "got: $(printf '%s' "$echoed" | head -c 160)"
+
+printf '[{"kind":"app","id":' > "$PYSTUB/trunc.json"
+trunc="$(PATH="$PYSTUB:$PATH" "$ROOT/bin/discover" --cache "$PYSTUB/trunc.json" 2>/dev/null)"; rc=$?
+check "a truncated cache exits 1 and says so in a row" \
+      "$([ "$rc" = 1 ] && printf '%s' "$trunc" | python3 -c "
+import json, sys
+try: rows = json.load(sys.stdin)
+except Exception: print(0); raise SystemExit
+print(1 if len(rows) == 1 and rows[0]['id'] == 'inventory'
+      and rows[0]['extra'] == 'error' else 0)" 2>/dev/null || echo 0)" \
+      "rc=$rc got: $(printf '%s' "$trunc" | head -c 160)"
+
+# EVERY MODE, not only the ones whose output is asserted above. A path that still reached for
+# python3 would be found by the breadcrumb below rather than by whichever fleet ran it first.
+start_fake healthy
+PATH="$PYSTUB:$PATH" "$ROOT/bin/discover" --write "$PYSTUB/w.json" \
+     --status "$PYSTUB/w.txt" --socket "$SOCK" >/dev/null 2>&1; write_rc=$?
+check "--write runs to completion with no interpreter" \
+      "$([ "$write_rc" = 0 ] && [ -s "$PYSTUB/w.json" ] && [ -s "$PYSTUB/w.txt" ] && echo 1 || echo 0)" \
+      "rc=$write_rc status=$(cat "$PYSTUB/w.txt" 2>/dev/null | head -c 200)"
+check "...and the status line keeps its shape" \
+      "$(grep -cE '^(ok|degraded) [0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:]+Z rows=[0-9]+( [a-z-]+=[^ ]+)+$' \
+         "$PYSTUB/w.txt" 2>/dev/null || echo 0)" \
+      "got: $(cat "$PYSTUB/w.txt" 2>/dev/null | head -c 200)"
+PATH="$PYSTUB:$PATH" "$ROOT/bin/discover" --deep --socket "$SOCK" >/dev/null 2>&1
+PATH="$PYSTUB:$PATH" "$ROOT/bin/discover" >/dev/null 2>&1
+stop_fake
+
+absent_row="$(PATH="$PYSTUB:$PATH" "$ROOT/bin/container-scan" --socket /nonexistent/d.sock 2>/dev/null)"
+check "container-scan's absent marker needs no interpreter" \
+      "$(printf '%s' "$absent_row" | python3 -c "
+import json, sys
+try: rows = json.load(sys.stdin)
+except Exception: print(0); raise SystemExit
+print(1 if len(rows) == 1 and rows[0]['id'] == 'containers'
+      and rows[0]['extra'] == 'absent' else 0)" 2>/dev/null)" \
+      "got: $(printf '%s' "$absent_row" | head -c 160)"
+
+check "python was never called" "$([ ! -e "$PYSTUB/called" ] && echo 1 || echo 0)" \
+      "called: $(cat "$PYSTUB/called" 2>/dev/null | head -c 200)"
+rm -rf "$PYSTUB"
+
+# Its own directory: $PYSTUB is gone by here, and reusing a removed path is the kind of
+# breakage that shows up as an assertion failing for the wrong reason.
+JSONTMP="$(mktemp -d "${TMPDIR:-/tmp}/jsonhelp.XXXXXX")"
+
+echo "  osq_run discards the output of a failed parse"
+# THE GUARD EVERY OTHER JSON CALL STANDS ON, asserted directly rather than through a caller.
+# Fed malformed JSON, osqueryi writes its error to stderr, exits 1, and STILL PRINTS "[\n\n]"
+# on stdout -- five bytes of valid, empty, entirely plausible JSON. A caller that read stdout
+# without the status would report a clean machine because a document failed to parse.
+#
+# BOTH HALVES ARE ASSERTED, and the first is what makes the second mean anything: raw
+# osqueryi must be shown to print the lie here, or a future osqueryi that stopped doing it
+# would leave this test passing while proving nothing.
+bad_sql="SELECT json_extract(value,'\$.id') AS id FROM json_each('[{')"
+raw_out="$("$OSQI" --json "$bad_sql" 2>/dev/null)"; raw_rc=$?
+check "raw osqueryi still prints [] on a parse failure" \
+      "$([ "$raw_rc" != 0 ] && [ -n "$(printf '%s' "$raw_out" | tr -d '[:space:]')" ] && echo 1 || echo 0)" \
+      "rc=$raw_rc out=$(printf '%s' "$raw_out" | tr -d '\n')  -- if this changed, osq_run's \
+guard may no longer be load-bearing, but do not delete it without measuring"
+guarded="$(. "$ROOT/bin/container-scan"; osq_run "$OSQI" --json "$bad_sql" 2>/dev/null)"; g_rc=$?
+check "osq_run prints nothing at all, and says so in its status" \
+      "$([ "$g_rc" != 0 ] && [ -z "$guarded" ] && echo 1 || echo 0)" \
+      "rc=$g_rc out=[$guarded]"
+
+echo "  json_concat refuses to invent an empty inventory"
+CONCAT_A='[{"kind":"app","id":"a-1","ver":"1","loc":"/a","extra":"","perms":""}]'
+CONCAT_B='[{"kind":"scan","id":"containers","ver":"9","loc":"/s","extra":"ok","perms":""}]'
+joined="$(. "$ROOT/bin/container-scan"; json_concat "$OSQI" "$CONCAT_A" "$CONCAT_B")"
+check "two documents join, in order, keeping every row" \
+      "$(printf '%s' "$joined" | python3 -c "
+import json, sys
+try: rows = json.load(sys.stdin)
+except Exception: print(0); raise SystemExit
+print(1 if [r['id'] for r in rows] == ['a-1','containers'] else 0)" 2>/dev/null)" \
+      "got: $(printf '%s' "$joined" | tr -d '\n ')"
+check "an empty second document is [] rather than an error" \
+      "$(. "$ROOT/bin/container-scan"; json_concat "$OSQI" "$CONCAT_A" "" \
+         | python3 -c "
+import json, sys
+try: print(1 if len(json.load(sys.stdin)) == 1 else 0)
+except Exception: print(0)" 2>/dev/null)" \
+      "an absent deep half must cost the base rows nothing"
+# The one that matters: a malformed half must take the WHOLE join down and print NOTHING,
+# because a partial join is a machine reporting less than it found, and "[\n\n]" is a machine
+# reporting nothing at all while looking clean.
+cat_bad="$(. "$ROOT/bin/container-scan"; json_concat "$OSQI" "$CONCAT_A" '[{' 2>/dev/null)"; cb_rc=$?
+check "a malformed half fails loudly and prints nothing" \
+      "$([ "$cb_rc" != 0 ] && [ -z "$cat_bad" ] && echo 1 || echo 0)" \
+      "rc=$cb_rc out=[$cat_bad] -- printing [] here is the bug this repo exists to prevent"
+
+echo "  every branch's SQL arrives byte for byte as the pack holds it"
+# A QUERY THAT LOST ITS TAIL WOULD STILL RUN, still return rows, and still look right in a
+# row count -- which is the shape of failure this repo keeps finding. The text crosses one
+# osqueryi joined to its branch name by a tab, so this reads the pack independently and
+# compares every byte.
+. "$ROOT/bin/container-scan"
+pack_branches "$OSQI" "$ROOT/dist/ai-discovery.conf" "$PLATFORM" > "$JSONTMP/packlines" 2>/dev/null
+pack_verdict="$(python3 - "$ROOT/dist/ai-discovery.conf" "$JSONTMP/packlines" "$PLATFORM" <<'PACKCHECK'
+import json, sys
+pack = json.load(open(sys.argv[1]))["queries"]
+want = {n: q["query"] for n, q in pack.items()
+        if q.get("platform") in (sys.argv[3], "posix", "all")}
+got = {}
+for line in open(sys.argv[2]).read().splitlines():
+    if not line:
+        continue
+    name, tab, text = line.partition("\t")
+    if not tab:
+        print("no tab in: %.60r" % line); raise SystemExit
+    got[name] = text
+if set(got) != set(want):
+    print("branches missing=%s extra=%s" % (sorted(set(want) - set(got)),
+                                            sorted(set(got) - set(want))))
+    raise SystemExit
+bad = [n for n in want if got[n] != want[n]]
+print("text differs for %s" % bad if bad else "1")
+PACKCHECK
+)"
+check "the branch list and every query match the pack exactly" "$pack_verdict" "$pack_verdict"
+
+echo "  a validator that cannot answer is not a cache that is broken"
+# THE THIRD OUTCOME, and it exists because collapsing it into "bad" sends someone to look at
+# a file that is fine. OSQI points at a binary that exits non-zero and prints nothing, which
+# is what osq_run turns any osqueryi failure into.
+printf '[]' > "$JSONTMP/fine.json"
+broken_out="$(OSQI=/usr/bin/false "$ROOT/bin/discover" --cache "$JSONTMP/fine.json" 2>&1)"; bo_rc=$?
+check "--cache exits 1 and names osqueryi, not the file" \
+      "$([ "$bo_rc" = 1 ] && printf '%s' "$broken_out" | grep -q 'osqueryi did not answer' && echo 1 || echo 0)" \
+      "rc=$bo_rc got: $(printf '%s' "$broken_out" | head -c 160)"
+rm -rf "$JSONTMP"
+
+echo "  a broken branch document costs one branch, and the merge says which"
+# THE INPUT THAT MATTERS, HANDED DIRECTLY. While the merge was a heredoc inside --write, the
+# only way to reach it was a full writer run against real branches -- so the one case worth
+# testing, a branch whose document is broken, could not be handed to it at all. It is a
+# function now and this points six branches at it, each carrying a different fact:
+#
+#   good     rows, no scan row of its own    -> rows kept, a synthetic `ok` marker added
+#   substit  rows plus id=<its own name>     -> its row stands, NO synthetic marker
+#   additive rows plus id=systemd            -> both ship: the branch ran AND systemd did not
+#   broken   not JSON at all                 -> `error`, and the other five still report
+#   empty    zero bytes, no .failed sentinel -> `error`
+#   sentinel .failed present                 -> `error`
+#
+# `empty` is the one that is a FIX rather than a port. The python merge read "" as [] and
+# called it ok, so bin/container-scan exiting 1 -- "could not run at all", which prints an
+# empty line -- came back as containers=ok: a scan that never happened, reported as a scan
+# that found nothing.
+MERGEDIR="$(mktemp -d "${TMPDIR:-/tmp}/merge.XXXXXX")"
+row() { printf '{"kind":"%s","id":"%s","ver":"1","loc":"","extra":"%s","perms":""}' "$1" "$2" "$3"; }
+printf '[%s]' "$(row app good-1 '')"                                  > "$MERGEDIR/good"
+printf '[%s,%s]' "$(row app sub-1 '')" "$(row scan substit timeout:6)" > "$MERGEDIR/substit"
+printf '[%s,%s]' "$(row app add-1 '')" "$(row scan systemd absent)"    > "$MERGEDIR/additive"
+printf '[{"kind":"app","id":'                                          > "$MERGEDIR/broken"
+: > "$MERGEDIR/empty"
+: > "$MERGEDIR/sentinel"
+: > "$MERGEDIR/sentinel.failed"
+
+merged="$(. "$ROOT/bin/container-scan"
+          merge_branches "$OSQI" "$MERGEDIR" good substit additive broken empty sentinel)"
+check "the merge answers at all with a malformed branch in the set" \
+      "$([ -n "$merged" ] && echo 1 || echo 0)" \
+      "empty -- one bad document took the whole payload down, which is the all-or-nothing \
+merge the independent writer exists to avoid"
+# THE VERDICT IS COMPUTED OUT OF LINE, AND NOT INSIDE A COMMAND SUBSTITUTION. Two traps met
+# here, both of which fail as a wrong answer rather than an error:
+#
+#   `python3 - <<'X'` reads the SCRIPT from stdin, so a pipe into it is discarded in silence
+#   and every assertion reads as failed;
+#
+#   a heredoc inside $( ) is scanned for the closing paren by bash 3.2 WITHOUT respecting the
+#   quoted delimiter, so one apostrophe in a comment -- "substit's own row" -- swallows the
+#   `)` and the file stops parsing. `bash -n` catches that one; nothing catches the first.
+#
+# So the payload goes in through argv and the verdict comes back through a file.
+printf '%s' "$merged" > "$MERGEDIR/merged.json"
+python3 - "$MERGEDIR/merged.json" > "$MERGEDIR/verdict" <<'MERGECHECK'
+import json, sys
+try:
+    rows = json.load(open(sys.argv[1]))
+except Exception:
+    print("unparseable"); raise SystemExit
+scans = {(r["id"], r["extra"]) for r in rows if r["kind"] == "scan"}
+ids = {r["id"] for r in rows if r["kind"] != "scan"}
+want = {("good", "ok"), ("substit", "timeout:6"), ("additive", "ok"),
+        ("systemd", "absent"), ("broken", "error"), ("empty", "error"),
+        ("sentinel", "error")}
+# The substit branch supplied its own row, so exactly one scan row may carry that name.
+dupes = [r for r in rows if r["kind"] == "scan" and r["id"] == "substit"]
+problems = []
+if scans != want:
+    problems.append("scans missing=%s extra=%s" % (sorted(want - scans), sorted(scans - want)))
+if ids != {"good-1", "sub-1", "add-1"}:
+    problems.append("rows lost or invented: %s" % sorted(ids))
+if len(dupes) != 1:
+    problems.append("substit has %d scan rows, not 1" % len(dupes))
+print("; ".join(problems) if problems else "1")
+MERGECHECK
+merge_verdict="$(cat "$MERGEDIR/verdict")"
+check "each branch reports the right outcome, and no branch loses its rows" \
+      "$merge_verdict" "$merge_verdict"
+rm -rf "$MERGEDIR"
 
 echo "  one broken branch costs one branch"
 # THE RELIABILITY CLAIM the independent writer exists for. Composed, one unavailable table

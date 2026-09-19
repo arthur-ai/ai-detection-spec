@@ -314,8 +314,51 @@ fi
 # lends out the guard and the bound rather than having them copied. Two things can break
 # that silently: deleting the `(return 0 2>/dev/null) && return 0` line, after which
 # sourcing runs a live scan; and renaming a function the callers use.
-bash -c '. "'"$HERE"'/../bin/container-scan" && type -t run_bounded docker_healthy docker_socket_path marker >/dev/null' \
+bash -c '. "'"$HERE"'/../bin/container-scan" && type -t run_bounded docker_healthy docker_socket_path marker json_str json_row osq_run json_concat pack_branches merge_sql merge_branches >/dev/null' \
   || { echo "FAIL: bin/container-scan is no longer safely sourceable, or a shared function was renamed"; fail=1; }
+
+# NOTHING ON THE ENDPOINT IS PYTHON, AND THE FAILURE IT PREVENTS IS SILENCE RATHER THAN AN
+# ERROR. These two scripts run on managed Macs where /usr/bin/python3 is a STUB -- no Command
+# Line Tools, so it prints an install prompt on stderr and exits 1 with empty stdout. That
+# took the no-cache marker with it: the one row whose whole job is to say the writer never
+# ran was built by the interpreter that stopped the writer, so a collector saw nothing, and
+# nothing reads as a machine with nothing on it. docs/deployment.md has the history.
+#
+# `python` rather than `python3`, and no path anchor, so `/usr/bin/python3` and `env python`
+# fail here too. COMMENTS ARE EXCLUDED -- shell `#` and SQL `--` alike -- because the
+# comments in both files are what explain the removal, and a check that counts its own
+# documentation is one nobody can satisfy. bin/classify is the python half and is off the
+# endpoint by design, so it is not in this list and must not be added to it.
+#
+# A DENY-LIST, AND IT IS HONEST ABOUT BEING ONE. These seven are what someone reaches for when
+# they need to read JSON in a shell script, which is the only reason this rule has ever been
+# broken; `jq` in particular is the obvious next one and does not ship with macOS at all. It
+# does NOT enumerate every command these scripts may call, so it cannot enforce the whole rule
+# in CLAUDE.md -- an allow-list over two files this size is mostly shell builtins and control
+# flow, and one tuned to pass today would go stale as noise. What it catches is the failure
+# that has actually happened. Read the rule, not just the gate.
+#
+# `|| true` on the greps, because this file runs under `set -e` and a grep that matches
+# NOTHING exits 1 -- which is the passing case here. Without it lint stops dead at the first
+# clean file and every check below this line silently stops running.
+_endpoint_clean=1
+for _f in "$HERE/../bin/discover" "$HERE/../bin/container-scan"; do
+  _hits="$( { grep -nE '(^|[^a-zA-Z_.-])(python|jq|perl|ruby|node|deno|php)([^a-zA-Z0-9_-]|$)' \
+              "$_f" || true; } \
+            | { grep -vE '^[0-9]+:[[:space:]]*(#|--)' || true; } )"
+  if [ -n "$_hits" ]; then
+    echo "FAIL: $(basename "$_f") reaches for an interpreter or a JSON tool:"
+    printf '%s\n' "$_hits" | sed 's/^/      /'
+    echo "      The endpoint is bash 3.2, osqueryi and curl, and osqueryi is the JSON parser:"
+    echo "      json_str/json_row build rows, osq_run/json_concat/merge_sql read them."
+    echo "      bin/classify is the python half, and it runs off the machine."
+    fail=1; _endpoint_clean=0
+  fi
+done
+# Guarded, or the summary line prints `ok` directly underneath its own FAIL -- which is how
+# a reader skimming for the last line concludes the check passed.
+[ "$_endpoint_clean" = 1 ] &&
+  echo "endpoint: ok, bin/discover and bin/container-scan reach for no interpreter or JSON tool"
 
 # ONE expensive query, and the check exists because the second one is a trap.
 # dist/discovery-deep.sql is run by bin/container-scan behind a guard that is specific to
@@ -336,6 +379,29 @@ if len(expensive) > 1:
           "above this check in test/lint.sh.")
     sys.exit(1)
 print(f"expensive queries: {len(expensive)} ({expensive[0] if expensive else 'none'})")
+PY
+# THE PACK'S NAME AND QUERY CROSS ONE osqueryi IN ONE COLUMN, joined by a tab and split back
+# in the shell. bin/discover --write reads the branch list and every branch's SQL in a single
+# call that way, and the separator is safe because tools/build.py's flatten() is
+# `" ".join(text.split())` -- a property of the BUILDER, so it is asserted against the FILE.
+#
+# MEASURED, because the two characters do not fail the same way. A tab survives: `read -r
+# name qtext` hands the remainder to the last variable with its tabs intact. A newline does
+# not, and it does not fail loudly either -- the loop reads the second half as a fresh
+# record, so `SELECT 'app'\nAS kind FROM apps;` becomes a branch named `AS kind FROM apps;`
+# and a truncated `apps`. Both are rejected anyway: the tab is only harmless while qtext is
+# the last field, and a third column would make today's safe case tomorrow's silent one.
+python3 - "$HERE/../dist/ai-discovery.conf" <<'PY' || fail=1
+import json, sys
+pack = json.load(open(sys.argv[1]))["queries"]
+bad = [n for n, q in pack.items() if "\t" in q["query"] or "\n" in q["query"]]
+if bad:
+    print("FAIL: pack queries contain a tab or newline: " + ", ".join(sorted(bad)))
+    print("      bin/discover --write joins name and query with a tab and splits them back.")
+    print("      A newline there invents a branch out of the second half. Keep build.py's")
+    print("      flatten() collapsing whitespace, or give --write another separator.")
+    sys.exit(1)
+print(f"pack: ok, {len(pack)} queries, none carrying the separator --write splits on")
 PY
 python3 "$HERE/../tools/validate_catalog.py" || fail=1
 python3 "$HERE/../tools/build.py" --check || fail=1

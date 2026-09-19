@@ -107,12 +107,19 @@ one.
 | Linux | Any distro with dpkg or rpm. One artifact serves both: on Debian `rpm_packages` returns no rows and exits 0, and on Fedora `deb_packages` does the same — measured, not assumed |
 | osquery | **5.10.0** — every query declares its own in `min-osquery:`, and `queries/vscode.sql` declares **5.11.0**, which is when `vscode_extensions` arrived |
 | `bash` | 3.2, which is the macOS system `bash`, so `/bin/bash` is enough |
-| `python3` | **3.7** (`subprocess` `capture_output`) — for `bin/classify`, `bin/discover`'s writer and `tools/` |
+| `python3` | **3.7** (`subprocess` `capture_output`) — for `bin/classify` and `tools/`. **Nothing on the endpoint needs it** |
 | PyYAML | Only for the tools that read the catalog: `bin/classify` and `tools/validate_catalog.py` |
 
-Running the queries needs **osquery alone**. `python3` and PyYAML are for the classifier and
-the scheduled writer, not the endpoint's reporting path — which is a `cat`. Which OS versions
-each scenario has actually run on is recorded in [`docs/agents.md`](docs/agents.md).
+**Running the queries needs osquery alone, and so does everything else that runs on the
+endpoint.** `bin/discover` and `bin/container-scan` are bash and `osqueryi` — the JSON they
+read is parsed by `osqueryi`'s own SQLite, and the rows they write are built by `printf`.
+The one other binary either touches is `curl`, for the Docker health probe, and
+[`docs/deployment.md`](docs/deployment.md) says why that is not written up as a prerequisite.
+`python3` and PyYAML are for the classifier and the tools, which run off the machine.
+`CLAUDE.md` carries that rule and `test/lint.sh` gates it, for a reason `docs/deployment.md`
+also records: on a Mac without Command Line Tools `/usr/bin/python3` is a stub, and a marker
+row that needs an interpreter cannot report a broken interpreter. Which OS versions each
+scenario has actually run on is recorded in [`docs/agents.md`](docs/agents.md).
 
 `sudo` is needed because some tables read other users' home directories. Without it you see
 only your own account.
@@ -123,7 +130,7 @@ only your own account.
 $ git clone https://github.com/arthur-ai/osquery-ai-discovery
 $ cd osquery-ai-discovery              # or download the assets from a tagged release
 $ brew install --cask osquery          # or https://osquery.io/downloads
-$ python3 -m pip install pyyaml        # for bin/classify only -- the queries need nothing
+$ python3 -m pip install pyyaml        # for bin/classify only -- the endpoint needs nothing
 $ sudo osqueryi --json < dist/discovery-darwin.sql | bin/classify
 $ sudo bin/discover --deep | bin/classify     # the same, plus container images
 
@@ -226,7 +233,7 @@ and it is opt-in because it is the only part of this that talks to a daemon.
 
 ```console
 $ sudo bin/discover --deep | bin/classify     # base inventory plus container images
-$ sudo bin/container-scan --pretty            # containers alone
+$ sudo bin/container-scan | bin/classify      # containers alone
 ```
 
 Opt-in because `docker_images` cannot be bounded from inside osquery: against a daemon that

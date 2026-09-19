@@ -284,6 +284,26 @@ row says which happened.
 | inventory EA (`bin/discover`) | 1.10s | 1.10s | 1.10s |
 | container EA (`bin/container-scan`) | 7.36s | 0.51s | — |
 
+**What removing `python3` from the endpoint did to these, measured rather than reasoned.**
+The endpoint scripts parse JSON with `osqueryi` now, and an `osqueryi` spawn costs ~0.24s
+against an interpreter's ~0.03s — so the question is which paths gained one. Five runs each,
+old and new interleaved on one Mac, and that Mac is not the one the table above was measured
+on: read the DELTAS, not the absolutes, and do not fold them into the cells by arithmetic.
+
+| | old (python3) | new (osqueryi) | delta |
+|---|---|---|---|
+| `bin/discover` | 1.40s | 1.37s | — neither calls an interpreter |
+| `bin/discover --deep`, healthy | 2.43s | 2.67s | **+0.24s**, one spawn: the base/deep join |
+| `bin/discover --deep`, wedged | 9.69s | 9.63s | — |
+| `bin/container-scan`, healthy | 1.01s | 0.99s | — the marker lost a spawn, the join gained one |
+| `bin/discover --write` | 6.99s | 5.55s | **−1.44s**, eleven pack reads collapsed into one |
+
+**The budgeted path did not move.** Wedged is where the margin is thin, and it is flat there
+because `container_scan` joins its marker only on success, while `marker()` itself stopped
+spawning anything — so on the path that matters the two changes cancel. Healthy `--deep` pays
+one spawn, against a budget it uses a quarter of. `--write`, the mode with nobody waiting on
+it, got faster.
+
 Where a consumer's budgets are **per value** rather than a shared pool, splitting gives each
 half its own and neither can blank the other. Check whether yours are.
 
