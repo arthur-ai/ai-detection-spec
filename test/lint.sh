@@ -337,6 +337,29 @@ if len(expensive) > 1:
     sys.exit(1)
 print(f"expensive queries: {len(expensive)} ({expensive[0] if expensive else 'none'})")
 PY
+# THE PACK'S NAME AND QUERY CROSS ONE osqueryi IN ONE COLUMN, joined by a tab and split back
+# in the shell. bin/discover --write reads the branch list and every branch's SQL in a single
+# call that way, and the separator is safe because tools/build.py's flatten() is
+# `" ".join(text.split())` -- a property of the BUILDER, so it is asserted against the FILE.
+#
+# MEASURED, because the two characters do not fail the same way. A tab survives: `read -r
+# name qtext` hands the remainder to the last variable with its tabs intact. A newline does
+# not, and it does not fail loudly either -- the loop reads the second half as a fresh
+# record, so `SELECT 'app'\nAS kind FROM apps;` becomes a branch named `AS kind FROM apps;`
+# and a truncated `apps`. Both are rejected anyway: the tab is only harmless while qtext is
+# the last field, and a third column would make today's safe case tomorrow's silent one.
+python3 - "$HERE/../dist/ai-discovery.conf" <<'PY' || fail=1
+import json, sys
+pack = json.load(open(sys.argv[1]))["queries"]
+bad = [n for n, q in pack.items() if "\t" in q["query"] or "\n" in q["query"]]
+if bad:
+    print("FAIL: pack queries contain a tab or newline: " + ", ".join(sorted(bad)))
+    print("      bin/discover --write joins name and query with a tab and splits them back.")
+    print("      A newline there invents a branch out of the second half. Keep build.py's")
+    print("      flatten() collapsing whitespace, or give --write another separator.")
+    sys.exit(1)
+print(f"pack: ok, {len(pack)} queries, none carrying the separator --write splits on")
+PY
 python3 "$HERE/../tools/validate_catalog.py" || fail=1
 python3 "$HERE/../tools/build.py" --check || fail=1
 python3 "$HERE/../test/test_matcher.py" >/dev/null || { echo "FAIL: matcher tests"; fail=1; }
