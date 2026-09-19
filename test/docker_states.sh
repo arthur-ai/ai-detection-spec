@@ -717,6 +717,97 @@ check "python was never called" "$([ ! -e "$PYSTUB/called" ] && echo 1 || echo 0
       "called: $(cat "$PYSTUB/called" 2>/dev/null | head -c 200)"
 rm -rf "$PYSTUB"
 
+# Its own directory: $PYSTUB is gone by here, and reusing a removed path is the kind of
+# breakage that shows up as an assertion failing for the wrong reason.
+JSONTMP="$(mktemp -d "${TMPDIR:-/tmp}/jsonhelp.XXXXXX")"
+
+echo "  osq_run discards the output of a failed parse"
+# THE GUARD EVERY OTHER JSON CALL STANDS ON, asserted directly rather than through a caller.
+# Fed malformed JSON, osqueryi writes its error to stderr, exits 1, and STILL PRINTS "[\n\n]"
+# on stdout -- five bytes of valid, empty, entirely plausible JSON. A caller that read stdout
+# without the status would report a clean machine because a document failed to parse.
+#
+# BOTH HALVES ARE ASSERTED, and the first is what makes the second mean anything: raw
+# osqueryi must be shown to print the lie here, or a future osqueryi that stopped doing it
+# would leave this test passing while proving nothing.
+bad_sql="SELECT json_extract(value,'\$.id') AS id FROM json_each('[{')"
+raw_out="$("$OSQI" --json "$bad_sql" 2>/dev/null)"; raw_rc=$?
+check "raw osqueryi still prints [] on a parse failure" \
+      "$([ "$raw_rc" != 0 ] && [ -n "$(printf '%s' "$raw_out" | tr -d '[:space:]')" ] && echo 1 || echo 0)" \
+      "rc=$raw_rc out=$(printf '%s' "$raw_out" | tr -d '\n')  -- if this changed, osq_run's \
+guard may no longer be load-bearing, but do not delete it without measuring"
+guarded="$(. "$ROOT/bin/container-scan"; osq_run "$OSQI" --json "$bad_sql" 2>/dev/null)"; g_rc=$?
+check "osq_run prints nothing at all, and says so in its status" \
+      "$([ "$g_rc" != 0 ] && [ -z "$guarded" ] && echo 1 || echo 0)" \
+      "rc=$g_rc out=[$guarded]"
+
+echo "  json_concat refuses to invent an empty inventory"
+CONCAT_A='[{"kind":"app","id":"a-1","ver":"1","loc":"/a","extra":"","perms":""}]'
+CONCAT_B='[{"kind":"scan","id":"containers","ver":"9","loc":"/s","extra":"ok","perms":""}]'
+joined="$(. "$ROOT/bin/container-scan"; json_concat "$OSQI" "$CONCAT_A" "$CONCAT_B")"
+check "two documents join, in order, keeping every row" \
+      "$(printf '%s' "$joined" | python3 -c "
+import json, sys
+try: rows = json.load(sys.stdin)
+except Exception: print(0); raise SystemExit
+print(1 if [r['id'] for r in rows] == ['a-1','containers'] else 0)" 2>/dev/null)" \
+      "got: $(printf '%s' "$joined" | tr -d '\n ')"
+check "an empty second document is [] rather than an error" \
+      "$(. "$ROOT/bin/container-scan"; json_concat "$OSQI" "$CONCAT_A" "" \
+         | python3 -c "
+import json, sys
+try: print(1 if len(json.load(sys.stdin)) == 1 else 0)
+except Exception: print(0)" 2>/dev/null)" \
+      "an absent deep half must cost the base rows nothing"
+# The one that matters: a malformed half must take the WHOLE join down and print NOTHING,
+# because a partial join is a machine reporting less than it found, and "[\n\n]" is a machine
+# reporting nothing at all while looking clean.
+cat_bad="$(. "$ROOT/bin/container-scan"; json_concat "$OSQI" "$CONCAT_A" '[{' 2>/dev/null)"; cb_rc=$?
+check "a malformed half fails loudly and prints nothing" \
+      "$([ "$cb_rc" != 0 ] && [ -z "$cat_bad" ] && echo 1 || echo 0)" \
+      "rc=$cb_rc out=[$cat_bad] -- printing [] here is the bug this repo exists to prevent"
+
+echo "  every branch's SQL arrives byte for byte as the pack holds it"
+# A QUERY THAT LOST ITS TAIL WOULD STILL RUN, still return rows, and still look right in a
+# row count -- which is the shape of failure this repo keeps finding. The text crosses one
+# osqueryi joined to its branch name by a tab, so this reads the pack independently and
+# compares every byte.
+. "$ROOT/bin/container-scan"
+pack_branches "$OSQI" "$ROOT/dist/ai-discovery.conf" "$PLATFORM" > "$JSONTMP/packlines" 2>/dev/null
+pack_verdict="$(python3 - "$ROOT/dist/ai-discovery.conf" "$JSONTMP/packlines" "$PLATFORM" <<'PACKCHECK'
+import json, sys
+pack = json.load(open(sys.argv[1]))["queries"]
+want = {n: q["query"] for n, q in pack.items()
+        if q.get("platform") in (sys.argv[3], "posix", "all")}
+got = {}
+for line in open(sys.argv[2]).read().splitlines():
+    if not line:
+        continue
+    name, tab, text = line.partition("\t")
+    if not tab:
+        print("no tab in: %.60r" % line); raise SystemExit
+    got[name] = text
+if set(got) != set(want):
+    print("branches missing=%s extra=%s" % (sorted(set(want) - set(got)),
+                                            sorted(set(got) - set(want))))
+    raise SystemExit
+bad = [n for n in want if got[n] != want[n]]
+print("text differs for %s" % bad if bad else "1")
+PACKCHECK
+)"
+check "the branch list and every query match the pack exactly" "$pack_verdict" "$pack_verdict"
+
+echo "  a validator that cannot answer is not a cache that is broken"
+# THE THIRD OUTCOME, and it exists because collapsing it into "bad" sends someone to look at
+# a file that is fine. OSQI points at a binary that exits non-zero and prints nothing, which
+# is what osq_run turns any osqueryi failure into.
+printf '[]' > "$JSONTMP/fine.json"
+broken_out="$(OSQI=/usr/bin/false "$ROOT/bin/discover" --cache "$JSONTMP/fine.json" 2>&1)"; bo_rc=$?
+check "--cache exits 1 and names osqueryi, not the file" \
+      "$([ "$bo_rc" = 1 ] && printf '%s' "$broken_out" | grep -q 'osqueryi did not answer' && echo 1 || echo 0)" \
+      "rc=$bo_rc got: $(printf '%s' "$broken_out" | head -c 160)"
+rm -rf "$JSONTMP"
+
 echo "  a broken branch document costs one branch, and the merge says which"
 # THE INPUT THAT MATTERS, HANDED DIRECTLY. While the merge was a heredoc inside --write, the
 # only way to reach it was a full writer run against real branches -- so the one case worth

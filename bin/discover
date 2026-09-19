@@ -221,21 +221,9 @@ if [ -n "$WRITE" ]; then
   #
   # `posix` covers both, matching catalog/routes.yaml's platform_groups.
   #
-  # ONE READ FOR BOTH ANSWERS -- the list and every query's text. It was eleven interpreter
-  # calls on a Mac: one to filter, then one per branch to fetch a string out of a file
-  # already read. The pair crosses in one column separated by a TAB, and the separator is
-  # safe BY CONSTRUCTION rather than by hope: tools/build.py's flatten() is
-  # `" ".join(text.split())`, so no pack query can contain a tab or a newline. test/lint.sh
-  # asserts that, because the day it stops being true a branch would truncate in silence.
-  #
-  # --line, not --csv: osqueryi's CSV is naive and does not quote, so a comma in a query
-  # would split a field. --line prints the value raw after a fixed `    q = ` prefix, which
-  # is the only channel here that carries SQL text unaltered.
-  pack_lines="$({ printf "SELECT key || char(9) || json_extract(value,'\$.query') AS q FROM json_each('"
-                  sed "s/'/''/g" "$PACK"
-                  printf "','\$.queries') WHERE json_extract(value,'\$.platform')"
-                  printf " IN ('%s','posix','all') ORDER BY key;" "$PLATFORM"
-                } | osq_run "$osqi" --line | sed -n 's/^ *q = //p')" \
+  # One osqueryi for the branch list AND every branch's SQL. Lives in bin/container-scan so
+  # a test can assert the text arrives byte for byte; see pack_branches.
+  pack_lines="$(pack_branches "$osqi" "$PACK" "$PLATFORM")" \
     || { echo "discover: could not read $PACK" >&2; exit 1; }
 
   # A `while ... done <<EOF` loop runs in THIS shell, so $names survives it. Piping into

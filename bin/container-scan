@@ -112,6 +112,23 @@ need_arg() {
 # nothing. A collector that records stdout reads nothing as a clean machine.
 #
 # A MARKER ROW MAY NOT DEPEND ON ANYTHING THAT COULD BE THE THING IT IS REPORTING.
+#
+# WHAT IS EXPENSIVE TO MAINTAIN HERE, SAID ONCE SO THE NEXT CHANGE KNOWS THE SHAPE OF IT:
+#
+#   * THE SIX COLUMNS ARE WRITTEN OUT IN FOUR PLACES -- json_row's printf, json_concat's
+#     SELECT, and merge_sql's three UNION arms plus its outer SELECT -- and in ci.yml twice.
+#     A seventh column means editing all of them, and MISSING ONE IS SILENT: json_extract
+#     returns NULL for a column that was not selected, and osqueryi renders NULL as "", so
+#     the row arrives complete and empty rather than short. If the contract ever changes,
+#     change it here first and let test/docker_states.sh tell you what you missed.
+#   * THE SQL IS BUILT BY printf AND CHECKED BY NOTHING until it runs. A typo surfaces as
+#     `Error: near ...` on stderr and, through osq_run, as an empty result -- which is why
+#     every caller must treat empty as failure rather than as no rows.
+#   * `sed "s/'/''/g"` IS THE ONLY ESCAPE, and it appears five times across both scripts.
+#     It is correct because a single-quoted SQL literal has exactly one metacharacter. Any
+#     new statement embedding data must use it, and must take that data through sed rather
+#     than through a printf format -- a document holding `%s` would otherwise be eaten as a
+#     conversion.
 
 # One JSON string: escape what JSON requires, then replace any control byte still standing.
 # Not a no-op even on trusted input -- a path may hold any byte but / and NUL. Replacing is
@@ -186,6 +203,33 @@ SELECT json_extract(e.value,'$.kind')  AS kind, json_extract(e.value,'$.id')    
 FROM d, json_each(d.doc) e ORDER BY d.seq, e.key;
 TAIL
   } | osq_run "$osqi" --json
+}
+
+# The pack, filtered to one platform: one `name<TAB>query` line per branch, on stdout.
+#
+# ONE READ FOR BOTH ANSWERS -- the branch list and every branch's SQL. It was eleven
+# interpreter calls on a Mac: one to filter, then one per branch to pull a string out of a
+# file already read.
+#
+# HERE RATHER THAN INLINE IN --write FOR THE REASON merge_sql IS: reachable only through a
+# full writer run, the one thing worth asserting -- that each branch's SQL arrives BYTE FOR
+# BYTE as the pack holds it -- could not be asserted at all. A query that lost its tail would
+# still run, still return rows, and still look right in a row count.
+#
+# --line, not --csv: osqueryi's CSV is naive and does not quote, so a comma in a query would
+# split a field. --line prints the value raw after a fixed `    q = ` prefix, and it is the
+# only output mode here that carries SQL text unaltered.
+#
+# The TAB is safe BY CONSTRUCTION rather than by hope: tools/build.py's flatten() is
+# `" ".join(text.split())`, so no pack query can hold a tab or a newline. test/lint.sh
+# asserts that against the artifact, since it is a property of the builder.
+pack_branches() {
+  local osqi="$1" pack="$2" platform="$3"
+  { printf "SELECT key || char(9) || json_extract(value,'\$.query') AS q FROM json_each('"
+    sed "s/'/''/g" "$pack"
+    printf "','\$.queries') WHERE json_extract(value,'\$.platform')"
+    printf " IN ('%s','posix','all') ORDER BY key;" "$platform"
+  } | osq_run "$osqi" --line | sed -n 's/^ *q = //p'
 }
 
 # The statement that merges bin/discover --write's per-branch files into one payload.
