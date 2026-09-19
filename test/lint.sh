@@ -314,7 +314,7 @@ fi
 # lends out the guard and the bound rather than having them copied. Two things can break
 # that silently: deleting the `(return 0 2>/dev/null) && return 0` line, after which
 # sourcing runs a live scan; and renaming a function the callers use.
-bash -c '. "'"$HERE"'/../bin/container-scan" && type -t run_bounded docker_healthy docker_socket_path marker >/dev/null' \
+bash -c '. "'"$HERE"'/../bin/container-scan" && type -t run_bounded docker_healthy docker_socket_path marker json_str json_row osq_run >/dev/null' \
   || { echo "FAIL: bin/container-scan is no longer safely sourceable, or a shared function was renamed"; fail=1; }
 
 # ONE expensive query, and the check exists because the second one is a trap.

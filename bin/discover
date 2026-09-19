@@ -167,20 +167,37 @@ if [ -n "$CACHE_PATH" ]; then
   fi
   need_osqi
   # Parsed rather than echoed, so a truncated or half-written file is caught here instead of
-  # reaching a collector as "this machine reported nothing".
-  python3 -c '
-import json, sys
-try:
-    rows = json.load(open(sys.argv[1]))
-except (OSError, ValueError) as e:
-    sys.exit(f"discover: {sys.argv[1]} is not valid JSON ({e}). The writer may have been "
-             f"interrupted; it writes by rename, so this should not happen.")
-if not isinstance(rows, list):
-    sys.exit(f"discover: {sys.argv[1]} is not a JSON array")
-json.dump(rows, sys.stdout, separators=(",", ":"))
-print()
-' "$CACHE_PATH" || exit 1
-  exit 0
+  # reaching a collector as "this machine reported nothing". The parser is osqueryi -- the
+  # same SQLite that wrote the file.
+  #
+  # THE VERDICT COMES BACK, NOT THE ROWS. json_valid() and json_type() answer `bad` on a
+  # malformed document rather than raising, so a corrupt cache is a value this shell can
+  # branch on; feeding the document through json_each() instead would make osqueryi exit 1
+  # and print "[\n\n]", and the failure would arrive wearing the shape of a clean machine.
+  # osq_run swallowing that is what makes the third arm below distinguishable at all.
+  #
+  # Then `cat`. The comment above calls this path "cat with a parse check" and it was not
+  # one -- it re-encoded, which normalised whatever the writer had chosen to put in the file.
+  # Emitting the bytes is what the comment always claimed.
+  verdict="$({ printf "WITH d(doc) AS (VALUES ('"
+               sed "s/'/''/g" "$CACHE_PATH"
+               printf "')) SELECT CASE WHEN json_valid(doc) AND json_type(doc)='array'"
+               printf " THEN 'ok' ELSE 'bad' END AS v FROM d;"
+             } | osq_run "$osqi" --csv --header=false)"
+  case "$verdict" in
+    ok)  cat "$CACHE_PATH"; exit 0 ;;
+    bad) echo "discover: $CACHE_PATH is not a JSON array. The writer may have been" \
+              "interrupted; it writes by rename, so this should not happen." >&2
+         # A corrupt cache said nothing at all before this, which is the same silence a
+         # stubbed interpreter produced. `error` is already in the kind=scan vocabulary.
+         printf '[%s]\n' "$(json_row scan inventory "$(date +%s)" "$CACHE_PATH" error '')"
+         exit 1 ;;
+    # A BROKEN VALIDATOR IS NOT A BROKEN CACHE, and reporting one as the other would send
+    # someone to look at the file. osq_run prints nothing on a non-zero exit, so this arm
+    # is reachable only when osqueryi itself failed to answer.
+    *)   echo "discover: could not validate $CACHE_PATH -- osqueryi did not answer." >&2
+         exit 1 ;;
+  esac
 fi
 
 # Every mode below this line runs queries, so both are prerequisites for all of them. The

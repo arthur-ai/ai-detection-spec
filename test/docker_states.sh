@@ -664,6 +664,28 @@ print(1 if len(rows) == 1 and rows[0]['kind'] == 'scan' and rows[0]['id'] == 'in
       and rows[0]['extra'] == 'no-cache' else 0)" 2>/dev/null)" \
       "got: $(printf '%s' "$nocache" | head -c 160) -- empty here is the bug this closes"
 
+# A PRESENT cache is `cat` with a parse check, and the check is what tells a half-written
+# file from a machine with nothing on it. Both halves are asserted: the good file must come
+# back byte-for-byte -- the old implementation re-encoded, which silently normalised whatever
+# the writer had put there -- and the truncated one must be caught rather than forwarded.
+printf '[{"kind":"app","id":"com.x","ver":"1","loc":"/A/it'"'"'s \\"q\\"","extra":"","perms":""}]' \
+  > "$PYSTUB/good.json"
+echoed="$(PATH="$PYSTUB:$PATH" "$ROOT/bin/discover" --cache "$PYSTUB/good.json" 2>/dev/null)"
+check "a valid cache comes back byte-for-byte" \
+      "$([ "$echoed" = "$(cat "$PYSTUB/good.json")" ] && echo 1 || echo 0)" \
+      "got: $(printf '%s' "$echoed" | head -c 160)"
+
+printf '[{"kind":"app","id":' > "$PYSTUB/trunc.json"
+trunc="$(PATH="$PYSTUB:$PATH" "$ROOT/bin/discover" --cache "$PYSTUB/trunc.json" 2>/dev/null)"; rc=$?
+check "a truncated cache exits 1 and says so in a row" \
+      "$([ "$rc" = 1 ] && printf '%s' "$trunc" | python3 -c "
+import json, sys
+try: rows = json.load(sys.stdin)
+except Exception: print(0); raise SystemExit
+print(1 if len(rows) == 1 and rows[0]['id'] == 'inventory'
+      and rows[0]['extra'] == 'error' else 0)" 2>/dev/null || echo 0)" \
+      "rc=$rc got: $(printf '%s' "$trunc" | head -c 160)"
+
 absent_row="$(PATH="$PYSTUB:$PATH" "$ROOT/bin/container-scan" --socket /nonexistent/d.sock 2>/dev/null)"
 check "container-scan's absent marker needs no interpreter" \
       "$(printf '%s' "$absent_row" | python3 -c "
