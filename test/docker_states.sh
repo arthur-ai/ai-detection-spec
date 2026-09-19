@@ -617,6 +617,67 @@ print(1 if imgs and not gaps else 0)" 2>/dev/null)" \
       "got: $(printf '%s' "$stripped" | head -c 120)"
 stop_fake
 
+echo "  a marker row survives a socket path that is trying to break it"
+# THE REASON marker() WAS AN INTERPRETER. A socket path is input, and a quote in one emits
+# malformed JSON -- which a collector reads as "this machine reported nothing", the exact
+# outcome the row exists to prevent. The objection was never printf, it was un-escaped
+# interpolation, so this pins the escaper against every byte JSON cares about at once:
+# apostrophe, double quote, backslash, newline, tab, and UTF-8 that must survive untouched.
+#
+# Asserted by PARSING, not by grepping the output: a test that matched the escaped text
+# would pass on a string that no parser accepts, which is the bug itself.
+weird_sock='/tmp/it'"'"'s "weird"\back'$'\n''sock'$'\t''tab/ünï'
+weird_row="$(. "$ROOT/bin/container-scan"; MARKER=1 marker 'timeout:6' "$weird_sock")"
+check "a hostile socket path round-trips byte-exact" \
+      "$(printf '%s' "$weird_row" | python3 -c "
+import json, sys
+try: r = json.load(sys.stdin)[0]
+except Exception: print(0); raise SystemExit
+print(1 if r['loc'] == sys.argv[1] and r['extra'] == 'timeout:6'
+      and sorted(r) == ['extra','id','kind','loc','perms','ver'] else 0)" "$weird_sock" 2>/dev/null)" \
+      "got: $(printf '%s' "$weird_row" | head -c 160)"
+
+echo "  the row that says the writer never ran does not need the writer's interpreter"
+# THE MANAGED MAC THIS EXISTS FOR. Without Command Line Tools /usr/bin/python3 is a STUB: it
+# prints an install prompt on stderr and exits 1 with EMPTY STDOUT. docs/deployment.md said
+# that state surfaces as `no-cache`. It did not -- the no-cache marker was itself built with
+# python3, so the one row whose whole job is to say the writer never ran was built by the
+# interpreter that stopped the writer, and printed nothing. A collector that records stdout
+# and discards the status reads nothing as a machine with nothing on it.
+#
+# THE STUB LEAVES A BREADCRUMB, so this asserts python was NEVER CALLED rather than that the
+# run happened to survive calling it -- a fallback would pass the second and not the first.
+# `python` as well as `python3`, because a reintroduction could reach for either.
+PYSTUB="$(mktemp -d "${TMPDIR:-/tmp}/pystub.XXXXXX")"
+printf '#!/bin/sh\necho "$0" >> "%s/called"\nexit 1\n' "$PYSTUB" > "$PYSTUB/python3"
+cp "$PYSTUB/python3" "$PYSTUB/python"
+chmod +x "$PYSTUB/python3" "$PYSTUB/python"
+
+nocache="$(PATH="$PYSTUB:$PATH" "$ROOT/bin/discover" --cache "$PYSTUB/absent.json" 2>/dev/null)"; rc=$?
+check "--cache on a missing file still exits 1" "$([ "$rc" = 1 ] && echo 1 || echo 0)" "got $rc"
+check "...and still prints the no-cache row on STDOUT" \
+      "$(printf '%s' "$nocache" | python3 -c "
+import json, sys
+try: rows = json.load(sys.stdin)
+except Exception: print(0); raise SystemExit
+print(1 if len(rows) == 1 and rows[0]['kind'] == 'scan' and rows[0]['id'] == 'inventory'
+      and rows[0]['extra'] == 'no-cache' else 0)" 2>/dev/null)" \
+      "got: $(printf '%s' "$nocache" | head -c 160) -- empty here is the bug this closes"
+
+absent_row="$(PATH="$PYSTUB:$PATH" "$ROOT/bin/container-scan" --socket /nonexistent/d.sock 2>/dev/null)"
+check "container-scan's absent marker needs no interpreter" \
+      "$(printf '%s' "$absent_row" | python3 -c "
+import json, sys
+try: rows = json.load(sys.stdin)
+except Exception: print(0); raise SystemExit
+print(1 if len(rows) == 1 and rows[0]['id'] == 'containers'
+      and rows[0]['extra'] == 'absent' else 0)" 2>/dev/null)" \
+      "got: $(printf '%s' "$absent_row" | head -c 160)"
+
+check "python was never called" "$([ ! -e "$PYSTUB/called" ] && echo 1 || echo 0)" \
+      "called: $(cat "$PYSTUB/called" 2>/dev/null | head -c 200)"
+rm -rf "$PYSTUB"
+
 echo "  one broken branch costs one branch"
 # THE RELIABILITY CLAIM the independent writer exists for. Composed, one unavailable table
 # returns zero rows for the WHOLE inventory; run apart, it costs its own branch and nothing
