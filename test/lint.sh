@@ -330,25 +330,35 @@ bash -c '. "'"$HERE"'/../bin/container-scan" && type -t run_bounded docker_healt
 # documentation is one nobody can satisfy. bin/classify is the python half and is off the
 # endpoint by design, so it is not in this list and must not be added to it.
 #
+# A DENY-LIST, AND IT IS HONEST ABOUT BEING ONE. These seven are what someone reaches for when
+# they need to read JSON in a shell script, which is the only reason this rule has ever been
+# broken; `jq` in particular is the obvious next one and does not ship with macOS at all. It
+# does NOT enumerate every command these scripts may call, so it cannot enforce the whole rule
+# in CLAUDE.md -- an allow-list over two files this size is mostly shell builtins and control
+# flow, and one tuned to pass today would go stale as noise. What it catches is the failure
+# that has actually happened. Read the rule, not just the gate.
+#
 # `|| true` on the greps, because this file runs under `set -e` and a grep that matches
 # NOTHING exits 1 -- which is the passing case here. Without it lint stops dead at the first
 # clean file and every check below this line silently stops running.
 _endpoint_clean=1
 for _f in "$HERE/../bin/discover" "$HERE/../bin/container-scan"; do
-  _hits="$( { grep -nE '(^|[^a-zA-Z_-])python' "$_f" || true; } \
+  _hits="$( { grep -nE '(^|[^a-zA-Z_.-])(python|jq|perl|ruby|node|deno|php)([^a-zA-Z0-9_-]|$)' \
+              "$_f" || true; } \
             | { grep -vE '^[0-9]+:[[:space:]]*(#|--)' || true; } )"
   if [ -n "$_hits" ]; then
-    echo "FAIL: $(basename "$_f") invokes python:"
+    echo "FAIL: $(basename "$_f") reaches for an interpreter or a JSON tool:"
     printf '%s\n' "$_hits" | sed 's/^/      /'
-    echo "      The endpoint is bash and osqueryi. bin/classify is the python half, and it"
-    echo "      runs off the machine. See the JSON helpers in bin/container-scan."
+    echo "      The endpoint is bash 3.2, osqueryi and curl, and osqueryi is the JSON parser:"
+    echo "      json_str/json_row build rows, osq_run/json_concat/merge_sql read them."
+    echo "      bin/classify is the python half, and it runs off the machine."
     fail=1; _endpoint_clean=0
   fi
 done
 # Guarded, or the summary line prints `ok` directly underneath its own FAIL -- which is how
 # a reader skimming for the last line concludes the check passed.
 [ "$_endpoint_clean" = 1 ] &&
-  echo "endpoint: ok, bin/discover and bin/container-scan invoke no interpreter"
+  echo "endpoint: ok, bin/discover and bin/container-scan reach for no interpreter or JSON tool"
 
 # ONE expensive query, and the check exists because the second one is a trap.
 # dist/discovery-deep.sql is run by bin/container-scan behind a guard that is specific to

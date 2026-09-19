@@ -149,18 +149,41 @@ payload full of home directories and agent identifiers comes back out. `--teleme
 prints what would be sent without sending or creating anything, because a field list you
 cannot print is one the reader has to take on trust.
 
-**The endpoint is bash and `osqueryi`, and that is a second property of the same boundary.**
-`bin/discover` and `bin/container-scan` shell out to nothing else — `json_str`/`json_row`
-build rows with `printf`, and `osq_run`, `json_concat` and `merge_sql` parse documents with
-the SQLite that wrote them. It was not always true, and the cost of it not being true was not
-an error: on a managed Mac `/usr/bin/python3` is a **stub** — no Command Line Tools, so it
-prints an install prompt on stderr and exits 1 with empty stdout — and the `no-cache` row
-that exists to say the writer never ran was built by the interpreter that stopped the writer.
-It printed nothing, and nothing reads as a clean machine. **A marker row may not depend on
-anything that could be the thing it is reporting.** `test/lint.sh` greps for a
-reintroduction, excluding comments so the explanation does not fail its own check, and
-`bin/classify` is deliberately outside the rule for the same reason telemetry is: it runs off
-the machine.
+**`bin/discover` MAY NOT ADD A DEPENDENCY, and neither may `bin/container-scan`.** That is a
+rule about what you are allowed to type in them, and it is the second property of the same
+boundary as telemetry. What they are permitted is closed:
+
+| allowed | why |
+|---|---|
+| **bash 3.2** | what a managed Mac has, and the shebang both scripts declare |
+| **`osqueryi`** | the dependency this repo already is. Resolved through `osqueryi_path`, which states its failure rather than assuming a PATH |
+| **`curl`** | the Docker `/_ping` probe in `bin/container-scan`, and nothing else. Ships with macOS and every Linux base image we have run on; `docs/deployment.md` says why it is not written up as a prerequisite |
+| **the POSIX utilities already in use** | read off the two files, not from memory: `cat`, `chmod`, `date`, `dirname`, `mkdir`, `mktemp`, `mv`, `rm`, `sed`, `sleep`, `uname`. That is the whole list |
+
+Anything else is a new dependency, **including one that is obviously installed on the machine
+you are testing on.** No interpreter — no `python`, `perl`, `ruby`, `node`. No `jq`: it does
+not ship with macOS at all, and every use it would have is one `osqueryi` already covers. No
+GNU-only flag on a utility in that list, because BSD `sed` and `date` are what a Mac has.
+
+**`osqueryi` is the JSON parser, and the shell is the serializer.** That is the whole toolkit
+and it is enough: `json_str`/`json_row` build a six-column row with `printf`; `osq_run`,
+`json_concat` and `merge_sql` read documents with the same SQLite that wrote them. If you are
+reaching for a tool, you are reaching past one of those.
+
+It was not always true, and the cost of it not being true was not an error. On a managed Mac
+`/usr/bin/python3` is a **stub** — no Command Line Tools, so it prints an install prompt on
+stderr and exits 1 with empty stdout — and the `no-cache` row that exists to say the writer
+never ran was built by the interpreter that stopped the writer. It printed nothing, and
+nothing reads as a clean machine. **A marker row may not depend on anything that could be the
+thing it is reporting**, and neither may the guard that decides whether to emit one.
+
+`test/lint.sh` greps both files for a deny-list — `python`, `jq`, `perl`, `ruby`, `node`,
+`deno`, `php` — excluding comments so the explanation does not fail its own check. **That gate
+is narrower than this rule**: it catches what people actually reach for, not every command,
+so a new dependency can pass lint and still be wrong. The reviewer is the enforcement for the
+rest. `bin/classify` is deliberately outside all of this, for the same reason telemetry is: it
+runs off the machine, where a missing interpreter is one operator's problem rather than a
+fleet-wide condition.
 
 **`catalog/routes.yaml` is the route registry, and adding a route there is the whole edit.** The
 vocabulary used to live in five hardcoded lists that had to agree — `validate_catalog`'s

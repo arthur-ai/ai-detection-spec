@@ -110,14 +110,16 @@ one.
 | `python3` | **3.7** (`subprocess` `capture_output`) — for `bin/classify` and `tools/`. **Nothing on the endpoint needs it** |
 | PyYAML | Only for the tools that read the catalog: `bin/classify` and `tools/validate_catalog.py` |
 
-**Everything that runs on the endpoint needs osquery alone.** `bin/discover` and
-`bin/container-scan` are bash and `osqueryi` — the JSON they read is parsed by `osqueryi`'s
-own SQLite, and the rows they write are built by `printf`. `python3` and PyYAML are for the
-classifier and the tools, which run off the machine. `test/lint.sh` enforces that split, for
-a reason [`docs/deployment.md`](docs/deployment.md) records: on a Mac without Command Line
-Tools `/usr/bin/python3` is a stub, and a marker row that needs an interpreter cannot report
-a broken interpreter. Which OS versions each scenario has actually run on is recorded in
-[`docs/agents.md`](docs/agents.md).
+**Running the queries needs osquery alone, and so does everything else that runs on the
+endpoint.** `bin/discover` and `bin/container-scan` are bash and `osqueryi` — the JSON they
+read is parsed by `osqueryi`'s own SQLite, and the rows they write are built by `printf`.
+The one other binary either touches is `curl`, for the Docker health probe, and
+[`docs/deployment.md`](docs/deployment.md) says why that is not written up as a prerequisite.
+`python3` and PyYAML are for the classifier and the tools, which run off the machine.
+`CLAUDE.md` carries that rule and `test/lint.sh` gates it, for a reason `docs/deployment.md`
+also records: on a Mac without Command Line Tools `/usr/bin/python3` is a stub, and a marker
+row that needs an interpreter cannot report a broken interpreter. Which OS versions each
+scenario has actually run on is recorded in [`docs/agents.md`](docs/agents.md).
 
 `sudo` is needed because some tables read other users' home directories. Without it you see
 only your own account.
