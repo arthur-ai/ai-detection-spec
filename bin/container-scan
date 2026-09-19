@@ -2,7 +2,7 @@
 # Scan this machine for container images, or say why it could not. macOS and Linux both.
 #
 #     bin/container-scan              # JSON rows on stdout, or a stated reason on stderr
-#     bin/container-scan --pretty
+#     bin/container-scan | bin/classify        # the human view
 #     bin/container-scan --socket /tmp/arthur-fake-docker.sock
 #
 # containers.sql is declared `expensive`, so the build keeps it out of the composed artifacts
@@ -71,7 +71,6 @@ TIMEOUT="${DOCKER_PING_TIMEOUT:-8}"
 # three engine requests, so a daemon costing t each needs ~3t: 1s each fits, 3s each does
 # not. Do not raise it inside an EA.
 SCAN_TIMEOUT="${CONTAINER_SCAN_TIMEOUT:-6}"
-PRETTY=0
 SOCKET=""
 MARKER=1
 CACHE=""
@@ -546,16 +545,18 @@ container_scan() {
        return 1 ;;
   esac
 
-  if [ "$PRETTY" = 1 ]; then
-    printf '%s' "$BOUNDED_OUT" | python3 -c '
-import json,sys
-rows = [r for r in json.load(sys.stdin) if r["kind"] == "image"]
-if not rows: print("no container images"); raise SystemExit
-for r in rows:
-    gb = int(r.get("extra") or 0) / 1e9
-    print(f'"'"'{r["id"] or "<untagged>":50} {gb:6.2f} GB  {r["loc"][:19]}'"'"')'
-    return 0
-  fi
+  # --pretty WAS HERE, AND WENT WITH THE INTERPRETER. It rendered the image rows as a table
+  # for a human, and it was the last python3 on this endpoint -- an operator convenience
+  # holding a dependency that a fleet path could not afford.
+  #
+  # Porting it was the alternative and it was worse than it looks. int(extra or 0) RAISES on
+  # a size that is not a number; SQLite's CAST returns 0, so the port would have turned an
+  # error into `0.00 GB` -- a wrong answer replacing a loud failure, on the one path nobody
+  # tests. Nothing did test it: it appeared in README.md and docs/containers.md and in no
+  # assertion anywhere.
+  #
+  # `bin/container-scan | bin/classify` is the human view now, and it is a better one: it
+  # names the agents rather than listing every image, which is the question being asked.
 
   # Every payload dates itself, success included -- see cache_write. Appended by parsing
   # both documents rather than splicing brackets, for the reasons written above json_concat.
@@ -601,7 +602,10 @@ while [ $# -gt 0 ]; do
     # is the same thing said unambiguously, for anyone writing a new invocation.
     --timeout|--ping-timeout) need_arg "$@"; TIMEOUT="$2"; shift 2 ;;
     --scan-timeout) need_arg "$@"; SCAN_TIMEOUT="$2"; shift 2 ;;
-    --pretty)       PRETTY=1; shift ;;
+    # --pretty is GONE, and it says so rather than falling through to "unknown argument":
+    # it shipped in README.md and docs/containers.md, so someone has it in a shell history.
+    --pretty)       echo "container-scan: --pretty was removed. Pipe to bin/classify for a" \
+                         "human view: bin/container-scan | bin/classify" >&2; exit 1 ;;
     --no-marker)    MARKER=0; shift ;;
     --cache)        need_arg "$@"; CACHE="$2"; shift 2 ;;
     -h|--help)      sed -n '2,50p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;

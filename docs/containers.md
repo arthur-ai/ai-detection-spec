@@ -6,7 +6,7 @@ and it is opt-in because it is the only part of this that talks to a daemon.
 
 ```console
 $ sudo bin/discover --deep | bin/classify     # base inventory plus containers
-$ sudo bin/container-scan --pretty            # containers alone
+$ sudo bin/container-scan | bin/classify      # containers alone
 ```
 
 It reads three things: **images** on disk, **containers** running from them, and the

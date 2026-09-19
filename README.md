@@ -226,7 +226,7 @@ and it is opt-in because it is the only part of this that talks to a daemon.
 
 ```console
 $ sudo bin/discover --deep | bin/classify     # base inventory plus container images
-$ sudo bin/container-scan --pretty            # containers alone
+$ sudo bin/container-scan | bin/classify      # containers alone
 ```
 
 Opt-in because `docker_images` cannot be bounded from inside osquery: against a daemon that
