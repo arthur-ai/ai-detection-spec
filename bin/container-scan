@@ -156,6 +156,39 @@ osq_run() {
   printf '%s' "$out"
 }
 
+# Join JSON arrays of six-column rows into one, BY PARSING BOTH.
+#
+# Splicing on the brackets, or splitting one stream on a delimiter, would both bet that the
+# delimiter cannot appear in the data. A malformed array reads to a collector as a machine
+# that reported nothing, which is the single outcome every guard in this repo exists to
+# prevent, so it is not a bet worth taking to save a process. Splicing has one more problem
+# besides: osqueryi renders an empty result as "[\n\n]", which splices to "[\n\n,{...}]" --
+# invalid, and only on the machines that found nothing.
+#
+# Each document reaches the statement through sed, never through a printf format: a row
+# holding `%s` would otherwise be read as a conversion and vanish.
+json_concat() {
+  local osqi="$1" doc seq=0
+  shift
+  {
+    printf 'WITH d(seq, doc) AS (VALUES'
+    for doc in "$@"; do
+      seq=$(( seq + 1 ))
+      [ "$seq" = 1 ] || printf ','
+      printf "\n(%d,'" "$seq"
+      printf '%s' "${doc:-[]}" | sed "s/'/''/g"
+      printf "')"
+    done
+    cat <<'TAIL'
+)
+SELECT json_extract(e.value,'$.kind')  AS kind, json_extract(e.value,'$.id')    AS id,
+       json_extract(e.value,'$.ver')   AS ver,  json_extract(e.value,'$.loc')   AS loc,
+       json_extract(e.value,'$.extra') AS extra,json_extract(e.value,'$.perms') AS perms
+FROM d, json_each(d.doc) e ORDER BY d.seq, e.key;
+TAIL
+  } | osq_run "$osqi" --json
+}
+
 # The statement that merges bin/discover --write's per-branch files into one payload.
 #
 # IT LIVES HERE RATHER THAN INLINE IN bin/discover BECAUSE OF WHAT THAT MAKES TESTABLE. As a
@@ -525,13 +558,13 @@ for r in rows:
   fi
 
   # Every payload dates itself, success included -- see cache_write. Appended by parsing
-  # both documents rather than splicing brackets: a malformed array reads to a collector as
-  # a machine that reported nothing.
-  CS_ROWS="$BOUNDED_OUT" CS_STAMP="$(marker ok "$sock")" python3 -c '
-import json, os, sys
-rows = json.loads(os.environ["CS_ROWS"])
-rows += json.loads(os.environ.get("CS_STAMP") or "[]")
-print(json.dumps(rows))'
+  # both documents rather than splicing brackets, for the reasons written above json_concat.
+  #
+  # The SUCCESS path only, so the wall-clock budgets the wedged states are measured against
+  # are untouched by this call.
+  json_concat "$osqi" "$BOUNDED_OUT" "$(marker ok "$sock")" \
+    || { echo "container-scan: could not join the scan rows to their marker -- discarded" >&2
+         return 1; }
 }
 
 # The scan, plus the cache side of it. Kept separate from container_scan() so that the

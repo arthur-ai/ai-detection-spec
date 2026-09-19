@@ -357,17 +357,14 @@ case "$deep_rc" in
   *) echo "discover: container-scan could not run (exit $deep_rc); reporting base rows only" >&2 ;;
 esac
 
-# Join by PARSING both documents, each arriving on its own channel -- the base on stdin,
-# the deep rows in the environment. Splicing brackets in bash, or splitting one stream on a
-# delimiter, would both be betting that the delimiter cannot appear in the data. A
-# malformed array reads to a collector as "this machine reported nothing", which is the single
-# outcome every guard in this repo exists to prevent, so it is not a bet worth taking to
-# save a process.
-export DISCOVER_DEEP_JSON="${deep:-[]}"
-printf '%s' "$base" | python3 -c '
-import json, os, sys
-rows = json.load(sys.stdin)
-rows += json.loads(os.environ.get("DISCOVER_DEEP_JSON") or "[]")
-json.dump(rows, sys.stdout, separators=(",", ":"))
-print()
-'
+# Join by PARSING both documents, never by splicing brackets -- see json_concat, which
+# carries the reasoning and the rejected alternative.
+#
+# A FAILURE HERE MUST NOT PRINT. osq_run discards osqueryi's output on a non-zero exit, so a
+# document that will not parse leaves this empty rather than emitting the "[\n\n]" osqueryi
+# prints alongside its error -- and the base rows are reported as missing rather than as
+# absent. Exit 1 says the run failed; printing a plausible empty array would not.
+joined="$(json_concat "$osqi" "$base" "${deep:-[]}")" || {
+  echo "discover: could not join the base and deep rows; reporting nothing rather than" \
+       "an empty inventory" >&2; exit 1; }
+printf '%s\n' "$joined"
