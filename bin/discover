@@ -292,18 +292,39 @@ EOF
 
   if [ -n "$STATUS" ]; then
     stmp="$(mktemp "${STATUS}.XXXXXX")" || exit 1
-    python3 -c '
-import json, sys, time
-rows = json.load(open(sys.argv[1]))
-scans = sorted((r["id"], r["extra"]) for r in rows if r["kind"] == "scan")
-overall = "ok" if all(v == "ok" for _, v in scans) else "degraded"
-stamp = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-parts = " ".join(f"{k}={v}" for k, v in scans)
-open(sys.argv[2], "w").write(f"{overall} {stamp} rows={len(rows)} {parts}\n")
-' "$WRITE" "$stmp" && {
+    # ONE STATEMENT, and it reads back $WRITE rather than the rows on their way there, so
+    # the line describes the file a collector will actually find.
+    #
+    # COALESCE is load-bearing. group_concat over no rows returns NULL, and concatenating
+    # NULL in SQLite yields NULL -- so a payload with no scan rows would blank the WHOLE
+    # line rather than shortening it, and a status file that says nothing is a machine that
+    # looks fine. Unreachable today, since every branch gets a marker; explicit anyway.
+    #
+    # The ORDER BY sits in a subquery because SQLite gained ORDER BY inside an aggregate
+    # only in 3.44 and osquery 5.23.1 ships 3.42. Nothing consumes the token order.
+    status_line="$({ printf "WITH d(doc) AS (VALUES ('"
+                     sed "s/'/''/g" "$WRITE"
+                     printf "')), r AS (SELECT json_extract(e.value,'\$.kind') AS kind,"
+                     printf " json_extract(e.value,'\$.id') AS id,"
+                     printf " json_extract(e.value,'\$.extra') AS extra"
+                     printf " FROM d, json_each(d.doc) e)"
+                     printf " SELECT (CASE WHEN EXISTS (SELECT 1 FROM r WHERE kind='scan'"
+                     printf " AND extra IS NOT 'ok') THEN 'degraded' ELSE 'ok' END)"
+                     printf " || ' ' || strftime('%%Y-%%m-%%dT%%H:%%M:%%SZ','now')"
+                     printf " || ' rows=' || (SELECT count(*) FROM r) || ' ' ||"
+                     printf " COALESCE((SELECT group_concat(id || '=' || extra, ' ')"
+                     printf " FROM (SELECT id, extra FROM r WHERE kind='scan'"
+                     printf " ORDER BY id, extra)), '') AS line;"
+                   } | osq_run "$osqi" --line | sed -n 's/^ *line = //p')"
+    if [ -n "$status_line" ]; then
+      # printf, so the file ends in exactly one newline whatever osqueryi did with it.
+      printf '%s\n' "$status_line" > "$stmp"
       mkdir -p "$(dirname "$STATUS")" 2>/dev/null
       mv -f "$stmp" "$STATUS" && chmod 644 "$STATUS" 2>/dev/null
-    } || rm -f "$stmp"
+    else
+      echo "discover: could not summarise $WRITE; $STATUS left alone" >&2
+      rm -f "$stmp"
+    fi
   fi
 
   [ -s "$tmpdir/stderr" ] && cat "$tmpdir/stderr" >&2
