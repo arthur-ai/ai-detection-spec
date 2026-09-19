@@ -281,47 +281,8 @@ EOF
 
   # Merge by parsing, and give every branch a dated scan row -- present or absent, ok or
   # not. A branch that returned nothing and a branch that never ran are different facts.
-  python3 - "$tmpdir" $names <<'MERGE' > "$tmpdir/payload"
-import json, os, sys, time
-tmpdir, names, rows = sys.argv[1], sys.argv[2:], []
-now = str(int(time.time()))
-for name in names:
-    path = os.path.join(tmpdir, name)
-    outcome, got = "ok", []
-    if os.path.exists(path + ".failed"):
-        # The runner already knows this branch did not finish. Zero rows from a query that
-        # never ran is not an empty machine, which is the same distinction the container
-        # guard exists to make.
-        outcome = "error"
-    else:
-        try:
-            with open(path) as fh:
-                text = fh.read().strip()
-            got = json.loads(text) if text else []
-            if not isinstance(got, list):
-                raise ValueError("not a list")
-        except (OSError, ValueError):
-            outcome = "error"
-    # A BRANCH MAY EMIT ITS OWN SCAN ROWS, and whether one REPLACES this branch's marker
-    # depends on whether it carries the same id.
-    #
-    # container-scan emits `id: containers` for the `containers` branch -- same name, so
-    # it is a substitution, and its reason (absent, unhealthy, timeout) must not be
-    # overwritten with a bare "ok".
-    #
-    # queries/runtime-linux.sql emits `id: systemd`, which is a DIFFERENT fact: whether
-    # the unit list could be read, inside a branch that ran fine. Treating that as a
-    # substitution silently dropped the `runtime-linux` marker altogether, so the status
-    # line said `systemd=absent` and never said whether the branch itself ran. Both rows
-    # ship now.
-    own = [r for r in got if r.get("kind") == "scan"]
-    rows += [r for r in got if r.get("kind") != "scan"]
-    rows += own
-    if not any(r.get("id") == name for r in own):
-        rows.append({"kind": "scan", "id": name, "ver": now, "loc": "", "extra": outcome,
-                     "perms": ""})
-json.dump(rows, sys.stdout, separators=(",", ":"))
-MERGE
+  # The statement lives in bin/container-scan, where a test can hand it a broken branch.
+  merge_branches "$osqi" "$tmpdir" $names > "$tmpdir/payload"
   [ -s "$tmpdir/payload" ] || { echo "discover: produced no payload; $WRITE left alone" >&2; rm -rf "$tmpdir"; exit 1; }
   # Rename, never write in place: a `cat` that caught a half-written file yields truncated
   # JSON, which a collector reads as a machine that reported nothing.

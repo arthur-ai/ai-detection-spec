@@ -84,6 +84,15 @@ jobs:
           gaps = [r for r in deep if r["kind"] == "scan"]
           if not base:
               sys.exit("::error::bin/discover returned no rows at all")
+          # THE SIX-COLUMN CONTRACT, CHECKED WHERE IT CAN STILL BE BROKEN. These rows come
+          # straight out of the composed artifact, so their keys are whatever the SQL named
+          # -- and the pack once shipped a browser query whose columns were 'ext' and
+          # "permissions || CASE WHEN...". This check used to sit on the --write payload
+          # instead; the merge projects exactly these six columns now, so there it could no
+          # longer fail, and a check that cannot fail is worse than no check.
+          bad = [r for r in base if set(r) != {"kind","id","ver","loc","extra","perms"}]
+          if bad:
+              sys.exit(f"::error::{len(bad)} rows violate the six-column contract: {bad[:1]}")
           if len(deep) < len(base):
               sys.exit(f"::error::--deep lost rows: {len(base)} base, {len(deep)} deep. "
                        "The base inventory must survive a failed container scan.")
@@ -109,9 +118,10 @@ jobs:
           import json, sys, time
           inv = json.load(open("/tmp/inv.json"))
           scans = {r["id"]: r for r in inv if r["kind"] == "scan"}
-          bad = [r for r in inv if set(r) != {"kind","id","ver","loc","extra","perms"}]
-          if bad:
-              sys.exit(f"::error::{len(bad)} rows violate the six-column contract: {bad[:1]}")
+          # The six-column check that stood here moved to the bin/discover step above. The
+          # merge selects those six columns by name, so asserting them on its output tests
+          # the assertion rather than the payload; on the composed artifact's own rows it
+          # still tests something that has actually been wrong.
           # ONE SCAN ROW PER BRANCH THIS PLATFORM RUNS, derived from the pack rather
           # than a hardcoded floor. It was `< 6`, which was the branch count when it was
           # written; the portable branches have since been split out of their macOS
@@ -301,6 +311,12 @@ jobs:
           deep = json.load(open("/tmp/deep.json"))
           if not base:
               sys.exit("::error::bin/discover returned no rows at all")
+          # THE SIX-COLUMN CONTRACT, CHECKED WHERE IT CAN STILL BE BROKEN: these rows carry
+          # whatever names the artifact's SQL gave them. See the darwin job for why it is
+          # here rather than on the --write payload.
+          bad = [r for r in base if set(r) != {"kind","id","ver","loc","extra","perms"}]
+          if bad:
+              sys.exit(f"::error::{len(bad)} rows violate the six-column contract: {bad[:1]}")
           if len(deep) < len(base):
               sys.exit(f"::error::--deep lost rows: {len(base)} base, {len(deep)} deep. "
                        "The base inventory must survive a failed container scan.")
@@ -324,9 +340,8 @@ jobs:
           read = json.load(open("/tmp/read.json"))
           if read != inv:
               sys.exit("::error::--cache did not return exactly what --write wrote")
-          bad = [r for r in inv if set(r) != {"kind","id","ver","loc","extra","perms"}]
-          if bad:
-              sys.exit(f"::error::{len(bad)} rows violate the six-column contract: {bad[:1]}")
+          # The six-column check moved to the bin/discover step above: the merge selects
+          # those six by name, so here it would assert only that the assertion is right.
 
           scans = {r["id"]: r for r in inv if r["kind"] == "scan"}
           pack = json.load(open("dist/ai-discovery.conf"))["queries"]

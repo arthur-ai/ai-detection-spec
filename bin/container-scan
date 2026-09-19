@@ -156,6 +156,91 @@ osq_run() {
   printf '%s' "$out"
 }
 
+# The statement that merges bin/discover --write's per-branch files into one payload.
+#
+# IT LIVES HERE RATHER THAN INLINE IN bin/discover BECAUSE OF WHAT THAT MAKES TESTABLE. As a
+# heredoc inside --write, the only way to reach it was a full writer run against real
+# branches, so the one input that matters -- a branch whose document is broken -- could not
+# be handed to it at all. As a function, test/docker_states.sh builds a tmpdir by hand and
+# points it at exactly that.
+#
+# Takes the tmpdir and the branch names; prints SQL. merge_branches runs it.
+merge_sql() {
+  local tmpdir="$1" name seq=0 failed
+  shift
+  printf 'WITH b(name, seq, failed, raw) AS (VALUES'
+  for name in "$@"; do
+    seq=$(( seq + 1 )); failed=0
+    [ -e "$tmpdir/$name.failed" ] && failed=1
+    [ "$seq" = 1 ] || printf ','
+    printf "\n('%s',%d,%d,'" "$name" "$seq" "$failed"
+    # The document arrives through sed and never through a printf format: a query's own
+    # `LIKE '%<all_urls>%'` would otherwise be read as a conversion and vanish.
+    sed "s/'/''/g" "$tmpdir/$name"
+    printf "')"
+  done
+  cat <<'TAIL'
+),
+-- A MALFORMED BRANCH IS ISOLATED TO ITS BRANCH. Handed the raw document, json_each raises,
+-- osqueryi exits 1, and the other nine branches go down with it -- an all-or-nothing merge
+-- inside the one mode that exists to run branches apart, writing no payload at all.
+-- Substituting '[]' and carrying a parallel ok flag keeps the failure where it happened and
+-- turns it into that branch's own `error` marker.
+--
+-- AN EMPTY DOCUMENT IS `error` TOO, and that is a fix rather than a port. The python merge
+-- read "" as [] and called it ok, so bin/container-scan exiting 1 -- "could not run at all",
+-- which prints an empty line -- was reported as containers=ok. A scan that never happened,
+-- reported as a scan that found nothing.
+s AS (SELECT name, seq,
+        CASE WHEN failed=1 OR NOT json_valid(raw) THEN '[]' ELSE raw END AS doc,
+        CASE WHEN failed=1 OR NOT json_valid(raw) THEN 0 ELSE 1 END AS ok
+      FROM b)
+SELECT kind, id, ver, loc, extra, perms FROM (
+  -- Non-scan rows, then the branch's OWN scan rows, then a marker only if none of them
+  -- carries this branch's name. grp is that ordering; e.key is the document's own.
+  --
+  -- A BRANCH MAY EMIT ITS OWN SCAN ROWS, and whether one REPLACES this branch's marker
+  -- depends on whether it carries the same id. container-scan emits id=containers for the
+  -- containers branch -- same name, so it substitutes, and its reason (absent, unhealthy,
+  -- timeout) must not be overwritten with a bare "ok". queries/runtime-linux.sql emits
+  -- id=systemd, a DIFFERENT fact: whether the unit list could be read, inside a branch that
+  -- ran fine. Treating that as a substitution dropped the runtime-linux marker altogether,
+  -- so the status line said systemd=absent and never said whether the branch itself ran.
+  --
+  -- IS NOT, never !=. A row with no kind yields NULL, and `NULL != 'scan'` is NULL, so !=
+  -- would DROP that row from both arms instead of keeping it out of the scan half.
+  SELECT s.seq AS bseq, 0 AS grp, e.key AS rk,
+         json_extract(e.value,'$.kind')  AS kind, json_extract(e.value,'$.id')    AS id,
+         json_extract(e.value,'$.ver')   AS ver,  json_extract(e.value,'$.loc')   AS loc,
+         json_extract(e.value,'$.extra') AS extra,json_extract(e.value,'$.perms') AS perms
+  FROM s, json_each(s.doc) e WHERE json_extract(e.value,'$.kind') IS NOT 'scan'
+  UNION ALL
+  SELECT s.seq, 1, e.key,
+         json_extract(e.value,'$.kind'),  json_extract(e.value,'$.id'),
+         json_extract(e.value,'$.ver'),   json_extract(e.value,'$.loc'),
+         json_extract(e.value,'$.extra'), json_extract(e.value,'$.perms')
+  FROM s, json_each(s.doc) e WHERE json_extract(e.value,'$.kind') = 'scan'
+  UNION ALL
+  -- 'now' is evaluated once per statement, so every synthetic marker in one payload shares
+  -- one timestamp -- which is what the python merge's single time.time() call gave.
+  SELECT s.seq, 2, 0, 'scan', s.name, CAST(strftime('%s','now') AS TEXT), '',
+         CASE WHEN s.ok=1 THEN 'ok' ELSE 'error' END, ''
+  FROM s WHERE NOT EXISTS (
+    SELECT 1 FROM json_each(s.doc) e2
+    WHERE json_extract(e2.value,'$.kind')='scan'
+      AND json_extract(e2.value,'$.id')=s.name)
+) ORDER BY bseq, grp, rk;
+TAIL
+}
+
+# merge_sql, run. Six columns named for the contract, so osqueryi --json emits the payload
+# directly rather than something that has to be unwrapped.
+merge_branches() {
+  local osqi="$1"
+  shift
+  merge_sql "$@" | osq_run "$osqi" --json
+}
+
 # Every candidate osqueryi, in the order tools/measure.py looks.
 #
 # /usr/bin/osqueryi is where the Linux deb and rpm both put it, verified on Ubuntu 24.04

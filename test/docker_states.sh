@@ -700,6 +700,78 @@ check "python was never called" "$([ ! -e "$PYSTUB/called" ] && echo 1 || echo 0
       "called: $(cat "$PYSTUB/called" 2>/dev/null | head -c 200)"
 rm -rf "$PYSTUB"
 
+echo "  a broken branch document costs one branch, and the merge says which"
+# THE INPUT THAT MATTERS, HANDED DIRECTLY. While the merge was a heredoc inside --write, the
+# only way to reach it was a full writer run against real branches -- so the one case worth
+# testing, a branch whose document is broken, could not be handed to it at all. It is a
+# function now and this points six branches at it, each carrying a different fact:
+#
+#   good     rows, no scan row of its own    -> rows kept, a synthetic `ok` marker added
+#   substit  rows plus id=<its own name>     -> its row stands, NO synthetic marker
+#   additive rows plus id=systemd            -> both ship: the branch ran AND systemd did not
+#   broken   not JSON at all                 -> `error`, and the other five still report
+#   empty    zero bytes, no .failed sentinel -> `error`
+#   sentinel .failed present                 -> `error`
+#
+# `empty` is the one that is a FIX rather than a port. The python merge read "" as [] and
+# called it ok, so bin/container-scan exiting 1 -- "could not run at all", which prints an
+# empty line -- came back as containers=ok: a scan that never happened, reported as a scan
+# that found nothing.
+MERGEDIR="$(mktemp -d "${TMPDIR:-/tmp}/merge.XXXXXX")"
+row() { printf '{"kind":"%s","id":"%s","ver":"1","loc":"","extra":"%s","perms":""}' "$1" "$2" "$3"; }
+printf '[%s]' "$(row app good-1 '')"                                  > "$MERGEDIR/good"
+printf '[%s,%s]' "$(row app sub-1 '')" "$(row scan substit timeout:6)" > "$MERGEDIR/substit"
+printf '[%s,%s]' "$(row app add-1 '')" "$(row scan systemd absent)"    > "$MERGEDIR/additive"
+printf '[{"kind":"app","id":'                                          > "$MERGEDIR/broken"
+: > "$MERGEDIR/empty"
+: > "$MERGEDIR/sentinel"
+: > "$MERGEDIR/sentinel.failed"
+
+merged="$(. "$ROOT/bin/container-scan"
+          merge_branches "$OSQI" "$MERGEDIR" good substit additive broken empty sentinel)"
+check "the merge answers at all with a malformed branch in the set" \
+      "$([ -n "$merged" ] && echo 1 || echo 0)" \
+      "empty -- one bad document took the whole payload down, which is the all-or-nothing \
+merge the independent writer exists to avoid"
+# THE VERDICT IS COMPUTED OUT OF LINE, AND NOT INSIDE A COMMAND SUBSTITUTION. Two traps met
+# here, both of which fail as a wrong answer rather than an error:
+#
+#   `python3 - <<'X'` reads the SCRIPT from stdin, so a pipe into it is discarded in silence
+#   and every assertion reads as failed;
+#
+#   a heredoc inside $( ) is scanned for the closing paren by bash 3.2 WITHOUT respecting the
+#   quoted delimiter, so one apostrophe in a comment -- "substit's own row" -- swallows the
+#   `)` and the file stops parsing. `bash -n` catches that one; nothing catches the first.
+#
+# So the payload goes in through argv and the verdict comes back through a file.
+printf '%s' "$merged" > "$MERGEDIR/merged.json"
+python3 - "$MERGEDIR/merged.json" > "$MERGEDIR/verdict" <<'MERGECHECK'
+import json, sys
+try:
+    rows = json.load(open(sys.argv[1]))
+except Exception:
+    print("unparseable"); raise SystemExit
+scans = {(r["id"], r["extra"]) for r in rows if r["kind"] == "scan"}
+ids = {r["id"] for r in rows if r["kind"] != "scan"}
+want = {("good", "ok"), ("substit", "timeout:6"), ("additive", "ok"),
+        ("systemd", "absent"), ("broken", "error"), ("empty", "error"),
+        ("sentinel", "error")}
+# The substit branch supplied its own row, so exactly one scan row may carry that name.
+dupes = [r for r in rows if r["kind"] == "scan" and r["id"] == "substit"]
+problems = []
+if scans != want:
+    problems.append("scans missing=%s extra=%s" % (sorted(want - scans), sorted(scans - want)))
+if ids != {"good-1", "sub-1", "add-1"}:
+    problems.append("rows lost or invented: %s" % sorted(ids))
+if len(dupes) != 1:
+    problems.append("substit has %d scan rows, not 1" % len(dupes))
+print("; ".join(problems) if problems else "1")
+MERGECHECK
+merge_verdict="$(cat "$MERGEDIR/verdict")"
+check "each branch reports the right outcome, and no branch loses its rows" \
+      "$merge_verdict" "$merge_verdict"
+rm -rf "$MERGEDIR"
+
 echo "  one broken branch costs one branch"
 # THE RELIABILITY CLAIM the independent writer exists for. Composed, one unavailable table
 # returns zero rows for the WHOLE inventory; run apart, it costs its own branch and nothing
