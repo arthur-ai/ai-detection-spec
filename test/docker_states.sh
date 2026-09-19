@@ -90,8 +90,9 @@ trap '{ kill "$SUITE_WATCHDOG" 2>/dev/null; } 2>/dev/null; pkill -f "$SOCK" 2>/d
 # true: bin/container-scan stops before its argument parser when sourced, and that is the
 # only reason the line is there.
 #
-# Sourcing brings ROOT, DEEP, TIMEOUT, SCAN_TIMEOUT, PRETTY, SOCKET, MARKER, DOCKER_CODE,
-# BOUNDED_OUT and BOUNDED_SIGNAL into this shell, along with `set -uo pipefail`. The ping
+# Sourcing brings ROOT, DEEP, TIMEOUT, SCAN_TIMEOUT, SOCKET, MARKER, CACHE, DOCKER_CODE,
+# DOCKER_SECS, BOUNDED_OUT and BOUNDED_SIGNAL into this shell, along with `set -uo pipefail`,
+# and the JSON helpers json_str, json_row, osq_run, json_concat and merge_*. The ping
 # budget is INHERITED rather than restated, so that a change to the shipped default shows up
 # here -- and the `nap` checks below are where it shows up, because they are the ones whose
 # answer it changes. Two rows override it deliberately and say why.
@@ -685,6 +686,22 @@ except Exception: print(0); raise SystemExit
 print(1 if len(rows) == 1 and rows[0]['id'] == 'inventory'
       and rows[0]['extra'] == 'error' else 0)" 2>/dev/null || echo 0)" \
       "rc=$rc got: $(printf '%s' "$trunc" | head -c 160)"
+
+# EVERY MODE, not only the ones whose output is asserted above. A path that still reached for
+# python3 would be found by the breadcrumb below rather than by whichever fleet ran it first.
+start_fake healthy
+PATH="$PYSTUB:$PATH" "$ROOT/bin/discover" --write "$PYSTUB/w.json" \
+     --status "$PYSTUB/w.txt" --socket "$SOCK" >/dev/null 2>&1; write_rc=$?
+check "--write runs to completion with no interpreter" \
+      "$([ "$write_rc" = 0 ] && [ -s "$PYSTUB/w.json" ] && [ -s "$PYSTUB/w.txt" ] && echo 1 || echo 0)" \
+      "rc=$write_rc status=$(cat "$PYSTUB/w.txt" 2>/dev/null | head -c 200)"
+check "...and the status line keeps its shape" \
+      "$(grep -cE '^(ok|degraded) [0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9:]+Z rows=[0-9]+( [a-z-]+=[^ ]+)+$' \
+         "$PYSTUB/w.txt" 2>/dev/null || echo 0)" \
+      "got: $(cat "$PYSTUB/w.txt" 2>/dev/null | head -c 200)"
+PATH="$PYSTUB:$PATH" "$ROOT/bin/discover" --deep --socket "$SOCK" >/dev/null 2>&1
+PATH="$PYSTUB:$PATH" "$ROOT/bin/discover" >/dev/null 2>&1
+stop_fake
 
 absent_row="$(PATH="$PYSTUB:$PATH" "$ROOT/bin/container-scan" --socket /nonexistent/d.sock 2>/dev/null)"
 check "container-scan's absent marker needs no interpreter" \

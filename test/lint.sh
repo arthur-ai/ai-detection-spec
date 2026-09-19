@@ -314,8 +314,41 @@ fi
 # lends out the guard and the bound rather than having them copied. Two things can break
 # that silently: deleting the `(return 0 2>/dev/null) && return 0` line, after which
 # sourcing runs a live scan; and renaming a function the callers use.
-bash -c '. "'"$HERE"'/../bin/container-scan" && type -t run_bounded docker_healthy docker_socket_path marker json_str json_row osq_run >/dev/null' \
+bash -c '. "'"$HERE"'/../bin/container-scan" && type -t run_bounded docker_healthy docker_socket_path marker json_str json_row osq_run json_concat merge_sql merge_branches >/dev/null' \
   || { echo "FAIL: bin/container-scan is no longer safely sourceable, or a shared function was renamed"; fail=1; }
+
+# NOTHING ON THE ENDPOINT IS PYTHON, AND THE FAILURE IT PREVENTS IS SILENCE RATHER THAN AN
+# ERROR. These two scripts run on managed Macs where /usr/bin/python3 is a STUB -- no Command
+# Line Tools, so it prints an install prompt on stderr and exits 1 with empty stdout. That
+# took the no-cache marker with it: the one row whose whole job is to say the writer never
+# ran was built by the interpreter that stopped the writer, so a collector saw nothing, and
+# nothing reads as a machine with nothing on it. docs/deployment.md has the history.
+#
+# `python` rather than `python3`, and no path anchor, so `/usr/bin/python3` and `env python`
+# fail here too. COMMENTS ARE EXCLUDED -- shell `#` and SQL `--` alike -- because the
+# comments in both files are what explain the removal, and a check that counts its own
+# documentation is one nobody can satisfy. bin/classify is the python half and is off the
+# endpoint by design, so it is not in this list and must not be added to it.
+#
+# `|| true` on the greps, because this file runs under `set -e` and a grep that matches
+# NOTHING exits 1 -- which is the passing case here. Without it lint stops dead at the first
+# clean file and every check below this line silently stops running.
+_endpoint_clean=1
+for _f in "$HERE/../bin/discover" "$HERE/../bin/container-scan"; do
+  _hits="$( { grep -nE '(^|[^a-zA-Z_-])python' "$_f" || true; } \
+            | { grep -vE '^[0-9]+:[[:space:]]*(#|--)' || true; } )"
+  if [ -n "$_hits" ]; then
+    echo "FAIL: $(basename "$_f") invokes python:"
+    printf '%s\n' "$_hits" | sed 's/^/      /'
+    echo "      The endpoint is bash and osqueryi. bin/classify is the python half, and it"
+    echo "      runs off the machine. See the JSON helpers in bin/container-scan."
+    fail=1; _endpoint_clean=0
+  fi
+done
+# Guarded, or the summary line prints `ok` directly underneath its own FAIL -- which is how
+# a reader skimming for the last line concludes the check passed.
+[ "$_endpoint_clean" = 1 ] &&
+  echo "endpoint: ok, bin/discover and bin/container-scan invoke no interpreter"
 
 # ONE expensive query, and the check exists because the second one is a trap.
 # dist/discovery-deep.sql is run by bin/container-scan behind a guard that is specific to
