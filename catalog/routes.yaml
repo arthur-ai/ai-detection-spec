@@ -263,11 +263,11 @@ routes:
     # identifying power -- a second opinion from the same witness. catalog/agents.yaml's
     # header has the measurement.
     #
-    # But runtime.sql still emits kind='port' rows as raw evidence, and a kind absent
-    # from the registry is DROPPED by bin/classify, not unmatched. Deleting this entry
-    # would reproduce the `ext` bug exactly: rows collected, rows correct, rows invisible
-    # even under --show-unmatched. `retired` keeps the kind registered and the route
-    # unable to claim anything.
+    # But queries/ports.sql still emits kind='port' rows as raw evidence, and a kind
+    # absent from the registry is DROPPED by bin/classify, not unmatched. Deleting this
+    # entry would reproduce the `ext` bug exactly: rows collected, rows correct, rows
+    # invisible even under --show-unmatched. `retired` keeps the kind registered and the
+    # route unable to claim anything.
     platform: posix
     kind: port
     match: exact
