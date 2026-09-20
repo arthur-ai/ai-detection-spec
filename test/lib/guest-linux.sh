@@ -43,17 +43,6 @@ need_node() {
   command -v npm >/dev/null 2>&1
 }
 
-need_uv() {
-  command -v uv >/dev/null 2>&1 && return 0
-  need_curl
-  # The vendor's installer, which is how uv is actually installed on Linux. It writes to
-  # ~/.local/bin, which is also one of the paths queries/filesystem-linux.sql globs -- so
-  # uv itself shows up as an unmatched `file` row, correctly, being no kind of agent.
-  curl -fsSL https://astral.sh/uv/install.sh | sh >/dev/null 2>&1
-  export PATH="$HOME/.local/bin:$PATH"
-  command -v uv >/dev/null 2>&1
-}
-
 # A NON-ROOT USER WITH A REAL HOME, because half of what these queries look for is
 # per-user. Running everything as root would exercise only the /root branches and leave
 # the /home/<user>/ ones -- the ones that matter on a real fleet -- untested, while the

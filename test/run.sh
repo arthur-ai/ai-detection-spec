@@ -87,18 +87,19 @@ run_scenario() {
   fi
   [ "$setup_rc" = "0" ] || { echo "FAIL: scenario setup failed (exit $setup_rc)" >&2; return 1; }
 
-  # Run the SHIPPING script, not a reimplementation of it. The harness used to invoke
-  # osqueryi directly and measure gzip+base64 bytes, while discovery.sh emitted raw JSON
-  # -- so the suite reported ~600B while the real artifact would have produced 34KB on a
-  # developer Mac and blown the EA cap. Neither number was wrong on its own. Exercise the
-  # artifact and there is nothing left to drift.
+  # Run the SHIPPING ARTIFACT, not a reimplementation of it. A predecessor harness measured
+  # gzip+base64 bytes of its own capture while the endpoint script emitted raw JSON -- so
+  # the suite reported ~600B where the real artifact would have produced 34KB on a developer
+  # Mac and blown the EA cap. Neither number was wrong on its own. Exercise what dist/ ships
+  # and there is nothing left to drift. (That script predates this repo and is not in it;
+  # the endpoint runs bin/discover, which the Linux harness exercises directly.)
   # The DARWIN artifact: this harness boots a macOS guest under Tart. The Linux
   # scenarios run in containers -- test/run-linux.sh -- and on the CI runner directly.
   vm_put "$vm" "$HERE/../dist/discovery-darwin.sql" /tmp/discovery.sql
 
   local start; start=$(date +%s)
   vm_ssh "$vm" "sudo -n /usr/local/bin/osqueryi --json < /tmp/discovery.sql" > "$ART/$s.json" \
-    || { echo "FAIL: discovery.sh failed; see $ART/$s.json" >&2; return 1; }
+    || { echo "FAIL: the composed darwin artifact did not run; see $ART/$s.json" >&2; return 1; }
   local elapsed=$(( $(date +%s) - start ))
 
   local bytes

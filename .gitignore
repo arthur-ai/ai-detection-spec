@@ -13,3 +13,7 @@ artifacts/
 # reader will import it to try image_repo()), and Python drops a __pycache__ beside it.
 __pycache__/
 *.pyc
+
+# Aider writes its chat log into whatever directory it runs in, and one was committed from
+# this one. This repo detects agent state; it is not a place to keep any.
+.aider*

@@ -25,10 +25,11 @@ assert_counts() {
   local actual_json="$1" expected_json="$2"
   python3 - "$actual_json" "$expected_json" <<'PY'
 import json, sys, collections
-doc = json.load(open(sys.argv[1]))
-# discovery.sh wraps findings in a scan envelope; accept a bare array too so a raw
-# osqueryi capture can still be checked by hand.
-actual = doc["findings"] if isinstance(doc, dict) else doc
+# A BARE ARRAY IS THE ONLY SHAPE ANY PRODUCER EMITS -- `osqueryi --json`, bin/discover and
+# bin/container-scan alike. This used to unwrap a `findings` envelope as well, from an
+# endpoint script that predates this repo: nothing in the tree could produce a dict, and
+# the unwrap would have raised on bin/classify's findings anyway, which carry no `kind`.
+actual = json.load(open(sys.argv[1]))
 expected = json.load(open(sys.argv[2]))
 got = collections.Counter(r["kind"] for r in actual)
 want = expected["counts"]
@@ -81,35 +82,6 @@ sys.exit(1 if fail else 0)
 PY
 }
 
-# The summary EA and the detail EA are produced by two osqueryi invocations over the same
-# CTE. Nothing structurally forces them to agree, so assert it: a Smart Group matching on
-# the summary must select the same Macs the collector sees in the detail.
-assert_summary_agrees() {
-  local actual_json="$1" summary="$2"
-  python3 - "$actual_json" "$summary" <<'PY'
-import collections, json, re, sys
-doc = json.load(open(sys.argv[1]))
-rows = doc["findings"] if isinstance(doc, dict) else doc
-got = collections.Counter(r["kind"] for r in rows)
-line = re.sub(r"</?result>", "", sys.argv[2])
-# THIS HELPER IS NOT CALLED by run.sh, test/assert.sh or any CI job, and the kind list
-# below is a hand-written copy that still names the retired `model`. Left in place rather
-# than half-fixed: deriving the list from catalog/routes.yaml for a function nothing
-# invokes would spend the effort in the wrong place. If it is ever wired up, derive it --
-# a hardcoded kind list is the exact drift catalog/routes.yaml exists to end.
-pairs = re.findall(r"\b(app|npm|brew|daemon|port|ext|nmh|file|deb|rpm|desktop|unit"
-                   r"|vscodeext|model)=(\d+)", line)
-if not pairs:
-    print("  FAIL: summary carried no counts to check"); sys.exit(1)
-bad = False
-for kind, n in pairs:
-    if got.get(kind, 0) != int(n):
-        print(f"  FAIL: summary says {kind}={n}, detail has {got.get(kind, 0)}"); bad = True
-print("  summary counts agree with detail" if not bad else "  summary/detail MISMATCH")
-sys.exit(1 if bad else 0)
-PY
-}
-
 # Run the reference classifier over enumerated evidence and check what it concludes.
 #
 # This is the assertion that replaced the golden zeros. Before D20 a scenario could prove
@@ -132,8 +104,7 @@ if want is None:
     print("  (no classified block in expected.json, skipping)")
     sys.exit(0)
 
-doc = json.load(open(actual))
-rows = doc["findings"] if isinstance(doc, dict) else doc
+rows = json.load(open(actual))  # a bare array -- see assert_counts
 proc = subprocess.run(
     [sys.executable, root + "/bin/classify", "--json", "--show-unmatched"],
     input=json.dumps(rows), capture_output=True, text=True)
