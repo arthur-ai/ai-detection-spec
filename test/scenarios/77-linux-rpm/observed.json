@@ -16,7 +16,7 @@
       "platform": "linux",
       "os": "41",
       "arch": "x86_64",
-      "run": "35468527929"
+      "run": "35505809780"
     },
     {
       "agent": "cursor",
@@ -31,11 +31,11 @@
       "agent": "cursor",
       "route": "rpm_packages",
       "value": "cursor",
-      "agent_version": "3.21.13",
+      "agent_version": "3.21.16",
       "platform": "linux",
       "os": "41",
       "arch": "x86_64",
-      "run": "35468527929"
+      "run": "35505809780"
     }
   ]
 }
