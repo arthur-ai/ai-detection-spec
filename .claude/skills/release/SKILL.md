@@ -29,6 +29,7 @@ these shows up in a diff of the six-column contract:
 | a **route key** falls out of use | `model_stores` is still *accepted* by `validate_catalog.py` with no entry carrying it, so the route just never fires. `ports` was the other, and is now declared `retired: true` in `routes.yaml` — that one is visible, the silent case is the undeclared one |
 | a **row kind** stops being emitted | `kind='model'` left with the model runners |
 | an identifier is **superseded** | it stays in the catalog and stays matched, but leaves continuous testing — and `agent_status.py` drops it from the coverage denominator, so the identifier count falls with nothing removed. Say which value, and that machines on the old build still report it |
+| a **flag or mode** leaves a shipped script | nothing in `dist/` or `catalog/` moves, so every check above says the release is a patch. It is not: a script in `bin/` is an interface, and someone has the old invocation in a LaunchDaemon or a runbook. `--pretty` went this way at v0.5.0. Say which invocation to replace, and confirm the flag is refused by name rather than falling through to "unknown argument" |
 
 ```console
 $ python3 - <<'EOF'
@@ -217,6 +218,14 @@ State the change, then its consequence for someone running this on a fleet. Cove
   is not obvious: measured, a bound on the combined query returns the full base inventory, exits
   0, silently omits the container half and spends 6 of the 10 seconds doing it. Unbounded, the
   value blanks outright.
+- **What the endpoint needs installed**, if that moved. A prerequisite that DISAPPEARS is as
+  deployment-relevant as one that appears, and it is the easier one to leave out of the notes
+  because nothing breaks by omitting it: a fleet that provisioned for the old requirement keeps
+  working, and nobody learns they can stop. v0.5.0 is the standing case — the endpoint stopped
+  needing `python3`, which on a Mac without Command Line Tools was a stub that made the scheduled
+  writer emit nothing at all. Say what the endpoint runs on now, name what a deployer can stop
+  provisioning, and say whether a machine that was failing will now report on its own or needs
+  something done to it.
 - **Detection changes** — new agents, corrected identifiers, routes now covered. Say plainly
   whether a Mac must rescan or whether reclassifying retained evidence repairs history. **A
   removal on scope grounds is a detection change too**: the honest framing is that the last
