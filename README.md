@@ -117,6 +117,9 @@ read is parsed by `osqueryi`'s own SQLite, and the rows they write are built by 
 The one other binary either touches is `curl`, for the Docker health probe, and
 [`docs/deployment.md`](docs/deployment.md) says why that is not written up as a prerequisite.
 `python3` and PyYAML are for the classifier and the tools, which run off the machine.
+**The one-file bundle is the exception, and it costs two:** it extracts a `tar` from `base64`
+before the runner starts, so a machine running one needs those as well. Unpacking `bin/` and
+`dist/` yourself needs neither — [`docs/deployment.md`](docs/deployment.md) has it.
 `CLAUDE.md` carries that rule and `test/lint.sh` gates it, for a reason `docs/deployment.md`
 also records: on a Mac without Command Line Tools `/usr/bin/python3` is a stub, and a marker
 row that needs an interpreter cannot report a broken interpreter. Which OS versions each
