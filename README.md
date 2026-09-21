@@ -258,6 +258,10 @@ $ cat /var/lib/ai-discovery/inventory.json
 $ cat /var/lib/ai-discovery/status.txt
 ```
 
+**If your platform can host a script and not a package**, `tools/bundle.py` packs the runner
+and its artifacts into one self-extracting file that takes those same arguments and installs
+nothing. Every release attaches one per platform.
+
 `status.txt` is one line and its vocabulary is a contract, so a consumer can always tell a
 clean machine from a branch that could not look. Scheduling, transport and classification at
 scale are yours to supply; this repo ships the queries, the runner, the guard and the bound.

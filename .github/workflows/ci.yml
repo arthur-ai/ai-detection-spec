@@ -184,6 +184,47 @@ jobs:
           print(f"status: {first}, {len(tokens) - 1} branches, all outcomes in vocabulary")
           EOF
 
+      # THE BUNDLE IS THE DEPLOYABLE SHAPE, AND IT IS ONLY PROVEN AWAY FROM THE CHECKOUT.
+      # tools/bundle.py packs bin/ and dist/ into one self-extracting script, for a
+      # management platform that can host a script and cannot place files on disk. Built
+      # here, then run from `/` with no repo beside it: a bundle that quietly resolved a
+      # path back into this checkout would pass on this runner and fail on every machine
+      # it exists for, and the failure would be a missing file rather than a missing
+      # bundle.
+      - name: The one-file bundle, run away from the checkout
+        run: |
+          python3 tools/bundle.py --platform darwin --out /tmp/bundle/ai-discovery.sh
+          cd /
+          sudo -n env OSQI=/usr/local/bin/osqueryi /tmp/bundle/ai-discovery.sh \
+            --write /tmp/bundle-inv.json --status /tmp/bundle.status > /dev/null
+          cat /tmp/bundle.status
+          python3 - <<'EOF'
+          import json, sys
+          loose = json.load(open("/tmp/inv.json"))
+          bundled = json.load(open("/tmp/bundle-inv.json"))
+          if not bundled:
+              sys.exit("::error::the bundle produced no rows at all")
+          # SAME BRANCHES, NOT THE SAME ROW COUNT. The machine is the same but the
+          # inventory is live, and a port that opened between two steps is not a defect in
+          # the bundle. Which branches ran is the question worth asking here: it is the
+          # same as "did every artifact make it inside", and it is the one a base64 payload
+          # hides.
+          want = {r["id"] for r in loose if r["kind"] == "scan"}
+          got = {r["id"] for r in bundled if r["kind"] == "scan"}
+          if want != got:
+              sys.exit(f"::error::the bundle ran a different branch set: "
+                       f"missing={sorted(want - got)} extra={sorted(got - want)}")
+          print(f"{len(bundled)} rows from the bundle, {len(got)} branches, "
+                f"against {len(loose)} from the checkout")
+          EOF
+          # IT INSTALLS NOTHING, AND THAT INCLUDES ITS OWN PAYLOAD. The tree is extracted
+          # to a private temp directory and removed from an EXIT trap. One copy left
+          # behind per run is how a scheduled deployment fills a volume -- months later,
+          # and looking like anything but this script.
+          left="$(ls -d /tmp/ai-discovery.* /var/tmp/ai-discovery.* 2>/dev/null || true)"
+          [ -z "$left" ] || { echo "::error::the bundle left its payload behind: $left"; exit 1; }
+          echo "no extracted payload left on disk"
+
       # bin/classify is the reference reader. A payload the classifier cannot read is not a
       # payload, and the scenarios job that normally covers this runs only on main.
       - name: The classifier reads the payload
@@ -372,6 +413,47 @@ jobs:
                            f"on this vocabulary and it must not grow silently")
           print(f"{len(inv)} rows, {len(scans)} branches, every outcome in vocabulary")
           EOF
+
+      # THE BUNDLE IS THE DEPLOYABLE SHAPE, AND IT IS ONLY PROVEN AWAY FROM THE CHECKOUT.
+      # tools/bundle.py packs bin/ and dist/ into one self-extracting script, for a
+      # management platform that can host a script and cannot place files on disk. Built
+      # here, then run from `/` with no repo beside it: a bundle that quietly resolved a
+      # path back into this checkout would pass on this runner and fail on every machine
+      # it exists for, and the failure would be a missing file rather than a missing
+      # bundle.
+      - name: The one-file bundle, run away from the checkout
+        run: |
+          python3 tools/bundle.py --platform linux --out /tmp/bundle/ai-discovery.sh
+          cd /
+          sudo -n /tmp/bundle/ai-discovery.sh \
+            --write /tmp/bundle-inv.json --status /tmp/bundle.status > /dev/null
+          cat /tmp/bundle.status
+          python3 - <<'EOF'
+          import json, sys
+          loose = json.load(open("/tmp/inv.json"))
+          bundled = json.load(open("/tmp/bundle-inv.json"))
+          if not bundled:
+              sys.exit("::error::the bundle produced no rows at all")
+          # SAME BRANCHES, NOT THE SAME ROW COUNT. The machine is the same but the
+          # inventory is live, and a port that opened between two steps is not a defect in
+          # the bundle. Which branches ran is the question worth asking here: it is the
+          # same as "did every artifact make it inside", and it is the one a base64 payload
+          # hides.
+          want = {r["id"] for r in loose if r["kind"] == "scan"}
+          got = {r["id"] for r in bundled if r["kind"] == "scan"}
+          if want != got:
+              sys.exit(f"::error::the bundle ran a different branch set: "
+                       f"missing={sorted(want - got)} extra={sorted(got - want)}")
+          print(f"{len(bundled)} rows from the bundle, {len(got)} branches, "
+                f"against {len(loose)} from the checkout")
+          EOF
+          # IT INSTALLS NOTHING, AND THAT INCLUDES ITS OWN PAYLOAD. The tree is extracted
+          # to a private temp directory and removed from an EXIT trap. One copy left
+          # behind per run is how a scheduled deployment fills a volume -- months later,
+          # and looking like anything but this script.
+          left="$(ls -d /tmp/ai-discovery.* /var/tmp/ai-discovery.* 2>/dev/null || true)"
+          [ -z "$left" ] || { echo "::error::the bundle left its payload behind: $left"; exit 1; }
+          echo "no extracted payload left on disk"
 
       - name: The classifier reads the payload
         run: |

@@ -31,6 +31,60 @@ one unavailable table costs one branch rather than the whole inventory. Composed
 statement it returns zero rows and a valid empty JSON array, which a consumer cannot tell from
 a clean machine.
 
+## One file, when your platform can host a script and not a package
+
+A release attaches nine loose files, and they only work in the layout this repo has:
+`bin/container-scan` resolves `dist/discovery-deep.sql` relative to its own parent, and
+`bin/discover` sources `bin/container-scan`. Putting files in a fixed place on a managed
+machine is the part a management platform is worst at — it wants a package, which on macOS
+wants code signing, notarization and a PPPC profile. Hosting a script and running it on a
+schedule is the part every one of them does well.
+
+So: the layout, inside one script.
+
+```console
+$ python3 tools/bundle.py --platform darwin        # or download it from the release
+wrote artifacts/ai-discovery-darwin.sh (37 KB, 5 files, darwin)
+
+$ ./artifacts/ai-discovery-darwin.sh --write /var/lib/ai-discovery/inventory.json \
+                                    --status /var/lib/ai-discovery/status.txt
+```
+
+Every argument goes straight through to `bin/discover`, so everything on this page works
+unchanged. **It installs nothing**: the payload is extracted to a private temp directory,
+run, and removed — including when the run fails, and including when it is interrupted.
+
+**It costs two prerequisites: `base64` and `tar`.** `bin/discover` and `bin/container-scan`
+hold to a closed list of utilities so that what an endpoint needs is what a stock machine
+has, and the extraction preamble adds those two to it. Both are stock on macOS and on every
+Linux base image this repo has run on, and the cost is opt-in — unpacking `bin/` and `dist/`
+yourself needs neither — but it is a real widening rather than a detail.
+
+**One platform per bundle, and each refuses the other by name.** The composed artifacts name
+disjoint sets of tables and `bin/discover` picks by `uname -s`, so a bundle claiming both
+would be tested on whichever one built it. The wrong one exits 1 saying which artifact it
+carries, before it unpacks anything.
+
+**`catalog/` and `bin/classify` are not in it.** The endpoint enumerates and matches nothing;
+the classifier runs where you collect. That is what lets a new signature re-match evidence
+you already have, and it is why the machine being inventoried never carries the signatures
+it is supposed to enumerate past.
+
+### Wrapping it
+
+A reporting channel usually wants something of its own: fixed output paths, a wire format, a
+size budget, a particular exit status. None of that is a fact about osquery and none of it is
+in here. `--driver` is the seam:
+
+```console
+$ python3 tools/bundle.py --platform darwin --driver ./my-collector.sh
+```
+
+The bundle then runs `my-collector.sh` instead of `bin/discover`, with `AI_DISCOVERY_ROOT`
+pointing at the extracted tree and the arguments passed through. What it does with them —
+where it writes, what it frames, what it reports when the payload is too big for its channel
+— is yours, and stays yours through a version bump of this repo.
+
 ## `status.txt`, whose vocabulary is a contract
 
 One line:
