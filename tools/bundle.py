@@ -101,7 +101,8 @@ set -uo pipefail
 case "$(uname -s)" in
   @UNAME@) ;;
   *) echo "ai-discovery: this bundle carries dist/discovery-@PLATFORM@.sql and runs on" \
-          "@UNAME@ only. Build the other one with tools/bundle.py --platform." >&2
+          "@UNAME@ only. Use the @OTHER@ bundle -- every release attaches one per" \
+          "platform -- or build it with tools/bundle.py --platform @OTHER@." >&2
      exit 1 ;;
 esac
 
@@ -197,6 +198,7 @@ def wrapper(platform, files, driver=None, label=""):
                  "rest of the label into shell.")
     return (WRAPPER
             .replace("@PLATFORM@", platform)
+            .replace("@OTHER@", next(p for p in PLATFORMS if p != platform))
             .replace("@UNAME@", UNAME[platform])
             .replace("@LABEL@", f"  release: {label}" if label else "")
             .replace("@FILES@", " ".join(files) + (" + driver" if driver else ""))
@@ -224,6 +226,68 @@ def _split(text):
     return text[:open_at], text[open_at:close_at], text[close_at:]
 
 
+class CorruptBundle(Exception):
+    """A bundle's payload could not be decoded into the tar it is supposed to be."""
+
+
+def _payload_bytes(text):
+    """The decompressed payload of a bundle, or CorruptBundle.
+
+    ONE EXCEPTION FOR A CLASS OF FAILURE, BECAUSE ENUMERATING THEM HAS BEEN WRONG THREE
+    TIMES. The callers used to list the types they expected from base64 and gzip, and the
+    list was short every time: first OSError and ValueError, then EOFError (a TRUNCATED
+    payload, which is what a half-copied file is) and tarfile.TarError, then zlib.error,
+    which inherits straight from Exception and is what malformed DEFLATE raises -- three of
+    four ways of corrupting a stream produce it. Each round was a traceback where the
+    caller had promised an answer.
+
+    So the catch is broad and the SCOPE is narrow: two stdlib calls on bytes a caller
+    supplied. Anything either of them raises means one thing -- this is not a payload --
+    and there is nothing else in here for a broad catch to hide. payload_tar() and the
+    comparison stay outside it, where a real defect still surfaces as one.
+    """
+    _, body, _ = _split(text)
+    try:
+        return gzip.decompress(base64.b64decode(body))
+    except Exception as exc:
+        raise CorruptBundle(f"{type(exc).__name__}: {exc}") from exc
+
+
+def read_member(text, name):
+    """One file out of a built bundle, by its name in the payload.
+
+    PUBLIC BECAUSE A CONSUMER ALREADY NEEDS IT, and was reaching past the underscore to get
+    it. A wrapper built with --driver puts the consumer's own script inside the payload, so
+    every check that consumer had which used to grep its collector -- is the frame still
+    there, is the size cap still enforced -- now has to read the member back. The first
+    repo to adopt --driver wrote that against `_split`, which is exactly the shape of the
+    breakage this project has already shipped once: `bin/discover --framed` was removed
+    here for good reasons and took a downstream collector with it. An interface a consumer
+    must use is an interface this repo maintains, and the way to make that true is to say
+    so rather than to hope.
+
+    Returns bytes. A name that is not in the payload raises KeyError, so a caller asking
+    for the wrong thing is told, rather than handed an empty string it will treat as a file
+    that exists and is empty.
+    """
+    import io
+    try:
+        tar = tarfile.open(fileobj=io.BytesIO(_payload_bytes(text)))
+    except tarfile.TarError as exc:
+        raise CorruptBundle(f"{type(exc).__name__}: {exc}") from exc
+    try:
+        member = tar.extractfile(name)
+    except KeyError:
+        member = None
+    if member is None:
+        # tarfile raises its own KeyError first, whose message names only what was asked
+        # for. Saying what IS in there turns "not found" into an answer: a caller reading
+        # `driver` out of a bundle built without one needs to know that is why.
+        raise KeyError(f"{name!r} is not a file in this bundle's payload; it carries "
+                       f"{sorted(tar.getnames())}")
+    return member.read()
+
+
 def matches(text, root, platform, driver=None, label=""):
     """Does an existing bundle carry this tree?
 
@@ -235,7 +299,7 @@ def matches(text, root, platform, driver=None, label=""):
     bytes zlib chose is not a fact about this repo.
     """
     try:
-        head, body, tail = _split(text)
+        head, _, tail = _split(text)
         want = wrapper(platform, list(payload_files(platform)), driver, label)
         want_head, _, want_tail = _split(want)
     except ValueError:
@@ -243,9 +307,17 @@ def matches(text, root, platform, driver=None, label=""):
     if (head, tail) != (want_head, want_tail):
         return False
     try:
-        return gzip.decompress(base64.b64decode(body)) == payload_tar(root, platform, driver)
-    except (OSError, ValueError):
+        payload = _payload_bytes(text)
+    except CorruptBundle:
+        # CORRUPT IS "DOES NOT MATCH", WHICH IS THIS FUNCTION'S WHOLE QUESTION. This is what
+        # --check calls and what a consumer's own gate calls, so raising here crashed the
+        # gate instead of reporting the artifact as not carrying the tree -- and "the check
+        # blew up" and "the check says no" are different answers to someone deciding
+        # whether to ship.
         return False
+    # OUTSIDE the catch on purpose: a missing vendored file is this repo's problem, not a
+    # corrupt bundle, and it should not be able to read as "does not match".
+    return payload == payload_tar(root, platform, driver)
 
 
 def main():
@@ -258,7 +330,27 @@ def main():
     ap.add_argument("--label", default="", help="a release name, recorded in the banner")
     ap.add_argument("--check", metavar="PATH",
                     help="fail unless PATH already carries this tree; writes nothing")
+    ap.add_argument("--member", nargs=2, metavar=("NAME", "PATH"),
+                    help="print one file out of a built bundle, e.g. --member driver ./b.sh")
     args = ap.parse_args()
+
+    # READING A BUNDLE BACK IS PART OF THE INTERFACE, not a debugging convenience. A
+    # consumer using --driver has checks that used to grep its own collector and now have to
+    # reach into the payload; giving them a command means they do not reach into `_split`.
+    if args.member:
+        name, path = args.member
+        try:
+            sys.stdout.buffer.write(read_member(pathlib.Path(path).read_text(), name))
+        except KeyError as exc:
+            sys.exit(f"bundle: {exc}")
+        except CorruptBundle as exc:
+            # Every way a payload can be wrong arrives here as one thing, named rather than
+            # raised: bad base64, bad gzip magic, a truncated payload, malformed DEFLATE, or
+            # a blob that ungzips to something that is not a tar.
+            sys.exit(f"bundle: {path} is not a bundle this can read: {exc}")
+        except (OSError, ValueError) as exc:
+            sys.exit(f"bundle: cannot read {path}: {exc}")
+        return
 
     # THE CATALOG MUST NOT REACH AN ENDPOINT. One line here, and the failure it prevents --
     # a machine carrying the signatures it is supposed to enumerate past -- would be

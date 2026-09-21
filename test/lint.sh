@@ -569,14 +569,19 @@ if [ "$_bundle_ok" = 1 ]; then
     echo "FAIL: the $_other bundle ran on $(uname -s) instead of refusing"; fail=1
   else
     case "$_out" in
-      *"runs on"*only*) : ;;
+      # AND THE COMMAND IT PRINTS MUST RUN. `--platform` takes a value; the message omitted
+      # it, so following the advice exited with an argument error. It must also name the
+      # OTHER platform -- this bundle's own is the one the reader is already holding.
+      *"runs on"*only*"--platform $(uname -s | tr 'A-Z' 'a-z')."*) : ;;
+      *"runs on"*only*) echo "FAIL: the $_other bundle's refusal does not name the platform "\
+                             "to build: $_out"; fail=1 ;;
       *) echo "FAIL: the $_other bundle refused without naming the cause: $_out"; fail=1 ;;
     esac
   fi
 fi
 
 python3 - "$HERE/.." "$_bundle_tmp" <<'BUNDLE' || fail=1
-import base64, gzip, io, pathlib, re, sys, tarfile
+import base64, gzip, io, os, pathlib, re, sys, tarfile
 root, tmp = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
 sys.path.insert(0, str(root / "tools"))
 import bundle as B
@@ -624,6 +629,72 @@ for plat in ("darwin", "linux"):
     if "trap " not in code or "rm -rf" not in code:
         bad.append(f"{plat}: the wrapper does not remove its working directory")
 
+# --driver IS THE ONE THING A CONSUMER BUILDS ON, AND IT SHIPPED WITH NO TEST AT ALL.
+# release.yml names it in a comment; nothing exercised it. The first repo to adopt it made
+# its entire deployable out of it -- a wrapper around its own script -- so a --driver that
+# quietly stopped embedding, or a --check that ignored the driver and blessed a stale
+# bundle, would be someone's fleet.
+_drv = tmp / "driver.sh"
+_drv.write_text("#!/bin/bash\necho marker-in-driver\n")
+_wrapped = B.build(root, "darwin", driver=str(_drv), label="lint")
+
+if B.read_member(_wrapped, "driver") != _drv.read_bytes():
+    bad.append("--driver did not put the driver in the payload byte for byte")
+if "AI_DISCOVERY_ROOT" not in _wrapped:
+    bad.append("a --driver bundle does not set AI_DISCOVERY_ROOT, which is the whole "
+               "interface the driver is handed")
+# CHECK MUST BE DRIVER-SENSITIVE. Comparing only the wrapper would pass a bundle carrying
+# somebody else's driver, which is the one substitution this hook makes possible.
+if not B.matches(_wrapped, root, "darwin", driver=str(_drv), label="lint"):
+    bad.append("--check rejects a bundle it has just built with a driver")
+if B.matches(_wrapped, root, "darwin", label="lint"):
+    bad.append("--check accepts a driver bundle as a plain one -- it is not reading the "
+               "payload, so any driver would pass")
+# The default bundle must NOT carry one, or every consumer ships a file it did not ask for.
+try:
+    B.read_member(B.build(root, "darwin", label="lint"), "driver")
+    bad.append("a bundle built without --driver carries a driver anyway")
+except KeyError:
+    pass
+
+# A CORRUPT PAYLOAD IS AN ANSWER, NOT A TRACEBACK. matches() is what --check calls and what
+# a consumer's own gate calls, so it must say "this bundle does not carry the tree" rather
+# than raise -- a crashed gate reports nothing about the artifact it was asked about. Three
+# ways a payload goes wrong, and EOFError (a truncated bundle: half-written, half-copied)
+# was the one that got through: base64 raises ValueError, gzip raises OSError on bad magic
+# but EOFError on truncation, and tarfile raises TarError on a blob that ungzips to
+# something else.
+_head, _body, _tail = B._split(_wrapped)
+def _corrupt(raw):
+    b = base64.b64encode(raw).decode()
+    return _head + "\n".join(b[i:i + 76] for i in range(0, len(b), 76)) + _tail
+_gz = gzip.compress(os.urandom(4000))          # incompressible: a long DEFLATE stream
+for _what, _text in (
+        ("a truncated payload", _corrupt(_gz[:20])),
+        # MALFORMED DEFLATE IS ITS OWN FAILURE and was the third type this list was short
+        # of: zlib.error inherits straight from Exception, and three of four ways of
+        # corrupting a stream produce it rather than a gzip or tar error.
+        ("malformed DEFLATE", _corrupt(_gz[:10] + bytes(x ^ 0xFF for x in _gz[10:14]) + _gz[14:])),
+        ("a failed CRC", _corrupt(_gz[:100] + bytes([_gz[100] ^ 0xFF]) + _gz[101:])),
+        ("gzip that is not a tar", _corrupt(gzip.compress(b"not a tar"))),
+        ("a body that is not base64", _head + "!!!! not base64 !!!!" + _tail)):
+    try:
+        if B.matches(_text, root, "darwin", driver=str(_drv), label="lint"):
+            bad.append(f"matches() accepted {_what}")
+    except Exception as exc:
+        bad.append(f"matches() raised {type(exc).__name__} on {_what} instead of "
+                   f"answering False -- this is what --check calls")
+    # And the reader turns every one of them into the SAME exception, so a caller has one
+    # thing to catch rather than a list that has now been short three times.
+    try:
+        B.read_member(_text, "driver")
+        bad.append(f"read_member() returned a member out of {_what}")
+    except B.CorruptBundle:
+        pass
+    except Exception as exc:
+        bad.append(f"read_member() raised {type(exc).__name__} on {_what}; every decode "
+                   f"failure must arrive as CorruptBundle")
+
 # A LABEL IS THE ONLY CALLER TEXT THAT REACHES THE GENERATED SHELL, and it lands in a
 # comment line. A newline in it ends the comment and the rest becomes shell, in a file
 # that still looks exactly like a bundle. The refusal lives in wrapper(), so --check is
@@ -639,8 +710,8 @@ for b in bad:
     print(f"FAIL: bundle: {b}")
 if bad:
     sys.exit(1)
-print("bundle: ok, both platforms build, carry only endpoint material, refuse a label "
-      "that would escape the banner, and clean up after themselves")
+print("bundle: ok, both platforms build, carry only endpoint material, embed and compare a "
+      "--driver, refuse a label that would escape the banner, and clean up after themselves")
 BUNDLE
 
 [ "$fail" -eq 0 ] && echo "lint: PASS" || echo "lint: FAIL"
