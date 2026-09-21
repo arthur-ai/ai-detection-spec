@@ -101,8 +101,8 @@ set -uo pipefail
 case "$(uname -s)" in
   @UNAME@) ;;
   *) echo "ai-discovery: this bundle carries dist/discovery-@PLATFORM@.sql and runs on" \
-          "@UNAME@ only. Use the bundle for this platform -- every release attaches one" \
-          "per platform -- or build it with tools/bundle.py --platform." >&2
+          "@UNAME@ only. Use the @OTHER@ bundle -- every release attaches one per" \
+          "platform -- or build it with tools/bundle.py --platform @OTHER@." >&2
      exit 1 ;;
 esac
 
@@ -198,6 +198,7 @@ def wrapper(platform, files, driver=None, label=""):
                  "rest of the label into shell.")
     return (WRAPPER
             .replace("@PLATFORM@", platform)
+            .replace("@OTHER@", next(p for p in PLATFORMS if p != platform))
             .replace("@UNAME@", UNAME[platform])
             .replace("@LABEL@", f"  release: {label}" if label else "")
             .replace("@FILES@", " ".join(files) + (" + driver" if driver else ""))
@@ -278,7 +279,12 @@ def matches(text, root, platform, driver=None, label=""):
         return False
     try:
         return gzip.decompress(base64.b64decode(body)) == payload_tar(root, platform, driver)
-    except (OSError, ValueError):
+    except (OSError, ValueError, EOFError, tarfile.TarError):
+        # CORRUPT IS "DOES NOT MATCH", WHICH IS THIS FUNCTION'S WHOLE QUESTION. EOFError was
+        # missing and is the likeliest of the four: gzip raises it on a TRUNCATED payload,
+        # which is exactly what a half-written or half-copied bundle is. This is what
+        # --check calls, and what a consumer's own gate calls, so the uncaught version
+        # crashed the gate instead of reporting the artifact as stale.
         return False
 
 
@@ -305,8 +311,13 @@ def main():
             sys.stdout.buffer.write(read_member(pathlib.Path(path).read_text(), name))
         except KeyError as exc:
             sys.exit(f"bundle: {exc}")
-        except (OSError, ValueError) as exc:
-            sys.exit(f"bundle: {path} is not a bundle this can read: {exc}")
+        except (OSError, ValueError, EOFError, tarfile.TarError) as exc:
+            # Every way a payload can be wrong, named rather than raised: bad base64
+            # (ValueError), bad gzip magic (OSError), a TRUNCATED payload (EOFError) and a
+            # decompressed blob that is not a tar (TarError). The last two reached the user
+            # as a traceback, which says the same thing in a form nobody can act on.
+            sys.exit(f"bundle: {path} is not a bundle this can read: "
+                     f"{type(exc).__name__}: {exc}")
         return
 
     # THE CATALOG MUST NOT REACH AN ENDPOINT. One line here, and the failure it prevents --

@@ -569,7 +569,12 @@ if [ "$_bundle_ok" = 1 ]; then
     echo "FAIL: the $_other bundle ran on $(uname -s) instead of refusing"; fail=1
   else
     case "$_out" in
-      *"runs on"*only*) : ;;
+      # AND THE COMMAND IT PRINTS MUST RUN. `--platform` takes a value; the message omitted
+      # it, so following the advice exited with an argument error. It must also name the
+      # OTHER platform -- this bundle's own is the one the reader is already holding.
+      *"runs on"*only*"--platform $(uname -s | tr 'A-Z' 'a-z')."*) : ;;
+      *"runs on"*only*) echo "FAIL: the $_other bundle's refusal does not name the platform "\
+                             "to build: $_out"; fail=1 ;;
       *) echo "FAIL: the $_other bundle refused without naming the cause: $_out"; fail=1 ;;
     esac
   fi
@@ -651,6 +656,27 @@ try:
     bad.append("a bundle built without --driver carries a driver anyway")
 except KeyError:
     pass
+
+# A CORRUPT PAYLOAD IS AN ANSWER, NOT A TRACEBACK. matches() is what --check calls and what
+# a consumer's own gate calls, so it must say "this bundle does not carry the tree" rather
+# than raise -- a crashed gate reports nothing about the artifact it was asked about. Three
+# ways a payload goes wrong, and EOFError (a truncated bundle: half-written, half-copied)
+# was the one that got through: base64 raises ValueError, gzip raises OSError on bad magic
+# but EOFError on truncation, and tarfile raises TarError on a blob that ungzips to
+# something else.
+_head, _body, _tail = B._split(_wrapped)
+def _corrupt(raw):
+    b = base64.b64encode(raw).decode()
+    return _head + "\n".join(b[i:i + 76] for i in range(0, len(b), 76)) + _tail
+for _what, _text in (("a truncated payload", _corrupt(gzip.compress(b"x" * 100)[:20])),
+                     ("gzip that is not a tar", _corrupt(gzip.compress(b"not a tar"))),
+                     ("a body that is not base64", _head + "!!!! not base64 !!!!" + _tail)):
+    try:
+        if B.matches(_text, root, "darwin", driver=str(_drv), label="lint"):
+            bad.append(f"matches() accepted {_what}")
+    except Exception as exc:
+        bad.append(f"matches() raised {type(exc).__name__} on {_what} instead of "
+                   f"answering False -- this is what --check calls")
 
 # A LABEL IS THE ONLY CALLER TEXT THAT REACHES THE GENERATED SHELL, and it lands in a
 # comment line. A newline in it ends the comment and the rest becomes shell, in a file
