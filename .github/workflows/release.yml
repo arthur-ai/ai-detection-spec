@@ -25,12 +25,21 @@ jobs:
       # macOS gates, and nothing on the release page would hint at it. Publishing is one
       # click from a draft, so the wrong target is a plausible mistake rather than a
       # theoretical one.
+      # THE TAG REACHES THE SHELL THROUGH env, NOT THROUGH ${{ }}. An expression is
+      # substituted textually before bash parses the line, and a git ref may legally
+      # contain a double quote, a semicolon, a backtick or $(...) -- git forbids spaces,
+      # control characters, ~ ^ : ? * [ and backslash, and none of the shell metacharacters
+      # that matter here. Publishing a release needs write access, so this is a narrow
+      # door; it is also one click from a draft, which is the same reason the ancestry
+      # check above exists.
       - name: Confirm the tag is on main
+        env:
+          TAG: ${{ github.event.release.tag_name }}
         run: |
           git fetch --no-tags origin main
           sha=$(git rev-parse HEAD)
           if ! git merge-base --is-ancestor "$sha" origin/main; then
-            echo "::error::${{ github.event.release.tag_name }} ($sha) is not an ancestor of main"
+            echo "::error::$TAG ($sha) is not an ancestor of main"
             exit 1
           fi
           echo "$sha is on main"
@@ -67,10 +76,11 @@ jobs:
       # committed: it is derived, it changes with every query edit, and 37KB of base64 in
       # the tree is a diff nobody can review.
       - name: Build the one-file bundles
+        env:
+          TAG: ${{ github.event.release.tag_name }}
         run: |
-          tag="${{ github.event.release.tag_name }}"
-          python3 tools/bundle.py --platform darwin --label "$tag"
-          python3 tools/bundle.py --platform linux  --label "$tag"
+          python3 tools/bundle.py --platform darwin --label "$TAG"
+          python3 tools/bundle.py --platform linux  --label "$TAG"
 
       # --clobber replaces whatever was attached to the draft by hand. A consumer pins a
       # tag and downloads these files; they are the deliverable, not a convenience.
@@ -109,8 +119,9 @@ jobs:
       - name: Attach the artifacts
         env:
           GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
         run: |
-          gh release upload "${{ github.event.release.tag_name }}" \
+          gh release upload "$TAG" \
             dist/discovery-darwin.sql dist/discovery-linux.sql \
             dist/discovery-deep.sql dist/ai-discovery.conf \
             bin/discover bin/container-scan bin/classify \

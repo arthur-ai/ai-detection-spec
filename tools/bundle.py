@@ -131,6 +131,22 @@ chmod +x "$work/bin/"* 2>/dev/null
 # trap -- verified, not assumed: the extracted tree is then left in TMPDIR. On a schedule
 # that is one copy of the payload per run, and it surfaces months later as a full volume
 # rather than as anything to do with this script.
+#
+# A SIGNAL ARRIVES LATE HERE, AND THAT IS THE TRADE. bash defers a trap until the
+# foreground command returns, so a TERM sent to this shell ALONE does not stop the runner.
+# Measured: TERM at t+1 against an 8s runner ran the cleanup at t+8, when the runner
+# finished, not on arrival. Nothing leaks -- HUP, INT and TERM are trapped, so the shell
+# leaves through EXIT and the tree goes either way -- and a signal sent to the process
+# group, which is what both a terminal and a scheduler send, reaches the runner directly.
+#
+# The alternative is to background the runner, wait on its pid and forward signals to its
+# group. NOT DONE, DELIBERATELY. Backgrounding WITHOUT forwarding is strictly worse: the
+# trap fires immediately and deletes the tree out from under a process still reading its
+# own SQL. Forwarding properly means a signal supervisor in bash 3.2 -- re-waiting around
+# interrupted waits, an escalation timer -- inside the one file that has to work on every
+# managed machine, to shorten a cleanup that already happens. The bound that actually
+# matters is a wall-clock kill on a query that can block forever, and it exists one level
+# down in bin/container-scan, where a second copy of it does not belong.
 @RUN@
 status=$?
 exit "$status"
@@ -170,6 +186,15 @@ def payload_tar(root, platform, driver=None):
 
 def wrapper(platform, files, driver=None, label=""):
     """The shell around the payload, with no payload in it yet."""
+    # A LABEL LANDS IN A COMMENT LINE, so a newline in it ends that comment and everything
+    # after it is shell -- in a file that still looks exactly like a bundle, which is this
+    # project's worst failure shape. A git ref cannot carry a control character, so a
+    # release tag cannot reach this; `--label "$(some command)"` from a human can.
+    # Refused HERE rather than in main() so that every caller is covered, --check included.
+    if any(c in label for c in "\r\n"):
+        sys.exit("bundle: --label must not contain a newline. It is interpolated into a "
+                 "comment line in the generated wrapper, and a newline there turns the "
+                 "rest of the label into shell.")
     return (WRAPPER
             .replace("@PLATFORM@", platform)
             .replace("@UNAME@", UNAME[platform])
@@ -180,6 +205,7 @@ def wrapper(platform, files, driver=None, label=""):
 
 
 def build(root, platform, driver=None, label=""):
+    """One shell file: the wrapper, with the payload base64'd into it."""
     blob = base64.b64encode(gzip.compress(payload_tar(root, platform, driver), 9, mtime=0))
     b64 = blob.decode()
     wrapped = "\n".join(b64[i:i + 76] for i in range(0, len(b64), 76))
@@ -223,6 +249,7 @@ def matches(text, root, platform, driver=None, label=""):
 
 
 def main():
+    """Build a bundle, or check that an existing one still carries this tree."""
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--platform", choices=PLATFORMS, required=True)
     ap.add_argument("--out", help="default: artifacts/ai-discovery-<platform>.sh")

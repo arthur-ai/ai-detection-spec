@@ -571,12 +571,23 @@ for plat in ("darwin", "linux"):
     if "trap " not in code or "rm -rf" not in code:
         bad.append(f"{plat}: the wrapper does not remove its working directory")
 
+# A LABEL IS THE ONLY CALLER TEXT THAT REACHES THE GENERATED SHELL, and it lands in a
+# comment line. A newline in it ends the comment and the rest becomes shell, in a file
+# that still looks exactly like a bundle. The refusal lives in wrapper(), so --check is
+# covered too; asserted here because a guard nothing exercises is a guard that can be
+# removed without anything going red.
+try:
+    B.wrapper("darwin", list(B.payload_files("darwin")), None, "v1\necho pwned")
+    bad.append("a --label containing a newline was accepted")
+except SystemExit:
+    pass
+
 for b in bad:
     print(f"FAIL: bundle: {b}")
 if bad:
     sys.exit(1)
-print("bundle: ok, both platforms build, carry only endpoint material and clean up after "
-      "themselves")
+print("bundle: ok, both platforms build, carry only endpoint material, refuse a label "
+      "that would escape the banner, and clean up after themselves")
 BUNDLE
 
 [ "$fail" -eq 0 ] && echo "lint: PASS" || echo "lint: FAIL"
