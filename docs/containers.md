@@ -112,7 +112,9 @@ containers produced zero rows. So an agent that is installed but stopped appears
 `perms` carries `privileged`, because a privileged agent container can reach the host and an
 unprivileged one cannot. **Environment variables are never collected** — `env_variables` and
 the whole `docker_container_envs` table hold `ANTHROPIC_API_KEY` and its like, and this
-payload leaves the machine.
+payload leaves the machine. `test/lint.sh` fails on either name, in the queries, the
+composed artifact and the pack, because the row is written **on** the endpoint — by the
+time a collector could drop the column, it has already left.
 
 ## Whether it is worth enabling
 

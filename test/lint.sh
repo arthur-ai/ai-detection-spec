@@ -360,6 +360,59 @@ done
 [ "$_endpoint_clean" = 1 ] &&
   echo "endpoint: ok, bin/discover and bin/container-scan reach for no interpreter or JSON tool"
 
+# NO QUERY MAY NAME A CONTAINER'S ENVIRONMENT. `docker_containers.env_variables` and the
+# whole `docker_container_envs` table hold ANTHROPIC_API_KEY, OPENAI_API_KEY, model
+# endpoints and session tokens. Every other hazard in this repo is a wrong answer; this one
+# is an employee's credentials in a Jamf inventory record, and it cannot be walked back
+# once a recon has run.
+#
+# FILTERING DOWNSTREAM IS TOO LATE, which is why the gate is here and not in bin/classify.
+# The six-column contract is written ON the endpoint: by the time a collector could drop
+# the column, the row has already left the machine. The column must never be selected.
+#
+# NOTHING ELSE CATCHES IT, and that was measured rather than assumed. Injecting
+# `c.command || ' ' || c.env_variables AS extra` into the docker_containers branch produces
+# a query that is six columns wide, correctly aliased in its first arm, on a registered
+# kind, inside the one expensive file -- and lint, tools/build.py --check,
+# check_no_catalog.py, validate_catalog.py and test/test_matcher.py ALL PASSED. The
+# contract checks count and name columns; they cannot know what is inside one.
+#
+# A DENY-LIST OF TWO NAMES, and an allow-list was rejected rather than overlooked: it would
+# have to enumerate every column of nineteen docker tables plus everything else these
+# queries touch, and one tuned to pass today goes stale as noise. These two are different
+# from the rest because they are the only columns here whose CONTENTS are structurally
+# guaranteed to be secrets -- not "might contain a path", but "holds the API key". The
+# neighbouring hazard, docker_container_processes.cmdline, is NOT on this list: it *can*
+# carry `--api-key`, so it wants redaction rather than prohibition, and it is unreachable
+# today because no query selects the table at all. UP-5025 owns that; do not fold it in
+# here, because a name on a deny-list is a decision not to have the column, and that is the
+# wrong decision for cmdline.
+#
+# dist/ IS GENERATED AND IS CHECKED ANYWAY. tools/build.py --check gates drift both ways,
+# so a leak in queries/ is the only way one reaches an artifact today -- but the artifacts
+# are what ship, the pack embeds its SQL as JSON strings, and a check that reads the thing
+# that leaves the machine costs one glob. COMMENTS ARE EXCLUDED, shell `#` and SQL `--`
+# alike: queries/containers.sql explains this rule in a comment and dist/discovery-deep.sql
+# carries the copy, so a check counting its own documentation is one nobody can satisfy.
+_envs_clean=1
+for _f in "$HERE"/../queries/*.sql "$HERE"/../dist/*.sql "$HERE"/../dist/*.conf \
+          "$HERE/../bin/discover" "$HERE/../bin/container-scan"; do
+  [ -f "$_f" ] || continue
+  _hits="$( { grep -nE '(^|[^a-zA-Z0-9_])(env_variables|docker_container_envs)([^a-zA-Z0-9_]|$)' \
+              "$_f" || true; } \
+            | { grep -vE '^[0-9]+:[[:space:]]*(#|--)' || true; } )"
+  if [ -n "$_hits" ]; then
+    echo "FAIL: $(basename "$_f") names a container's environment:"
+    printf '%s\n' "$_hits" | sed 's/^/      /'
+    echo "      env_variables and docker_container_envs hold ANTHROPIC_API_KEY and its like,"
+    echo "      and this payload leaves the machine. The column is never selected -- not"
+    echo "      selected-and-filtered, because the row is written on the endpoint."
+    fail=1; _envs_clean=0
+  fi
+done
+[ "$_envs_clean" = 1 ] &&
+  echo "container envs: ok, no query or artifact names env_variables or docker_container_envs"
+
 # ONE expensive query, and the check exists because the second one is a trap.
 # dist/discovery-deep.sql is run by bin/container-scan behind a guard that is specific to
 # Docker: a round trip to /_ping demanding HTTP 200. A second expensive branch composed
