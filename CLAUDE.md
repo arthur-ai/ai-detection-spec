@@ -165,6 +165,15 @@ you are testing on.** No interpreter — no `python`, `perl`, `ruby`, `node`. No
 not ship with macOS at all, and every use it would have is one `osqueryi` already covers. No
 GNU-only flag on a utility in that list, because BSD `sed` and `date` are what a Mac has.
 
+**`tools/bundle.py` widens that list by exactly two, and it is the only thing allowed to.**
+The one-file bundle it emits extracts a `tar` from `base64` before `bin/discover` starts, so
+a machine running a bundle needs those two on top of the table above. They are stock
+everywhere this repo runs and the cost is opt-in — a consumer who unpacks `bin/` and `dist/`
+themselves pays neither — but it is a widening rather than a detail, and it is written down
+in `docs/deployment.md` where a deployer will meet it. Nothing else may add to the list: the
+wrapper ships to the same machines the runner does, and `test/lint.sh` holds it to the same
+deny-list.
+
 **`osqueryi` is the JSON parser, and the shell is the serializer.** That is the whole toolkit
 and it is enough: `json_str`/`json_row` build a six-column row with `printf`; `osq_run`,
 `json_concat` and `merge_sql` read documents with the same SQLite that wrote them. If you are

@@ -482,5 +482,113 @@ python3 "$HERE/../tools/check_doc_numbers.py" || fail=1
 python3 "$HERE/../tools/agent_status.py" --json >/dev/null \
   || { echo "FAIL: agent_status.py --json does not serialise"; fail=1; }
 
+# --- the one-file bundle -----------------------------------------------------------------
+# tools/bundle.py packs bin/ and dist/ into one self-extracting script, for a management
+# platform that can host a script and cannot place files on disk. Everything it produces is
+# invisible afterwards: the payload is base64, so which files went in, and whether the
+# shell around them is sound, cannot be read off the artifact by eye. Checked here instead.
+#
+# Built into a temp directory rather than artifacts/, so a lint run never leaves a stale
+# bundle somewhere a release might pick it up.
+_bundle_tmp="$(mktemp -d "${TMPDIR:-/tmp}/lint-bundle.XXXXXX")"
+trap 'rm -rf "$_bundle_tmp"' EXIT HUP INT TERM
+_bundle_ok=1
+for _p in darwin linux; do
+  python3 "$HERE/../tools/bundle.py" --platform "$_p" --out "$_bundle_tmp/$_p.sh" >/dev/null \
+    || { echo "FAIL: tools/bundle.py --platform $_p did not build"; fail=1; _bundle_ok=0; continue; }
+  # GENERATED SHELL IS EXACTLY THE SHELL NOBODY READS. A wrapper edit in bundle.py produces
+  # this file unexamined, and bash reports a syntax error only when a fleet runs it.
+  bash -n "$_bundle_tmp/$_p.sh" \
+    || { echo "FAIL: bash syntax in the $_p bundle"; fail=1; _bundle_ok=0; }
+  # The check mode is what a consumer committing a bundle depends on, so it is exercised
+  # rather than assumed -- a --check that cannot fail is worse than no --check.
+  python3 "$HERE/../tools/bundle.py" --platform "$_p" --check "$_bundle_tmp/$_p.sh" >/dev/null \
+    || { echo "FAIL: a freshly built $_p bundle does not pass --check"; fail=1; _bundle_ok=0; }
+done
+
+# THE BUNDLE REFUSES THE OTHER PLATFORM BY NAME. The composed artifacts name disjoint sets
+# of tables, so the wrong bundle would die on a missing path and report a file when the
+# truth is about the build. Run here because the guard is the first thing in the script and
+# costs nothing: it fires before mktemp, before base64, before anything is unpacked.
+case "$(uname -s)" in Darwin) _other=linux ;; *) _other=darwin ;; esac
+if [ "$_bundle_ok" = 1 ]; then
+  if _out="$("$_bundle_tmp/$_other.sh" 2>&1)"; then
+    echo "FAIL: the $_other bundle ran on $(uname -s) instead of refusing"; fail=1
+  else
+    case "$_out" in
+      *"runs on"*only*) : ;;
+      *) echo "FAIL: the $_other bundle refused without naming the cause: $_out"; fail=1 ;;
+    esac
+  fi
+fi
+
+python3 - "$HERE/.." "$_bundle_tmp" <<'BUNDLE' || fail=1
+import base64, gzip, io, pathlib, re, sys, tarfile
+root, tmp = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
+sys.path.insert(0, str(root / "tools"))
+import bundle as B
+bad = []
+
+for plat in ("darwin", "linux"):
+    path = tmp / f"{plat}.sh"
+    if not path.exists():
+        bad.append(f"{plat}: not built"); continue
+    text = path.read_text()
+    head, body, tail = B._split(text)
+
+    # WHAT IS ACTUALLY IN THE PAYLOAD, read out of the payload. A list of filenames in
+    # bundle.py is a statement of intent; the tar is the artifact, and inside 37KB of
+    # base64 the difference between them is not something a reviewer can see.
+    names = sorted(tarfile.open(fileobj=io.BytesIO(
+        gzip.decompress(base64.b64decode(body))), mode="r").getnames())
+    want = sorted(B.payload_files(plat))
+    if names != want:
+        bad.append(f"{plat}: payload is {names}, declared {want}")
+
+    # THE ENDPOINT HOLDS NO CATALOG, and this is the check that survives someone adding a
+    # file to the list for a good-sounding reason. A machine carrying the signatures it is
+    # supposed to enumerate past is the one outcome the architecture exists to prevent.
+    for leak in B.FORBIDDEN:
+        if any(leak in n for n in names) or leak in text:
+            bad.append(f"{plat}: the bundle carries or names {leak!r}")
+
+    # THE WRAPPER SHIPS TO THE SAME MACHINES bin/discover DOES, so it lives under the same
+    # rule: no interpreter, no JSON tool. On a managed Mac /usr/bin/python3 is a stub that
+    # prints an install prompt and exits 1, and a wrapper built on it would fail before the
+    # runner it was written to protect ever started.
+    wrapper = head[:head.index("<<")] + tail
+    code = "\n".join(l for l in wrapper.splitlines() if not l.strip().startswith("#"))
+    hit = re.search(r"(?:^|[|;&(`]|\$\(|\s)(python3?|jq|perl|ruby|node|deno|php)\b", code)
+    if hit:
+        bad.append(f"{plat}: the wrapper reaches for {hit.group(1)}")
+
+    # RUN, NOT exec. A shell replaced by exec does not run its EXIT trap, so the extracted
+    # tree stays in TMPDIR -- one copy per run on a schedule, surfacing months later as a
+    # full volume and looking like anything but this script. Verified behaviour, not a
+    # style preference, which is why it is a gate.
+    if re.search(r"^\s*exec\s", code, re.M):
+        bad.append(f"{plat}: the wrapper execs the runner, which skips the cleanup trap")
+    if "trap " not in code or "rm -rf" not in code:
+        bad.append(f"{plat}: the wrapper does not remove its working directory")
+
+# A LABEL IS THE ONLY CALLER TEXT THAT REACHES THE GENERATED SHELL, and it lands in a
+# comment line. A newline in it ends the comment and the rest becomes shell, in a file
+# that still looks exactly like a bundle. The refusal lives in wrapper(), so --check is
+# covered too; asserted here because a guard nothing exercises is a guard that can be
+# removed without anything going red.
+try:
+    B.wrapper("darwin", list(B.payload_files("darwin")), None, "v1\necho pwned")
+    bad.append("a --label containing a newline was accepted")
+except SystemExit:
+    pass
+
+for b in bad:
+    print(f"FAIL: bundle: {b}")
+if bad:
+    sys.exit(1)
+print("bundle: ok, both platforms build, carry only endpoint material, refuse a label "
+      "that would escape the banner, and clean up after themselves")
+BUNDLE
+
 [ "$fail" -eq 0 ] && echo "lint: PASS" || echo "lint: FAIL"
 exit "$fail"
