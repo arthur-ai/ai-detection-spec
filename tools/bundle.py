@@ -226,6 +226,33 @@ def _split(text):
     return text[:open_at], text[open_at:close_at], text[close_at:]
 
 
+class CorruptBundle(Exception):
+    """A bundle's payload could not be decoded into the tar it is supposed to be."""
+
+
+def _payload_bytes(text):
+    """The decompressed payload of a bundle, or CorruptBundle.
+
+    ONE EXCEPTION FOR A CLASS OF FAILURE, BECAUSE ENUMERATING THEM HAS BEEN WRONG THREE
+    TIMES. The callers used to list the types they expected from base64 and gzip, and the
+    list was short every time: first OSError and ValueError, then EOFError (a TRUNCATED
+    payload, which is what a half-copied file is) and tarfile.TarError, then zlib.error,
+    which inherits straight from Exception and is what malformed DEFLATE raises -- three of
+    four ways of corrupting a stream produce it. Each round was a traceback where the
+    caller had promised an answer.
+
+    So the catch is broad and the SCOPE is narrow: two stdlib calls on bytes a caller
+    supplied. Anything either of them raises means one thing -- this is not a payload --
+    and there is nothing else in here for a broad catch to hide. payload_tar() and the
+    comparison stay outside it, where a real defect still surfaces as one.
+    """
+    _, body, _ = _split(text)
+    try:
+        return gzip.decompress(base64.b64decode(body))
+    except Exception as exc:
+        raise CorruptBundle(f"{type(exc).__name__}: {exc}") from exc
+
+
 def read_member(text, name):
     """One file out of a built bundle, by its name in the payload.
 
@@ -244,8 +271,10 @@ def read_member(text, name):
     that exists and is empty.
     """
     import io
-    _, body, _ = _split(text)
-    tar = tarfile.open(fileobj=io.BytesIO(gzip.decompress(base64.b64decode(body))))
+    try:
+        tar = tarfile.open(fileobj=io.BytesIO(_payload_bytes(text)))
+    except tarfile.TarError as exc:
+        raise CorruptBundle(f"{type(exc).__name__}: {exc}") from exc
     try:
         member = tar.extractfile(name)
     except KeyError:
@@ -270,7 +299,7 @@ def matches(text, root, platform, driver=None, label=""):
     bytes zlib chose is not a fact about this repo.
     """
     try:
-        head, body, tail = _split(text)
+        head, _, tail = _split(text)
         want = wrapper(platform, list(payload_files(platform)), driver, label)
         want_head, _, want_tail = _split(want)
     except ValueError:
@@ -278,14 +307,17 @@ def matches(text, root, platform, driver=None, label=""):
     if (head, tail) != (want_head, want_tail):
         return False
     try:
-        return gzip.decompress(base64.b64decode(body)) == payload_tar(root, platform, driver)
-    except (OSError, ValueError, EOFError, tarfile.TarError):
-        # CORRUPT IS "DOES NOT MATCH", WHICH IS THIS FUNCTION'S WHOLE QUESTION. EOFError was
-        # missing and is the likeliest of the four: gzip raises it on a TRUNCATED payload,
-        # which is exactly what a half-written or half-copied bundle is. This is what
-        # --check calls, and what a consumer's own gate calls, so the uncaught version
-        # crashed the gate instead of reporting the artifact as stale.
+        payload = _payload_bytes(text)
+    except CorruptBundle:
+        # CORRUPT IS "DOES NOT MATCH", WHICH IS THIS FUNCTION'S WHOLE QUESTION. This is what
+        # --check calls and what a consumer's own gate calls, so raising here crashed the
+        # gate instead of reporting the artifact as not carrying the tree -- and "the check
+        # blew up" and "the check says no" are different answers to someone deciding
+        # whether to ship.
         return False
+    # OUTSIDE the catch on purpose: a missing vendored file is this repo's problem, not a
+    # corrupt bundle, and it should not be able to read as "does not match".
+    return payload == payload_tar(root, platform, driver)
 
 
 def main():
@@ -311,13 +343,13 @@ def main():
             sys.stdout.buffer.write(read_member(pathlib.Path(path).read_text(), name))
         except KeyError as exc:
             sys.exit(f"bundle: {exc}")
-        except (OSError, ValueError, EOFError, tarfile.TarError) as exc:
-            # Every way a payload can be wrong, named rather than raised: bad base64
-            # (ValueError), bad gzip magic (OSError), a TRUNCATED payload (EOFError) and a
-            # decompressed blob that is not a tar (TarError). The last two reached the user
-            # as a traceback, which says the same thing in a form nobody can act on.
-            sys.exit(f"bundle: {path} is not a bundle this can read: "
-                     f"{type(exc).__name__}: {exc}")
+        except CorruptBundle as exc:
+            # Every way a payload can be wrong arrives here as one thing, named rather than
+            # raised: bad base64, bad gzip magic, a truncated payload, malformed DEFLATE, or
+            # a blob that ungzips to something that is not a tar.
+            sys.exit(f"bundle: {path} is not a bundle this can read: {exc}")
+        except (OSError, ValueError) as exc:
+            sys.exit(f"bundle: cannot read {path}: {exc}")
         return
 
     # THE CATALOG MUST NOT REACH AN ENDPOINT. One line here, and the failure it prevents --

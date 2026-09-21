@@ -581,7 +581,7 @@ if [ "$_bundle_ok" = 1 ]; then
 fi
 
 python3 - "$HERE/.." "$_bundle_tmp" <<'BUNDLE' || fail=1
-import base64, gzip, io, pathlib, re, sys, tarfile
+import base64, gzip, io, os, pathlib, re, sys, tarfile
 root, tmp = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
 sys.path.insert(0, str(root / "tools"))
 import bundle as B
@@ -668,15 +668,32 @@ _head, _body, _tail = B._split(_wrapped)
 def _corrupt(raw):
     b = base64.b64encode(raw).decode()
     return _head + "\n".join(b[i:i + 76] for i in range(0, len(b), 76)) + _tail
-for _what, _text in (("a truncated payload", _corrupt(gzip.compress(b"x" * 100)[:20])),
-                     ("gzip that is not a tar", _corrupt(gzip.compress(b"not a tar"))),
-                     ("a body that is not base64", _head + "!!!! not base64 !!!!" + _tail)):
+_gz = gzip.compress(os.urandom(4000))          # incompressible: a long DEFLATE stream
+for _what, _text in (
+        ("a truncated payload", _corrupt(_gz[:20])),
+        # MALFORMED DEFLATE IS ITS OWN FAILURE and was the third type this list was short
+        # of: zlib.error inherits straight from Exception, and three of four ways of
+        # corrupting a stream produce it rather than a gzip or tar error.
+        ("malformed DEFLATE", _corrupt(_gz[:10] + bytes(x ^ 0xFF for x in _gz[10:14]) + _gz[14:])),
+        ("a failed CRC", _corrupt(_gz[:100] + bytes([_gz[100] ^ 0xFF]) + _gz[101:])),
+        ("gzip that is not a tar", _corrupt(gzip.compress(b"not a tar"))),
+        ("a body that is not base64", _head + "!!!! not base64 !!!!" + _tail)):
     try:
         if B.matches(_text, root, "darwin", driver=str(_drv), label="lint"):
             bad.append(f"matches() accepted {_what}")
     except Exception as exc:
         bad.append(f"matches() raised {type(exc).__name__} on {_what} instead of "
                    f"answering False -- this is what --check calls")
+    # And the reader turns every one of them into the SAME exception, so a caller has one
+    # thing to catch rather than a list that has now been short three times.
+    try:
+        B.read_member(_text, "driver")
+        bad.append(f"read_member() returned a member out of {_what}")
+    except B.CorruptBundle:
+        pass
+    except Exception as exc:
+        bad.append(f"read_member() raised {type(exc).__name__} on {_what}; every decode "
+                   f"failure must arrive as CorruptBundle")
 
 # A LABEL IS THE ONLY CALLER TEXT THAT REACHES THE GENERATED SHELL, and it lands in a
 # comment line. A newline in it ends the comment and the rest becomes shell, in a file
