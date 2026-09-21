@@ -81,9 +81,20 @@ $ python3 tools/bundle.py --platform darwin --driver ./my-collector.sh
 ```
 
 The bundle then runs `my-collector.sh` instead of `bin/discover`, with `AI_DISCOVERY_ROOT`
-pointing at the extracted tree and the arguments passed through. What it does with them —
-where it writes, what it frames, what it reports when the payload is too big for its channel
-— is yours, and stays yours through a version bump of this repo.
+pointing at the extracted tree and the arguments passed through. Your driver owns the exit
+status. What it does with them — where it writes, what it frames, what it reports when the
+payload is too big for its channel — is yours, and stays yours through a version bump here.
+
+Your driver is inside the payload once it is bundled, so anything you had that checked your
+own collector by reading it needs a way back in:
+
+```console
+$ python3 tools/bundle.py --platform darwin --member driver ./my-bundle.sh
+```
+
+That is a supported interface, not a debugging trick — `read_member()` in Python is the same
+thing. Reaching into the file yourself is how a consumer ends up pinned to an internal detail,
+which this project has already done to one downstream repo by removing `bin/discover --framed`.
 
 ## `status.txt`, whose vocabulary is a contract
 

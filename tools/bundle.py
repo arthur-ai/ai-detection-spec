@@ -101,7 +101,8 @@ set -uo pipefail
 case "$(uname -s)" in
   @UNAME@) ;;
   *) echo "ai-discovery: this bundle carries dist/discovery-@PLATFORM@.sql and runs on" \
-          "@UNAME@ only. Build the other one with tools/bundle.py --platform." >&2
+          "@UNAME@ only. Use the bundle for this platform -- every release attaches one" \
+          "per platform -- or build it with tools/bundle.py --platform." >&2
      exit 1 ;;
 esac
 
@@ -224,6 +225,39 @@ def _split(text):
     return text[:open_at], text[open_at:close_at], text[close_at:]
 
 
+def read_member(text, name):
+    """One file out of a built bundle, by its name in the payload.
+
+    PUBLIC BECAUSE A CONSUMER ALREADY NEEDS IT, and was reaching past the underscore to get
+    it. A wrapper built with --driver puts the consumer's own script inside the payload, so
+    every check that consumer had which used to grep its collector -- is the frame still
+    there, is the size cap still enforced -- now has to read the member back. The first
+    repo to adopt --driver wrote that against `_split`, which is exactly the shape of the
+    breakage this project has already shipped once: `bin/discover --framed` was removed
+    here for good reasons and took a downstream collector with it. An interface a consumer
+    must use is an interface this repo maintains, and the way to make that true is to say
+    so rather than to hope.
+
+    Returns bytes. A name that is not in the payload raises KeyError, so a caller asking
+    for the wrong thing is told, rather than handed an empty string it will treat as a file
+    that exists and is empty.
+    """
+    import io
+    _, body, _ = _split(text)
+    tar = tarfile.open(fileobj=io.BytesIO(gzip.decompress(base64.b64decode(body))))
+    try:
+        member = tar.extractfile(name)
+    except KeyError:
+        member = None
+    if member is None:
+        # tarfile raises its own KeyError first, whose message names only what was asked
+        # for. Saying what IS in there turns "not found" into an answer: a caller reading
+        # `driver` out of a bundle built without one needs to know that is why.
+        raise KeyError(f"{name!r} is not a file in this bundle's payload; it carries "
+                       f"{sorted(tar.getnames())}")
+    return member.read()
+
+
 def matches(text, root, platform, driver=None, label=""):
     """Does an existing bundle carry this tree?
 
@@ -258,7 +292,22 @@ def main():
     ap.add_argument("--label", default="", help="a release name, recorded in the banner")
     ap.add_argument("--check", metavar="PATH",
                     help="fail unless PATH already carries this tree; writes nothing")
+    ap.add_argument("--member", nargs=2, metavar=("NAME", "PATH"),
+                    help="print one file out of a built bundle, e.g. --member driver ./b.sh")
     args = ap.parse_args()
+
+    # READING A BUNDLE BACK IS PART OF THE INTERFACE, not a debugging convenience. A
+    # consumer using --driver has checks that used to grep its own collector and now have to
+    # reach into the payload; giving them a command means they do not reach into `_split`.
+    if args.member:
+        name, path = args.member
+        try:
+            sys.stdout.buffer.write(read_member(pathlib.Path(path).read_text(), name))
+        except KeyError as exc:
+            sys.exit(f"bundle: {exc}")
+        except (OSError, ValueError) as exc:
+            sys.exit(f"bundle: {path} is not a bundle this can read: {exc}")
+        return
 
     # THE CATALOG MUST NOT REACH AN ENDPOINT. One line here, and the failure it prevents --
     # a machine carrying the signatures it is supposed to enumerate past -- would be

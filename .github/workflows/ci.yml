@@ -225,6 +225,31 @@ jobs:
           [ -z "$left" ] || { echo "::error::the bundle left its payload behind: $left"; exit 1; }
           echo "no extracted payload left on disk"
 
+          # --driver IS WHAT A CONSUMER BUILDS ON, AND IT SHIPPED WITH NO TEST. The hook
+          # hands a driver the extracted tree in AI_DISCOVERY_ROOT, passes the arguments
+          # through, and lets it own the exit status. All three are asserted here because a
+          # repo downstream now makes its entire deployable out of this, and a hook that
+          # quietly stopped passing one of them would surface there rather than here.
+          cat > /tmp/drv.sh <<'DRV'
+          #!/bin/bash
+          [ -x "$AI_DISCOVERY_ROOT/bin/discover" ] \
+            || { echo "::error::the driver got no runner beside it"; exit 1; }
+          [ "${1:-}" = passed-through ] \
+            || { echo "::error::arguments did not reach the driver: $*"; exit 1; }
+          exit 7
+          DRV
+          python3 tools/bundle.py --platform darwin --driver /tmp/drv.sh \
+            --out /tmp/bundle/wrapped.sh
+          set +e; /tmp/bundle/wrapped.sh passed-through; s=$?; set -e
+          [ "$s" = 7 ] \
+            || { echo "::error::the driver's exit status did not propagate: got $s"; exit 1; }
+          # And it must be readable back out, which is how a consumer's own guards inspect
+          # what they shipped.
+          python3 tools/bundle.py --platform darwin --member driver \
+            /tmp/bundle/wrapped.sh | grep -q "exit 7" \
+            || { echo "::error::--member could not read the driver back"; exit 1; }
+          echo "driver: tree, arguments and exit status all arrived, and it reads back"
+
       # bin/classify is the reference reader. A payload the classifier cannot read is not a
       # payload, and the scenarios job that normally covers this runs only on main.
       - name: The classifier reads the payload
@@ -454,6 +479,31 @@ jobs:
           left="$(ls -d /tmp/ai-discovery.* /var/tmp/ai-discovery.* 2>/dev/null || true)"
           [ -z "$left" ] || { echo "::error::the bundle left its payload behind: $left"; exit 1; }
           echo "no extracted payload left on disk"
+
+          # --driver IS WHAT A CONSUMER BUILDS ON, AND IT SHIPPED WITH NO TEST. The hook
+          # hands a driver the extracted tree in AI_DISCOVERY_ROOT, passes the arguments
+          # through, and lets it own the exit status. All three are asserted here because a
+          # repo downstream now makes its entire deployable out of this, and a hook that
+          # quietly stopped passing one of them would surface there rather than here.
+          cat > /tmp/drv.sh <<'DRV'
+          #!/bin/bash
+          [ -x "$AI_DISCOVERY_ROOT/bin/discover" ] \
+            || { echo "::error::the driver got no runner beside it"; exit 1; }
+          [ "${1:-}" = passed-through ] \
+            || { echo "::error::arguments did not reach the driver: $*"; exit 1; }
+          exit 7
+          DRV
+          python3 tools/bundle.py --platform linux --driver /tmp/drv.sh \
+            --out /tmp/bundle/wrapped.sh
+          set +e; /tmp/bundle/wrapped.sh passed-through; s=$?; set -e
+          [ "$s" = 7 ] \
+            || { echo "::error::the driver's exit status did not propagate: got $s"; exit 1; }
+          # And it must be readable back out, which is how a consumer's own guards inspect
+          # what they shipped.
+          python3 tools/bundle.py --platform linux --member driver \
+            /tmp/bundle/wrapped.sh | grep -q "exit 7" \
+            || { echo "::error::--member could not read the driver back"; exit 1; }
+          echo "driver: tree, arguments and exit status all arrived, and it reads back"
 
       - name: The classifier reads the payload
         run: |

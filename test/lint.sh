@@ -624,6 +624,34 @@ for plat in ("darwin", "linux"):
     if "trap " not in code or "rm -rf" not in code:
         bad.append(f"{plat}: the wrapper does not remove its working directory")
 
+# --driver IS THE ONE THING A CONSUMER BUILDS ON, AND IT SHIPPED WITH NO TEST AT ALL.
+# release.yml names it in a comment; nothing exercised it. The first repo to adopt it made
+# its entire deployable out of it -- a wrapper around its own script -- so a --driver that
+# quietly stopped embedding, or a --check that ignored the driver and blessed a stale
+# bundle, would be someone's fleet.
+_drv = tmp / "driver.sh"
+_drv.write_text("#!/bin/bash\necho marker-in-driver\n")
+_wrapped = B.build(root, "darwin", driver=str(_drv), label="lint")
+
+if B.read_member(_wrapped, "driver") != _drv.read_bytes():
+    bad.append("--driver did not put the driver in the payload byte for byte")
+if "AI_DISCOVERY_ROOT" not in _wrapped:
+    bad.append("a --driver bundle does not set AI_DISCOVERY_ROOT, which is the whole "
+               "interface the driver is handed")
+# CHECK MUST BE DRIVER-SENSITIVE. Comparing only the wrapper would pass a bundle carrying
+# somebody else's driver, which is the one substitution this hook makes possible.
+if not B.matches(_wrapped, root, "darwin", driver=str(_drv), label="lint"):
+    bad.append("--check rejects a bundle it has just built with a driver")
+if B.matches(_wrapped, root, "darwin", label="lint"):
+    bad.append("--check accepts a driver bundle as a plain one -- it is not reading the "
+               "payload, so any driver would pass")
+# The default bundle must NOT carry one, or every consumer ships a file it did not ask for.
+try:
+    B.read_member(B.build(root, "darwin", label="lint"), "driver")
+    bad.append("a bundle built without --driver carries a driver anyway")
+except KeyError:
+    pass
+
 # A LABEL IS THE ONLY CALLER TEXT THAT REACHES THE GENERATED SHELL, and it lands in a
 # comment line. A newline in it ends the comment and the rest becomes shell, in a file
 # that still looks exactly like a bundle. The refusal lives in wrapper(), so --check is
@@ -639,8 +667,8 @@ for b in bad:
     print(f"FAIL: bundle: {b}")
 if bad:
     sys.exit(1)
-print("bundle: ok, both platforms build, carry only endpoint material, refuse a label "
-      "that would escape the banner, and clean up after themselves")
+print("bundle: ok, both platforms build, carry only endpoint material, embed and compare a "
+      "--driver, refuse a label that would escape the banner, and clean up after themselves")
 BUNDLE
 
 [ "$fail" -eq 0 ] && echo "lint: PASS" || echo "lint: FAIL"
