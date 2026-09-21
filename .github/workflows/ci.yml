@@ -193,7 +193,14 @@ jobs:
       # bundle.
       - name: The one-file bundle, run away from the checkout
         run: |
-          python3 tools/bundle.py --platform darwin --out /tmp/bundle/ai-discovery.sh
+          # THE REPO PATH IS CAPTURED BEFORE `cd /`, and the second build below is why.
+          # Running the bundle from / is the point of this step -- it proves the file needs
+          # no checkout beside it -- but the BUILDER still does, and a relative path after
+          # the cd resolved to //tools/bundle.py and failed the job. Local runs did not
+          # reproduce it: it only bites if you replicate the cd, which is the part that
+          # looks like scenery.
+          repo="$PWD"
+          python3 "$repo/tools/bundle.py" --platform darwin --out /tmp/bundle/ai-discovery.sh
           cd /
           sudo -n env OSQI=/usr/local/bin/osqueryi /tmp/bundle/ai-discovery.sh \
             --write /tmp/bundle-inv.json --status /tmp/bundle.status > /dev/null
@@ -238,14 +245,14 @@ jobs:
             || { echo "::error::arguments did not reach the driver: $*"; exit 1; }
           exit 7
           DRV
-          python3 tools/bundle.py --platform darwin --driver /tmp/drv.sh \
+          python3 "$repo/tools/bundle.py" --platform darwin --driver /tmp/drv.sh \
             --out /tmp/bundle/wrapped.sh
           set +e; /tmp/bundle/wrapped.sh passed-through; s=$?; set -e
           [ "$s" = 7 ] \
             || { echo "::error::the driver's exit status did not propagate: got $s"; exit 1; }
           # And it must be readable back out, which is how a consumer's own guards inspect
           # what they shipped.
-          python3 tools/bundle.py --platform darwin --member driver \
+          python3 "$repo/tools/bundle.py" --platform darwin --member driver \
             /tmp/bundle/wrapped.sh | grep -q "exit 7" \
             || { echo "::error::--member could not read the driver back"; exit 1; }
           echo "driver: tree, arguments and exit status all arrived, and it reads back"
@@ -448,7 +455,14 @@ jobs:
       # bundle.
       - name: The one-file bundle, run away from the checkout
         run: |
-          python3 tools/bundle.py --platform linux --out /tmp/bundle/ai-discovery.sh
+          # THE REPO PATH IS CAPTURED BEFORE `cd /`, and the second build below is why.
+          # Running the bundle from / is the point of this step -- it proves the file needs
+          # no checkout beside it -- but the BUILDER still does, and a relative path after
+          # the cd resolved to //tools/bundle.py and failed the job. Local runs did not
+          # reproduce it: it only bites if you replicate the cd, which is the part that
+          # looks like scenery.
+          repo="$PWD"
+          python3 "$repo/tools/bundle.py" --platform linux --out /tmp/bundle/ai-discovery.sh
           cd /
           sudo -n /tmp/bundle/ai-discovery.sh \
             --write /tmp/bundle-inv.json --status /tmp/bundle.status > /dev/null
@@ -493,14 +507,14 @@ jobs:
             || { echo "::error::arguments did not reach the driver: $*"; exit 1; }
           exit 7
           DRV
-          python3 tools/bundle.py --platform linux --driver /tmp/drv.sh \
+          python3 "$repo/tools/bundle.py" --platform linux --driver /tmp/drv.sh \
             --out /tmp/bundle/wrapped.sh
           set +e; /tmp/bundle/wrapped.sh passed-through; s=$?; set -e
           [ "$s" = 7 ] \
             || { echo "::error::the driver's exit status did not propagate: got $s"; exit 1; }
           # And it must be readable back out, which is how a consumer's own guards inspect
           # what they shipped.
-          python3 tools/bundle.py --platform linux --member driver \
+          python3 "$repo/tools/bundle.py" --platform linux --member driver \
             /tmp/bundle/wrapped.sh | grep -q "exit 7" \
             || { echo "::error::--member could not read the driver back"; exit 1; }
           echo "driver: tree, arguments and exit status all arrived, and it reads back"
