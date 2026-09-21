@@ -49,6 +49,9 @@ UNION ALL
 -- contract already reserves for capability facts. A privileged agent container can reach
 -- the host, and an unprivileged one cannot. env_variables is NOT selected here and must never
 -- be: it holds ANTHROPIC_API_KEY and its like, and this payload leaves the machine.
+-- test/lint.sh FAILS ON THE NAME -- here, in dist/ and in the pack -- because nothing else
+-- does: a branch selecting it is six columns wide on a registered kind, and every other
+-- gate passes it. Comments are excluded there, which is why this one may say it.
 SELECT 'container' AS kind, c.image AS id, c.state AS ver, c.id AS loc,
        c.command AS extra,
        CASE WHEN c.privileged = 1 THEN 'privileged' ELSE '' END AS perms

@@ -269,7 +269,7 @@ in both directions — a stale artifact and an artifact nothing generates are th
 ## Testing
 
 ```console
-$ test/lint.sh                      # contract, first-arm aliases, kind coverage
+$ test/lint.sh                      # contract, first-arm aliases, kind coverage, container envs
 $ python3 tools/build.py --check    # dist/ matches queries/
 $ python3 tools/validate_catalog.py # + routes.yaml, platforms, value_pattern
 $ python3 tools/check_no_catalog.py
