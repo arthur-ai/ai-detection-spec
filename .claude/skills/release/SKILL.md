@@ -266,15 +266,19 @@ $ gh run list --workflow=release.yml --limit=1
 $ gh release view v<X.Y.Z> --json assets --jq '[.assets[].name]'
 ```
 
-**Nine assets**, and a missing one is a broken release: `discovery-darwin.sql`,
+**Eleven assets**, and a missing one is a broken release: `discovery-darwin.sql`,
 `discovery-linux.sql`, `discovery-deep.sql`, `ai-discovery.conf`, `discover`, `container-scan`,
-`classify`, `agents.yaml`, `routes.yaml`.
+`classify`, `agents.yaml`, `routes.yaml`, `ai-discovery-darwin.sh`, `ai-discovery-linux.sh`.
+`tools/check_workflows.py` derives this list from `release.yml` and fails when the two
+disagree — it read `Nine` for a release after the bundles were added, because no gate read
+this file.
 
 Two things the notes must say about layout, because the scripts resolve each other by relative
 path: ship `bin/`, `dist/` and `catalog/` **side by side** — loose in one folder, `bin/discover`
 will not find its artifact — and `classify` needs both catalog files beside it, since it defaults
 to `catalog/agents.yaml` relative to its own parent and derives its route vocabulary from
-`routes.yaml`.
+`routes.yaml`. The two `ai-discovery-*.sh` bundles are that layout packed into one file, for a
+consumer who would rather not reproduce it; they carry no catalog and no classifier.
 
 
 **Deployment glue for a particular MDM is not released from here.** This repo ships osquery
