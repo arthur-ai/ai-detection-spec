@@ -196,7 +196,7 @@ You do not need all of them. Which you take depends on where the thing runs.
 | | |
 |---|---|
 | `discovery-darwin.sql`<br>`discovery-linux.sql` | The query for each platform. Take the one that matches — `bin/discover` picks by `uname -s`, so you can ship both |
-| `discovery-deep.sql` | The container-image query. A supplement, not a superset, and only `bin/container-scan` runs it |
+| `discovery-deep.sql` | The container-image query, and a supplement rather than a superset. `bin/container-scan` is the only thing that runs it, because the wall-clock bound lives there — and `bin/discover --deep` reaches it by calling that. Take this file if you use either |
 | `ai-discovery.conf` | The osqueryd pack, carrying every platform's queries with osqueryd's own per-query `platform` field. Take this *instead of* the `.sql` files if you schedule through osqueryd rather than calling `bin/discover` |
 | `discover` | Runs the query for the platform it is on and prints one JSON array |
 | `container-scan` | Runs the deep query under a time limit. The only supported way to run it |
