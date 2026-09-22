@@ -309,6 +309,72 @@ if _rel.exists():
                       f"number.")
                 failed = True
 
+# --- EVERY EXPENSIVE JOB ON A PULL REQUEST IS GATED BY THE SCOPE JOB ---------------------
+#
+# The scenario matrix bills ten minutes for a macOS job that ran for nine seconds, and a
+# pull request that edits only prose cannot change what osqueryi finds on a Mac. The
+# `scope` job answers that once and the expensive jobs read its output; the rule itself is
+# tools/ci_scope.py.
+#
+# THIS CHECK EXISTS BECAUSE THE GATE IS OPT-IN PER JOB, which makes forgetting it the
+# default. A new macOS job added without `needs: scope` is not broken and not red: it
+# simply runs on every README edit forever, and the only symptom is a bill. That is the
+# same shape as a `kind` missing from KIND_ROUTES -- invisible, and green.
+#
+# EXPENSIVE IS DERIVED, NOT LISTED: a job is expensive if it runs on macOS, or if one of
+# its steps installs osquery. Both are read off the job, so a job cannot escape by being
+# named something this file has not heard of.
+def _expensive(spec):
+    labels = (((spec.get("strategy") or {}).get("matrix") or {}).get("os") or [])
+    if "macos" in " ".join([str(spec.get("runs-on", ""))] + [str(x) for x in labels]):
+        return "it runs on macOS, which bills at ten times the Linux rate"
+    if any("pkg.osquery.io" in (s.get("run", "") or "") for s in spec.get("steps", [])):
+        return "it installs osquery, so it needs a runner rather than a static check"
+    return None
+
+
+for path in sorted(root.glob("*.y*ml")):
+    try:
+        doc = yaml.safe_load(path.read_text())
+    except yaml.YAMLError:
+        continue  # already reported at the top of this file
+    trig = doc.get("on") or doc.get(True) or {}
+    if not isinstance(trig, dict) or "pull_request" not in trig:
+        continue  # release.yml and docs.yml do not run per pull request
+    jobs = doc.get("jobs") or {}
+    costly = {n: why for n, s in jobs.items() if (why := _expensive(s))}
+    if costly and "scope" not in jobs:
+        print(f"FAIL: {path.name} runs {sorted(costly)} on every pull request and has no "
+              f"`scope` job to gate them. A documentation-only change would pay for all "
+              f"of them.")
+        failed = True
+        continue
+    for name, why in sorted(costly.items()):
+        spec = jobs[name]
+        needs = spec.get("needs") or []
+        needs = [needs] if isinstance(needs, str) else list(needs)
+        cond = str(spec.get("if") or "")
+        if "scope" not in needs or "needs.scope.outputs.runtime" not in cond:
+            print(f"FAIL: {path.name} job {name!r} is expensive ({why}) and is not gated "
+                  f"on the scope job. Add `needs: scope` and "
+                  f"`if: needs.scope.outputs.runtime == 'true'`, or it runs on every "
+                  f"documentation-only pull request and nothing goes red to say so.")
+            failed = True
+    # A job that depends on a gated one must be gated too, or `always()` runs it against
+    # nothing -- which is how the coverage gate would come to pass having judged nothing.
+    for name, spec in sorted(jobs.items()):
+        needs = spec.get("needs") or []
+        needs = [needs] if isinstance(needs, str) else list(needs)
+        if name in costly or not (set(needs) & set(costly)):
+            continue
+        if "needs.scope.outputs.runtime" not in str(spec.get("if") or ""):
+            print(f"FAIL: {path.name} job {name!r} depends on the gated job(s) "
+                  f"{sorted(set(needs) & set(costly))} without reading the scope gate "
+                  f"itself. When they skip it still runs, on whatever they did not "
+                  f"produce.")
+            failed = True
+
+
 if not failed:
     print(f"workflows: ok, {len(list(root.glob('*.y*ml')))} parse and declare jobs, "
           f"every referenced path exists, {len(_matrix)} scenarios across "

@@ -7,7 +7,68 @@ on:
   push:
     branches: [main]
 
+# Cancel a pull request's superseded runs; NEVER a main or a scheduled one. Pushing five
+# times to a branch then costs one suite rather than five, and the runs being cancelled
+# are ones whose answer nobody will read. scenarios.yml has had this since it was written
+# and these two did not: measured 2026-09-22, six runs over the preceding four days were
+# kept alive to completion for no reader. A dated observation, not a standing figure.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
+  # WHAT THIS DIFF CAN MOVE, decided once and read by the expensive jobs below.
+  #
+  # A JOB-LEVEL `if`, NOT A WORKFLOW-LEVEL `paths:` FILTER, and the difference is the
+  # whole reason this job exists rather than three lines under `on:`. A workflow filtered
+  # out by `paths` never reports a check at all -- it vanishes from the pull request's
+  # list, leaving every remaining check green, which is precisely the failure
+  # tools/check_workflows.py was written for and which that file calls worse than a red
+  # build. A job whose `if` is false reports SKIPPED: visible in the list, and counted as
+  # passing by a required status check rather than blocking it forever.
+  #
+  # The rule itself is in tools/ci_scope.py, in ONE place, because three workflows ask
+  # this question and three copies of the answer would be three lists that have to agree.
+  scope:
+    name: What this diff can move
+    runs-on: ubuntu-latest
+    outputs:
+      runtime: ${{ steps.scope.outputs.runtime }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The diff needs the base commit, not just the tip. The whole repo is 5MB.
+          fetch-depth: 0
+      - id: scope
+        env:
+          # `before` is the previous tip on a push and all-zeros on a force-push or a
+          # branch's first push; ci_scope.py reads that as "cannot tell" and runs.
+          BASE: ${{ github.event_name == 'pull_request'
+                    && github.event.pull_request.base.sha || github.event.before }}
+          EVENT: ${{ github.event_name }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          # A schedule or a manual dispatch has no diff to read, and a dispatch is
+          # somebody asking for this on purpose. Both run everything.
+          case "$EVENT" in
+            pull_request|push) ;;
+            *) echo "runtime=true" >> "$GITHUB_OUTPUT"
+               echo "$EVENT has no diff to read; running every gate"
+               exit 0 ;;
+          esac
+          python3 tools/ci_scope.py "$BASE" "$HEAD_SHA" >> "$GITHUB_OUTPUT"
+          # AN EMPTY OUTPUT IS THE ONE FAILURE THIS GATE COULD HIDE. A false `if` and an
+          # unset output are the same string to GitHub, so a scope job that succeeded
+          # while writing nothing would skip the whole suite and report green -- an empty
+          # result indistinguishable from a clean one, in the place that decides whether
+          # anything gets checked at all. A crash is already red; this covers the rest.
+          grep -qE '^runtime=(true|false)$' "$GITHUB_OUTPUT" || {
+            echo "::error::ci_scope.py wrote no verdict. Refusing to skip the suite on"
+            echo "::error::a gate that did not answer."
+            exit 1
+          }
+          grep '^runtime=' "$GITHUB_OUTPUT"
+
   lint:
     # PLATFORM-FREE BY DESIGN, and it runs on ubuntu because it needs no osquery: it
     # checks BOTH platforms' queries statically -- the six-column contract, first-arm
@@ -30,6 +91,8 @@ jobs:
         run: test/lint.sh
 
   query-runs:
+    needs: scope
+    if: needs.scope.outputs.runtime == 'true'
     name: Runtime on macOS
     # Pinned deliberately: GitHub reissues these images, and a new image adding
     # software is drift the baseline should catch rather than silently absorb.
@@ -306,6 +369,8 @@ jobs:
   # /usr/bin/osqueryi instead of /usr/local/bin, and the Linux branch names in the status
   # vocabulary.
   query-runs-linux:
+    needs: scope
+    if: needs.scope.outputs.runtime == 'true'
     name: Runtime on Linux
     runs-on: ubuntu-24.04
     steps:
