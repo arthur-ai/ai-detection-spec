@@ -183,6 +183,46 @@ get the raw inventory instead:
 ]
 ```
 
+## What a release attaches
+
+**Eleven assets**: `discovery-darwin.sql`, `discovery-linux.sql`, `discovery-deep.sql`,
+`ai-discovery.conf`, `discover`, `container-scan`, `classify`, `agents.yaml`, `routes.yaml`,
+`ai-discovery-darwin.sh`, `ai-discovery-linux.sh`.
+
+You do not need all of them. Which you take depends on where the thing runs.
+
+**On the endpoint**
+
+| | |
+|---|---|
+| `discovery-darwin.sql`<br>`discovery-linux.sql` | The query for each platform. Take the one that matches — `bin/discover` picks by `uname -s`, so you can ship both |
+| `discovery-deep.sql` | The container-image query. A supplement, not a superset, and only `bin/container-scan` runs it |
+| `ai-discovery.conf` | The osqueryd pack, carrying every platform's queries with osqueryd's own per-query `platform` field. Take this *instead of* the `.sql` files if you schedule through osqueryd rather than calling `bin/discover` |
+| `discover` | Runs the query for the platform it is on and prints one JSON array |
+| `container-scan` | Runs the deep query under a time limit. The only supported way to run it |
+
+**Off the machine**
+
+| | |
+|---|---|
+| `classify` | Turns collected evidence into agent names. Never runs on the endpoint |
+| `agents.yaml` | What the evidence is matched against |
+| `routes.yaml` | How each route matches. `classify` reads both and expects them beside it |
+
+**Or, instead of the endpoint half: one file**
+
+| | |
+|---|---|
+| `ai-discovery-darwin.sh`<br>`ai-discovery-linux.sh` | Everything in the endpoint table above, for one platform, packed into one self-extracting script — for a machine that can host a script and not a package. It takes the same arguments as `bin/discover` and installs nothing |
+
+**A bundle carries no catalog and no classifier**, so it enumerates and cannot name an agent.
+That is the same split as everything else here: you classify off the machine, from whatever the
+bundle wrote. It also costs two prerequisites the loose files do not — `base64` and `tar`.
+
+If you take the loose files, ship `bin/`, `dist/` and `catalog/` **side by side**. Both
+`bin/discover` and `bin/classify` resolve what they need relative to their own parent, so loose
+in one folder neither finds it.
+
 ## What it collects, and what it does not
 
 The queries read **names, paths, versions and declared permissions**. That is all.
@@ -261,9 +301,12 @@ $ cat /var/lib/ai-discovery/inventory.json
 $ cat /var/lib/ai-discovery/status.txt
 ```
 
-**If your platform can host a script and not a package**, `tools/bundle.py` packs the runner
-and its artifacts into one self-extracting file that takes those same arguments and installs
-nothing. Every release attaches one per platform.
+**If your platform can host a script and not a package**, take `ai-discovery-darwin.sh` or
+`ai-discovery-linux.sh` from the release — one self-extracting file that takes those same
+arguments and installs nothing. `tools/bundle.py` is what builds them, and `--driver` wraps your
+own collector in one; [`docs/deployment.md`](docs/deployment.md) has that. A bundle carries the
+endpoint half only, so classification still happens off the machine —
+[What a release attaches](#what-a-release-attaches) says which file does what.
 
 `status.txt` is one line and its vocabulary is a contract, so a consumer can always tell a
 clean machine from a branch that could not look. Scheduling, transport and classification at
