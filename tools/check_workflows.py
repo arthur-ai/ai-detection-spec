@@ -238,7 +238,7 @@ if _docs.exists():
                   f"silently stop being regenerated when that file changes.")
             failed = True
 
-# --- the release skill's asset list, against what release.yml actually uploads -------------
+# --- every stated asset list, against what release.yml actually uploads --------------------
 # A CHECKLIST CATCHES THAT ONCE; THIS CATCHES IT EVERY TIME -- the same argument as the trigger
 # check above, and it has already been paid for. The skill told a releaser to expect NINE assets
 # and to treat a missing one as a broken release; the one-file bundles made it eleven and nothing
@@ -251,43 +251,63 @@ _NUMWORDS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "se
 # root is .github/workflows, so the repo root is two up. This read root.parent and the
 # block skipped itself in silence -- the shape it exists to catch, found by mutating the
 # count and watching the gate stay green.
-_skill = root.parent.parent / ".claude" / "skills" / "release" / "SKILL.md"
+#
+# TWO FILES STATE THE LIST NOW, AND NEITHER MAY BE THE STALE ONE. README grew a section
+# telling a reader which of the attached files they actually need, after four of the eleven
+# -- discovery-deep.sql, ai-discovery.conf and both bundles -- turned out to be named
+# nowhere in it. That section's count is the same claim as the skill's and goes stale the
+# same way, and check_doc_numbers.py gates only `agents`, `identifiers`, `scenarios` and
+# `blind spots`, so "assets" was outside every gate in the tree. Same phrasing, same
+# derivation, one loop: a file that states a count must state the list that backs it.
 _rel = root / "release.yml"
-if _skill.exists() and _rel.exists():
+# The label is what a failure calls the file, because "the release skill" stopped being the
+# answer the moment README made the same claim. A MISSING claimant FAILS rather than skips:
+# silently skipping is the bug recorded above, and both of these are checked in.
+_claimants = [(root.parent.parent / ".claude" / "skills" / "release" / "SKILL.md",
+               "the release skill"),
+              (root.parent.parent / "README.md", "README.md")]
+if _rel.exists():
     _run = ""
     for _job in (yaml.safe_load(_rel.read_text()) or {}).get("jobs", {}).values():
         for _step in _job.get("steps", []):
             if "gh release upload" in str(_step.get("run", "")):
                 _run = str(_step["run"])
-    # Basenames, because the skill names what lands on the release page and the workflow names
+    # Basenames, because a claimant names what lands on the release page and the workflow names
     # where each file came from -- artifacts/ai-discovery-darwin.sh uploads as its own name.
     _uploaded = {t.rsplit("/", 1)[-1]
                  for t in re.findall(r"[\w./-]+\.(?:sql|conf|yaml|sh)\b", _run)}
     _uploaded |= {t.rsplit("/", 1)[-1] for t in re.findall(r"\bbin/[\w-]+", _run)}
-    _claim = re.search(r"\*\*(\w+) assets\*\*(.*?)\.\n", _skill.read_text(), re.S)
     if not _run:
-        print("FAIL: release.yml has no step running `gh release upload`. The release skill "
-              "tells a releaser to check the attached assets against a list; nothing produces "
-              "them any more.")
-        failed = True
-    elif not _claim:
-        print("FAIL: the release skill no longer states an asset count. It is the check a "
-              "releaser runs against a published release; derive it or drop the instruction.")
+        print("FAIL: release.yml has no step running `gh release upload`. The release skill and "
+              "README both tell a reader to check the attached assets against a list; nothing "
+              "produces them any more.")
         failed = True
     else:
-        _word = _claim.group(1).lower()
-        _said = _NUMWORDS.get(_word, int(_word) if _word.isdigit() else None)
-        _named = set(re.findall(r"`([\w.-]+)`", _claim.group(2)))
-        if _named != _uploaded:
-            print(f"FAIL: the release skill names assets release.yml does not upload, or "
-                  f"misses some: only in the skill {sorted(_named - _uploaded)}, only in the "
-                  f"workflow {sorted(_uploaded - _named)}.")
-            failed = True
-        elif _said != len(_uploaded):
-            print(f"FAIL: the release skill says {_claim.group(1)!r} assets and release.yml "
-                  f"uploads {len(_uploaded)}. A releaser checks a published release against "
-                  f"that number.")
-            failed = True
+        for _path, _label in _claimants:
+            if not _path.exists():
+                print(f"FAIL: {_label} is missing, and it states the asset list a reader "
+                      f"checks a published release against.")
+                failed = True
+                continue
+            _claim = re.search(r"\*\*(\w+) assets\*\*(.*?)\.\n", _path.read_text(), re.S)
+            if not _claim:
+                print(f"FAIL: {_label} no longer states an asset count. It is the check a "
+                      f"reader runs against a published release; derive it or drop the claim.")
+                failed = True
+                continue
+            _word = _claim.group(1).lower()
+            _said = _NUMWORDS.get(_word, int(_word) if _word.isdigit() else None)
+            _named = set(re.findall(r"`([\w.-]+)`", _claim.group(2)))
+            if _named != _uploaded:
+                print(f"FAIL: {_label} names assets release.yml does not upload, or misses "
+                      f"some: only in {_label} {sorted(_named - _uploaded)}, only in the "
+                      f"workflow {sorted(_uploaded - _named)}.")
+                failed = True
+            elif _said != len(_uploaded):
+                print(f"FAIL: {_label} says {_claim.group(1)!r} assets and release.yml uploads "
+                      f"{len(_uploaded)}. A reader checks a published release against that "
+                      f"number.")
+                failed = True
 
 if not failed:
     print(f"workflows: ok, {len(list(root.glob('*.y*ml')))} parse and declare jobs, "
