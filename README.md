@@ -52,7 +52,7 @@ per run: counts, never identifiers, described field by field in
 
 | | | |
 |---|---|---|
-| 🗂 | **A query** | Runs on each machine and collects evidence — installed apps, packages, browser extensions, state directories. It **never names an agent**, so a new agent never means a new deployment. One per platform, because macOS and Linux read different tables |
+| 🗂 | **A query** | Runs on each machine and lists what is installed — apps, packages, browser extensions, state directories. **No agent name appears anywhere in it.** It reports what it finds; which of those findings add up to an agent is decided later, by the classifier. One per platform, because macOS and Linux read different tables |
 | ▶️ | **A runner** | Runs that query on the endpoint and prints the result as one JSON array. A second one covers agents packaged as Docker images, separately and on a time limit, because a wedged Docker daemon never answers and would otherwise hang the scan |
 | 🔎 | **A classifier and its catalog** | Reads the collected JSON and tells you which agents are on the machine, matching the evidence against **22 agents and 61 identifiers**. It runs wherever you keep the output, never on the endpoint |
 
