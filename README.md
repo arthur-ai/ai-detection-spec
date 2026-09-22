@@ -52,18 +52,20 @@ per run: counts, never identifiers, described field by field in
 
 | | | |
 |---|---|---|
-| 🗂 | **`dist/discovery-darwin.sql`**<br>**`dist/discovery-linux.sql`** | The query that runs on each machine. It collects evidence — installed apps, packages, browser extensions, state directories — and **never names an agent**, so a new agent never means a new deployment. One file per platform, because macOS and Linux read different tables |
-| ▶️ | **`bin/discover`** | The command you run on a machine to collect that evidence. It picks the right query file for the platform it is on and prints the result as one JSON array |
-| 🐳 | **`bin/container-scan`** | The same idea for agents packaged as Docker images. It runs separately and on a time limit, because a wedged Docker daemon never answers and would otherwise hang the scan |
-| 🔎 | **`bin/classify`** | The command that reads the collected JSON and tells you which agents are on the machine. Runs wherever you keep the output, not on the endpoint |
-| 🧭 | **`catalog/agents.yaml`** | What the evidence is matched against: 22 agents and 61 identifiers. Add one here and it re-matches evidence you already collected — no going back to the fleet |
-| 🧱 | **`catalog/routes.yaml`** | The ways an agent can show up — a bundle id, a Debian package, an npm install, a config directory — and how each is matched. The matcher, the validator, the coverage report and lint all read this one file |
-| 📋 | **[`docs/agents.md`](docs/agents.md)** | Which agents are covered, and the CI test that proves each one. Generated, so the numbers are counted rather than typed |
+| 🗂 | **A query** | Runs on each machine and collects evidence — installed apps, packages, browser extensions, state directories. It **never names an agent**, so a new agent never means a new deployment. One per platform, because macOS and Linux read different tables |
+| ▶️ | **A runner** | Runs that query on the endpoint and prints the result as one JSON array. A second one covers agents packaged as Docker images, separately and on a time limit, because a wedged Docker daemon never answers and would otherwise hang the scan |
+| 🔎 | **A classifier and its catalog** | Reads the collected JSON and tells you which agents are on the machine, matching the evidence against **22 agents and 61 identifiers**. It runs wherever you keep the output, never on the endpoint |
 
 **Why the split matters.** The endpoint *enumerates* and the matching happens elsewhere. A
 scanner that knows the agent names has to be redeployed to the whole fleet every time the list
 changes, and can only ever find what it already knew to look for. This one collects the
-evidence once and answers new questions about it later.
+evidence once and answers new questions about it later — add a signature to the catalog and it
+re-matches evidence you already have, without going back to the fleet.
+
+[`docs/agents.md`](docs/agents.md) lists which agents are covered and the CI test that proves
+each one, generated so the numbers are counted rather than typed.
+**[What a release attaches](#what-a-release-attaches)** names every file and says which machine
+it belongs on.
 
 ## Scope, so you know what you are getting
 
@@ -206,8 +208,8 @@ You do not need all of them. Which you take depends on where the thing runs.
 | | |
 |---|---|
 | `classify` | Turns collected evidence into agent names. Never runs on the endpoint |
-| `agents.yaml` | What the evidence is matched against |
-| `routes.yaml` | How each route matches. `classify` reads both and expects them beside it |
+| `agents.yaml` | What the evidence is matched against. Add a signature here and it re-matches evidence you already collected |
+| `routes.yaml` | How each kind of evidence is matched — a bundle id, a Debian package, an npm install, a config directory. The matcher, the validator, the coverage report and lint all read this one file, and `classify` expects it beside `agents.yaml` |
 
 **Or, instead of the endpoint half: one file**
 
