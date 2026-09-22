@@ -91,8 +91,9 @@ trap '{ kill "$SUITE_WATCHDOG" 2>/dev/null; } 2>/dev/null; pkill -f "$SOCK" 2>/d
 # only reason the line is there.
 #
 # Sourcing brings ROOT, DEEP, TIMEOUT, SCAN_TIMEOUT, SOCKET, MARKER, CACHE, DOCKER_CODE,
-# DOCKER_SECS, BOUNDED_OUT and BOUNDED_SIGNAL into this shell, along with `set -uo pipefail`,
-# and the JSON helpers json_str, json_row, osq_run, json_concat and merge_*. The ping
+# DOCKER_SECS, BOUNDED_OUT, BOUNDED_SIGNAL, RUNTIME_NAME and RUNTIME_AT into this shell,
+# along with `set -uo pipefail`, and the helpers json_str, json_row, osq_run, json_concat,
+# merge_*, _runtime_seen and other_runtime. The ping
 # budget is INHERITED rather than restated, so that a change to the shipped default shows up
 # here -- and the `nap` checks below are where it shows up, because they are the ones whose
 # answer it changes. Two rows override it deliberately and say why.
@@ -703,11 +704,20 @@ PATH="$PYSTUB:$PATH" "$ROOT/bin/discover" --deep --socket "$SOCK" >/dev/null 2>&
 PATH="$PYSTUB:$PATH" "$ROOT/bin/discover" >/dev/null 2>&1
 stop_fake
 
+# CONTAINER_RUNTIME_ROOT is pinned throughout this block: `absent` now depends on what else
+# the machine has, so an assertion expecting it is otherwise an assertion about the host --
+# and a hosted ubuntu runner ships podman.
+RTROOT="$(mktemp -d "${TMPDIR:-/tmp}/rtroot.XXXXXX")"
+mkdir -p "$RTROOT/empty" "$RTROOT/podman/usr/bin" "$RTROOT/asdir/usr/bin/podman"
+printf '#!/bin/sh\nexit 0\n' > "$RTROOT/podman/usr/bin/podman"
+chmod +x "$RTROOT/podman/usr/bin/podman"
+
 # `absent` is a stated fact about the machine, not a branch that failed. A status line that
 # calls a Mac without Docker `degraded` fires on every such Mac, and a signal that fires on
 # a third of a fleet for nothing is a signal a fleet learns to ignore.
-PATH="$PYSTUB:$PATH" "$ROOT/bin/discover" --write "$PYSTUB/a.json" \
-     --status "$PYSTUB/a.txt" --socket /nonexistent/d.sock >/dev/null 2>&1
+CONTAINER_RUNTIME_ROOT="$RTROOT/empty" PATH="$PYSTUB:$PATH" "$ROOT/bin/discover" \
+     --write "$PYSTUB/a.json" --status "$PYSTUB/a.txt" \
+     --socket /nonexistent/d.sock >/dev/null 2>&1
 check "a machine with no Docker is ok, not degraded" \
       "$(grep -cE '^ok .* containers=absent' "$PYSTUB/a.txt" 2>/dev/null || echo 0)" \
       "got: $(cat "$PYSTUB/a.txt" 2>/dev/null | head -c 200)"
@@ -723,7 +733,20 @@ check "a branch that could not look still degrades" \
          "$PYSTUB/d.txt" 2>/dev/null || echo 0)" \
       "got: $(cat "$PYSTUB/d.txt" 2>/dev/null | head -c 200)"
 
-absent_row="$(PATH="$PYSTUB:$PATH" "$ROOT/bin/container-scan" --socket /nonexistent/d.sock 2>/dev/null)"
+# `absent` stopped degrading because it is nothing to look at; a runtime we cannot read is
+# the opposite, so it lands on the other side. With no rule of its own -- bin/discover
+# degrades anything that is neither `ok` nor `absent` -- and asserted anyway, because a
+# fourth name added to that CASE would silence a Podman fleet with nothing going red.
+CONTAINER_RUNTIME_ROOT="$RTROOT/podman" PATH="$PYSTUB:$PATH" "$ROOT/bin/discover" \
+     --write "$PYSTUB/u.json" --status "$PYSTUB/u.txt" \
+     --socket /nonexistent/d.sock >/dev/null 2>&1
+check "a runtime we cannot read degrades the line, unlike absent" \
+      "$(grep -cE '^degraded .* containers=unreadable:podman' "$PYSTUB/u.txt" 2>/dev/null \
+         || echo 0)" \
+      "got: $(cat "$PYSTUB/u.txt" 2>/dev/null | head -c 200)"
+
+absent_row="$(CONTAINER_RUNTIME_ROOT="$RTROOT/empty" PATH="$PYSTUB:$PATH" \
+              "$ROOT/bin/container-scan" --socket /nonexistent/d.sock 2>/dev/null)"
 check "container-scan's absent marker needs no interpreter" \
       "$(printf '%s' "$absent_row" | python3 -c "
 import json, sys
@@ -732,6 +755,75 @@ except Exception: print(0); raise SystemExit
 print(1 if len(rows) == 1 and rows[0]['id'] == 'containers'
       and rows[0]['extra'] == 'absent' else 0)" 2>/dev/null)" \
       "got: $(printf '%s' "$absent_row" | head -c 160)"
+
+# In the PYSTUB block deliberately: this is a marker row, so the "python was never called"
+# check below has to cover its producer too.
+unread_row="$(CONTAINER_RUNTIME_ROOT="$RTROOT/podman" PATH="$PYSTUB:$PATH" \
+              "$ROOT/bin/container-scan" --socket /nonexistent/d.sock 2>/dev/null)"; unread_rc=$?
+check "a podman install is named, not reported absent" \
+      "$(printf '%s' "$unread_row" | python3 -c "
+import json, sys
+try: rows = json.load(sys.stdin)
+except Exception: print(0); raise SystemExit
+print(1 if len(rows) == 1 and rows[0]['kind'] == 'scan' and rows[0]['id'] == 'containers'
+      and rows[0]['extra'] == 'unreadable:podman'
+      and rows[0]['loc'] == sys.argv[1] else 0)" "$RTROOT/podman/usr/bin/podman" 2>/dev/null)" \
+      "got: $(printf '%s' "$unread_row" | head -c 200)"
+check "...and it is still 'did not scan', not a failure" \
+      "$([ "$unread_rc" = 2 ] && echo 1 || echo 0)" "got $unread_rc"
+
+# The must-not half: a producer that named a runtime on every machine would pass the check
+# above and tell a reader nothing. Same invocation, empty candidate root.
+check "an empty machine still reports absent, so the term is not free" \
+      "$(printf '%s' "$absent_row" | python3 -c "
+import json, sys
+try: print(1 if json.load(sys.stdin)[0]['extra'] == 'absent' else 0)
+except Exception: print(0)" 2>/dev/null)" \
+      "got: $(printf '%s' "$absent_row" | head -c 160)"
+
+# A directory is executable, so `-x` alone would match one named podman. The producer tests
+# `-f` first; this is what goes red if that stops being true.
+CONTAINER_RUNTIME_ROOT="$RTROOT/asdir"
+if other_runtime; then dirhit=1; else dirhit=0; fi
+unset CONTAINER_RUNTIME_ROOT
+check "a directory named podman is not an install" \
+      "$([ "$dirhit" = 0 ] && echo 1 || echo 0)" \
+      "matched $RUNTIME_NAME at $RUNTIME_AT -- -f must be tested before -x"
+
+# The other kind of evidence. Through the primitive rather than a planted path, because
+# bash cannot create a socket.
+start_fake healthy
+RUNTIME_NAME=""; RUNTIME_AT=""
+if _runtime_seen colima "$SOCK"; then sockhit=1; else sockhit=0; fi
+check "a live socket counts as evidence, attributed to the runtime asked for" \
+      "$([ "$sockhit" = 1 ] && [ "$RUNTIME_NAME" = colima ] && [ "$RUNTIME_AT" = "$SOCK" ] \
+         && echo 1 || echo 0)" \
+      "hit=$sockhit name=$RUNTIME_NAME at=$RUNTIME_AT"
+stop_fake
+
+# The $SUDO_USER candidates: under `sudo bin/discover --deep` $HOME is root's, and Rancher
+# Desktop has no binary to fall back on, so a wrong pair here reads `absent` on a machine
+# that is running containers. Both homes, because /Users is macOS and /home is Linux.
+for _home in Users home; do
+  _rd="$RTROOT/rd/$_home/rdtest/.rd"
+  mkdir -p "$_rd"
+  python3 "$HERE/lib/fake_docker.py" "$_rd/docker.sock" hang >/dev/null 2>&1 &
+  _rdpid=$!
+  for _ in $(seq 1 40); do [ -e "$_rd/docker.sock" ] && break; sleep 0.1; done
+  # A subshell, so SUDO_USER and HOME do not leak: an assignment before a FUNCTION call
+  # persists in bash, unlike one before a command.
+  _rdout="$( CONTAINER_RUNTIME_ROOT="$RTROOT/rd"
+             SUDO_USER=rdtest
+             HOME="$RTROOT/empty"
+             other_runtime && printf '%s %s' "$RUNTIME_NAME" "$RUNTIME_AT" )"
+  kill "$_rdpid" 2>/dev/null; wait "$_rdpid" 2>/dev/null
+  check "a rancher-desktop socket under \$SUDO_USER's /$_home home is found" \
+        "$([ "$_rdout" = "rancher-desktop $_rd/docker.sock" ] && echo 1 || echo 0)" \
+        "got: '$_rdout'"
+  rm -rf "$RTROOT/rd"
+done
+
+rm -rf "$RTROOT"
 
 check "python was never called" "$([ ! -e "$PYSTUB/called" ] && echo 1 || echo 0)" \
       "called: $(cat "$PYSTUB/called" 2>/dev/null | head -c 200)"

@@ -278,7 +278,8 @@ for extra, needle in (("absent", "no socket"),
                       ("no-cache", "never run"),
                       ("error", "ran and failed"),
                       ("unhealthy:500", "answered 500"),
-                      ("timeout:6", "stalled")):
+                      ("timeout:6", "stalled"),
+                      ("unreadable:podman", "podman runtime is installed")):
     text = classify_rows([scan_row(extra)])
     check(f"{extra!r} reports COULD NOT LOOK, distinctly",
           "COULD NOT LOOK" in text and needle in text, f"got: {text.splitlines()[:1]}")
@@ -294,7 +295,7 @@ check("a marker with no loc names no place",
 # bin/classify reads payloads a fleet collector may have merged from several hosts, so it
 # is not entitled to say which platform anything is. "no Docker socket on this Mac" was
 # the wording that made that claim.
-for extra in ("absent", "error", "timeout:6"):
+for extra in ("absent", "error", "timeout:6", "unreadable:podman"):
     check(f"{extra!r} claims no platform",
           "this Mac" not in classify_rows([scan_row(extra)]),
           "a matcher over a mixed-platform payload cannot know the platform")
@@ -302,6 +303,22 @@ for extra in ("absent", "error", "timeout:6"):
 check("a gap is never silently an empty finding set",
       "No AI agents found." not in classify_rows([scan_row("timeout:6")]),
       "'no agents' under an unread branch is the lie this whole marker exists to stop")
+
+# THE DISTINCTION `unreadable:` WAS ADDED FOR, asserted as a DIFFERENCE rather than as a
+# string. A host running Podman and a host running no containers at all both reach this
+# renderer with no Docker socket behind them; if they read the same, the state an operator
+# has to act on is being reported as the one that needs nothing.
+#
+# WHAT IT CATCHES, checked by mutation rather than assumed: a renderer that gives the two
+# reasons the same sentence -- which is what "simplifying" this band into one branch would
+# do. It CANNOT see a producer that stops emitting the term, because the rows here are
+# written by hand; test/docker_states.sh owns that half and fails on it.
+check("a runtime we cannot read does not read as a machine with none",
+      classify_rows([scan_row("unreadable:podman")]) != classify_rows([scan_row("absent")]),
+      "`absent` and `unreadable:podman` rendered identically, which is the bug itself")
+check("...and it is not folded into an empty finding set either",
+      "No AI agents found." not in classify_rows([scan_row("unreadable:podman")]),
+      "uncounted containers reported as no agents is the same lie one hop later")
 
 # --- home roots and anchors: the two halves of one fix -----------------------------
 #

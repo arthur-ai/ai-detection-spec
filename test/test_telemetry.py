@@ -381,6 +381,11 @@ gapful.write_text(json.dumps([
      "extra": "no-cache", "perms": ""},
     {"kind": "scan", "id": "browser", "ver": str(now), "loc": "", "extra": "timeout:6",
      "perms": ""},
+    # The parameter is a runtime NAME, not a number, and it must not travel: `unreadable`
+    # is the property, `podman` stays on the endpoint like every other path and identifier
+    # in this payload.
+    {"kind": "scan", "id": "containers", "ver": str(now), "loc": "/usr/bin/podman",
+     "extra": "unreadable:podman", "perms": ""},
     {"kind": "scan", "id": "martian", "ver": str(now), "loc": "/Users/dana/secret",
      "extra": "exploded-in-/Users/dana", "perms": ""},
     {"kind": "scan", "id": "npm", "ver": str(now - 90000), "loc": "", "extra": "ok",
@@ -396,13 +401,16 @@ finally:
     proc_srv.kill()
 gp = props_of(cap_gap)
 check("every gap reason a scan row can carry arrives normalised",
-      gp.get("gap_reasons") == "absent,error,no-cache,other,timeout,unhealthy",
+      gp.get("gap_reasons") == "absent,error,no-cache,other,timeout,unhealthy,unreadable",
       f"{gp.get('gap_reasons')!r}")
 check("...with the unhealthy code and the timeout kept as numbers",
       gp.get("gap_unhealthy_code") == 500 and gp.get("gap_timeout_seconds") == 6,
       f"code={gp.get('gap_unhealthy_code')} timeout={gp.get('gap_timeout_seconds')}")
 check("an unknown reason is reported as 'other', never forwarded verbatim",
       "exploded" not in cap_gap.read_text() and "/Users/dana" not in cap_gap.read_text())
+check("...and a known reason's parameter does not travel either",
+      "podman" not in cap_gap.read_text(),
+      "gap_reasons carries the head of the vocabulary, never the tail")
 check("a stale branch is counted", gp.get("stale_branches") == 1,
       f"{gp.get('stale_branches')}")
 check("a containers marker counts as a deep scan even when the scan FAILED",

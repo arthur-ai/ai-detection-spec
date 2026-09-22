@@ -21,8 +21,14 @@ repo has shipped was a wrong answer that looked like a right one:
   reported via its native-messaging bridge, so nothing looked wrong.
 
 So: every failure carries a reason. That is what `kind=scan` marker rows are for, and their
-vocabulary — `ok`, `absent`, `unhealthy:<code>`, `timeout:<n>`, `error`, `no-cache` — is a
-contract, not a log format.
+vocabulary — `ok`, `absent`, `unreadable:<runtime>`, `unhealthy:<code>`, `timeout:<n>`,
+`error`, `no-cache` — is a contract, not a log format.
+
+**`unreadable:<runtime>` is the newest term.** `absent` means “no Docker socket at the paths
+we probe”, which a reader takes as “no containers here” — different facts on a Podman host.
+Probing Podman would be worse: its socket passes the health guard and then serves zero images.
+So the runtime is named from a socket or a binary on disk, and nothing more. **Declining to
+look and finding nothing may not share a word.**
 
 **`stale:<n>` was in that list and is now retired**, because nothing ever emitted it. It was
 documented here, in `docs/deployment.md` and accepted by `ci.yml`'s vocabulary check, while no

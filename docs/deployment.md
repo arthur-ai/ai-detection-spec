@@ -104,17 +104,29 @@ One line:
 ok 2026-08-31T20:30:29Z rows=775 apps=ok browser=ok containers=ok filesystem=ok packages=ok runtime=ok
 ```
 
-`ok`, `absent`, `unhealthy:<http-code>`, `timeout:<seconds>`, `error`, `no-cache`. Every
-payload also carries one dated `kind=scan` row per branch with the same value, so a consumer
-that only has the JSON still knows which branches ran and when.
+`ok`, `absent`, `unreadable:<runtime>`, `unhealthy:<http-code>`, `timeout:<seconds>`,
+`error`, `no-cache`. Every payload also carries one dated `kind=scan` row per branch with
+the same value, so a consumer that only has the JSON still knows which branches ran and when.
+
+**`absent` and `unreadable:` are both “no Docker socket here”, and what separates them is
+what else is on the machine.** `absent` means no other container runtime is installed
+either. `unreadable:podman` means one is and this scan does not read it — so whether that
+machine holds containers is **unknown**, not none. A consumer that folds the second into
+the first reads a Podman fleet as a fleet with no containers, which is the one reading
+this vocabulary exists to prevent.
 
 **The first token separates "could not look" from "nothing to look at".** `absent` is a
 stated fact about the machine — no Docker, no systemd bus — so it does not degrade the line;
-a Mac that simply does not run Docker reads `ok`. `unhealthy:*`, `timeout:*` and `error` are
-branches that failed to look, and those do. The distinction is what keeps the first token
-worth alerting on: a signal that fires on every Docker-less machine is one a fleet learns to
-ignore. The per-branch token still says `containers=absent` either way, so a consumer that
-wants to count Docker-less machines narrows on that instead.
+a Mac that simply does not run Docker reads `ok`. `unhealthy:*`, `timeout:*`, `error` and
+`unreadable:*` are branches that failed to look, and those do. The distinction is what keeps
+the first token worth alerting on: a signal that fires on every Docker-less machine is one a
+fleet learns to ignore. The per-branch token still says `containers=absent` whether or not
+the line degrades, so a consumer counting machines with no container runtime at all narrows
+on that — a Docker-less machine that runs Podman says `containers=unreadable:podman`.
+
+**`unreadable:*` is on the degrading side, and it is what makes the other side safe.** A
+Podman host used to report `absent` too, so excusing `absent` alone would have excused the
+machines most worth looking at.
 
 `stale:<seconds>` used to be listed here and is retired: nothing emitted it. Judge staleness
 from the marker row's `ver`, which holds the unix time of the scan — that is what
@@ -190,6 +202,7 @@ run this on. Naming it as a prerequisite would
 make the list look longer than it is without telling anyone anything they can act on.
 
 **Docker** is a property of the machine you are scanning, not a dependency of the scanner. If a
-machine has no Docker, `bin/container-scan` finds no socket and reports `absent` — a stated
-outcome, not a failure. See [containers.md](containers.md) for what the container branch buys
-you and when it is worth enabling.
+machine has no Docker, `bin/container-scan` finds no socket and reports `absent`, or
+`unreadable:<runtime>` when another container runtime is installed and was not
+inspected — a stated outcome either way, not a failure. See [containers.md](containers.md) for what the
+container branch buys you and when it is worth enabling.
