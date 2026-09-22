@@ -245,8 +245,21 @@ def _payload_bytes(text):
     supplied. Anything either of them raises means one thing -- this is not a payload --
     and there is nothing else in here for a broad catch to hide. payload_tar() and the
     comparison stay outside it, where a real defect still surfaces as one.
+
+    _split() IS INSIDE THE TRY, and was not. A file with no payload marker is not a bundle,
+    which is the same answer as a bundle whose payload will not decode -- but it arrived as
+    a bare ValueError through read_member() while every other failure arrived as
+    CorruptBundle. The first consumer to hand this a wrong path got a traceback for the
+    commonest mistake there is, and a caller cannot be asked to catch two things to learn
+    one thing.
     """
-    _, body, _ = _split(text)
+    try:
+        _, body, _ = _split(text)
+    except ValueError as exc:
+        # NAMED, BECAUSE THIS IS THE COMMONEST MISTAKE AND THE LEAST INFORMATIVE ERROR.
+        # str.index raises "substring not found", which tells a caller nothing about what
+        # it handed over. The likeliest cause by far is the wrong path.
+        raise CorruptBundle(f"no {MARKER} marker -- this is not a bundle") from exc
     try:
         return gzip.decompress(base64.b64decode(body))
     except Exception as exc:
