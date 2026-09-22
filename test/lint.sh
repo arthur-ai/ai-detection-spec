@@ -677,7 +677,14 @@ for _what, _text in (
         ("malformed DEFLATE", _corrupt(_gz[:10] + bytes(x ^ 0xFF for x in _gz[10:14]) + _gz[14:])),
         ("a failed CRC", _corrupt(_gz[:100] + bytes([_gz[100] ^ 0xFF]) + _gz[101:])),
         ("gzip that is not a tar", _corrupt(gzip.compress(b"not a tar"))),
-        ("a body that is not base64", _head + "!!!! not base64 !!!!" + _tail)):
+        ("a body that is not base64", _head + "!!!! not base64 !!!!" + _tail),
+        # NOT A BUNDLE AT ALL is the same answer and used to arrive differently: _split()
+        # sat outside the wrapped region, so a missing marker came back as a bare
+        # ValueError while every other failure came back as CorruptBundle. A caller cannot
+        # be asked to catch two things to learn one thing, and this is the commonest
+        # mistake there is -- the wrong path.
+        ("a file with no payload marker", "#!/bin/bash\nnot a bundle\n"),
+        ("an empty file", "")):
     try:
         if B.matches(_text, root, "darwin", driver=str(_drv), label="lint"):
             bad.append(f"matches() accepted {_what}")
