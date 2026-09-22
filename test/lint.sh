@@ -460,6 +460,7 @@ python3 "$HERE/../tools/validate_catalog.py" || fail=1
 python3 "$HERE/../tools/build.py" --check || fail=1
 python3 "$HERE/../test/test_matcher.py" >/dev/null || { echo "FAIL: matcher tests"; fail=1; }
 python3 "$HERE/../test/test_telemetry.py" >/dev/null || { echo "FAIL: telemetry tests"; fail=1; }
+python3 "$HERE/../test/test_ci_scope.py" >/dev/null || { echo "FAIL: ci scope tests"; fail=1; }
 python3 "$HERE/../tools/check_workflows.py" || fail=1
 python3 "$HERE/../tools/check_no_catalog.py" || fail=1
 # docs/agents.md is generated from the catalog and its coverage, exactly as dist/ is

@@ -8,7 +8,7 @@ name: Scenarios
 # catalog is consistent; only a real install proves an identifier is what the software
 # ships. Landing a signature on the strength of a green lint is how `bot.molt.mac` got in.
 #
-# The cost is real and is bounded three ways rather than by not running:
+# The cost is real and is bounded four ways rather than by not running:
 #
 #   * `concurrency` below cancels a PR's superseded runs, so pushing five times to a
 #     branch costs one suite and not five.
@@ -16,6 +16,20 @@ name: Scenarios
 #     instead of hiding the other twenty.
 #   * the `collect` job stays main-only, so a PR run asserts and uploads without
 #     committing observations. A PR must not be able to move recorded coverage.
+#   * the `scope` job below skips the matrix when every changed path is a `.md` file.
+#
+# THAT LAST BOUND DOES NOT WEAKEN THE ONE ABOVE IT, and the distinction is the whole
+# argument. What was wrong before was skipping the suite on a CHANGE THAT COULD MOVE A
+# SIGNATURE -- a catalog edit, a query, a scenario -- because a green lint says nothing
+# about whether an identifier is what the software ships. A `.md` file is not that change:
+# no job in this workflow opens one. Every gate that DOES read prose lives in ci.yml's
+# lint job, which is deliberately left ungated and still runs on every pull request.
+#
+# The measurement behind it, taken 2026-09-22 over the preceding four days: 93% of this
+# repository's billable minutes were this workflow, and eleven of the last thirty pull
+# requests changed only Markdown. Each of those eleven paid for 26 macOS jobs to prove
+# that an edit to a sentence had not changed what osquery finds on a Mac. The figures are
+# a dated observation rather than a standing claim -- re-measure before quoting them.
 on:
   pull_request:
   push:
@@ -32,7 +46,61 @@ concurrency:
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
+  # WHAT THIS DIFF CAN MOVE, decided once and read by the expensive jobs below.
+  #
+  # A JOB-LEVEL `if`, NOT A WORKFLOW-LEVEL `paths:` FILTER, and the difference is the
+  # whole reason this job exists rather than three lines under `on:`. A workflow filtered
+  # out by `paths` never reports a check at all -- it vanishes from the pull request's
+  # list, leaving every remaining check green, which is precisely the failure
+  # tools/check_workflows.py was written for and which that file calls worse than a red
+  # build. A job whose `if` is false reports SKIPPED: visible in the list, and counted as
+  # passing by a required status check rather than blocking it forever.
+  #
+  # The rule itself is in tools/ci_scope.py, in ONE place, because three workflows ask
+  # this question and three copies of the answer would be three lists that have to agree.
+  scope:
+    name: What this diff can move
+    runs-on: ubuntu-latest
+    outputs:
+      runtime: ${{ steps.scope.outputs.runtime }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The diff needs the base commit, not just the tip. The whole repo is 5MB.
+          fetch-depth: 0
+      - id: scope
+        env:
+          # `before` is the previous tip on a push and all-zeros on a force-push or a
+          # branch's first push; ci_scope.py reads that as "cannot tell" and runs.
+          BASE: ${{ github.event_name == 'pull_request'
+                    && github.event.pull_request.base.sha || github.event.before }}
+          EVENT: ${{ github.event_name }}
+          HEAD_SHA: ${{ github.sha }}
+        run: |
+          # A schedule or a manual dispatch has no diff to read, and a dispatch is
+          # somebody asking for this on purpose. Both run everything.
+          case "$EVENT" in
+            pull_request|push) ;;
+            *) echo "runtime=true" >> "$GITHUB_OUTPUT"
+               echo "$EVENT has no diff to read; running every gate"
+               exit 0 ;;
+          esac
+          python3 tools/ci_scope.py "$BASE" "$HEAD_SHA" >> "$GITHUB_OUTPUT"
+          # AN EMPTY OUTPUT IS THE ONE FAILURE THIS GATE COULD HIDE. A false `if` and an
+          # unset output are the same string to GitHub, so a scope job that succeeded
+          # while writing nothing would skip the whole suite and report green -- an empty
+          # result indistinguishable from a clean one, in the place that decides whether
+          # anything gets checked at all. A crash is already red; this covers the rest.
+          grep -qE '^runtime=(true|false)$' "$GITHUB_OUTPUT" || {
+            echo "::error::ci_scope.py wrote no verdict. Refusing to skip the suite on"
+            echo "::error::a gate that did not answer."
+            exit 1
+          }
+          grep '^runtime=' "$GITHUB_OUTPUT"
+
   scenario:
+    needs: scope
+    if: needs.scope.outputs.runtime == 'true'
     name: ${{ matrix.scenario }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -203,6 +271,8 @@ jobs:
   # the local path, test/run.sh -- so Linux needs nothing new: a hosted ubuntu-24.04 has
   # systemd as PID 1, which is what 76-linux-systemd needs and what a container cannot give.
   scenario-linux:
+    needs: scope
+    if: needs.scope.outputs.runtime == 'true'
     name: ${{ matrix.scenario }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -306,6 +376,8 @@ jobs:
   # snap_packages returns [] and exits 1 -- so this is the run that keeps the difference
   # honest.
   scenario-linux-rpm:
+    needs: scope
+    if: needs.scope.outputs.runtime == 'true'
     name: ${{ matrix.scenario }} on fedora
     runs-on: ubuntu-24.04
     container: fedora:41
@@ -361,7 +433,7 @@ jobs:
 
   collect:
     name: Coverage, and commit observations on main
-    needs: [scenario, scenario-linux, scenario-linux-rpm]
+    needs: [scope, scenario, scenario-linux, scenario-linux-rpm]
     # always() so a green scenario's observation still lands when a DIFFERENT scenario
     # failed. Each observation is independent evidence, and discarding all of them because
     # one scenario broke would throw away the runs that worked.
@@ -375,7 +447,11 @@ jobs:
     #
     # So the check moved here, where this run's own observations exist, and lint keeps the
     # half it can answer statically. tools/agent_status.py's _pending() has the split.
-    if: always()
+    # AND THE SCOPE GATE, because always() INCLUDES SKIPPED. With the matrix gated,
+    # always() alone would run this against zero downloaded observations: the merge
+    # would be a no-op, the coverage gate would pass having judged nothing, and a
+    # check that cannot fail is worse than no check.
+    if: always() && needs.scope.outputs.runtime == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write
