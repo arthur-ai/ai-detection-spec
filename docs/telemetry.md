@@ -78,6 +78,7 @@ zero, because "no timeout happened" and "a timeout of zero seconds" are differen
 | `unmatched_rows` | rows a route looked at and no signature claimed |
 | `dropped_rows` | rows whose `kind` belongs to no route, and which the classifier therefore discards in silence. **Non-zero means a route is missing** |
 | `gap_rows` | `kind=scan` markers reporting that a branch could not look |
+| `absence_rows` | `kind=scan` markers reporting `absent` — the branch read the machine and there was nothing there. High here with `gap_rows` at zero is a fleet without containers, not a fleet whose container scan is failing |
 | `payload_bytes` | size of the payload as read, in bytes |
 | `payload_packed_bytes` | the same after gzip -9 and base64, matching `tools/measure_payload.py`. This is the figure a single-text-value channel actually pays. **The 30KB budget it is judged against is self-imposed** — a Jamf Extension Attribute convention this project keeps to, not a documented platform limit |
 | `scan_rows` | `kind=scan` markers reporting a branch ran fine |
