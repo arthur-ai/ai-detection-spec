@@ -339,15 +339,24 @@ jobs:
           import json, sys
           text = open("/tmp/classified.txt").read()
           r = json.load(open("/tmp/inv.json"))
-          gaps = [x for x in r if x["kind"] == "scan" and x["extra"] != "ok"]
-          # A runner has no Docker, so at least the container branch must be reported as a
-          # gap -- and a gap must never render as a bare "no agents found".
+          scan = [x for x in r if x["kind"] == "scan"]
+          # THE TWO ARE NOT ONE BUCKET. A runner has no Docker, so the container branch
+          # reports `absent` -- it read the machine and there was nothing there. That must
+          # NOT hedge the summary, or a machine without Docker can never say "no agents
+          # found". It must not be silent either: the row exists so a reader knows the
+          # branch was considered.
+          gaps = [x for x in scan if x["extra"] not in ("ok", "absent")]
+          absences = [x for x in scan if x["extra"] == "absent"]
+          if absences and "NOTHING TO LOOK AT" not in text:
+              sys.exit(f"::error::{len(absences)} absence row(s) and the reader said "
+                       f"nothing: {absences[:1]}")
           if gaps and "COULD NOT LOOK" not in text:
               sys.exit(f"::error::{len(gaps)} gap rows but the reader said nothing: {gaps[:1]}")
           if gaps and text.strip() == "No AI agents found.":
               sys.exit("::error::a gap rendered as a clean machine, which is the one "
                        "outcome the scan row exists to prevent")
-          print(f"classifier reported {len(gaps)} gap(s) rather than silence")
+          print(f"classifier reported {len(gaps)} gap(s) and {len(absences)} "
+                f"absence(s) rather than silence")
           EOF
 
       # The pack is a separate artifact built by a different code path, and nothing ran
@@ -602,11 +611,17 @@ jobs:
           #
           # What must always hold is that the two AGREE: gaps open means the summary says
           # the answer is partial, and no gaps means it does not.
+          #
+          # `absent` is not a gap for this purpose and excluding it is what makes the
+          # invariant bidirectional. A branch that read the machine and found nothing there
+          # leaves the answer complete, so a hedge would understate it -- which is the
+          # second assertion below, firing in reverse.
           python3 - <<'EOF'
           import json, sys
           inv = json.load(open("/tmp/inv.json"))
           text = open("/tmp/classified.txt").read()
-          gaps = [r for r in inv if r["kind"] == "scan" and r["extra"] != "ok"]
+          gaps = [r for r in inv if r["kind"] == "scan"
+                  and r["extra"] not in ("ok", "absent")]
           hedged = "could be read" in text
           if gaps and not hedged:
               sys.exit(f"::error::{len(gaps)} branch(es) could not be read "
