@@ -319,3 +319,8 @@ State the measurement, then the consequence. Where a number is unverified, say s
 rounding it into fact. Comments in this repo carry the reasoning and the rejected alternative,
 because the *why* is the part that stops the bug coming back — see the headers of
 `queries/browser.sql` and `catalog/agents.yaml` for the house style.
+
+**Be concise. This applies to comments and to docs alike.** Carrying the reasoning is not
+licence for a paragraph where a clause does. Keep the fact that stops the bug; cut the
+retelling, the second example, the restatement in capitals, and the history of a tree that
+has no users yet. A comment nobody finishes reading protects nothing.
