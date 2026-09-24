@@ -108,6 +108,14 @@ ok 2026-08-31T20:30:29Z rows=775 apps=ok browser=ok containers=ok filesystem=ok 
 payload also carries one dated `kind=scan` row per branch with the same value, so a consumer
 that only has the JSON still knows which branches ran and when.
 
+**The first token separates "could not look" from "nothing to look at".** `absent` is a
+stated fact about the machine — no Docker, no systemd bus — so it does not degrade the line;
+a Mac that simply does not run Docker reads `ok`. `unhealthy:*`, `timeout:*` and `error` are
+branches that failed to look, and those do. The distinction is what keeps the first token
+worth alerting on: a signal that fires on every Docker-less machine is one a fleet learns to
+ignore. The per-branch token still says `containers=absent` either way, so a consumer that
+wants to count Docker-less machines narrows on that instead.
+
 `stale:<seconds>` used to be listed here and is retired: nothing emitted it. Judge staleness
 from the marker row's `ver`, which holds the unix time of the scan — that is what
 `bin/classify` does, and it lets the reader pick the threshold rather than the writer.

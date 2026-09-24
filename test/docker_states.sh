@@ -703,6 +703,26 @@ PATH="$PYSTUB:$PATH" "$ROOT/bin/discover" --deep --socket "$SOCK" >/dev/null 2>&
 PATH="$PYSTUB:$PATH" "$ROOT/bin/discover" >/dev/null 2>&1
 stop_fake
 
+# `absent` is a stated fact about the machine, not a branch that failed. A status line that
+# calls a Mac without Docker `degraded` fires on every such Mac, and a signal that fires on
+# a third of a fleet for nothing is a signal a fleet learns to ignore.
+PATH="$PYSTUB:$PATH" "$ROOT/bin/discover" --write "$PYSTUB/a.json" \
+     --status "$PYSTUB/a.txt" --socket /nonexistent/d.sock >/dev/null 2>&1
+check "a machine with no Docker is ok, not degraded" \
+      "$(grep -cE '^ok .* containers=absent' "$PYSTUB/a.txt" 2>/dev/null || echo 0)" \
+      "got: $(cat "$PYSTUB/a.txt" 2>/dev/null | head -c 200)"
+
+# ...and the distinction still works in the other direction: a daemon that did not answer is
+# a branch that could not look, which is exactly what the first token is for.
+start_fake wedge
+PATH="$PYSTUB:$PATH" "$ROOT/bin/discover" --write "$PYSTUB/d.json" \
+     --status "$PYSTUB/d.txt" --socket "$SOCK" >/dev/null 2>&1
+stop_fake
+check "a branch that could not look still degrades" \
+      "$(grep -cE '^degraded .* containers=(unhealthy|timeout|error)' \
+         "$PYSTUB/d.txt" 2>/dev/null || echo 0)" \
+      "got: $(cat "$PYSTUB/d.txt" 2>/dev/null | head -c 200)"
+
 absent_row="$(PATH="$PYSTUB:$PATH" "$ROOT/bin/container-scan" --socket /nonexistent/d.sock 2>/dev/null)"
 check "container-scan's absent marker needs no interpreter" \
       "$(printf '%s' "$absent_row" | python3 -c "
