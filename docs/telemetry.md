@@ -17,7 +17,7 @@ here. The questions this exists to answer are specific:
 - Is anyone running a catalog months behind the current one?
 - Does anyone turn the deep container scan on, and does it succeed when they do?
 - Which gap reasons actually fire in the field — `absent`, `no-cache`, `unhealthy`,
-  `timeout` — as opposed to which ones we imagined?
+  `timeout`, `unreadable` — as opposed to which ones we imagined?
 - Are rows being **dropped** on somebody's fleet, which is the `ext` bug happening again?
 
 Each of those changes what gets built next. None of them needs to know who you are.
@@ -83,7 +83,7 @@ zero, because "no timeout happened" and "a timeout of zero seconds" are differen
 | `scan_rows` | `kind=scan` markers reporting a branch ran fine |
 | `kinds_seen` | the row kinds present, comma-joined and sorted. Anything outside the route vocabulary is reported as `other` |
 | `deep_scan` | whether the container branch was attempted — including when it failed, because asking and being refused is still use |
-| `gap_reasons` | the gap vocabulary present: `absent`, `no-cache`, `error`, `unhealthy`, `timeout`, or `other` |
+| `gap_reasons` | the gap vocabulary present: `absent`, `no-cache`, `error`, `unhealthy`, `timeout`, `unreadable`, or `other` |
 | `gap_unhealthy_code` | the HTTP code an unhealthy daemon answered with |
 | `gap_timeout_seconds` | the bound a timed-out branch gave up at |
 | `stale_branches` | branches last scanned over 24h ago |

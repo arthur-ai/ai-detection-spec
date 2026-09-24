@@ -241,7 +241,10 @@ jobs:
               # left permissive: an allowlist entry with no producer makes the vocabulary
               # look wider than it is, and a consumer branching on it would be writing
               # dead code. Staleness comes from the marker row's `ver` instead.
-              if not (v in ok or v.startswith(("unhealthy:", "timeout:"))):
+              # `unreadable:<runtime>` was added under that rule with its producer:
+              # bin/container-scan emits it when there is no Docker socket but another
+              # runtime is on disk, and test/docker_states.sh produces the row.
+              if not (v in ok or v.startswith(("unhealthy:", "timeout:", "unreadable:"))):
                   sys.exit(f"::error::unknown outcome {v!r} for {k}. Consumers branch on this "
                            f"vocabulary and it must not grow silently")
           print(f"status: {first}, {len(tokens) - 1} branches, all outcomes in vocabulary")
@@ -505,7 +508,7 @@ jobs:
           ok = ("ok", "absent", "error")
           for name, r in scans.items():
               v = r["extra"]
-              if not (v in ok or v.startswith(("unhealthy:", "timeout:"))):
+              if not (v in ok or v.startswith(("unhealthy:", "timeout:", "unreadable:"))):
                   sys.exit(f"::error::unknown outcome {v!r} for {name}. Consumers branch "
                            f"on this vocabulary and it must not grow silently")
           print(f"{len(inv)} rows, {len(scans)} branches, every outcome in vocabulary")

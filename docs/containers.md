@@ -54,6 +54,15 @@ That row is not decoration: an interrupted `osqueryi` exits 0 having printed a v
 array, so without it a wedged daemon and a machine with no containers produce the same value.
 `bin/classify` prints it as `COULD NOT LOOK` above the findings.
 
+**A declined scan is not a permanent one, and the marker deliberately does not say so.** A
+Docker that was napping past the ping budget, or wedged, is read normally by the next
+scheduled run — but *this repo does not own that schedule*: a launchd job, a systemd timer,
+an MDM policy or cron is something a deployment supplies, and a marker promising a retry
+would be asserting a fact its writer cannot check. That is the `stale:<n>` shape again, a
+term whose truth lives outside the thing emitting it. What the row does carry is `ver`, the
+unix time of the scan, so a reader comparing two payloads can see whether the condition
+cleared. Judge it there rather than from one result.
+
 ## Three rows, three strengths of claim
 
 The branch emits three kinds, and they are not interchangeable. A reader who treats them as
@@ -122,8 +131,9 @@ Container images are rare in this catalog — `catalog/agents.yaml`'s `images:` 
 which agents carry one. So `--deep` earns its place on fleets that run agents in containers
 and adds little elsewhere.
 
-Docker itself is never required. A machine with no Docker reports `absent`, which is a stated
-outcome rather than a failure.
+Docker itself is never required. A machine with no Docker reports `absent` — or
+`unreadable:<runtime>` if another container runtime is installed here — and both are
+stated outcomes rather than failures.
 
 ## On Linux, where the socket is simpler and the blind spot is wider
 
@@ -136,10 +146,15 @@ outcome rather than a failure.
 - **Podman is not probed, and on Linux that costs more.** It is often the default there, and
   `/run/podman/podman.sock` would pass the health guard and then return **zero images**,
   because `docker_images` does not read Podman's image store at all. That is a manufactured
-  "we looked", which is worse than a gap — so it is recorded as a gap in
-  [the blind spots](agents.md) instead of probed.
+  "we looked", which is worse than a gap — so the runtime is **named instead of probed**.
 - **A rootless Podman socket lives under `$XDG_RUNTIME_DIR`**, which the same argument
   covers.
 
-So on a Podman host `--deep` reports `absent` and means it: there is no Docker socket. It is
-not saying the machine has no containers, and nothing here can tell you whether it does.
+So on a Podman host `--deep` reports `unreadable:podman`, and that is the whole of the claim:
+a container runtime is installed here and this scan does not read it. It is not saying the
+machine has no containers, and nothing here can tell you whether it does.
+
+It used to report `absent`, the same word a machine with no containers gets, so the two
+arrived looking identical. The evidence is a socket path or a binary on disk: **presence, and
+nothing more.** Asking Podman what it runs would be a new dependency and a daemon
+conversation on the one path that must not depend on the thing it reports.
