@@ -16,7 +16,7 @@
       "platform": "linux",
       "os": "24.04",
       "arch": "x86_64",
-      "run": "35851104839"
+      "run": "35948708184"
     },
     {
       "agent": "claude-code",
@@ -33,7 +33,7 @@
       "platform": "linux",
       "os": "24.04",
       "arch": "x86_64",
-      "run": "35851104839"
+      "run": "35948708184"
     },
     {
       "agent": "cline",
@@ -52,7 +52,7 @@
       "platform": "linux",
       "os": "24.04",
       "arch": "x86_64",
-      "run": "35851104839"
+      "run": "35948708184"
     },
     {
       "agent": "codex-cli",
@@ -71,7 +71,7 @@
       "platform": "linux",
       "os": "24.04",
       "arch": "x86_64",
-      "run": "35851104839"
+      "run": "35948708184"
     },
     {
       "agent": "codex-cli",
@@ -88,7 +88,7 @@
       "platform": "linux",
       "os": "24.04",
       "arch": "x86_64",
-      "run": "35851104839"
+      "run": "35948708184"
     },
     {
       "agent": "copilot-cli",
@@ -107,7 +107,7 @@
       "platform": "linux",
       "os": "24.04",
       "arch": "x86_64",
-      "run": "35851104839"
+      "run": "35948708184"
     },
     {
       "agent": "gemini-cli",
@@ -122,11 +122,11 @@
       "agent": "gemini-cli",
       "route": "npm",
       "value": "@google/gemini-cli",
-      "agent_version": "0.60.0",
+      "agent_version": "0.61.0",
       "platform": "linux",
       "os": "24.04",
       "arch": "x86_64",
-      "run": "35851104839"
+      "run": "35948708184"
     }
   ]
 }

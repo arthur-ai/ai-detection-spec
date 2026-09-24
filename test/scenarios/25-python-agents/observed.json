@@ -28,7 +28,7 @@
       "value": "aider-chat",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "35851104839"
+      "run": "35948708184"
     },
     {
       "agent": "aider",
@@ -57,7 +57,7 @@
       "value": "~/.aider",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "35851104839"
+      "run": "35948708184"
     },
     {
       "agent": "hermes",
@@ -86,7 +86,7 @@
       "value": "~/.local/bin/hermes",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "35851104839"
+      "run": "35948708184"
     },
     {
       "agent": "hermes",
@@ -115,7 +115,7 @@
       "value": "hermes-agent",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "35851104839"
+      "run": "35948708184"
     },
     {
       "agent": "hermes",
@@ -144,7 +144,7 @@
       "value": "~/.hermes",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "35851104839"
+      "run": "35948708184"
     }
   ]
 }

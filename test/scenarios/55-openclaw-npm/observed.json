@@ -29,10 +29,10 @@
       "agent": "openclaw",
       "route": "npm",
       "value": "openclaw",
-      "agent_version": "2026.9.5",
+      "agent_version": "2026.9.6",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "35851104839"
+      "run": "35948708184"
     },
     {
       "agent": "openclaw",
@@ -61,7 +61,7 @@
       "value": "~/.openclaw",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "35851104839"
+      "run": "35948708184"
     }
   ]
 }
