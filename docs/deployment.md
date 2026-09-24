@@ -115,6 +115,12 @@ machine holds containers is **unknown**, not none. A consumer that folds the sec
 the first reads a Podman fleet as a fleet with no containers, which is the one reading
 this vocabulary exists to prevent.
 
+`bin/classify` splits the same three ways — `scans`, `absences`, `gaps` — and only `gaps`
+makes it hedge its report. A machine with no container runtime still gets a plain
+`No AI agents found.`; one whose daemon would not answer gets `... in the parts that could
+be read.` A consumer reconciling row counts owes `absences` a subtraction, or those rows
+read as dropped.
+
 **The first token separates "could not look" from "nothing to look at".** `absent` is a
 stated fact about the machine — no Docker, no systemd bus — so it does not degrade the line;
 a Mac that simply does not run Docker reads `ok`. `unhealthy:*`, `timeout:*`, `error` and

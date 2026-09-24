@@ -274,8 +274,7 @@ check("...and says so in the text output",
 # for every non-container branch that ran and failed, and the renderer had no case for
 # it, so it fell through to a generic sentence that substituted "the socket" as the
 # place -- naming a socket that had nothing to do with a failed `apps` query.
-for extra, needle in (("absent", "no socket"),
-                      ("no-cache", "never run"),
+for extra, needle in (("no-cache", "never run"),
                       ("error", "ran and failed"),
                       ("unhealthy:500", "answered 500"),
                       ("timeout:6", "stalled"),
@@ -460,15 +459,30 @@ check("a SECOND entry from the same install is not a second finding",
       {e["id"] for f in _rd["findings"] for e in f["evidence"]} == {"cursor.desktop"},
       "cursor-url-handler.desktop is one install's second file, not a second install")
 
-# The systemd marker is a gap, not a finding, and an unreadable unit list must not read as
-# a clean one. This is the branch a container exercises and a CI runner never will.
-_scan = [{"kind": "scan", "id": "systemd", "ver": str(int(_time.time())),
-          "loc": "/run/dbus/system_bus_socket", "extra": "absent", "perms": ""}]
-_txt = classify_rows(_scan)
+# The systemd marker carries two values that are easy to read as one thing, and the query
+# is where the difference is decided: a host WITH systemd has hundreds of units, so
+# zero-with-a-socket is `unhealthy:no-units` and never a clean machine. No socket file at
+# all is `absent` -- no systemd, so there are no units to miss.
+# This is the branch a container exercises and a CI runner never will.
+def _systemd(extra):
+    return classify_rows([{"kind": "scan", "id": "systemd",
+                           "ver": str(int(_time.time())),
+                           "loc": "/run/dbus/system_bus_socket",
+                           "extra": extra, "perms": ""}])
+
+
+_txt = _systemd("unhealthy:no-units")
 check("an unreadable systemd unit list is a gap, not silence",
       "COULD NOT LOOK: systemd" in _txt
       and "No AI agents found in the parts that could be read." in _txt,
       "zero units with no bus is indistinguishable from a clean host without this")
+
+_txt = _systemd("absent")
+check("...but no systemd at all is an absence, and does not hedge the report",
+      "NOTHING TO LOOK AT: systemd" in _txt
+      and "No AI agents found." in _txt
+      and "No AI agents found in the parts that could be read." not in _txt,
+      "hedging here withholds the clean answer from every machine without systemd")
 
 # A systemd unit is EVIDENCE AND NOT A SIGNATURE, and this assertion is why.
 #

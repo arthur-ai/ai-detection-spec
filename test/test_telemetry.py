@@ -254,7 +254,7 @@ AGREED = {
     "classify_sha",
     "rows_total", "findings_agents", "findings_rows", "unmatched_rows", "dropped_rows",
     "payload_bytes", "payload_packed_bytes",
-    "gap_rows", "scan_rows",
+    "gap_rows", "absence_rows", "scan_rows",
     "kinds_seen", "deep_scan",
     "gap_reasons", "gap_unhealthy_code", "gap_timeout_seconds",
     "stale_branches", "newest_scan_age_seconds",
