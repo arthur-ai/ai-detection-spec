@@ -14,11 +14,11 @@
       "agent": "cursor",
       "route": "deb_packages",
       "value": "cursor",
-      "agent_version": "3.21.18-1790045713",
+      "agent_version": "3.22.7-1790228161",
       "platform": "linux",
       "os": "24.04",
       "arch": "x86_64",
-      "run": "35991484880"
+      "run": "36128368535"
     },
     {
       "agent": "cursor",
@@ -35,7 +35,7 @@
       "platform": "linux",
       "os": "24.04",
       "arch": "x86_64",
-      "run": "35991484880"
+      "run": "36128368535"
     }
   ]
 }
