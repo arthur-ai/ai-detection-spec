@@ -14,11 +14,11 @@
       "agent": "cline",
       "route": "vscode_extensions",
       "value": "saoudrizwan.claude-dev",
-      "agent_version": "4.1.21",
+      "agent_version": "4.1.22",
       "platform": "linux",
       "os": "24.04",
       "arch": "x86_64",
-      "run": "36566569046"
+      "run": "36711858380"
     },
     {
       "agent": "continue",
@@ -37,7 +37,7 @@
       "platform": "linux",
       "os": "24.04",
       "arch": "x86_64",
-      "run": "36566569046"
+      "run": "36711858380"
     }
   ]
 }
