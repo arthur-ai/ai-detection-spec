@@ -16,7 +16,7 @@
       "platform": "linux",
       "os": "24.04",
       "arch": "x86_64",
-      "run": "36711858380"
+      "run": "36862282146"
     },
     {
       "agent": "claude-code",
@@ -33,7 +33,7 @@
       "platform": "linux",
       "os": "24.04",
       "arch": "x86_64",
-      "run": "36711858380"
+      "run": "36862282146"
     },
     {
       "agent": "cline",
@@ -48,11 +48,11 @@
       "agent": "cline",
       "route": "npm",
       "value": "cline",
-      "agent_version": "3.0.66",
+      "agent_version": "3.0.67",
       "platform": "linux",
       "os": "24.04",
       "arch": "x86_64",
-      "run": "36711858380"
+      "run": "36862282146"
     },
     {
       "agent": "codex-cli",
@@ -67,11 +67,11 @@
       "agent": "codex-cli",
       "route": "npm",
       "value": "@openai/codex",
-      "agent_version": "0.159.2",
+      "agent_version": "0.159.3",
       "platform": "linux",
       "os": "24.04",
       "arch": "x86_64",
-      "run": "36711858380"
+      "run": "36862282146"
     },
     {
       "agent": "codex-cli",
@@ -88,7 +88,7 @@
       "platform": "linux",
       "os": "24.04",
       "arch": "x86_64",
-      "run": "36711858380"
+      "run": "36862282146"
     },
     {
       "agent": "copilot-cli",
@@ -103,11 +103,11 @@
       "agent": "copilot-cli",
       "route": "npm",
       "value": "@github/copilot",
-      "agent_version": "1.0.89",
+      "agent_version": "1.0.90",
       "platform": "linux",
       "os": "24.04",
       "arch": "x86_64",
-      "run": "36711858380"
+      "run": "36862282146"
     },
     {
       "agent": "gemini-cli",
@@ -126,7 +126,7 @@
       "platform": "linux",
       "os": "24.04",
       "arch": "x86_64",
-      "run": "36711858380"
+      "run": "36862282146"
     }
   ]
 }
