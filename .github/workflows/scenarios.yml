@@ -123,6 +123,7 @@ jobs:
           - 00-baseline
           - 10-desktop-apps
           - 11-perplexity-desktop
+          - 12-chatgpt-pre-rename
           - 20-cli-agents
           - 21-cli-agents-homebrew
           - 25-python-agents
