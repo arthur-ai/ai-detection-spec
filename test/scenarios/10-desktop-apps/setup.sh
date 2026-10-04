@@ -12,8 +12,8 @@ need_brew
 # on macos-14 one cask's floor was skipping the whole scenario and every other cask with
 # it. The requires.json went with it, and this scenario now runs on both runners.
 #
-# KEEP IT THAT WAY: adding a cask with a floor above 13 silently costs macos-14 coverage
-# for every cask in the loop below. Check depends_on before adding one.
+# KEEP IT THAT WAY: a cask whose depends_on floor is above the oldest macOS in the
+# scenarios.yml matrix silently costs that runner every cask in the loop below.
 #
 # lm-studio and jan were installed here and are not any more: they are model runners, and
 # the scope is agents. Worth remembering that lm-studio sat in this list for a long time
@@ -24,8 +24,8 @@ need_brew
 # names none of them.
 # kiro, antigravity and antigravity-ide added 2026-09-05. All three declare
 # depends_on macos >= 12, read off the Homebrew API that day (kiro 1.0.411,
-# antigravity 2.11.0, antigravity-ide 2.5.5), so they clear the 13 ceiling above and cost
-# macos-14 nothing. THEY DO COST DOWNLOAD: 255MB, 191MB and 212MB, which is roughly a
+# antigravity 2.11.0, antigravity-ide 2.5.5), so they clear the floor rule above.
+# THEY DO COST DOWNLOAD: 255MB, 191MB and 212MB, which is roughly a
 # 50% increase on this scenario's bytes. Recorded because that is the tradeoff to revisit
 # if this list grows again, not a reason to skip the install -- the bundle ids are the
 # whole point and only an install proves them.

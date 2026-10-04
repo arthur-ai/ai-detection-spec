@@ -787,6 +787,24 @@ check("...and does NOT resurrect an archived record from another runner's upload
       "handed them straight back to identifiers")
 check("a live record still merges normally", _live == {"openclaw"}, f"got {sorted(_live)}")
 
+# The 26.0 artifact sorts LAST and carries a stale copy of the 15.7.9 record, as every
+# upload does for the other runner's keys. The 15.7.9 runner's own record must win.
+with _tf2.TemporaryDirectory() as _d:
+    _art, _scen = pathlib.Path(_d) / "art", pathlib.Path(_d) / "scen"
+    (_scen / "zz-merge").mkdir(parents=True)
+    _committed = _scen / "zz-merge" / "observed.json"
+    _committed.write_text(json.dumps({
+        "scenario": "zz-merge", "identifiers": [_rec("openclaw", "15.7.9", run="100")]}))
+    _artifact(_art, "zz-merge", "15.7.9", [_rec("openclaw", "15.7.9", run="200")])
+    _artifact(_art, "zz-merge", "26.0", [_rec("openclaw", "15.7.9", run="100"),
+                                         _rec("openclaw", "26.0", run="200")])
+    _mo.merge(_art, _scen)
+    _runs = {r["os"]: r["run"] for r in json.loads(_committed.read_text())["identifiers"]}
+
+check("a runner's fresh record beats the stale copy in an upload that sorts after it",
+      _runs == {"15.7.9": "200", "26.0": "200"},
+      f"got {_runs}: the last artifact won every key, so the other runner's record froze")
+
 # --- the coverage shrink guard is scoped per (platform, os, arch) -----------------
 #
 # THIS TEST EXISTS BECAUSE I MISREAD THE GUARD AND BLAMED IT. A CI job refused to record

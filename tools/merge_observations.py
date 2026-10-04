@@ -60,10 +60,19 @@ def merge(artifacts, scenarios):
 
     Returns {scenario: record count} for the files it wrote.
     """
+    # THE NEWEST RUN WINS A KEY, NOT THE LAST ARTIFACT. Every upload carries verbatim copies
+    # of the other runners' committed records, and artifacts arrive in name order -- so the
+    # label that sorted last overwrote the other runner's fresh records with stale copies.
+    # Run 37118799385: macos-14 uploaded its 14.8.9 records with that run id, and the
+    # committed file kept macos-15's copies, which had none. GitHub run ids only increase,
+    # so a runner's own record outranks any copy of an older one; no run ranks lowest.
     incoming = collections.defaultdict(dict)
     for scen, doc in uploaded(artifacts):
         for rec in doc.get("identifiers", []):
-            incoming[scen][_key(rec)] = rec
+            k = _key(rec)
+            held = incoming[scen].get(k)
+            if held is None or int(rec.get("run") or 0) > int(held.get("run") or 0):
+                incoming[scen][k] = rec
 
     written = {}
     for scen, recs in sorted(incoming.items()):
