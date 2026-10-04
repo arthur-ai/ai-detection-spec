@@ -20,19 +20,33 @@ source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest-linux.sh"
 need_curl
 need_user
 
-arch=$(dpkg --print-architecture 2>/dev/null || echo amd64)
+arch=$(uname -m)
 # Google ships no Linux arm64 Chrome at all. Chromium would need a snap on Ubuntu, and a
 # snap relocates the profile to ~/snap/chromium/common/chromium -- which osquery DOES
 # scan, but that is a different path than the one a fleet's Chrome uses. Skipping is
 # honest here: the CI runner is x86_64 and runs this for real.
-[ "$arch" = amd64 ] || { echo "SKIP: Google ships no Linux $arch Chrome build"; exit 3; }
+[ "$arch" = x86_64 ] || { echo "SKIP: Google ships no Linux $arch Chrome build"; exit 3; }
 
-curl -fsSLo /tmp/chrome.deb \
-  https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
-  || { echo "SKIP: Chrome download failed"; exit 3; }
-try "installing the Chrome deb" sudo_maybe apt-get -qq install -y /tmp/chrome.deb \
-  || echo "WARN: Chrome did not install"
-rm -f /tmp/chrome.deb
+# THE PACKAGE FOLLOWS THE FAMILY. Google publishes the deb and the rpm from the same URL
+# shape, and what is under test -- the profile osquery reads and the native-messaging
+# directories beside it -- is the same install either way. The rpm goes through dnf
+# rather than rpm -i so its dependencies resolve: Chrome needs the X libraries to start
+# even headless.
+case "$(pm)" in
+  apt) curl -fsSLo /tmp/chrome.deb \
+         https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+         || { echo "SKIP: Chrome download failed"; exit 3; }
+       try "installing the Chrome deb" sudo_maybe apt-get -qq install -y /tmp/chrome.deb \
+         || echo "WARN: Chrome did not install"
+       rm -f /tmp/chrome.deb ;;
+  dnf) curl -fsSLo /tmp/chrome.rpm \
+         https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm \
+         || { echo "SKIP: Chrome download failed"; exit 3; }
+       try "installing the Chrome rpm" sudo_maybe dnf -q -y install /tmp/chrome.rpm \
+         || echo "WARN: Chrome did not install"
+       rm -f /tmp/chrome.rpm ;;
+  *)   echo "SKIP: no package manager this scenario can install Chrome with"; exit 3 ;;
+esac
 google-chrome --version 2>&1 | head -1 || true
 
 # LET CHROME SCAFFOLD ITS OWN PROFILE. This is the step that cannot be faked: three

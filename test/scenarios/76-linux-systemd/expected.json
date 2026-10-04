@@ -2,7 +2,8 @@
   "description": "An inert systemd unit and a listening port. On probation with the route it exercises.",
   "platform": "linux",
   "counts": {
-    "deb": ">=1",
+    "deb": ">=0",
+    "deb+rpm": ">=1",
     "desktop": ">=0",
     "ext": ">=0",
     "file": ">=0",
@@ -28,7 +29,7 @@
     "18789"
   ],
   "known_gaps": [
-    "Skips wherever there is no system dbus -- a container has none, which is what the kind=scan marker in queries/runtime-linux.sql exists to report. It runs for real on a GitHub ubuntu runner, where systemd is PID 1.",
+    "Skips wherever there is no system dbus -- a container has none, which is what the kind=scan marker in queries/runtime-linux.sql exists to report. It runs for real on a GitHub ubuntu runner, where systemd is PID 1, and on every family under test/run-gce.sh.",
     "No agent's systemd unit name has been read off a real install, so this proves the query and the matcher and not any vendor's naming. The route is registered and carries no values for exactly that reason.",
     "systemd user units (systemctl --user) are not visible to the table at all, and a per-user agent gateway is exactly the thing that would be one."
   ]

@@ -39,6 +39,12 @@ need_curl() { command -v curl >/dev/null 2>&1 || need_pkgs curl ca-certificates;
 
 need_node() {
   command -v npm >/dev/null 2>&1 && return 0
+  # RHEL 9 and Rocky 9 ship Node as a module whose default stream is 16, which the
+  # current agent CLIs refuse to install under. Enable the newest stream first. Fedora
+  # and the apt family have no modules, and `dnf module list` simply fails there.
+  if [ "$(pm)" = dnf ] && dnf module list nodejs >/dev/null 2>&1; then
+    sudo_maybe dnf -q -y module enable nodejs:22 >/dev/null 2>&1 || true
+  fi
   need_pkgs nodejs npm
   command -v npm >/dev/null 2>&1
 }

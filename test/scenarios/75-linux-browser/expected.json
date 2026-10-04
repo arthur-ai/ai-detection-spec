@@ -2,7 +2,8 @@
   "description": "A real Chrome profile on Linux, its extension permissions, and a native-messaging bridge.",
   "platform": "linux",
   "counts": {
-    "deb": ">=1",
+    "deb": ">=0",
+    "deb+rpm": ">=1",
     "desktop": ">=0",
     "ext": ">=1",
     "file": ">=0",

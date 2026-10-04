@@ -14,20 +14,32 @@ set -e
 source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest-linux.sh"
 need_curl
 need_user
-need_pkgs libasound2t64 || true
-
-arch=$(dpkg --print-architecture 2>/dev/null || echo amd64)
-case "$arch" in
-  amd64) build=linux-deb-x64 ;;
-  arm64) build=linux-deb-arm64 ;;
-  *) echo "SKIP: no VS Code deb for $arch"; exit 3 ;;
+# The deb or the rpm, by family: Microsoft publishes both from the same URL shape, and
+# the extension directory osquery reads is the same install either way.
+case "$(pm)-$(uname -m)" in
+  apt-x86_64)  build=linux-deb-x64   pkg=/tmp/code.deb ;;
+  apt-aarch64) build=linux-deb-arm64 pkg=/tmp/code.deb ;;
+  dnf-x86_64)  build=linux-rpm-x64   pkg=/tmp/code.rpm ;;
+  dnf-aarch64) build=linux-rpm-arm64 pkg=/tmp/code.rpm ;;
+  *) echo "SKIP: no VS Code package for $(pm) on $(uname -m)"; exit 3 ;;
 esac
-curl -fsSLo /tmp/code.deb "https://update.code.visualstudio.com/latest/$build/stable" \
+if [ "$(pm)" = apt ]; then
+  # libasound2t64 is Ubuntu 24.04's name for the ALSA library and Debian 12 still says
+  # libasound2. apt resolves the deb's dependencies itself when the install goes through
+  # apt-get, so this only matters on the dpkg -i fallback.
+  need_pkgs libasound2t64 || need_pkgs libasound2 || true
+fi
+curl -fsSLo "$pkg" "https://update.code.visualstudio.com/latest/$build/stable" \
   || { echo "SKIP: VS Code download failed"; exit 3; }
-try "installing the VS Code deb" sudo_maybe apt-get -qq install -y /tmp/code.deb \
-  || try "dpkg -i for VS Code" sudo_maybe dpkg -i /tmp/code.deb \
-  || echo "WARN: VS Code did not install"
-rm -f /tmp/code.deb
+if [ "$(pm)" = apt ]; then
+  try "installing the VS Code deb" sudo_maybe apt-get -qq install -y "$pkg" \
+    || try "dpkg -i for VS Code" sudo_maybe dpkg -i "$pkg" \
+    || echo "WARN: VS Code did not install"
+else
+  try "installing the VS Code rpm" sudo_maybe dnf -q -y install "$pkg" \
+    || echo "WARN: VS Code did not install"
+fi
+rm -f "$pkg"
 code --version --no-sandbox 2>&1 | head -1 || true
 
 # AS THE USER: extensions live in ~/.vscode/extensions, so installing as root would put

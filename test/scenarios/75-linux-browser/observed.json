@@ -6,7 +6,7 @@
       "route": "native_messaging_hosts",
       "value": "com.anthropic.claude_browser_extension.json",
       "platform": "linux",
-      "os": "24.04",
+      "os": "ubuntu-24.04",
       "arch": "x86_64",
       "run": "37200060844"
     }

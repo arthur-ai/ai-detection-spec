@@ -162,6 +162,42 @@ unchanged. Three things differ and are worth knowing before you deploy:
   produces. Read it the way you read the container marker, because "no agent units" and
   "we could not read the unit list" are different answers.
 
+### On a Compute Engine VM
+
+A VM is a headless, often multi-user server, which is a different machine from a laptop.
+Four things about it are worth knowing, each checked rather than assumed.
+
+**Which images.** CI runs every Linux scenario on Debian 12, Rocky Linux 9 and Fedora 41
+containers and on an Ubuntu 24.04 runner, so the one `dist/discovery-linux.sql` is proved
+on the three families a GCE fleet boots and on the deb and rpm sides of each. A container
+cannot host systemd or OS Login, so `test/run-gce.sh` runs the same scenarios on one real
+VM per family and brings the observations back into the tree.
+
+**OS Login.** With OS Login on, accounts come from an NSS module rather than `/etc/passwd`,
+and a home directory appears on first login. osquery's Linux `users` table has read
+`/etc/passwd` directly when unconstrained since 5.13.1, so that an LDAP site does not pay a
+directory query per scan — which means **`users` does not list OS Login accounts at all**,
+nor SSSD, LDAP or Active Directory ones. The path branches never depended on it: they glob
+`/home/%/` and `/root/` on disk. The two branches that join `users`, browser extensions and
+VS Code extensions, take their uids from the home directories on disk as well as from
+`users`, because a lookup by one uid does reach NSS. So an account that has logged in is
+covered, and one that never has owns nothing to find. The remaining gap is an NSS-only
+account with a home outside `/home` or `/root`, which `docs/blind-spots.yaml` records.
+
+**Headless.** No desktop session means the desktop-entry, browser and native-messaging
+branches return no rows, and that is the correct answer rather than a silent one: each is
+a glob over paths that exist or do not, with nothing that can fail soft. On the write path
+every branch still gets its own dated `kind=scan` row, so `status.txt` on a headless VM
+reads `browser=ok desktop-linux=ok native-messaging-linux=ok`, and a reader can tell
+"looked, nothing there" from a branch that never ran. The `systemd` marker is the one that
+changes on a VM: with systemd as PID 1 and osquery running as root it reads `ok` and the
+`unit` rows are real, where every container run reports `absent`.
+
+**Small shapes.** The wall-clock figures this repo quotes come from developer machines and
+hosted runners, and a shared-core `e2-small` is neither. `test/run-gce.sh` times the
+composed artifact, `--deep` and `--write` on that shape and runs `tools/measure.py --check`
+there, and records what it measured, dated, in its facts file.
+
 ## The `python3` stub, which used to bite only on a fleet
 
 On a Mac without Command Line Tools installed, `/usr/bin/python3` is a **stub**: it prints an
