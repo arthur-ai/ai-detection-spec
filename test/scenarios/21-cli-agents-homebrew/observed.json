@@ -32,7 +32,16 @@
       "agent_version": "0.86.2",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37179178950"
+    },
+    {
+      "agent": "aider",
+      "route": "homebrew",
+      "value": "aider",
+      "agent_version": "0.86.2",
+      "os": "26.6.2",
+      "arch": "arm64",
+      "run": "37179178950"
     },
     {
       "agent": "claude-code",
@@ -62,10 +71,19 @@
       "agent": "claude-code",
       "route": "npm",
       "value": "@anthropic-ai/claude-code",
-      "agent_version": "2.1.288",
+      "agent_version": "2.1.289",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37179178950"
+    },
+    {
+      "agent": "claude-code",
+      "route": "npm",
+      "value": "@anthropic-ai/claude-code",
+      "agent_version": "2.1.289",
+      "os": "26.6.2",
+      "arch": "arm64",
+      "run": "37179178950"
     },
     {
       "agent": "codex-cli",
@@ -98,7 +116,16 @@
       "agent_version": "0.153.4",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37179178950"
+    },
+    {
+      "agent": "codex-cli",
+      "route": "homebrew",
+      "value": "codex",
+      "agent_version": "0.153.4",
+      "os": "26.6.2",
+      "arch": "arm64",
+      "run": "37179178950"
     },
     {
       "agent": "copilot-cli",
@@ -131,7 +158,16 @@
       "agent_version": "1.0.83",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37179178950"
+    },
+    {
+      "agent": "copilot-cli",
+      "route": "homebrew",
+      "value": "copilot-cli",
+      "agent_version": "1.0.83",
+      "os": "26.6.2",
+      "arch": "arm64",
+      "run": "37179178950"
     },
     {
       "agent": "gemini-cli",
@@ -164,7 +200,16 @@
       "agent_version": "0.46.0",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37179178950"
+    },
+    {
+      "agent": "gemini-cli",
+      "route": "homebrew",
+      "value": "gemini-cli",
+      "agent_version": "0.46.0",
+      "os": "26.6.2",
+      "arch": "arm64",
+      "run": "37179178950"
     },
     {
       "agent": "hermes",
@@ -197,7 +242,16 @@
       "agent_version": "2026.8.31_1",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37179178950"
+    },
+    {
+      "agent": "hermes",
+      "route": "homebrew",
+      "value": "hermes-agent",
+      "agent_version": "2026.8.31_1",
+      "os": "26.6.2",
+      "arch": "arm64",
+      "run": "37179178950"
     }
   ]
 }
