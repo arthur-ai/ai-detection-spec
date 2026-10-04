@@ -111,20 +111,14 @@ jobs:
         # OBSERVATION instead. Encoding it in directory names would mean one copy of every
         # scenario per OS, edited in lockstep whenever a signature moves.
         #
-        # Adding a label here fans the whole suite across both, and observed.json records
-        # which OS produced each identifier -- so a signature that appears on one macOS
-        # version and not another becomes visible rather than averaged away. Kept at one
-        # label until a second is confirmed available: an invented runner label fails the
-        # entire matrix rather than the one job that needed it.
-        # TWO LABELS, so the suite runs on two macOS versions and observed.json records
-        # which one produced each identifier. That is the whole point of the axis: a
-        # signature that appears on one version and not another becomes visible instead of
-        # being averaged into a single number.
+        # TWO LABELS, so observed.json records which macOS version produced each identifier
+        # and a signature that appears on one and not the other is visible rather than
+        # averaged away.
         #
-        # macos-14 is added rather than assumed available. If GitHub has retired the label,
-        # THAT job fails with "no runner matching labels" and macos-15 still reports -- which
-        # is why fail-fast is off. Read the result before adding a third.
-        os: [macos-15, macos-14]
+        # PINNED, never macos-latest: a floating label changes the OS under every observation
+        # with no diff here. macos-14 left when GitHub retired it (2026-11-02); its records
+        # stay in observed.json. Replace a retired label rather than drop it.
+        os: [macos-15, macos-26]
         scenario:
           - 00-baseline
           - 10-desktop-apps
