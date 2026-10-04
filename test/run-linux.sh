@@ -71,7 +71,7 @@ elif command -v dnf >/dev/null 2>&1; then
   # --allowerasing: Rocky ships curl-minimal, which conflicts with curl, and dnf then
   # fails the WHOLE transaction -- pyyaml included -- while osquery still installs, so the
   # run died at the first assertion with a message about PyYAML rather than about curl.
-  { dnf -q -y --allowerasing install curl python3 python3-pyyaml tar findutils procps-ng
+  { dnf -q -y install --allowerasing curl python3 python3-pyyaml tar findutils procps-ng
     curl -fsSLo /tmp/o.rpm https://pkg.osquery.io/rpm/osquery-'"$OSQUERY_VERSION"'-1.linux.'"$RPM_ARCH"'.rpm
     rpm -i --nodeps /tmp/o.rpm; } >"$log" 2>&1
 else

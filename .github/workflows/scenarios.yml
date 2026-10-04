@@ -428,7 +428,7 @@ jobs:
             apt-get -qq update
             apt-get -qq install -y git curl ca-certificates tar python3 python3-yaml sudo procps
           else
-            dnf -q -y --allowerasing install git curl tar python3 python3-pyyaml findutils procps-ng
+            dnf -q -y install --allowerasing git curl tar python3 python3-pyyaml findutils procps-ng
           fi
       - uses: actions/checkout@v4
       - name: Install osquery

@@ -151,7 +151,7 @@ if command -v apt-get >/dev/null 2>&1; then
   curl -fsSLo /tmp/o.deb "https://pkg.osquery.io/deb/osquery_${V}-1.linux_amd64.deb"
   sudo dpkg -i /tmp/o.deb >/dev/null 2>&1
 else
-  sudo dnf -q -y --allowerasing install curl python3 python3-pyyaml tar findutils >/dev/null 2>&1
+  sudo dnf -q -y install --allowerasing curl python3 python3-pyyaml tar findutils >/dev/null 2>&1
   curl -fsSLo /tmp/o.rpm "https://pkg.osquery.io/rpm/osquery-${V}-1.linux.x86_64.rpm"
   sudo dnf -q -y install /tmp/o.rpm >/dev/null 2>&1
 fi
