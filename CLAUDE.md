@@ -110,9 +110,11 @@ week, and a guard that archived on its own would supersede a live signature on o
 afternoon. Unknown agent fields are an error, so the old habit fails loudly rather than
 shipping a value nothing checks.
 
-An identifier that genuinely cannot be covered goes under `untested:` with a reason and a
-date. That list can shrink silently and never grow silently: an entry whose identifier *is*
-covered fails the gate, so a reason cannot outlive the gap it excused.
+**`untested:` is gone too, and `tools/validate_catalog.py` rejects it.** An identifier no CI
+test covers has three outcomes: cover it, supersede it if a run once proved it and nothing
+can install it now, or remove it. "No runner happens to produce it" is not one of them.
+`com.openai.chat` looked like a supersession until the pre-rename DMG turned out to still be
+served.
 
 **A real install is the standard, and it is now the only one.** An agent is verified when a VM
 scenario installs the real software and asserts the classifier finds it, and

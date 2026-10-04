@@ -295,12 +295,14 @@ precisely so those two could be asserted.
 
 There is no register to put an unproved value in. If you want a signature, you prove it.
 
-Do not conclude that an older generation is untestable. That conclusion was reached twice and
-was wrong both times. OpenClaw's retired npm names were recorded as coverable only by a fixture
-on the reasoning that nothing installs them any more; both packages turned out to be still
-published, and `56-openclaw-retired-names` installs them for real. And the predecessor macOS
-app was assumed gone; the release asset is still downloadable, and `57-clawdbot-era` installs
-it.
+Do not conclude that an older generation is untestable. That conclusion has been reached
+three times and was wrong every time. OpenClaw's retired npm names were recorded as coverable
+only by a fixture on the reasoning that nothing installs them any more; both packages turned
+out to be still published, and `56-openclaw-retired-names` installs them for real. The
+predecessor macOS app was assumed gone; the release asset is still downloadable, and
+`57-clawdbot-era` installs it. And once the `chatgpt` cask stopped resolving the pre-rename
+build, `com.openai.chat` looked ready to supersede; OpenAI still serves that DMG, and
+`12-chatgpt-pre-rename` installs it.
 
 Two things those scenarios had to get right, and both generalise:
 

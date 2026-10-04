@@ -248,15 +248,13 @@ agents:
     # it -- so a direct download, which is how most people install this app, was invisible.
     bundle_ids: [com.openai.codex, com.openai.chat]
     homebrew: [chatgpt]
-    # com.openai.chat IS NOT SUPERSEDED YET, and the distinction is the whole point of the
-    # field being evidence-backed. It was labelled retired on the reasoning that a fresh
-    # install cannot produce it -- and 10-desktop-apps produces it on every run, because
-    # one runner image's Homebrew is still stale enough to resolve the pre-rename build.
-    # An identifier CI proves today is current, whatever era it belongs to.
+    # com.openai.chat IS PROVED, NOT SUPERSEDED. 12-chatgpt-pre-rename installs build
+    # 1.2026.160 from OpenAI's own URL on every run. Superseding needs a build nobody can
+    # install, and this one is still served.
     #
-    # The day that runner updates, the shrink guard will fire, the observation will be
-    # archived, and a `superseded:` record will land here carrying the run that last saw
-    # it. That is a fact the tooling will write, not a label someone types in advance.
+    # This used to say the shrink guard would fire once macos-14's Homebrew caught up. It
+    # did not fire. The image update changed `os` from 14.8.7 to 14.8.9, which made it a
+    # different key, so the old record stayed and kept counting as CI coverage.
 
   - id: codex-cli
     name: Codex CLI
