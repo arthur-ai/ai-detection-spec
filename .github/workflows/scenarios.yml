@@ -563,16 +563,39 @@ jobs:
         # to be CHECKED. Those are different statements and are now in different steps.
         if: github.ref == 'refs/heads/main'
         run: |
-          python3 tools/agent_status.py --write
-          git add test/scenarios/*/observed.json docs/agents.md README.md
-          if git diff --cached --quiet; then
-            echo "Coverage unchanged. Nothing to commit."
-            exit 0
-          fi
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit \
-            -m "docs: record identifier coverage observed by the scenario run" \
-            -m "Written by tools/agent_status.py --record from each scenario's own output. Triggered by ${{ github.sha }}."
-          git push
-          python3 tools/agent_status.py | tail -5 >> "$GITHUB_STEP_SUMMARY"
+          # ON TOP OF THE CURRENT MAIN, NOT THE COMMIT THIS RUN WAS FOR. This job checks out
+          # the run's own commit, and main may have moved since: a parallel run's collect, or
+          # this run's own first attempt when a failed job is re-run. Pushing from the old
+          # base is rejected with "fetch first" -- self-healing, since the next run records
+          # the same observations, but red, and a red run is what a releaser reads as a broken
+          # suite. Run 37255856907: two macOS jobs were re-run after an upload timeout, both
+          # passed, and this step went red for a reason nobody needed to act on.
+          #
+          # So the merge is redone on the latest main before every push, which is correct
+          # rather than merely safe: tools/merge_observations.py merges by key and the newest
+          # run wins, so the result on any base is the same files. Three attempts, because
+          # the window between fetch and push is a few seconds and another collect can still
+          # land inside it; the third failure is reported as the error it is.
+          for attempt in 1 2 3; do
+            git fetch -q origin main
+            git checkout -q -f -B main origin/main
+            python3 tools/merge_observations.py /tmp/observed test/scenarios
+            python3 tools/agent_status.py --write
+            git add test/scenarios/*/observed.json docs/agents.md README.md
+            if git diff --cached --quiet; then
+              echo "Coverage unchanged against $(git rev-parse --short HEAD). Nothing to commit."
+              exit 0
+            fi
+            git commit -q \
+              -m "docs: record identifier coverage observed by the scenario run" \
+              -m "Written by tools/agent_status.py --record from each scenario's own output. Triggered by ${{ github.sha }}."
+            if git push -q origin main; then
+              python3 tools/agent_status.py | tail -5 >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "push rejected on attempt $attempt of 3: another collect landed; catching up and merging again"
+          done
+          echo "::error::could not push the observations after 3 attempts. Re-run this job."
+          exit 1

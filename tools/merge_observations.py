@@ -88,13 +88,28 @@ def merge(artifacts, scenarios):
         committed = json.loads(out.read_text()) if out.exists() else {}
         archived = {_key(r): r for r in committed.get("archived", [])}
 
+        # THE COMMITTED FILE IS THE BASE, AND AN UPLOAD REPLACES A KEY ONLY WITH A NEWER
+        # RUN. This used to build `identifiers` from the uploads alone, which was the same
+        # thing exactly as long as main had not moved since the run checked out -- every
+        # upload carries a verbatim copy of the committed file. Once collect re-merges onto
+        # the current main after a rejected push, that stops being true: a record another
+        # collect committed in the meantime is absent from these uploads, or present only
+        # as the older copy they were cut from, and uploads-only would erase or regress it.
+        # Starting from what is committed and letting only a newer run id win a key makes
+        # the merge the same files on any base, which is what re-merging relies on.
+        live = {_key(r): r for r in committed.get("identifiers", [])}
+        for k, r in incoming[scen].items():
+            held = live.get(k)
+            if held is None or int(r.get("run") or 0) >= int(held.get("run") or 0):
+                live[k] = r
+
         # AND A RESURRECTED RECORD IS WORSE THAN A LOST ONE. record() copies every OTHER
         # (platform, os, arch) key's records verbatim into each job's upload, so a record
         # archived on the macos-15 runner is re-uploaded intact by macos-14 and the union
         # above hands it straight back to `identifiers`. The archive could never take
         # effect in CI. An archived key wins: it is the decision a maintainer committed,
         # and another runner's stale copy does not get to overturn it.
-        live = {k: r for k, r in incoming[scen].items() if k not in archived}
+        live = {k: r for k, r in live.items() if k not in archived}
 
         doc = {"scenario": scen, "identifiers": sorted(live.values(), key=_sort_key)}
         if archived:
