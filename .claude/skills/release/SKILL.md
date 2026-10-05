@@ -164,9 +164,11 @@ $ tools/gates.sh                      # agent_status --check fails on a stale pa
 `gates.sh` catches a stale page but not a *pending* one: a tree matching its own uncommitted
 observations is internally consistent and still a merge behind. Pull again after collect lands.
 
-**A `collect` push race is not a gate failure.** Two runs finishing together both push; the loser
-reports `! [rejected] main -> main (fetch first)`. Self-healing, but it leaves a red run a
-releaser reads as a broken suite. Check which job failed:
+**A `collect` push race is not a gate failure, and it now retries.** Two runs finishing together
+both push, and so does a re-run of a run whose first collect already landed; the loser used to
+report `! [rejected] main -> main (fetch first)` and go red. The step now re-merges onto the
+current main before each of three push attempts, so only three rejections in a row are an
+error. If a run is red, check which job failed:
 
 ```console
 $ gh run view <id> --json jobs --jq '.jobs[] | select(.conclusion=="failure") | .name'
