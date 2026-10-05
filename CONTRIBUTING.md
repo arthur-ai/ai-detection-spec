@@ -68,15 +68,17 @@ it — a scenario must pin the kinds **its own platform's queries actually emit*
 
 ## Adding a signature
 
-1. Install the real thing on a Mac. Do not guess identifiers from vendor documentation.
+1. Install the real thing, on the platform it ships for. Do not guess identifiers from vendor
+   documentation.
 2. Find how it actually presents:
    ```console
    $ osqueryi "SELECT bundle_identifier, bundle_short_version, path FROM apps WHERE path LIKE '%Thing%'"
-   $ plutil -extract CFBundleIdentifier raw /Applications/Thing.app/Contents/Info.plist
+   $ osqueryi "SELECT name, version FROM deb_packages WHERE name LIKE '%thing%' AND status LIKE '%ok installed'"
    ```
 3. Add a test scenario under `test/scenarios/`, with a `setup.sh` that installs it and an
    `expected.json` that says what should be found.
-4. Open a PR. CI checks the scenario is well-formed; the full run happens on a macOS runner.
+4. Open a PR. CI checks the scenario is well-formed; the full run happens on a runner for its
+   platform.
 
 **Check every install route.** A single tool often ships several ways, and each lands somewhere
 different. OpenClaw ships as a Homebrew cask *and* an npm global *and* a `curl | bash` installer
@@ -100,7 +102,6 @@ ships through**:
   npm: [openclaw, clawdbot, moltbot]
   state_dirs: ["~/.openclaw"]
   launchd_prefixes: [ai.openclaw.]
-  ports: [18789]
 ```
 
 `tools/validate_catalog.py` checks it and runs in CI. It is strict about the mistakes that
@@ -206,40 +207,19 @@ committed file already holds stops rather than overwriting it, because that is a
 query that quietly broke looks like. `--allow-shrink` is the deliberate override, for an
 identifier genuinely removed from the catalog.
 
-### `observed.json` is what coverage is counted from
-
-Each scenario records what it actually matched in `test/scenarios/<name>/observed.json`, and
-`tools/agent_status.py` counts coverage from those files rather than from what `expected.json`
-asserts — an agent can pass while carrying an identifier nothing exercised.
-
-The `collect` job writes them and it runs **only on `main`**: a pull request asserts and
-uploads without committing, because a PR must not be able to move recorded coverage. So **a PR
-that adds an identifier's first real install should commit the observation itself** — otherwise
-the generated page reports that identifier as uncovered until the merge lands, while the
-scenario proving it sits green on the same PR.
-
-```console
-$ python3 tools/agent_status.py --record /tmp/out.json test/scenarios/<name> \
-    --platform linux --os 24.04 --arch x86_64
-```
-
-Records merge and are refused when they shrink: a run proving fewer identifiers than the
-committed file already holds stops rather than overwriting it, because that is also what a
-query that quietly broke looks like. `--allow-shrink` is the deliberate override, for an
-identifier genuinely removed from the catalog.
-
 The state to read closely is **`did not appear`**: a scenario installed the agent and this
-identifier never showed up. It means one of four things, and telling them apart is the work:
+identifier never showed up. It means one of five things, and telling them apart is the work:
 
 | it means | what to do |
 |---|---|
 | the scenario installs by another route | install that route in a **separate** scenario — two routes claiming one binary name cannot share a machine, which is why `21-cli-agents-homebrew` exists beside `20-cli-agents` |
 | the artifact only exists once the agent **runs** | invoke it. A state directory does not exist until first run |
 | **the identifier is wrong** | remove it, and keep its row as a negative control |
+| the route cannot identify at all | remove the route. A listening port only matches when the process holding it already names the agent, so `ports` was retired |
 | **the identifier is right and is no longer installable** | **keep it.** The software moved on and the machines on the old build still report it — supersede it, which is the next section |
 
-The last two look identical in the report and take opposite actions, so tell them apart
-before you edit anything. The discriminator is whether any run has ever produced the value:
+A wrong identifier and one that is no longer installable look identical in the report and
+take opposite actions, so tell them apart before you edit anything. The discriminator is whether any run has ever produced the value:
 `grep -rl '"value": "<the value>"' test/scenarios/*/observed.json`. A wrong identifier has
 no such record, because nothing can produce a name that belongs to other software.
 
@@ -295,20 +275,20 @@ against the normalised tag, and the normalisation was read off 28 real images ra
 reasoned about:
 
 ```yaml
-  images: [ollama/ollama]                 # Docker Hub: no docker.io/, no library/
-  images: ["ghcr.io/ggml-org/llama.cpp"]  # anywhere else: the registry host IS part of it
+  images: [paulgauthier/aider]        # Docker Hub: no docker.io/, no library/
+  images: ["ghcr.io/block/goose"]     # anywhere else: the registry host IS part of it
 ```
 
 Three things to know before adding one:
 
-- **Give the repository, never a tag.** `ollama/ollama:latest` in the catalog normalises to
-  `ollama/ollama` on the row side and would simply never match. `validate_catalog.py` rejects
-  it, because the failure is otherwise silent — the agent just stops being found.
+- **Give the repository, never a tag.** `paulgauthier/aider:latest` in the catalog normalises
+  to `paulgauthier/aider` on the row side and would simply never match. `validate_catalog.py`
+  rejects it, because the failure is otherwise silent — the agent just stops being found.
 - **Prefer the two-segment published name.** A locally built image is shaped exactly like a
-  Docker Hub library image, so a bare `ollama` would claim anyone's `ollama:latest` build.
+  Docker Hub library image, so a bare `aider` would claim anyone's `aider:latest` build.
 - **This route is weaker evidence than the others, and the difference is real.** Every other
   identifier here is chosen by a vendor. An image name is chosen by whoever ran `docker tag`,
-  so `docker tag alpine ollama/ollama` yields an Ollama finding that nothing can tell from
+  so `docker tag alpine paulgauthier/aider` yields an aider finding that nothing can tell from
   the genuine image. Say so when you use it; do not treat an image row as a bundle id.
 
 **Verification: pull it and read the row.** Identifiers are facts read off real installs, and

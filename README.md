@@ -69,8 +69,8 @@ it belongs on.
 
 ## Scope, so you know what you are getting
 
-**macOS and Linux ship. Windows does not.** CI installs the real software on macOS runners and
-on `ubuntu-24.04`, plus a `fedora:41` container for the rpm family, so both platforms are held
+**macOS and Linux ship. Windows does not.** CI installs the real software on macOS runners, on
+`ubuntu-24.04`, and in Debian 12, Rocky 9 and Fedora 41 containers, so both platforms are held
 to the same standard: a signature is verified when a scenario installs the actual software and
 asserts the classifier finds it.
 
@@ -124,8 +124,7 @@ before the runner starts, so a machine running one needs those as well. Unpackin
 `dist/` yourself needs neither — [`docs/deployment.md`](docs/deployment.md) has it.
 `CLAUDE.md` carries that rule and `test/lint.sh` gates it, for a reason `docs/deployment.md`
 also records: on a Mac without Command Line Tools `/usr/bin/python3` is a stub, and a marker
-row that needs an interpreter cannot report a broken interpreter. Which OS versions each
-scenario has actually run on is recorded in [`docs/agents.md`](docs/agents.md).
+row that needs an interpreter cannot report a broken interpreter.
 
 `sudo` is needed because some tables read other users' home directories. Without it you see
 only your own account.

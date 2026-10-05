@@ -33,7 +33,7 @@ a clean machine.
 
 ## One file, when your platform can host a script and not a package
 
-A release attaches nine loose files, and they only work in the layout this repo has:
+The loose files a release attaches only work in the layout this repo has:
 `bin/container-scan` resolves `dist/discovery-deep.sql` relative to its own parent, and
 `bin/discover` sources `bin/container-scan`. Putting files in a fixed place on a managed
 machine is the part a management platform is worst at — it wants a package, which on macOS
