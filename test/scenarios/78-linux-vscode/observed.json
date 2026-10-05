@@ -17,7 +17,18 @@
       "agent_version": "4.1.22",
       "platform": "linux",
       "os": "debian-12",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
+    },
+    {
+      "agent": "cline",
+      "route": "vscode_extensions",
+      "value": "saoudrizwan.claude-dev",
+      "agent_version": "4.1.22",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "cline",
@@ -35,7 +46,8 @@
       "agent_version": "4.1.22",
       "platform": "linux",
       "os": "rocky-9.8",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "cline",
@@ -53,7 +65,8 @@
       "agent_version": "4.1.22",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "continue",
@@ -71,7 +84,18 @@
       "agent_version": "2.0.0",
       "platform": "linux",
       "os": "debian-12",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
+    },
+    {
+      "agent": "continue",
+      "route": "vscode_extensions",
+      "value": "continue.continue",
+      "agent_version": "2.0.0",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "continue",
@@ -89,7 +113,8 @@
       "agent_version": "2.0.0",
       "platform": "linux",
       "os": "rocky-9.8",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "continue",
@@ -107,7 +132,8 @@
       "agent_version": "2.0.0",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     }
   ]
 }

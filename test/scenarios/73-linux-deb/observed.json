@@ -17,7 +17,8 @@
       "agent_version": "3.23.12-1790831722",
       "platform": "linux",
       "os": "debian-12",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "cursor",
@@ -35,7 +36,8 @@
       "agent_version": "3.23.12-1790831722",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "cursor",
@@ -51,7 +53,8 @@
       "value": "cursor.desktop",
       "platform": "linux",
       "os": "debian-12",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "cursor",
@@ -67,7 +70,8 @@
       "value": "cursor.desktop",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     }
   ]
 }

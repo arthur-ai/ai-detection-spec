@@ -15,7 +15,17 @@
       "value": "aider-chat",
       "platform": "linux",
       "os": "debian-12",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
+    },
+    {
+      "agent": "aider",
+      "route": "pypi",
+      "value": "aider-chat",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "aider",
@@ -31,7 +41,8 @@
       "value": "aider-chat",
       "platform": "linux",
       "os": "rocky-9.8",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "aider",
@@ -47,7 +58,8 @@
       "value": "aider-chat",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "aider",
@@ -63,7 +75,17 @@
       "value": "~/.aider",
       "platform": "linux",
       "os": "debian-12",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
+    },
+    {
+      "agent": "aider",
+      "route": "state_dirs",
+      "value": "~/.aider",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "aider",
@@ -79,7 +101,8 @@
       "value": "~/.aider",
       "platform": "linux",
       "os": "rocky-9.8",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "aider",
@@ -95,7 +118,8 @@
       "value": "~/.aider",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "hermes",
@@ -111,7 +135,17 @@
       "value": "~/.local/bin/hermes",
       "platform": "linux",
       "os": "debian-12",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
+    },
+    {
+      "agent": "hermes",
+      "route": "binaries",
+      "value": "~/.local/bin/hermes",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "hermes",
@@ -127,7 +161,8 @@
       "value": "~/.local/bin/hermes",
       "platform": "linux",
       "os": "rocky-9.8",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "hermes",
@@ -143,7 +178,8 @@
       "value": "~/.local/bin/hermes",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "hermes",
@@ -159,7 +195,17 @@
       "value": "hermes-agent",
       "platform": "linux",
       "os": "debian-12",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
+    },
+    {
+      "agent": "hermes",
+      "route": "pypi",
+      "value": "hermes-agent",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "hermes",
@@ -175,7 +221,8 @@
       "value": "hermes-agent",
       "platform": "linux",
       "os": "rocky-9.8",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "hermes",
@@ -191,7 +238,8 @@
       "value": "hermes-agent",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "hermes",
@@ -207,7 +255,17 @@
       "value": "~/.hermes",
       "platform": "linux",
       "os": "debian-12",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
+    },
+    {
+      "agent": "hermes",
+      "route": "state_dirs",
+      "value": "~/.hermes",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "hermes",
@@ -223,7 +281,8 @@
       "value": "~/.hermes",
       "platform": "linux",
       "os": "rocky-9.8",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "hermes",
@@ -239,7 +298,8 @@
       "value": "~/.hermes",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     }
   ]
 }

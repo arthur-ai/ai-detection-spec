@@ -15,7 +15,17 @@
       "value": "~/.local/bin/claude",
       "platform": "linux",
       "os": "debian-12",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
+    },
+    {
+      "agent": "claude-code",
+      "route": "binaries",
+      "value": "~/.local/bin/claude",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "claude-code",
@@ -31,7 +41,8 @@
       "value": "~/.local/bin/claude",
       "platform": "linux",
       "os": "rocky-9.8",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "claude-code",
@@ -47,7 +58,8 @@
       "value": "~/.local/bin/claude",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "claude-code",
@@ -63,7 +75,17 @@
       "value": "~/.claude",
       "platform": "linux",
       "os": "debian-12",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
+    },
+    {
+      "agent": "claude-code",
+      "route": "state_dirs",
+      "value": "~/.claude",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "claude-code",
@@ -79,7 +101,8 @@
       "value": "~/.claude",
       "platform": "linux",
       "os": "rocky-9.8",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "claude-code",
@@ -95,7 +118,8 @@
       "value": "~/.claude",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "cline",
@@ -113,7 +137,18 @@
       "agent_version": "3.0.68",
       "platform": "linux",
       "os": "debian-12",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
+    },
+    {
+      "agent": "cline",
+      "route": "npm",
+      "value": "cline",
+      "agent_version": "3.0.68",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "cline",
@@ -131,7 +166,8 @@
       "agent_version": "3.0.68",
       "platform": "linux",
       "os": "rocky-9.8",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "cline",
@@ -149,7 +185,8 @@
       "agent_version": "3.0.68",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "codex-cli",
@@ -167,7 +204,18 @@
       "agent_version": "0.160.0",
       "platform": "linux",
       "os": "debian-12",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
+    },
+    {
+      "agent": "codex-cli",
+      "route": "npm",
+      "value": "@openai/codex",
+      "agent_version": "0.160.0",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "codex-cli",
@@ -185,7 +233,8 @@
       "agent_version": "0.160.0",
       "platform": "linux",
       "os": "rocky-9.8",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "codex-cli",
@@ -203,7 +252,8 @@
       "agent_version": "0.160.0",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "codex-cli",
@@ -219,7 +269,17 @@
       "value": "~/.codex",
       "platform": "linux",
       "os": "debian-12",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
+    },
+    {
+      "agent": "codex-cli",
+      "route": "state_dirs",
+      "value": "~/.codex",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "codex-cli",
@@ -235,7 +295,8 @@
       "value": "~/.codex",
       "platform": "linux",
       "os": "rocky-9.8",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "codex-cli",
@@ -251,7 +312,8 @@
       "value": "~/.codex",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "copilot-cli",
@@ -269,7 +331,18 @@
       "agent_version": "1.0.91",
       "platform": "linux",
       "os": "debian-12",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
+    },
+    {
+      "agent": "copilot-cli",
+      "route": "npm",
+      "value": "@github/copilot",
+      "agent_version": "1.0.91",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "copilot-cli",
@@ -287,7 +360,8 @@
       "agent_version": "1.0.91",
       "platform": "linux",
       "os": "rocky-9.8",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "copilot-cli",
@@ -305,7 +379,8 @@
       "agent_version": "1.0.91",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "gemini-cli",
@@ -323,7 +398,18 @@
       "agent_version": "0.62.0",
       "platform": "linux",
       "os": "debian-12",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
+    },
+    {
+      "agent": "gemini-cli",
+      "route": "npm",
+      "value": "@google/gemini-cli",
+      "agent_version": "0.62.0",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "gemini-cli",
@@ -341,7 +427,8 @@
       "agent_version": "0.62.0",
       "platform": "linux",
       "os": "rocky-9.8",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     },
     {
       "agent": "gemini-cli",
@@ -359,7 +446,8 @@
       "agent_version": "0.62.0",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "x86_64"
+      "arch": "x86_64",
+      "run": "37255856907"
     }
   ]
 }
