@@ -45,7 +45,7 @@ per run: counts, never identifiers, described field by field in
   [the report](docs/agents.md) is generated, so it cannot flatter itself.
 - **🧩 Add an agent without touching the endpoint.** The queries carry no product names, so a new
   signature re-matches evidence you already collected — nothing to redeploy to the fleet.
-- **🗺 Blind spots stated up front.** [Written down](docs/agents.md), because a discovery tool
+- **🗺 Blind spots stated up front.** [Written down](docs/limits.md), because a discovery tool
   that hides them is worse than none.
 
 ## What you get
@@ -253,15 +253,16 @@ lists every field.
 
 Every agent in the catalog, every identifier each is matched on, and the CI scenario that
 installs the real software and proves it. Generated and gated by lint, so it cannot describe a
-catalog that has moved on without it — and it names what the suite *cannot* prove alongside
-what it can.
+catalog that has moved on without it. What the suite *cannot* prove is kept beside it, in
+[`docs/limits.md`](docs/limits.md).
 
 **[Open the coverage report →](docs/agents.md)**
 
 ## What it cannot see
 
 A discovery tool that hides its blind spots is worse than none, so they live in one place —
-[`docs/blind-spots.yaml`](docs/blind-spots.yaml) — and are rendered into the report. They are
+[`docs/blind-spots.yaml`](docs/blind-spots.yaml) — and are rendered into
+[`docs/limits.md`](docs/limits.md). They are
 properties of the platform and the osquery tables rather than gaps in the test suite: no
 amount of coverage moves them.
 
@@ -269,7 +270,7 @@ The ones most likely to matter to you: anything inside a VM or a container, snap
 packages (osquery has no table for either), AppImage installs, and what an agent *does* as
 opposed to what it is permitted to do.
 
-**[Read them in context →](docs/agents.md#what-osquery-cannot-see)**
+**[Read them in context →](docs/limits.md#what-osquery-cannot-see)**
 
 ## Containers
 

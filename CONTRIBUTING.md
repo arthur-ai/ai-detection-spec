@@ -167,14 +167,15 @@ $ grep -rl '"value": "<the value>"' test/scenarios/*/observed.json
 ### Regenerate the doc in the same commit
 
 [`docs/agents.md`](docs/agents.md) lists every agent, its identifiers and the evidence
-behind each one. It is **generated**, exactly as `dist/` is:
+behind each one; [`docs/limits.md`](docs/limits.md) lists what osquery cannot see and what
+each scenario leaves unproved. Both are **generated**, exactly as `dist/` is:
 
 ```console
 $ python3 tools/agent_status.py            # read it in the terminal
-$ python3 tools/agent_status.py --write    # regenerate docs/agents.md
+$ python3 tools/agent_status.py --write    # regenerate docs/agents.md and docs/limits.md
 ```
 
-`test/lint.sh` fails if it is stale, so change the catalog and regenerate in the same
+`test/lint.sh` fails if either is stale, so change the catalog and regenerate in the same
 commit. A workflow also regenerates it on `main` as a safety net, which covers a direct
 push or a merge that moves coverage without touching the catalog.
 

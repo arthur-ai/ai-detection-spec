@@ -1,4 +1,4 @@
-# What these queries CANNOT see. The canonical list, and the only copy: docs/agents.md
+# What these queries CANNOT see. The canonical list, and the only copy: docs/limits.md
 # renders it and README points at that, so a reader meets these once.
 #
 # These are properties of the platform and the osquery tables. No amount of test coverage
