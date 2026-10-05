@@ -480,7 +480,6 @@ macOS 26, Apple Silicon, 392 apps, 136 Homebrew packages, 53 browser extensions.
 | 55-openclaw-npm | 584 | 12.3 KB | 41% |
 | 60-persistence | 586 | 12.3 KB | 41% |
 | 25-python-agents | 589 | 12.3 KB | 41% |
-| 30-local-models | 591 | 12.5 KB | 42% |
 | 10-desktop-apps | 592 | 12.7 KB | 42% |
 | 40-browser | 590 | 12.8 KB | 43% |
 
