@@ -805,6 +805,33 @@ check("a runner's fresh record beats the stale copy in an upload that sorts afte
       _runs == {"15.7.9": "200", "26.0": "200"},
       f"got {_runs}: the last artifact won every key, so the other runner's record froze")
 
+# THE COMMITTED FILE IS THE BASE. collect re-merges onto the current main after a rejected
+# push, and by then main may hold what this run's uploads do not: a key a later collect
+# added, or a newer run of a key these uploads carry an older copy of -- a VM record with
+# no run id is the first shape, and the second is any parallel run that finished first.
+# Built from uploads alone, the merge erased the first and regressed the second, and the
+# only thing that had kept that from happening was the push being rejected.
+with _tf2.TemporaryDirectory() as _d:
+    _art, _scen = pathlib.Path(_d) / "art", pathlib.Path(_d) / "scen"
+    (_scen / "zz-merge").mkdir(parents=True)
+    _committed = _scen / "zz-merge" / "observed.json"
+    _vm = dict(_rec("openclaw", "debian-12"), platform="linux", arch="x86_64"); del _vm["run"]
+    _committed.write_text(json.dumps({
+        "scenario": "zz-merge",
+        "identifiers": [_rec("openclaw", "15.7.9", run="300"), _vm]}))
+    _artifact(_art, "zz-merge", "15.7.9", [_rec("openclaw", "15.7.9", run="200"),
+                                           _rec("openclaw", "26.0", run="200")])
+    _mo.merge(_art, _scen)
+    _got = {(r["os"], r.get("run")) for r in json.loads(_committed.read_text())["identifiers"]}
+
+check("a re-merge keeps a committed record the uploads never carried",
+      ("debian-12", None) in _got, f"got {sorted(_got, key=str)}: the VM record was erased")
+check("...and keeps the committed copy when it is the newer run",
+      ("15.7.9", "300") in _got and ("15.7.9", "200") not in _got,
+      f"got {sorted(_got, key=str)}: an older upload regressed a newer committed record")
+check("...while still adding what the uploads bring",
+      ("26.0", "200") in _got, f"got {sorted(_got, key=str)}")
+
 # --- the coverage shrink guard is scoped per (platform, os, arch) -----------------
 #
 # THIS TEST EXISTS BECAUSE I MISREAD THE GUARD AND BLAMED IT. A CI job refused to record
