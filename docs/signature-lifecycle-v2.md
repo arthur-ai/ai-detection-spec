@@ -553,7 +553,7 @@ ambiguous, and add the model against that measurement.
 |---|---|
 | recording what each run matched, per identifier, with version, platform, OS, arch and run id | `--record`, in every scenario job |
 | merging one scenario's observations across every runner, carrying the archive | `tools/merge_observations.py`, main-only |
-| regenerating `docs/agents.md` and the README badge | `--write`, plus `docs.yml` as a safety net |
+| regenerating `docs/agents.md`, `docs/limits.md` and the README badge | `--write`, plus `docs.yml` as a safety net |
 | computing coverage per identifier and per platform, against the CI matrix | `tools/agent_status.py` |
 | refusing a run that proves less than the committed record | the shrink guard |
 | listing what arrived unclaimed when a run loses an identifier | `tools/successor_candidates.py`, called by the guard |
