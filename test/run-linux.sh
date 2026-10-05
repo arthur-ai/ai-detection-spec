@@ -3,7 +3,7 @@
 #
 #   test/run-linux.sh                              every linux scenario, on the default image
 #   test/run-linux.sh 73-linux-deb                 one of them
-#   LINUX_IMAGE=rockylinux:9 test/run-linux.sh     the same, on another image
+#   LINUX_IMAGE=quay.io/rockylinux/rockylinux:9 test/run-linux.sh   the same, on another image
 #
 # WHY A CONTAINER AND NOT A VM. test/run.sh uses Tart because a macOS guest needs
 # Apple's hypervisor and a signed image. A Linux scenario needs neither: the CI jobs run
@@ -32,7 +32,9 @@ ROOT="$(cd "$HERE/.." && pwd)"
 OSQUERY_VERSION="${OSQUERY_VERSION:-5.23.1}"
 # Docker Hub is blocked daemon-side on some machines here, so the default is a mirror
 # that is not. The other images this is run against are the GCE families and the rpm
-# control: debian:12, rockylinux:9, registry.fedoraproject.org/fedora:41.
+# control: debian:12, quay.io/rockylinux/rockylinux:9 and fedora:41 -- the same three
+# scenarios.yml runs. Docker Hub's own `rockylinux:9` stopped at 9.3; the Rocky
+# project's repository on quay.io tracks the current point release.
 LINUX_IMAGE="${LINUX_IMAGE:-public.ecr.aws/ubuntu/ubuntu:24.04}"
 
 command -v docker >/dev/null || { echo "run-linux: docker is required" >&2; exit 1; }
@@ -73,7 +75,7 @@ elif command -v dnf >/dev/null 2>&1; then
   # run died at the first assertion with a message about PyYAML rather than about curl.
   { dnf -q -y install --allowerasing curl python3 python3-pyyaml tar findutils procps-ng
     curl -fsSLo /tmp/o.rpm https://pkg.osquery.io/rpm/osquery-'"$OSQUERY_VERSION"'-1.linux.'"$RPM_ARCH"'.rpm
-    rpm -i --nodeps /tmp/o.rpm; } >"$log" 2>&1
+    dnf -q -y install /tmp/o.rpm; } >"$log" 2>&1
 else
   echo "FAIL: neither apt-get nor dnf in this image"; exit 1
 fi

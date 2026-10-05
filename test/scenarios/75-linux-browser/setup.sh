@@ -32,19 +32,25 @@ arch=$(uname -m)
 # directories beside it -- is the same install either way. The rpm goes through dnf
 # rather than rpm -i so its dependencies resolve: Chrome needs the X libraries to start
 # even headless.
+#
+# mktemp, with the suffix the package manager keys on: apt-get and dnf treat an argument
+# as a local package only when it ends in .deb or .rpm. A fixed /tmp name is a symlink
+# waiting to be planted between the download and the privileged install.
 case "$(pm)" in
-  apt) curl -fsSLo /tmp/chrome.deb \
+  apt) pkg=$(mktemp /tmp/chrome.XXXXXX.deb)
+       curl -fsSLo "$pkg" \
          https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
-         || { echo "SKIP: Chrome download failed"; exit 3; }
-       try "installing the Chrome deb" sudo_maybe apt-get -qq install -y /tmp/chrome.deb \
+         || { rm -f "$pkg"; echo "SKIP: Chrome download failed"; exit 3; }
+       try "installing the Chrome deb" sudo_maybe apt-get -qq install -y "$pkg" \
          || echo "WARN: Chrome did not install"
-       rm -f /tmp/chrome.deb ;;
-  dnf) curl -fsSLo /tmp/chrome.rpm \
+       rm -f "$pkg" ;;
+  dnf) pkg=$(mktemp /tmp/chrome.XXXXXX.rpm)
+       curl -fsSLo "$pkg" \
          https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm \
-         || { echo "SKIP: Chrome download failed"; exit 3; }
-       try "installing the Chrome rpm" sudo_maybe dnf -q -y install /tmp/chrome.rpm \
+         || { rm -f "$pkg"; echo "SKIP: Chrome download failed"; exit 3; }
+       try "installing the Chrome rpm" sudo_maybe dnf -q -y install "$pkg" \
          || echo "WARN: Chrome did not install"
-       rm -f /tmp/chrome.rpm ;;
+       rm -f "$pkg" ;;
   *)   echo "SKIP: no package manager this scenario can install Chrome with"; exit 3 ;;
 esac
 google-chrome --version 2>&1 | head -1 || true

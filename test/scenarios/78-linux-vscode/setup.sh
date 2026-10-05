@@ -17,12 +17,14 @@ need_user
 # The deb or the rpm, by family: Microsoft publishes both from the same URL shape, and
 # the extension directory osquery reads is the same install either way.
 case "$(pm)-$(uname -m)" in
-  apt-x86_64)  build=linux-deb-x64   pkg=/tmp/code.deb ;;
-  apt-aarch64) build=linux-deb-arm64 pkg=/tmp/code.deb ;;
-  dnf-x86_64)  build=linux-rpm-x64   pkg=/tmp/code.rpm ;;
-  dnf-aarch64) build=linux-rpm-arm64 pkg=/tmp/code.rpm ;;
+  apt-x86_64)  build=linux-deb-x64   ext=deb ;;
+  apt-aarch64) build=linux-deb-arm64 ext=deb ;;
+  dnf-x86_64)  build=linux-rpm-x64   ext=rpm ;;
+  dnf-aarch64) build=linux-rpm-arm64 ext=rpm ;;
   *) echo "SKIP: no VS Code package for $(pm) on $(uname -m)"; exit 3 ;;
 esac
+# mktemp, keeping the suffix the package manager keys on -- see 75-linux-browser.
+pkg=$(mktemp "/tmp/code.XXXXXX.$ext")
 if [ "$(pm)" = apt ]; then
   # libasound2t64 is Ubuntu 24.04's name for the ALSA library and Debian 12 still says
   # libasound2. apt resolves the deb's dependencies itself when the install goes through

@@ -443,7 +443,9 @@ jobs:
           else
             curl -fsSL -o /tmp/osquery.rpm \
               https://pkg.osquery.io/rpm/osquery-5.23.1-1.linux.x86_64.rpm
-            rpm -i --nodeps /tmp/osquery.rpm
+            # dnf, not `rpm -i --nodeps`: a missing library would otherwise surface as
+            # a runtime failure two steps later rather than as a named dependency here.
+            dnf -q -y install /tmp/osquery.rpm
           fi
           osqueryi --version
       - name: Provision

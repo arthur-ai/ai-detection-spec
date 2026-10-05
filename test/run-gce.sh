@@ -122,8 +122,16 @@ cleanup() {
     echo "  gcloud compute instances delete $CURRENT_VM --zone $GCE_ZONE --quiet"
   else
     echo "run-gce: deleting $CURRENT_VM"
+    # The error is shown, and the instance is looked up afterwards, because a VM that
+    # outlives a run that reported success is the one nobody comes back for. A delete of
+    # an instance that was never created says "not found", which is the answer wanted.
     gcloud compute instances delete "$CURRENT_VM" --zone "$GCE_ZONE" \
-      ${PROJECT_FLAG[@]+"${PROJECT_FLAG[@]}"} --quiet >/dev/null 2>&1 || true
+      ${PROJECT_FLAG[@]+"${PROJECT_FLAG[@]}"} --quiet 2>&1 | grep -v "not found" | sed 's/^/    /'
+    if gcloud compute instances describe "$CURRENT_VM" --zone "$GCE_ZONE" \
+         ${PROJECT_FLAG[@]+"${PROJECT_FLAG[@]}"} --format='value(name)' >/dev/null 2>&1; then
+      echo "run-gce: WARNING: $CURRENT_VM still exists. Delete it by hand:"
+      echo "  gcloud compute instances delete $CURRENT_VM --zone $GCE_ZONE --quiet"
+    fi
   fi
   CURRENT_VM=""
 }
@@ -244,7 +252,24 @@ if ! grep -q "^$(id -un):" /etc/passwd && command -v google-chrome >/dev/null 2>
   mkdir -p "$ext"
   printf '%s\n' '{"name":"Fixture agent extension, OS Login user","version":"1.0.0","manifest_version":3,"permissions":["tabs"],"host_permissions":["<all_urls>"]}' > "$ext/manifest.json"
   log "ext rows under $HOME through the users table alone: $(sudo osqueryi --line "select count(*) as n from users cross join chrome_extensions using (uid) where profile_path like '$HOME/%'" 2>/dev/null | awk '{print $NF}')"
-  log "ext rows under $HOME in the shipped artifact: $(sudo osqueryi --json < dist/discovery-linux.sql 2>/dev/null | python3 -c "import json,sys;print(sum(1 for r in json.load(sys.stdin) if r['kind']=='ext' and r['loc'].startswith('$HOME')))")"
+  # ASSERTED, NOT LOGGED. The fixture's own fields -- browser_type chrome, version 1.0.0,
+  # the two permissions -- under the login account's home, in the artifact that ships.
+  # A probe that only prints a count is one a reader can skim past at zero.
+  probe=$(sudo osqueryi --json < dist/discovery-linux.sql 2>/dev/null \
+    | python3 -c "
+import json, sys
+home = sys.argv[1]
+rows = [r for r in json.load(sys.stdin) if r['kind'] == 'ext' and r['loc'].startswith(home)]
+fix = [r for r in rows if r['extra'] == 'chrome' and r['ver'] == '1.0.0'
+       and 'tabs' in r['perms'] and '<all_urls>' in r['perms']]
+print(len(rows), len(fix))" "$HOME")
+  log "ext rows under $HOME in the shipped artifact: ${probe%% *}, of which the fixture: ${probe##* }"
+  if [ "${probe##* }" -ge 1 ] 2>/dev/null; then
+    log "OS Login probe: PASS"
+  else
+    log "OS Login probe: FAIL -- the shipped artifact did not return the login account's extension"
+    result=1
+  fi
 fi
 
 if [ "$result" = 0 ]; then log "--- $SC PASS"; else log "--- $SC FAIL"; fi
@@ -258,13 +283,15 @@ run_vm() {
   out="$ART/$fam/$sc"; rm -rf "$out"; mkdir -p "$out"
   echo
   echo "=============== $fam / $sc: $vm ($GCE_MACHINE, $imgfam) in $GCE_ZONE"
+  # OWNED BEFORE IT EXISTS. A create that times out on the client can still have made the
+  # instance, so the name is claimed first and cleanup runs whatever create reported.
+  CURRENT_VM="$vm"
   # shellcheck disable=SC2086
   gcloud compute instances create "$vm" --zone "$GCE_ZONE" ${PROJECT_FLAG[@]+"${PROJECT_FLAG[@]}"} \
       --machine-type "$GCE_MACHINE" --image-family "$imgfam" --image-project "$proj" \
       --metadata enable-oslogin=TRUE --boot-disk-size 20GB \
       --labels purpose=osquery-ai-discovery ${GCE_CREATE_FLAGS:-} --quiet >/dev/null 2>"$out/create.err" \
-    || { echo "FAIL: could not create $vm"; sed 's/^/    /' "$out/create.err"; return 1; }
-  CURRENT_VM="$vm"
+    || { echo "FAIL: could not create $vm"; sed 's/^/    /' "$out/create.err"; cleanup; return 1; }
 
   # OS Login takes a few seconds to accept a key after boot, and the guest agent longer
   # on a cold image. Thirty tries ten seconds apart is a bound, not an expectation.
@@ -281,8 +308,10 @@ run_vm() {
   gce_ssh "$vm" "bash /tmp/guest.sh $OSQUERY_VERSION $mode $sc" 2>&1 | tee "$out/guest.log"
   rc=${PIPESTATUS[0]}
 
-  gce_get "$vm" /tmp/ai-discovery-out "$out/" >/dev/null 2>&1 \
-    || echo "WARN: could not fetch the guest's output; guest.log is all there is"
+  # stderr is kept and shown on failure: a WARN with no reason is one nobody can act on.
+  gce_get "$vm" /tmp/ai-discovery-out "$out/" >/dev/null 2>"$out/fetch.err" \
+    || { echo "WARN: could not fetch the guest's output; guest.log is all there is:"
+         sed 's/^/    /' "$out/fetch.err"; }
   cleanup
 
   # RECORD FROM THE HOST, against the fetched payload, with the guest's own os and arch.
