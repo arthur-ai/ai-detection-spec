@@ -46,7 +46,7 @@ every row count below is the empty case for those.
 | `packages-linux.sql` | fast | 0.26 | 1211 |
 | `packages.sql` | fast | 0.26 | 13 |
 | `ports.sql` | fast | 0.24 | 0 |
-| `runtime-linux.sql` | fast | **1.03** | **478** |
+| `runtime-linux.sql` | slow | **1.03** | **478** |
 | `vscode.sql` | fast | 0.23 | 0 |
 | `containers.sql` | expensive | 0.22 | 0 |
 | `dist/discovery-linux.sql` | composed | 1.12 | 1726 |
@@ -85,11 +85,9 @@ Two consequences, and neither is a defect in the query:
   not to put this on a synchronous reporting path and to schedule `bin/discover --write` and
   `cat` the file. A cold cost near the budget is the measurement behind that sentence rather
   than a new problem.
-- **The CI gate warns at the budget and fails at 2x.** That is the convention `measure.py`
-  already uses, and the reason it is right HERE is narrower than the reason it is right there:
-  a hard gate made this job red at 12s and green at 9s on identical code, which teaches people
-  to re-run rather than to read. The warning is the part that matters -- it fires on every run,
-  so the overrun stays visible instead of being absorbed into a green tick.
+- **The CI gate warns at the budget and fails at 2x**, the convention above: a hard gate made
+  this job red at 12s and green at 9s on identical code. The warning fires on every run, so
+  the overrun stays visible instead of being absorbed into a green tick.
 - **The `unit` branch is the first thing to reconsider if this needs to come down.** It is 477
   of the ~1750 rows -- 28% of the payload -- and `systemd_prefixes` carries no catalog values,
   so none of those rows can match anything today. Dropping or filtering it would cut payload
@@ -106,16 +104,9 @@ better than picking one of them and writing it down.
 
 ### `runtime-linux.sql` is the one to read carefully
 
-This section previously said no Linux numbers existed and that this branch's band was "an
-expectation, not a measurement". It is measured now, and the expectation was optimistic in two
-different ways.
-
-**It is over its declared band.** 1.03s against a `fast` ceiling of 1s — reported as *over
-declared band, within tolerance*, so the 2x gate passes it. **The band is not being changed on
-one sample**, and that is the same judgement `apps.sql` already earned: it measured 0.81s and
-1.14s on consecutive runs of the same commit on the same runner, which is why the gate fires at
-2x and not at the band. 1.03s is inside that noise. A second and third run either settle it
-below 1s or make the case for `slow` on evidence rather than on one reading.
+**It is banded `slow`, and it was `fast` until a shared-core VM measured it at 5.54s** — the
+Compute Engine section below has that reading. 1.03s on a hosted runner would have passed as
+noise; one VM at five times that is a band, not noise.
 
 **478 rows is 28% of the whole Linux payload**, and the `systemd_prefixes` route carries **no
 catalog values at all** — so every one of those rows is evidence that can never match anything
@@ -202,11 +193,6 @@ several browser profiles, 76 matching rows.
 matches. It took the full query from 2.0s to 78s. If it is ever wanted, it goes in the
 scheduled writer, never on a synchronous reporting path.
 
-(This lived in `queries/NOTES.md`, which was deleted: its other entry described
-`docker_images` as absent, and `docker_images` now ships. A note about one table belongs
-beside that table — `queries/containers.sql` carries the current version — and a note about
-cost belongs here.)
-
 ## What neither baseline covers
 
 **A machine without the dependency installed is not a valid baseline.** A `docker_images`
@@ -277,12 +263,10 @@ here, because the probe is what waits for a wake.
 
 **The ping budget is a ceiling, not a cost, which is why 8 is affordable.** Every state that
 answers returns in about a tenth of a second whatever it is set to; only accepts-never-replies
-pays the whole of it. It was 1s, and a Docker Desktop wake does not fit in 1s: Resource Saver
-parks the VM after five idle minutes and holds the first request while it comes back — 2.60s
-and 2.49s measured on macOS 15 / Docker 28.4.0 after a 340s pause, with the query behind it
-then running warm at 0.13s per engine request. At 1s the guard rejected the daemon it had just
-woken and reported `unhealthy:000`, and the next scan succeeded on the engine the last one had
-started. **A nap longer than 8s is not measured**: one Mac, one nap length.
+pays the whole of it. It was 1s, and a Docker Desktop Resource Saver wake does not fit in 1s:
+2.60s and 2.49s measured on macOS 15 / Docker 28.4.0 after a 340s pause, after which the query
+runs warm at 0.13s per engine request. `docs/containers.md` has the mechanism. **A nap longer
+than 8s is not measured**: one Mac, one nap length.
 
 **What costs inside the wall clock is daemon latency, not inventory size.** Against a daemon
 answering instantly, osquery's own side of the scan is 0.23s at 18 images and 0.55s at 10,000
@@ -436,9 +420,10 @@ Note that `size_bytes` is the UNCOMPRESSED size. `ollama/ollama:latest` reports 
 a 2.78 GB download, so the figure `bin/container-scan --pretty` prints is disk footprint, not
 transfer.
 
-# Measured payload
+## Measured payload
 
-Enumeration (D20) trades payload for not being wrong about the catalog. The Extension
+Enumeration — every machine reports its inventory, and the catalog matches off it — trades
+payload for not being wrong about the catalog. The Extension
 Attribute cap is roughly 30KB, so the trade only holds if the payload fits, and these are
 the numbers it was accepted on. Framed sizes below are gzip plus base64, which is what a
 value channel with a size limit will cost you.
@@ -446,7 +431,7 @@ value channel with a size limit will cost you.
 `tools/measure_payload.py` prints this per scenario on every Scenarios run. It fails over
 the cap and warns above 80%.
 
-## Clean runner, macOS 15.7.7 arm64
+### Clean runner, macOS 15.7.7 arm64
 
 Scenario `00-baseline` on the hosted runner: no AI agents, no browser profiles.
 
@@ -461,7 +446,7 @@ understanding. 402 apps and 121 Homebrew packages are macOS and the runner image
 findings. Enumeration means every Mac reports its inventory whether or not it has an agent
 on it.
 
-## Loaded developer Mac
+### Loaded developer Mac
 
 macOS 26, Apple Silicon, 392 apps, 136 Homebrew packages, 53 browser extensions.
 
@@ -470,7 +455,7 @@ macOS 26, Apple Silicon, 392 apps, 136 Homebrew packages, 53 browser extensions.
 | filtered (before D20) | 76 | 9 KB | 2.6 KB | 9% |
 | enumerated | 748 | 113.5 KB | 17.4 KB | 58% |
 
-## Every scenario, same run
+### Every scenario, same run
 
 | scenario | rows | framed EA | % of cap |
 |---|---|---|---|
@@ -494,7 +479,7 @@ Installing agents barely moves the number. The payload is dominated by inventory
 machine already had, so the marginal cost of a finding is close to nothing and the total
 is set by how loaded the Mac is.
 
-## Where the cap actually binds
+### Where the cap actually binds
 
 **Catalog growth is free.** The query holds no identifiers, so adding agents costs zero
 bytes. Verified rather than assumed: growing `catalog/agents.yaml` from 21 agents to 221 <!--fixed-number-->
@@ -519,7 +504,7 @@ An earlier revision of this file put the marginal cost at 23 B/row and the ceili
 1300 rows. That came from measuring random subsets, which breaks up the runs of similar
 paths gzip exploits and understates the true marginal cost. Prefer the numbers above.
 
-### The lever, and why it is not simply pulled
+#### The lever, and why it is not simply pulled
 
 Applications dominate: **300 of 392 rows on the reference Mac are `/System/`**, stock
 macOS rather than anything installed. Dropping them takes 58% to 34% of the cap, and 43%
@@ -535,7 +520,7 @@ exclusion here would contradict a decision this repo has already made deliberate
 If the payload needs to come down, exclude `/System/` by an argued rule that keeps the
 Apple Intelligence surface, and record which bundles it keeps. Do not reach for the prefix.
 
-## Fleet cost, which is the real tradeoff
+### Fleet cost, which is the real tradeoff
 
 EA values ride in every inventory submission and every `section=EXTENSION_ATTRIBUTES`
 response. At 10,000 Macs per full sync:

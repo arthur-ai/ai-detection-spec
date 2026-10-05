@@ -78,33 +78,12 @@ typing. And **`refused` is the only terminal state**.
 ## Why `superseded`, and not `retired` or `archived`
 
 The word is load-bearing, because the one thing a reader must not conclude is that these
-signatures stop being matched. Industry vocabulary splits along a useful line:
-
-| precedent | word | what it means there |
-|---|---|---|
-| CPE dictionary | `deprecated`, with a pointer to the replacement | an identifier for a renamed platform, kept because old scan data references it |
-| MITRE ATT&CK | `deprecated`, and `revoked` where a specific successor exists | revoked carries the successor; deprecated does not |
-| Sigma | `status: deprecated` / `unsupported` | plus a directory that deprecated rules move into |
-| npm, PyPI | `deprecated` | still resolvable, still installable, marked |
-| RFC, IANA | `Historic` | superseded, kept for the record |
-| HTTP | `Deprecation`, then `Sunset` | advice, then an end date |
-
-The common word is **deprecated**; where the point is that a specific newer thing took over,
-it is **revoked** or **superseded**. This catalog is the second case, and three things decide
-it:
-
-1. **It names what was measured.** `retired` and `archived` describe what *we* did.
-   `superseded` describes what the *vendor* did.
-2. **It is silent about matching.** `archived` means "moved out of the active set" nearly
-   everywhere, and `retired` reads as "no longer in service". Both invite the one misreading
-   that would break the fleet.
-3. **`retired` was already taken, for the near-opposite meaning.** On a route in
-   `catalog/routes.yaml` it still means the route **cannot claim** a row — `ports` is the only
-   one. Having the same word withhold a match in one file and change nothing in another cost
-   real confusion, and the rename ended it.
-
-`deprecated` is the more recognisable word and was rejected for one reason: it carries *do not
-use this*, and here you very much should keep using it.
+signatures stop being matched. `deprecated` is the industry word — CPE, ATT&CK, Sigma, npm —
+and carries *do not use this*; here you very much should keep using it. `retired` and
+`archived` describe what *we* did rather than what the *vendor* did, both read as "out of
+service", and `retired` already means the near-opposite on a route in `catalog/routes.yaml`:
+the route **cannot claim** a row. `superseded` names what was measured and is silent about
+matching.
 
 **`archived` survives, for the other half of the pair.** A *signature* is superseded — it stays
 in the matcher. Its *observation* is archived, because that genuinely does leave live coverage.
@@ -426,14 +405,11 @@ admit a third is gone:
 | the `alias` state and the `retired:` list | exempting a hand-typed value from the gate |
 | `grade()` and the exception register | reporting the above |
 
-**Nothing migrated: both registers were absent from the catalog.** Not empty — absent. They
-were built so a guess could not hide, and they worked: nothing ever hid in them, because
-nothing was ever written to them. They held zero entries for their entire lives while remaining
+**Nothing migrated: both registers held zero entries for their entire lives**, while remaining
 the only ways in that did not require a machine to have run the software. The weakest grade
 `unverified:` accepted was `vendor-documentation` — the source this repo exists to distrust.
-
-**What was not deleted:** the Chromium extension-id derivation above. Removing the `evidence`
-enum does not touch the fact that a CRX-derived id is stronger than an observation.
+The Chromium extension-id derivation above stays: a CRX-derived id is stronger than an
+observation whether or not an `evidence` enum says so.
 
 ## The entry condition
 
@@ -553,7 +529,7 @@ ambiguous, and add the model against that measurement.
 |---|---|
 | recording what each run matched, per identifier, with version, platform, OS, arch and run id | `--record`, in every scenario job |
 | merging one scenario's observations across every runner, carrying the archive | `tools/merge_observations.py`, main-only |
-| regenerating `docs/agents.md` and the README badge | `--write`, plus `docs.yml` as a safety net |
+| regenerating `docs/agents.md`, `docs/limits.md` and the README badge | `--write`, plus `docs.yml` as a safety net |
 | computing coverage per identifier and per platform, against the CI matrix | `tools/agent_status.py` |
 | refusing a run that proves less than the committed record | the shrink guard |
 | listing what arrived unclaimed when a run loses an identifier | `tools/successor_candidates.py`, called by the guard |

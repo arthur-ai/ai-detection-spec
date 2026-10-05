@@ -130,16 +130,9 @@ fleet learns to ignore. The per-branch token still says `containers=absent` whet
 the line degrades, so a consumer counting machines with no container runtime at all narrows
 on that — a Docker-less machine that runs Podman says `containers=unreadable:podman`.
 
-**`unreadable:*` is on the degrading side, and it is what makes the other side safe.** A
-Podman host used to report `absent` too, so excusing `absent` alone would have excused the
-machines most worth looking at.
-
-`stale:<seconds>` used to be listed here and is retired: nothing emitted it. Judge staleness
-from the marker row's `ver`, which holds the unix time of the scan — that is what
-`bin/classify` does, and it lets the reader pick the threshold rather than the writer.
-
-**Judge freshness on that timestamp, not the file's mtime** — redeploying a file resets the
-mtime without changing the truth.
+**Judge freshness from the marker row's `ver`**, the unix time of the scan, and not from the
+file's mtime — redeploying a file resets the mtime without changing the truth. There is no
+`stale:` token: the reader picks the threshold, not the writer.
 
 ## On Linux, which is the same shape with three differences
 
@@ -198,21 +191,12 @@ reads `browser=ok desktop-linux=ok native-messaging-linux=ok`, and a reader can 
 changes on a VM: with systemd as PID 1 and osquery running as root it reads `ok` and the
 `unit` rows are real, where every container run reports `absent`.
 
-**Small shapes.** The wall-clock figures this repo quotes come from developer machines and
-hosted runners, and a shared-core `e2-small` is neither. Measured 2026-10-04 by
-`test/run-gce.sh` on stock images, first run after boot and then warm:
-
-| family | composed, cold | composed, warm | `--deep` | `--write` | rows |
-|---|---|---|---|---|---|
-| Debian 12 | 1.3s | 0.8s | 1.2s | 3.9s | 622 |
-| Ubuntu 24.04 | 1.7s | 1.2s | 1.6s | 4.3s | 1065 |
-| Rocky Linux 9.8 | 2.4s | 1.7s | 2.0s | 5.1s | 674 |
-
-Every number is inside the 10s convention and `tools/measure.py --check` passed on each
-VM. **The shape is noisy, though:** an earlier Rocky VM the same afternoon took 14.0s cold
-and 9.2s warm, with `systemd_units` alone at 5.5s against 1.2s on the VM in the table. That
-is why `queries/runtime-linux.sql` is banded `slow`, and why a scheduled `--write`, where
-each branch has its own bound, is the deployment shape to prefer over anything that waits.
+**Small shapes.** A shared-core `e2-small` does not promise the same number twice: the same
+Rocky image measured the composed artifact at 2.4s cold on one VM and 14.0s on another the
+same afternoon, with `systemd_units` alone at 5.5s against 1.2s.
+[`queries/COST.md`](../queries/COST.md#compute-engine-e2-small-2026-10-04) has the table. It
+is why `queries/runtime-linux.sql` is banded `slow`, and why a scheduled `--write`, where each
+branch has its own bound, is the shape to prefer over anything that waits.
 
 ## The `python3` stub, which used to bite only on a fleet
 
@@ -220,11 +204,9 @@ On a Mac without Command Line Tools installed, `/usr/bin/python3` is a **stub**:
 install prompt on stderr and exits 1 with empty stdout. The scheduled writer was built on it
 and produced nothing at all there.
 
-**This page said that surfaced as `no-cache`. It did not.** The `no-cache` marker row — the
-one thing that tells a reader the writer never ran — was itself emitted by `python3`, so on
-the machine this section describes it surfaced as **silence**, which a collector that records
-stdout and discards the exit status reads as a machine with nothing on it. The reason and the
-failure shared an interpreter, and the reason lost.
+It did not even surface as `no-cache`: that marker row — the one thing that tells a reader
+the writer never ran — was itself emitted by `python3`, so the failure surfaced as **silence**,
+which a collector that discards the exit status reads as a machine with nothing on it.
 
 Neither endpoint script uses `python3` now. `bin/discover` and `bin/container-scan` are bash
 and `osqueryi`; marker rows are built by `printf`, so the row that says the writer never ran
