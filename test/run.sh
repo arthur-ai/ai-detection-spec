@@ -102,6 +102,18 @@ run_scenario() {
     || { echo "FAIL: the composed darwin artifact did not run; see $ART/$s.json" >&2; return 1; }
   local elapsed=$(( $(date +%s) - start ))
 
+  # The rendered match SQL, in the same guest, the same way -- and the parity wrapper over
+  # the rows just collected, built on the host because the guest has no python and run in
+  # the guest because the host may have no osqueryi. assert_match_sql takes both outputs
+  # and runs nothing itself.
+  vm_put "$vm" "$HERE/../dist/agents-darwin.sql" /tmp/agents.sql
+  python3 "$HERE/test_match_sql.py" --wrapper "$ART/$s.json" > "$ART/$s.parity.sql"
+  vm_put "$vm" "$ART/$s.parity.sql" /tmp/parity.sql
+  vm_ssh "$vm" "sudo -n /usr/local/bin/osqueryi --json < /tmp/agents.sql" > "$ART/$s.agents.json" \
+    || { echo "FAIL: dist/agents-darwin.sql did not run; see $ART/$s.agents.json" >&2; return 1; }
+  vm_ssh "$vm" "/usr/local/bin/osqueryi --json < /tmp/parity.sql" > "$ART/$s.parity.json" \
+    || { echo "FAIL: the match wrapper did not run; see $ART/$s.parity.json" >&2; return 1; }
+
   local bytes
   bytes=$(python3 - "$ART/$s.json" <<'EOF' || true
 import base64, gzip, json, sys
@@ -130,6 +142,8 @@ EOF
   # without ever printing them.
   assert_counts "$ART/$s.json" "$dir/expected.json" || rc=1
   assert_classified "$ART/$s.json" "$dir/expected.json" "$HERE/.." || rc=1
+  assert_match_sql "$ART/$s.json" "$dir/expected.json" "$HERE/.." \
+    "$ART/$s.agents.json" "$ART/$s.parity.json" || rc=1
 
   # Record WHICH IDENTIFIERS this run actually matched, into a committed observed.json.
   # test/artifacts/ is gitignored and per-machine, so the raw output cannot back a

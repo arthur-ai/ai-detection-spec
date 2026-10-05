@@ -387,8 +387,12 @@ Platform-free, and worth running first:
 $ test/lint.sh                 # static checks, ~10s, no osquery, both platforms
 $ python3 test/test_matcher.py # the matcher, no osquery, no VM, no container
 $ python3 tools/build.py --check
+$ python3 tools/render_match.py --check   # the catalog rendered as SQL, up to date
 $ python3 tools/validate_catalog.py
 ```
+
+`python3 test/test_match_sql.py` holds that rendered SQL to the matcher, evidence row for
+evidence row. It needs `osqueryi` and says SKIP without one; it runs for real in CI.
 
 Needs osquery, and measures whichever platform you are on:
 

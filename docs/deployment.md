@@ -33,7 +33,7 @@ a clean machine.
 
 ## One file, when your platform can host a script and not a package
 
-A release attaches nine loose files, and they only work in the layout this repo has:
+A release attaches thirteen loose files, and they only work in the layout this repo has:
 `bin/container-scan` resolves `dist/discovery-deep.sql` relative to its own parent, and
 `bin/discover` sources `bin/container-scan`. Putting files in a fixed place on a managed
 machine is the part a management platform is worst at — it wants a package, which on macOS
@@ -44,7 +44,7 @@ So: the layout, inside one script.
 
 ```console
 $ python3 tools/bundle.py --platform darwin        # or download it from the release
-wrote artifacts/ai-discovery-darwin.sh (37 KB, 5 files, darwin)
+wrote artifacts/ai-discovery-darwin.sh (46 KB, 6 files, darwin)
 
 $ ./artifacts/ai-discovery-darwin.sh --write /var/lib/ai-discovery/inventory.json \
                                     --status /var/lib/ai-discovery/status.txt
@@ -65,10 +65,11 @@ disjoint sets of tables and `bin/discover` picks by `uname -s`, so a bundle clai
 would be tested on whichever one built it. The wrong one exits 1 saying which artifact it
 carries, before it unpacks anything.
 
-**`catalog/` and `bin/classify` are not in it.** The endpoint enumerates and matches nothing;
-the classifier runs where you collect. That is what lets a new signature re-match evidence
-you already have, and it is why the machine being inventoried never carries the signatures
-it is supposed to enumerate past.
+**`catalog/` and `bin/classify` are not in it; `dist/signatures.sql` is.** The enumeration
+matches nothing and the classifier runs where you collect — that is what lets a new
+signature re-match evidence you already have. The one file that does name agents is the
+catalog rendered into SQL, carried so that `--names` can print a line on a machine that can
+host nothing but this script; see [One line for an Extension Attribute](#one-line-for-an-extension-attribute).
 
 ### Wrapping it
 
@@ -95,6 +96,69 @@ $ python3 tools/bundle.py --platform darwin --member driver ./my-bundle.sh
 That is a supported interface, not a debugging trick — `read_member()` in Python is the same
 thing. Reaching into the file yourself is how a consumer ends up pinned to an internal detail,
 which this project has already done to one downstream repo by removing `bin/discover --framed`.
+
+## One line for an Extension Attribute
+
+A Jamf Extension Attribute is one printed value per Mac, and everything Jamf does well
+hangs off it: Smart Groups match on it, searches report on it, policies scope to the groups.
+A packed JSON payload is unreadable to all of them. So the runner has a mode that prints
+the names instead:
+
+```console
+$ bin/discover --names --cache /var/lib/ai-discovery/inventory.json
+Claude Code 2.0.1, Cursor 1.7.44; ok 2026-10-05T13:20:11Z rows=775 apps=ok browser=ok containers=absent filesystem=ok homebrew=ok native-messaging=ok packages=ok ports=ok runtime=ok vscode=ok
+```
+
+**The whole Extension Attribute script is that command**, with the scheduled writer from the
+top of this page producing the file it reads. `--names` composes with every other mode —
+`--names` alone runs the base query, `--names --deep` adds the bounded container scan,
+`--names --write PATH --status TXT` writes both files and prints the line — and the bundle
+takes it like any other argument.
+
+The line is two halves around `; `. The left is the agents found, name and a version when
+any evidence row carried one, or `none`. The right is the status line, the same vocabulary
+as `status.txt` and from the same run the same bytes, so a Smart Group can match
+`contains "Cursor"` and another can match `contains "degraded"`. **`none` and "could not
+look" are never the same value**: `none; degraded … containers=timeout:6` is a machine that
+reported no agents in the branches it could read.
+
+- `max()` over the evidence rows is **a version seen**, not a resolution across routes, and
+  `file` evidence carries none — so `Claude Code` can appear without a version.
+- When the writer never ran, `--names --cache` prints `none; degraded <stamp> rows=1
+  inventory=no-cache` and exits 1 — built by the shell, needing no osqueryi, for the
+  reason the `python3` section below gives.
+- When the summary itself fails, nothing is printed and the exit is 1. The one value this
+  mode must never produce is `none` for a machine it could not read.
+
+The signatures come from `dist/signatures.sql`, the catalog rendered into SQL by
+`tools/render_match.py` and held to `bin/classify` evidence row for evidence row by
+`test/test_match_sql.py`. **A signature added to the catalog reaches `--names` only by
+redeploying that file.** The JSON payload still re-matches without a rescan; the one line
+cannot, and that is the trade.
+
+## Fleet policies
+
+`dist/fleet-policies.yml` is one [Fleet](https://fleetdm.com) policy per agent per platform,
+in the library format:
+
+```console
+$ fleetctl apply -f dist/fleet-policies.yml
+```
+
+Each policy passes when no evidence of its agent is on the host, so Fleet's **failing-hosts
+list is the machines that carry it** and a failure automation fires when one appears. Flip
+`NOT EXISTS` to `EXISTS` for the opposite reading. A policy enumerates only the branches its
+agent can be found through — Claude Code on macOS reads the filesystem and npm branches,
+nothing else — so it costs what its routes cost rather than the whole inventory.
+
+Two things a policy cannot do. It carries no version: a policy is yes or no, and the
+evidence rows are in `bin/discover --write`. And it never reads the container branch:
+osqueryd has no per-query wall clock and `docker_images` can block forever, so agents that
+ship only as an image have no policy, and the file's header names them.
+
+`dist/agents-darwin.sql` and `dist/agents-linux.sql` are the same match as one query per
+platform, for anyone with `osqueryi` and a question — one row per agent found, with the
+same container caveat. `bin/discover --names --deep` is how the image-only agents are seen.
 
 ## `status.txt`, whose vocabulary is a contract
 
@@ -196,9 +260,12 @@ consumer and would rot in a public repo:
   enough; on a reference Mac 121 KB of rows becomes about 19 KB. The 30KB figure this repo
   keeps to is a **Jamf Extension Attribute convention and self-imposed on both platforms** —
   Linux has no such channel at all, so do not restate it as a limit there.
-- **Classification at scale.** `bin/classify` is the reference implementation and answers "what
-  is on this machine". For a fleet, collect the rows and match them where the catalog lives, so
-  that adding a signature re-matches evidence you already hold instead of requiring a re-scan.
+- **Classification at scale, one of two ways.** `bin/classify` is the reference
+  implementation and answers "what is on this machine". For a fleet with a collector, collect
+  the rows and match them where the catalog lives, so that adding a signature re-matches
+  evidence you already hold instead of requiring a re-scan. For a fleet whose channel is one
+  printed value, or whose tool runs policies, match on the endpoint with the rendered SQL
+  above — and redeploy it when the catalog changes, which is what the first way avoids.
 
 ## Two things that are deliberately not prerequisites
 

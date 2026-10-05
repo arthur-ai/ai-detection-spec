@@ -12,6 +12,11 @@ unchanged while letting the source be readable.
     dist/discovery-deep.sql    every `expensive` query, joined the same way
     dist/ai-discovery.conf     an osquery pack, one named query per file
 
+Four more files in dist/ are RENDERED from the catalog rather than composed from queries/,
+by tools/render_match.py: the signature fragment, the per-platform match queries and the
+Fleet policies. That tool needs PyYAML and this one must not, so main() runs it when it can
+and otherwise says what is left to do; `render_match.py --check` is its own gate.
+
 ONE COMPOSED ARTIFACT PER PLATFORM, because one file cannot span two: the tables are
 disjoint, so a Linux artifact on macOS dies on the first table and returns "[\n\n]" --
 valid, empty, plausible JSON -- with exit 1. A query declares `-- platform: darwin`,
@@ -208,11 +213,33 @@ def body(text):
     return text.rstrip().rstrip(";").rstrip()
 
 
-def main():
-    check = "--check" in sys.argv
-    files = sorted(QUERIES.glob("*.sql"))
+def kinds_of(sql):
+    """The row kinds a query emits, by the rule test/lint.sh already applies: every
+    `SELECT '<kind>'` literal. tools/render_match.py picks the branches a per-agent
+    Fleet policy needs by these, so the rule lives here once rather than twice."""
+    return sorted(set(re.findall(r"SELECT\s+'(\w+)'", sql)))
+
+
+def queries(files=None):
+    """Every query file, read once: its frontmatter, its body, the platforms it runs on
+    and the kinds it emits. main() composes dist/ from this; tools/render_match.py wraps
+    the same bodies in a match, so the two can never read a file differently."""
+    files = sorted(QUERIES.glob("*.sql")) if files is None else files
     if not files:
         sys.exit("no queries found")
+    out = []
+    for path in files:
+        text = path.read_text()
+        fm = frontmatter(text, path)
+        sql = body(text)
+        out.append({"path": path, "fm": fm, "sql": sql,
+                    "platforms": platforms_of(fm), "kinds": kinds_of(sql),
+                    "expensive": fm["cost"] == "expensive"})
+    return out
+
+
+def main():
+    check = "--check" in sys.argv
 
     # PER PLATFORM, because one composed file cannot span two.
     #
@@ -223,10 +250,8 @@ def main():
     # construction. So `platform` now decides which artifact a query lands in, and a
     # `posix` query lands in both.
     inline, deep, pack = {}, [], {}
-    for path in files:
-        text = path.read_text()
-        fm = frontmatter(text, path)
-        sql = body(text)
+    for q in queries():
+        path, fm, sql = q["path"], q["fm"], q["sql"]
         pack[fm["name"]] = {
             "query": flatten(sql).rstrip(";") + ";",
             "interval": 3600,
@@ -234,7 +259,7 @@ def main():
             "description": fm["description"],
         }
         part = f"-- from {path.name}\n{sql}"
-        if fm["cost"] == "expensive":
+        if q["expensive"]:
             # ONE DEEP ARTIFACT, while every expensive query is portable -- and a loud
             # failure the day one is not, rather than a quiet guess about which platform
             # a shared file belongs to. containers.sql selects only from docker_images,
@@ -249,7 +274,7 @@ def main():
             print(f"  {path.name}: expensive, deep artifact only")
             deep.append(part)
             continue
-        for plat in platforms_of(fm):
+        for plat in q["platforms"]:
             inline.setdefault(plat, []).append(part)
 
     conf = json.dumps({"queries": pack}, indent=2, sort_keys=True) + "\n"
@@ -273,6 +298,15 @@ def main():
     # the one that silently makes the biggest.
     retired = [DIST / "discovery.sql"]
 
+    # THE OTHER GENERATOR'S FILES ARE KNOWN HERE AND NOT CHECKED HERE. tools/render_match.py
+    # renders the catalog into match SQL beside these artifacts; it needs PyYAML and this
+    # file must not, so it keeps its own --check and this one only learns the names --
+    # otherwise the unknown-file check below would call every rendered file drift. Imported
+    # inside main() because render_match imports this module: at module scope the two
+    # would import each other before either had finished defining anything.
+    import render_match
+    rendered = set(render_match.OUTPUTS)
+
     if check:
         # A generated artifact that has drifted from its source is worse than no
         # generated artifact: consumers take dist/ at face value.
@@ -283,14 +317,15 @@ def main():
         stale += [f"{p.name} is retired and should be deleted" for p in retired
                   if p.exists()]
         # A file in dist/ that nothing generates is the other direction of the same drift.
-        known = {p.name for p in targets} | {deep_path.name}
+        known = {p.name for p in targets} | {deep_path.name} | rendered
         stale += [f"{p.name} is in dist/ but nothing generates it"
                   for p in sorted(DIST.glob("*")) if p.name not in known
                   and p not in retired]
         if stale:
             sys.exit(f"dist/ is stale: {', '.join(stale)}. Run tools/build.py.")
         print(f"dist/ is up to date ({len(targets)} artifacts, "
-              f"platforms: {', '.join(sorted(inline))})")
+              f"platforms: {', '.join(sorted(inline))}; "
+              f"{len(rendered)} rendered files are tools/render_match.py --check's)")
         return
 
     DIST.mkdir(exist_ok=True)
@@ -305,6 +340,16 @@ def main():
     for path, content in targets.items():
         path.write_text(content)
         print(f"  wrote {path.relative_to(ROOT)} ({len(content.splitlines())} lines)")
+    # Rendered in the same run when the catalog can be read, so one command leaves dist/
+    # whole. Without PyYAML the enumeration still builds and the message says what is
+    # left to do rather than pretending the rendered files were refreshed.
+    try:
+        import yaml  # noqa: F401  -- the probe, not a use
+    except ImportError:
+        print("  NOT regenerated: dist/signatures.sql and the other rendered files need "
+              "PyYAML. Run tools/render_match.py where it is installed.")
+        return
+    render_match.write()
 
 
 if __name__ == "__main__":

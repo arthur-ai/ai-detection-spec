@@ -131,6 +131,24 @@ jobs:
             echo "::warning::query took ${elapsed}s, over the self-imposed 10s budget."
           fi
 
+      # The rendered match query wraps the same enumeration in a join, and a reader may run
+      # it synchronously -- an Extension Attribute is exactly that -- so it is held to the
+      # same budget, with the same warn-then-fail shape.
+      - name: The rendered match query, timed
+        run: |
+          OSQI=/usr/local/bin/osqueryi
+          start=$(date +%s)
+          sudo -n "$OSQI" --json < dist/agents-darwin.sql > /tmp/agents.json
+          elapsed=$(( $(date +%s) - start ))
+          agents=$(python3 -c "import json;print(len(json.load(open('/tmp/agents.json'))))")
+          echo "$agents agents in ${elapsed}s"
+          if [ "$elapsed" -gt 20 ]; then
+            echo "::error::the match query took ${elapsed}s, over 2x the budget."
+            exit 1
+          elif [ "$elapsed" -gt 10 ]; then
+            echo "::warning::the match query took ${elapsed}s, over the self-imposed 10s budget."
+          fi
+
       # The runner that owns the --deep flag, on a machine with no Docker -- which is the
       # state most of a fleet is in, and the one where "did not scan" must not be confused
       # with "no containers". Asserts the deal the split exists to deliver: --deep never
@@ -209,6 +227,48 @@ jobs:
               sys.exit(f"::error::reading the cache lost rows: {len(inv)} -> {len(rows)}")
           print(f"{len(inv)} rows, {len(scans)} branches, containers={scans['containers']['extra']}")
           EOF
+          # --names IN EVERY SHAPE IT COMPOSES WITH. One line each; the right half is the
+          # status line and must obey its vocabulary; and the --write form's right half
+          # must be the status file the same run wrote, byte for byte -- one statement
+          # produces both, and this is what holds it to that.
+          sudo -n env OSQI="$OSQI" bin/discover --names --cache /tmp/inv.json > /tmp/names.cache
+          sudo -n env OSQI="$OSQI" bin/discover --names \
+            --write /tmp/inv2.json --status /tmp/inv2.status > /tmp/names.write
+          sudo -n env OSQI="$OSQI" bin/discover --names > /tmp/names.base
+          cat /tmp/names.write
+          python3 - <<'EOF'
+          import re, sys
+          for path in ("/tmp/names.cache", "/tmp/names.write", "/tmp/names.base"):
+              text = open(path).read()
+              if text.count("\n") != 1:
+                  sys.exit(f"::error::{path}: --names must print exactly one line, got {text!r}")
+              left, sep, right = text.rstrip("\n").partition("; ")
+              if not sep:
+                  sys.exit(f"::error::{path}: no '; ' between the names and the status: {text!r}")
+              if left != "none" and not all(p.strip() for p in left.split(",")):
+                  sys.exit(f"::error::{path}: names half is neither 'none' nor a list: {left!r}")
+              first, stamp, rest = (right.split(maxsplit=2) + ["", ""])[:3]
+              if first not in ("ok", "degraded"):
+                  sys.exit(f"::error::{path}: status half starts {first!r}, want ok or degraded")
+              if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", stamp):
+                  sys.exit(f"::error::{path}: status timestamp is not ISO-8601 UTC: {stamp!r}")
+              if not rest.startswith("rows="):
+                  sys.exit(f"::error::{path}: status half carries no rows= token: {right!r}")
+              for k, v in (p.split("=", 1) for p in rest.split()[1:] if "=" in p):
+                  if not (v in ("ok", "absent", "error")
+                          or v.startswith(("unhealthy:", "timeout:", "unreadable:"))):
+                      sys.exit(f"::error::{path}: unknown outcome {v!r} for {k}")
+          status = open("/tmp/inv2.status").read().rstrip("\n")
+          right = open("/tmp/names.write").read().rstrip("\n").partition("; ")[2]
+          if right != status:
+              sys.exit("::error::--names printed a status that differs from the file the "
+                       f"same run wrote:\n  {right}\n  {status}")
+          base = open("/tmp/names.base").read().rstrip("\n").partition("; ")[2]
+          if base.endswith(" "):
+              sys.exit(f"::error::the base path's status half has a trailing space: {base!r}")
+          print("names: one line in every mode, status half in vocabulary and identical to "
+                "status.txt")
+          EOF
 
       # THE STATUS LINE IS A CONTRACT. Its vocabulary is what a consumer branches on, so
       # it must not grow silently. The payload's size and any transport framing are the
@@ -271,6 +331,15 @@ jobs:
           sudo -n env OSQI=/usr/local/bin/osqueryi /tmp/bundle/ai-discovery.sh \
             --write /tmp/bundle-inv.json --status /tmp/bundle.status > /dev/null
           cat /tmp/bundle.status
+          # --names THROUGH THE BUNDLE, which is how an Extension Attribute calls it. The
+          # bundle carries dist/signatures.sql for this and nothing else checks that it
+          # does: lint compares the payload to the same tuple that lists it, so dropping
+          # the file passes lint. Here it prints nothing and exits 1.
+          sudo -n env OSQI=/usr/local/bin/osqueryi /tmp/bundle/ai-discovery.sh \
+            --names --cache /tmp/bundle-inv.json > /tmp/bundle.names
+          cat /tmp/bundle.names
+          grep -q "; " /tmp/bundle.names && grep -q "rows=" /tmp/bundle.names \
+            || { echo "::error::--names through the bundle printed no names line"; exit 1; }
           python3 - <<'EOF'
           import json, sys
           loose = json.load(open("/tmp/inv.json"))
@@ -358,6 +427,10 @@ jobs:
           print(f"classifier reported {len(gaps)} gap(s) and {len(absences)} "
                 f"absence(s) rather than silence")
           EOF
+          # THE RENDERED MATCH SQL, HELD TO THE CLASSIFIER ON THIS RUNNER'S OWN PAYLOAD,
+          # evidence row for evidence row -- plus the fixtures and the controls. Lint runs
+          # the same file without osqueryi and SKIPs; here it must run.
+          python3 test/test_match_sql.py --require-osqueryi /tmp/inv.json
 
       # The pack is a separate artifact built by a different code path, and nothing ran
       # it until it shipped with four of five queries silently returning zero rows.
@@ -432,6 +505,21 @@ jobs:
           # means the artifact did not run rather than that the machine is clean -- which
           # is the one reading this repo exists to prevent.
           [ "$rows" -gt 100 ] || { echo "::error::only $rows rows"; exit 1; }
+
+      # Same budget, same shape, for the rendered match query -- see the macOS job.
+      - name: The rendered match query, timed
+        run: |
+          start=$(date +%s)
+          sudo -n /usr/bin/osqueryi --json < dist/agents-linux.sql > /tmp/agents.json
+          elapsed=$(( $(date +%s) - start ))
+          agents=$(python3 -c "import json;print(len(json.load(open('/tmp/agents.json'))))")
+          echo "$agents agents in ${elapsed}s"
+          if [ "$elapsed" -gt 20 ]; then
+            echo "::error::the match query took ${elapsed}s, over 2x the budget."
+            exit 1
+          elif [ "$elapsed" -gt 10 ]; then
+            echo "::warning::the match query took ${elapsed}s, over the self-imposed 10s budget."
+          fi
 
       - name: The darwin artifact must fail loudly here
         run: |
@@ -522,6 +610,46 @@ jobs:
                            f"on this vocabulary and it must not grow silently")
           print(f"{len(inv)} rows, {len(scans)} branches, every outcome in vocabulary")
           EOF
+          # --names in every shape it composes with; the same assertions as the macOS job.
+          sudo -n bin/discover --names --cache /tmp/inv.json > /tmp/names.cache
+          sudo -n bin/discover --names --write /tmp/inv2.json --status /tmp/inv2.status > /tmp/names.write
+          sudo -n bin/discover --names > /tmp/names.base
+          cat /tmp/names.write
+          python3 - <<'EOF'
+          import re, sys
+          for path in ("/tmp/names.cache", "/tmp/names.write", "/tmp/names.base"):
+              text = open(path).read()
+              if text.count("\n") != 1:
+                  sys.exit(f"::error::{path}: --names must print exactly one line, got {text!r}")
+              left, sep, right = text.rstrip("\n").partition("; ")
+              if not sep:
+                  sys.exit(f"::error::{path}: no '; ' between the names and the status: {text!r}")
+              if left != "none" and not all(p.strip() for p in left.split(",")):
+                  sys.exit(f"::error::{path}: names half is neither 'none' nor a list: {left!r}")
+              first, stamp, rest = (right.split(maxsplit=2) + ["", ""])[:3]
+              if first not in ("ok", "degraded"):
+                  sys.exit(f"::error::{path}: status half starts {first!r}, want ok or degraded")
+              if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", stamp):
+                  sys.exit(f"::error::{path}: status timestamp is not ISO-8601 UTC: {stamp!r}")
+              if not rest.startswith("rows="):
+                  sys.exit(f"::error::{path}: status half carries no rows= token: {right!r}")
+              for k, v in (p.split("=", 1) for p in rest.split()[1:] if "=" in p):
+                  if not (v in ("ok", "absent", "error")
+                          or v.startswith(("unhealthy:", "timeout:", "unreadable:"))):
+                      sys.exit(f"::error::{path}: unknown outcome {v!r} for {k}")
+          status = open("/tmp/inv2.status").read().rstrip("\n")
+          right = open("/tmp/names.write").read().rstrip("\n").partition("; ")[2]
+          if right != status:
+              sys.exit("::error::--names printed a status that differs from the file the "
+                       f"same run wrote:\n  {right}\n  {status}")
+          # The base path has no marker rows, and runtime-linux.sql's own systemd marker is
+          # the one exception: it is computed in SQL, so it rides in the composed artifact.
+          base = open("/tmp/names.base").read().rstrip("\n").partition("; ")[2]
+          if base.endswith(" "):
+              sys.exit(f"::error::the base path's status half has a trailing space: {base!r}")
+          print("names: one line in every mode, status half in vocabulary and identical to "
+                "status.txt")
+          EOF
 
       # THE BUNDLE IS THE DEPLOYABLE SHAPE, AND IT IS ONLY PROVEN AWAY FROM THE CHECKOUT.
       # tools/bundle.py packs bin/ and dist/ into one self-extracting script, for a
@@ -544,6 +672,11 @@ jobs:
           sudo -n /tmp/bundle/ai-discovery.sh \
             --write /tmp/bundle-inv.json --status /tmp/bundle.status > /dev/null
           cat /tmp/bundle.status
+          # --names through the bundle; see the macOS job for why this is the gate.
+          sudo -n /tmp/bundle/ai-discovery.sh --names --cache /tmp/bundle-inv.json > /tmp/bundle.names
+          cat /tmp/bundle.names
+          grep -q "; " /tmp/bundle.names && grep -q "rows=" /tmp/bundle.names \
+            || { echo "::error::--names through the bundle printed no names line"; exit 1; }
           python3 - <<'EOF'
           import json, sys
           loose = json.load(open("/tmp/inv.json"))
@@ -632,6 +765,8 @@ jobs:
           print(f"consistent: {len(gaps)} gap(s), summary "
                 f"{'hedged' if hedged else 'unhedged'}")
           EOF
+          # The rendered match SQL against this runner's payload; see the macOS job.
+          python3 test/test_match_sql.py --require-osqueryi /tmp/inv.json
 
       - name: Run every query in the pack
         run: sudo -n python3 tools/check_pack.py

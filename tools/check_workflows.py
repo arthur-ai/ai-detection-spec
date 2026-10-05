@@ -275,7 +275,7 @@ if _rel.exists():
     # Basenames, because a claimant names what lands on the release page and the workflow names
     # where each file came from -- artifacts/ai-discovery-darwin.sh uploads as its own name.
     _uploaded = {t.rsplit("/", 1)[-1]
-                 for t in re.findall(r"[\w./-]+\.(?:sql|conf|yaml|sh)\b", _run)}
+                 for t in re.findall(r"[\w./-]+\.(?:sql|conf|yaml|yml|sh)\b", _run)}
     _uploaded |= {t.rsplit("/", 1)[-1] for t in re.findall(r"\bbin/[\w-]+", _run)}
     if not _run:
         print("FAIL: release.yml has no step running `gh release upload`. The release skill and "
