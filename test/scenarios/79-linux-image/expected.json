@@ -4,7 +4,8 @@
   "deep": true,
   "counts": {
     "container": ">=1",
-    "deb": ">=1",
+    "deb": ">=0",
+    "deb+rpm": ">=1",
     "desktop": ">=1",
     "ext": ">=0",
     "file": ">=0",

@@ -405,17 +405,21 @@ Scenarios, which install real software and are therefore per platform:
 $ test/run.sh 00-baseline           # macOS, in a disposable VM
 $ test/run-linux.sh 70-linux-baseline   # Linux, in a disposable container
 $ test/run-linux.sh                 # every Linux scenario
+$ LINUX_IMAGE=quay.io/rockylinux/rockylinux:9 test/run-linux.sh   # on another distro
+$ test/run-gce.sh --family debian-12    # on a real Compute Engine VM; needs gcloud
 ```
 
-**The two harnesses differ because the platforms do.** `test/run.sh` uses
+**The harnesses differ because the platforms do.** `test/run.sh` uses
 [Tart](https://tart.run), which needs an Apple Silicon Mac and a base image of roughly 25GB.
 `test/run-linux.sh` needs only Docker, because a Linux scenario needs no hypervisor — which
-is also why the Linux CI jobs run directly on the runner with no VM layer.
+is also why the Linux CI jobs run directly on the runner with no VM layer, and in Debian,
+Rocky and Fedora containers beside it. `test/run-gce.sh` exists for what neither can stage:
+systemd as PID 1 on every family, OS Login accounts, and a shared-core machine shape.
 
-Two Linux scenarios **skip** in a container and run for real in CI, and both reasons are
-facts about the container rather than about the software: `75-linux-browser` needs an x86_64
-host because Google ships no Linux arm64 Chrome, and `76-linux-systemd` needs a real system
-bus, which a container has no PID 1 to provide.
+Three Linux scenarios **skip** in a container and run for real elsewhere, and every reason is
+a fact about the container rather than about the software: `75-linux-browser` needs an x86_64
+host because Google ships no Linux arm64 Chrome, `76-linux-systemd` needs a real system bus,
+which a container has no PID 1 to provide, and `79-linux-image` needs a Docker daemon.
 
 **Scenarios run on every pull request that changes anything but prose**, on macOS and Linux
 both. You do not need to run them locally to contribute: push the branch and let CI do it.

@@ -1,6 +1,6 @@
 -- name: vscode
 -- description: VS Code extensions, which is how several agents primarily ship
--- tables: users, vscode_extensions
+-- tables: users, file, vscode_extensions
 -- min-osquery: 5.11.0
 -- cost: fast
 -- platform: posix
@@ -31,6 +31,11 @@
 -- "The vscode_extensions table returns data based on the current user by default".
 -- Without it the answer is whatever root has installed, which is nothing.
 --
+-- THE UID LIST IS `users` PLUS THE HOME DIRECTORIES ON DISK, the same shape as
+-- queries/browser.sql and for the reason given there: on Linux since osquery 5.13.1 an
+-- unconstrained `users` is /etc/passwd, so an OS Login, SSSD or LDAP account is not in
+-- it, while a lookup by uid still reaches NSS. Keep the two files' uid source identical.
+--
 -- `name` ALONE IS THE IDENTIFIER, and reading that off a real install is what stopped a
 -- wrong one shipping here. The obvious expression is `publisher_id || '.' || name`, and it
 -- is wrong twice over: `name` ALREADY holds the full marketplace id
@@ -45,4 +50,8 @@
 -- with different blast radii, and only the collector can weigh that.
 SELECT 'vscodeext' AS kind, name AS id, version AS ver, path AS loc,
        vscode_edition AS extra, '' AS perms
-  FROM users CROSS JOIN vscode_extensions USING (uid)
+  FROM (SELECT uid FROM users
+        UNION
+        SELECT uid FROM file
+         WHERE path LIKE '/home/%/' OR path = '/root/' OR path LIKE '/Users/%/') u
+       CROSS JOIN vscode_extensions USING (uid)

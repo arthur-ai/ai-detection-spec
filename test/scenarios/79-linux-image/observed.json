@@ -6,7 +6,7 @@
       "route": "images",
       "value": "paulgauthier/aider",
       "platform": "linux",
-      "os": "24.04",
+      "os": "ubuntu-24.04",
       "arch": "x86_64",
       "run": "37200060844"
     },
@@ -15,7 +15,7 @@
       "route": "image_labels",
       "value": "https://github.com/block/goose",
       "platform": "linux",
-      "os": "24.04",
+      "os": "ubuntu-24.04",
       "arch": "x86_64",
       "run": "37200060844"
     },
@@ -24,7 +24,7 @@
       "route": "images",
       "value": "ghcr.io/block/goose",
       "platform": "linux",
-      "os": "24.04",
+      "os": "ubuntu-24.04",
       "arch": "x86_64",
       "run": "37200060844"
     },
@@ -33,7 +33,7 @@
       "route": "image_labels",
       "value": "https://github.com/OpenHands/OpenHands",
       "platform": "linux",
-      "os": "24.04",
+      "os": "ubuntu-24.04",
       "arch": "x86_64",
       "run": "37200060844"
     },
@@ -42,7 +42,7 @@
       "route": "images",
       "value": "ghcr.io/all-hands-ai/openhands",
       "platform": "linux",
-      "os": "24.04",
+      "os": "ubuntu-24.04",
       "arch": "x86_64",
       "run": "37200060844"
     },
@@ -51,7 +51,7 @@
       "route": "images",
       "value": "ghcr.io/openhands/openhands",
       "platform": "linux",
-      "os": "24.04",
+      "os": "ubuntu-24.04",
       "arch": "x86_64",
       "run": "37200060844"
     },
@@ -60,7 +60,7 @@
       "route": "images",
       "value": "sweagent/swe-agent",
       "platform": "linux",
-      "os": "24.04",
+      "os": "ubuntu-24.04",
       "arch": "x86_64",
       "run": "37200060844"
     }

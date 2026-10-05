@@ -66,5 +66,10 @@ systemctl list-units --all --no-legend 'ai.openclaw.*' 2>&1 | head -3 \
 
 # A listening port, for the `port` branch. Nothing is detected BY port -- the `ports`
 # route is retired -- but the rows still ship as evidence and the branch needs exercising.
-(setsid nohup sh -c 'exec nc -l 18789' >/dev/null 2>&1 &) || true
+#
+# python3, NOT nc. The Debian 12 and Rocky 9 Compute Engine images ship no netcat at all,
+# so `nc -l` failed silently there and the port assertion was the only thing that said
+# so. python3 is already a prerequisite of every assertion, so it is the one listener
+# every host this runs on is guaranteed to have.
+(setsid nohup python3 -m http.server 18789 --bind 127.0.0.1 >/dev/null 2>&1 &) || true
 sleep 1

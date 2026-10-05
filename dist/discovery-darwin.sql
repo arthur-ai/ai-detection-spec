@@ -19,7 +19,11 @@ SELECT 'ext' AS kind, identifier AS id, version AS ver, profile_path AS loc,
        browser_type AS extra,
        permissions || CASE WHEN manifest_json LIKE '%<all_urls>%' THEN ',<all_urls>' ELSE '' END
          AS perms
-  FROM users CROSS JOIN chrome_extensions USING (uid)
+  FROM (SELECT uid FROM users
+        UNION
+        SELECT uid FROM file
+         WHERE path LIKE '/home/%/' OR path = '/root/' OR path LIKE '/Users/%/') u
+       CROSS JOIN chrome_extensions USING (uid)
 
 UNION ALL
 
@@ -132,4 +136,8 @@ UNION ALL
 -- from vscode.sql
 SELECT 'vscodeext' AS kind, name AS id, version AS ver, path AS loc,
        vscode_edition AS extra, '' AS perms
-  FROM users CROSS JOIN vscode_extensions USING (uid);
+  FROM (SELECT uid FROM users
+        UNION
+        SELECT uid FROM file
+         WHERE path LIKE '/home/%/' OR path = '/root/' OR path LIKE '/Users/%/') u
+       CROSS JOIN vscode_extensions USING (uid);

@@ -5,9 +5,9 @@
       "agent": "cline",
       "route": "vscode_extensions",
       "value": "saoudrizwan.claude-dev",
-      "agent_version": "4.1.17",
+      "agent_version": "4.1.22",
       "platform": "linux",
-      "os": "24.04",
+      "os": "debian-12",
       "arch": "aarch64"
     },
     {
@@ -16,9 +16,44 @@
       "value": "saoudrizwan.claude-dev",
       "agent_version": "4.1.22",
       "platform": "linux",
-      "os": "24.04",
-      "arch": "x86_64",
-      "run": "37200060844"
+      "os": "debian-12",
+      "arch": "x86_64"
+    },
+    {
+      "agent": "cline",
+      "route": "vscode_extensions",
+      "value": "saoudrizwan.claude-dev",
+      "agent_version": "4.1.22",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "cline",
+      "route": "vscode_extensions",
+      "value": "saoudrizwan.claude-dev",
+      "agent_version": "4.1.22",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "x86_64"
+    },
+    {
+      "agent": "cline",
+      "route": "vscode_extensions",
+      "value": "saoudrizwan.claude-dev",
+      "agent_version": "4.1.17",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "cline",
+      "route": "vscode_extensions",
+      "value": "saoudrizwan.claude-dev",
+      "agent_version": "4.1.22",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64"
     },
     {
       "agent": "continue",
@@ -26,7 +61,7 @@
       "value": "continue.continue",
       "agent_version": "2.0.0",
       "platform": "linux",
-      "os": "24.04",
+      "os": "debian-12",
       "arch": "aarch64"
     },
     {
@@ -35,9 +70,44 @@
       "value": "continue.continue",
       "agent_version": "2.0.0",
       "platform": "linux",
-      "os": "24.04",
-      "arch": "x86_64",
-      "run": "37200060844"
+      "os": "debian-12",
+      "arch": "x86_64"
+    },
+    {
+      "agent": "continue",
+      "route": "vscode_extensions",
+      "value": "continue.continue",
+      "agent_version": "2.0.0",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "continue",
+      "route": "vscode_extensions",
+      "value": "continue.continue",
+      "agent_version": "2.0.0",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "x86_64"
+    },
+    {
+      "agent": "continue",
+      "route": "vscode_extensions",
+      "value": "continue.continue",
+      "agent_version": "2.0.0",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "continue",
+      "route": "vscode_extensions",
+      "value": "continue.continue",
+      "agent_version": "2.0.0",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64"
     }
   ]
 }

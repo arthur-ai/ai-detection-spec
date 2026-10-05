@@ -1,6 +1,6 @@
 -- name: browser
 -- description: Browser extensions with their permissions
--- tables: users, chrome_extensions
+-- tables: users, file, chrome_extensions
 -- min-osquery: 5.10.0
 -- cost: fast
 -- platform: posix
@@ -25,6 +25,26 @@
 
 -- CROSS JOIN is mandatory. A plain JOIN ... USING (uid) returns ZERO rows silently:
 -- osquery needs the uid constraint pushed into user-scoped tables.
+--
+-- THE UID LIST COMES FROM DISK AS WELL AS FROM `users`, because on Linux `users` is not
+-- the list of users. Since osquery 5.13.1 (osquery/osquery#8342) the unconstrained Linux
+-- table reads /etc/passwd directly, so that an LDAP site does not pay a directory query
+-- per scan -- and every account an NSS module supplies is absent from it: GCE OS Login,
+-- SSSD, LDAP, Active Directory through realmd. Joined to that list, this branch skipped
+-- exactly the users a server has and returned the shape a clean machine does. Read off
+-- osquery/tables/system/linux/users.cpp at 5.23.1, and test/run-gce.sh is what shows it
+-- on an OS Login VM.
+--
+-- Constrained by ONE uid the table does fall through to NSS (usersFromContext retries
+-- with include_remote=1), so the fix is to supply the uids rather than ask for them: the
+-- owner of every home directory on disk. That is the set of accounts that have logged in,
+-- which is the set that can own a browser profile. UNION rather than replacement keeps a
+-- user whose home is elsewhere. An NSS-only account with a home outside /home, /root and
+-- /Users is the gap left, and docs/blind-spots.yaml carries it. Both platforms' roots are
+-- globbed because this file is posix: /home on macOS is an empty autofs map (0 rows,
+-- 0.37s for the whole statement) and /Users does not exist on Linux. Measured 2026-10-04
+-- on a reference Mac: 81 ext rows from either list, so nothing moves where `users` was
+-- already complete.
 --
 -- `permissions`, NOT `permissions_json`. Verified against osquery 5.23.1 in 40-browser:
 -- permissions_json serialises a JSON ARRAY as an object with repeated empty keys --
@@ -64,4 +84,8 @@ SELECT 'ext' AS kind, identifier AS id, version AS ver, profile_path AS loc,
        browser_type AS extra,
        permissions || CASE WHEN manifest_json LIKE '%<all_urls>%' THEN ',<all_urls>' ELSE '' END
          AS perms
-  FROM users CROSS JOIN chrome_extensions USING (uid)
+  FROM (SELECT uid FROM users
+        UNION
+        SELECT uid FROM file
+         WHERE path LIKE '/home/%/' OR path = '/root/' OR path LIKE '/Users/%/') u
+       CROSS JOIN chrome_extensions USING (uid)

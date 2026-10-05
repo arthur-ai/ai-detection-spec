@@ -303,7 +303,10 @@ months because its fixture had no agent on either tag. If removing the code does
 test red, the test proves nothing.
 
 **Scenarios run per pull request, on both platforms.** `test/run.sh` boots a macOS guest under
-Tart; `test/run-linux.sh` runs the Linux scenarios in containers and needs no hypervisor. Each
+Tart; `test/run-linux.sh` runs the Linux scenarios in containers and needs no hypervisor, with
+`LINUX_IMAGE` choosing the distro. CI runs them on Debian 12, Rocky 9 and Fedora 41
+containers and an Ubuntu runner; `test/run-gce.sh` runs them on a real Compute Engine VM per
+family, which is the only path with systemd, OS Login and a shared-core shape. Each
 scenario declares its `platform` in `expected.json`, and `tools/check_workflows.py` asserts it
 is paired with a runner that can host it — a Linux scenario listed under the macOS job would
 otherwise skip on every run while looking scheduled.

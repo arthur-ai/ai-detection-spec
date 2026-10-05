@@ -10,6 +10,10 @@
 # without it. Same shape as `libxdmcp` versus `mcp`.
 set -e
 source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest-linux.sh"
+# The rpm family runs this install as 77-linux-rpm. On a dnf image the deb would fail to
+# install and the assertion would then report the signature missing, which is the wrong
+# thing to be red about.
+[ "$(pm)" = apt ] || { echo "SKIP: the .deb needs dpkg; 77-linux-rpm carries the rpm"; exit 3; }
 need_curl
 need_pkgs python3 || true
 

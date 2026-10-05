@@ -162,6 +162,58 @@ unchanged. Three things differ and are worth knowing before you deploy:
   produces. Read it the way you read the container marker, because "no agent units" and
   "we could not read the unit list" are different answers.
 
+### On a Compute Engine VM
+
+A VM is a headless, often multi-user server, which is a different machine from a laptop.
+Four things about it are worth knowing, each checked rather than assumed.
+
+**Which images.** CI runs every Linux scenario on Debian 12, Rocky Linux 9 and Fedora 41
+containers and on an Ubuntu 24.04 runner, so the one `dist/discovery-linux.sql` is proved
+on the three families a GCE fleet boots and on the deb and rpm sides of each. A container
+cannot host systemd or OS Login, so `test/run-gce.sh` runs the same scenarios on one real
+VM per family and brings the observations back into the tree.
+
+**OS Login.** With OS Login on, accounts come from an NSS module rather than `/etc/passwd`,
+and a home directory appears on first login. osquery's Linux `users` table has read
+`/etc/passwd` directly when unconstrained since 5.13.1, so that an LDAP site does not pay a
+directory query per scan — which means **`users` does not list OS Login accounts at all**,
+nor SSSD, LDAP or Active Directory ones. Measured 2026-10-04 on e2-small VMs of all three
+families with OS Login on: the unconstrained table returned exactly the `/etc/passwd` count,
+a lookup of the login account's uid returned nothing, and the same lookup with
+`include_remote = 1` returned the account. The path branches never depended on it: they
+glob `/home/%/` and `/root/` on disk. The two branches that join `users`, browser extensions
+and VS Code extensions, take their uids from the home directories on disk as well as from
+`users`, because a lookup by one uid does reach NSS. On each VM a Chrome profile owned by
+the OS Login account produced **0 extension rows through the `users` join and 1 through the
+shipped artifact.** So an account that has logged in is covered, and one that never has owns
+nothing to find. The remaining gap is an NSS-only account with a home outside `/home` or
+`/root`, which `docs/blind-spots.yaml` records.
+
+**Headless.** No desktop session means the desktop-entry, browser and native-messaging
+branches return no rows, and that is the correct answer rather than a silent one: each is
+a glob over paths that exist or do not, with nothing that can fail soft. On the write path
+every branch still gets its own dated `kind=scan` row, so `status.txt` on a headless VM
+reads `browser=ok desktop-linux=ok native-messaging-linux=ok`, and a reader can tell
+"looked, nothing there" from a branch that never ran. The `systemd` marker is the one that
+changes on a VM: with systemd as PID 1 and osquery running as root it reads `ok` and the
+`unit` rows are real, where every container run reports `absent`.
+
+**Small shapes.** The wall-clock figures this repo quotes come from developer machines and
+hosted runners, and a shared-core `e2-small` is neither. Measured 2026-10-04 by
+`test/run-gce.sh` on stock images, first run after boot and then warm:
+
+| family | composed, cold | composed, warm | `--deep` | `--write` | rows |
+|---|---|---|---|---|---|
+| Debian 12 | 1.3s | 0.8s | 1.2s | 3.9s | 622 |
+| Ubuntu 24.04 | 1.7s | 1.2s | 1.6s | 4.3s | 1065 |
+| Rocky Linux 9.8 | 2.4s | 1.7s | 2.0s | 5.1s | 674 |
+
+Every number is inside the 10s convention and `tools/measure.py --check` passed on each
+VM. **The shape is noisy, though:** an earlier Rocky VM the same afternoon took 14.0s cold
+and 9.2s warm, with `systemd_units` alone at 5.5s against 1.2s on the VM in the table. That
+is why `queries/runtime-linux.sql` is banded `slow`, and why a scheduled `--write`, where
+each branch has its own bound, is the deployment shape to prefer over anything that waits.
+
 ## The `python3` stub, which used to bite only on a fleet
 
 On a Mac without Command Line Tools installed, `/usr/bin/python3` is a **stub**: it prints an
