@@ -140,6 +140,29 @@ job keep the same budget anyway, because a payload small enough to move is worth
 regardless, but nothing about Linux requires it and no one should restate it as though something
 did.
 
+## Compute Engine, `e2-small`, 2026-10-04
+
+Stock images from the three families a GCE fleet boots, OS Login on, osquery 5.23.1, run by
+`test/run-gce.sh` before any scenario installed anything. A shared-core shape with 2 vCPU
+and under 2GB. `tools/measure.py --check` passed on every VM; floors of three.
+
+| query | Debian 12 | Ubuntu 24.04 | Rocky 9.8 |
+|---|---|---|---|
+| `packages-linux.sql` | 0.24s, 361 rows | 0.24s, 595 | 0.61s, 406 |
+| `runtime-linux.sql` | 0.78s, 241 | 1.18s, 449 | 1.23s, 258 |
+| every other Linux query | 0.23–0.26s | 0.24–0.26s | 0.24–0.26s |
+| `dist/discovery-linux.sql` | 0.82s, 620 | 1.22s, 1065 | 1.71s, 671 |
+
+Cold, as an endpoint's first scan pays it: 1.3s, 1.7s and 2.4s. `bin/discover --write`,
+every branch in its own process: 3.9s, 4.3s and 5.1s.
+
+**A second Rocky VM the same afternoon measured `runtime-linux.sql` at 5.54s and the
+composed artifact at 9.24s warm, 13.96s cold.** Same image, same shape, same query. The
+per-unit D-Bus round trips are where the time goes, and a shared core does not promise the
+same number twice — so `runtime-linux.sql` is banded `slow` on the strength of the worse
+VM, and the composed figure should be read as "usually two seconds, occasionally fourteen"
+rather than as either number alone.
+
 ## CI baseline
 
 GitHub-hosted `macos-15`, image macOS **15.7.7 arm64**, 26 applications, 117 Homebrew

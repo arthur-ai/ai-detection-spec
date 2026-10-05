@@ -2,7 +2,7 @@
 -- description: systemd units, with a marker saying whether the unit list could be read
 -- tables: systemd_units, file, time
 -- min-osquery: 5.10.0
--- cost: fast
+-- cost: slow
 -- platform: linux
 --
 -- systemd_units FAILS SOFT, AND THAT IS THE WHOLE REASON THIS FILE HAS TWO BRANCHES.
@@ -34,11 +34,19 @@
 -- also writes to /usr/lib, so filtering on it would drop exactly the packaged agent this
 -- branch is for.
 --
--- SO IT ENUMERATES EVERYTHING AND THE ROW COUNT IS UNMEASURED. There was no systemd host
--- to measure on: a container has no system bus, which is what the marker below exists to
--- report. tools/measure.py in the Linux CI job is what will produce the number, and if it
--- is large the filter decision gets made then, against evidence. Declaring `fast` here is
--- an expectation, not a measurement, and this comment is the record of which.
+-- SO IT ENUMERATES EVERYTHING, AND `slow` IS MEASURED RATHER THAN DECLARED.
+-- tools/measure.py on e2-small Compute Engine VMs, 2026-10-04, best of three --
+--
+--     debian-12      241 units   0.78s
+--     ubuntu-24.04   449 units   1.18s, and 1.60s on a second VM
+--     rocky-9.8      258 units   1.23s, and 5.54s on a second VM
+--
+-- The per-unit D-Bus round trips are what this pays for, and on a shared-core shape the
+-- same query on the same image varied more than fourfold between two VMs in one
+-- afternoon. It was `fast` on the strength of the Ubuntu runner alone, and that band
+-- failed the gate on the first RHEL host it met. The composed artifact still carries it
+-- -- `slow` is composed, only `expensive` is split out -- so nothing shipped changes.
+-- What changes is that the band tells the truth. queries/COST.md has the figures.
 --
 -- `unit_file_state` ships in `extra` -- enabled, masked, static -- because an installed
 -- but masked unit is a materially different finding from a running one, and only the
