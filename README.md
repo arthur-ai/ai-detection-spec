@@ -28,24 +28,20 @@ npm global *and* a curl installer. **This is that knowledge, written down and ke
 queries you can read in ten minutes and a catalog you can check line by line.
 
 Take all of it, take one query, or take just the catalog and match it your own way. MIT, no
-runtime dependencies beyond osquery. **Nothing that runs on the endpoint makes a network
-call** — the only socket it touches is the local Docker one, and only when you ask for a
-container scan.
+runtime dependencies beyond osquery.
 
 ### Why you might like it
 
 - **🔍 Nothing hidden.** It is SQL. Read `dist/discovery-darwin.sql` (or
   `dist/discovery-linux.sql`) and you know exactly what it collects: names, paths, versions
-  and declared permissions, and nothing else.
+  and declared permissions, and nothing else. Read `dist/agents-darwin.sql` and you also see
+  every identifier it matches on.
 - **✅ Every signature tested against a real install.** Not against documentation — which is how
   this repo once shipped an identifier that matched nothing on any Mac. **Every identifier** is
-  covered by a test that runs in CI — lint fails on one that is not — and
+  covered by a test that runs in CI, the build fails if one is not, and
   [the report](docs/agents.md) is generated, so it cannot flatter itself.
-- **🧩 One catalog, matched where you need it.** Run the inventory query and match the result
-  off the machine, where a new signature re-matches what you already collected. Or run
-  `agents-darwin.sql` and get the agent names straight from osquery, as a Fleet policy or a
-  Jamf Extension Attribute. Both are generated from the same catalog and checked against
-  each other in CI.
+- **🧩 One catalog, matched where you need it.** Off the machine with the classifier, or on
+  it with a query, a Fleet policy or a Jamf Extension Attribute. Same catalog either way.
 - **🗺 Blind spots stated up front.** [Written down](docs/limits.md), because a discovery tool
   that hides them is worse than none.
 
@@ -56,7 +52,7 @@ container scan.
 | 🗂 | **A query** | Runs on each machine and lists what is installed — apps, packages, browser extensions, state directories. **No agent name appears anywhere in it.** It reports what it finds; which of those findings add up to an agent is decided later, by the classifier. One per platform, because macOS and Linux read different tables |
 | ▶️ | **A runner** | Runs that query on the endpoint and prints the result as one JSON array. A second one covers agents packaged as Docker images, separately and on a time limit, because a wedged Docker daemon never answers and would otherwise hang the scan |
 | 🔎 | **A classifier and its catalog** | Reads the collected JSON and tells you which agents are on the machine, matching the evidence against **22 agents and 61 identifiers**. It runs wherever you keep the output, never on the endpoint |
-| 🧾 | **The same catalog, as SQL** | The second way to match. A query that returns the agent names directly, a set of Fleet policies, and `bin/discover --names`, which prints the names as one line for a Jamf Extension Attribute. All generated from the catalog, and CI checks they give the same answers as the classifier |
+| 🧾 | **The same catalog, as SQL** | A query that returns the agent names directly, a set of Fleet policies, and `bin/discover --names`, which prints the names as one line for a Jamf Extension Attribute |
 
 **Two ways to match, one catalog.** Pick the one that fits how you collect:
 
@@ -82,11 +78,6 @@ it belongs on.
 `ubuntu-24.04`, and in Debian 12, Rocky 9 and Fedora 41 containers, so both platforms are held
 to the same standard: a signature is verified when a scenario installs the actual software and
 asserts the classifier finds it.
-
-**Coverage is a gate, not a figure.** Every identifier is covered by a CI test that installs
-the real software, and the build fails if that is ever less than all of them — so there is no
-partial number to interpret. [The report](docs/agents.md) names which scenarios proved each
-one.
 
 **What is platform-specific.** Declared in [`catalog/routes.yaml`](catalog/routes.yaml), which
 the matcher, the validator, the coverage report and lint all read — so this table is the
@@ -146,9 +137,10 @@ $ sudo bin/discover --names                   # the same as one line, for a Jamf
 $ sudo osqueryi --json < dist/discovery-darwin.sql | bin/classify
 $ sudo bin/discover --deep | bin/classify     # the same, plus container images
 
-# On Linux, the same thing. bin/discover picks the artifact by `uname -s`, so the
-# second form needs no change at all.
+# On Linux, the same thing. The bin/discover commands need no change -- it picks the
+# platform by `uname -s`. The osqueryi commands take the -linux files instead.
 $ sudo apt install ./osquery_5.23.1-1.linux_amd64.deb
+$ sudo osqueryi --json < dist/agents-linux.sql
 $ sudo osqueryi --json < dist/discovery-linux.sql | bin/classify
 ```
 
@@ -158,6 +150,8 @@ catalog; see [SECURITY.md](SECURITY.md).
 
 For a fleet, do not run either of those on a synchronous reporting path — schedule
 `bin/discover --write` and `cat` the file. See [Running it on a fleet](docs/deployment.md).
+
+`bin/classify` prints the agents it found and the evidence for each:
 
 ```
 Claude Code  [Coding agent]
@@ -171,16 +165,15 @@ OpenClaw  [Personal agent]
     npm     openclaw  2026.8.1
 ```
 
-`bin/classify` joins the query output to `catalog/agents.yaml`. Run the query alone and you
-get the raw inventory instead:
+Run the inventory query alone and you get the raw rows it matched those from:
 
 ```json
 [
   {"kind":"app",  "id":"com.anthropic.claudefordesktop","ver":"1.37937.2","loc":"/Applications/Claude.app"},
   {"kind":"app",  "id":"ai.openclaw.mac",              "ver":"2026.7.1", "loc":"/Applications/OpenClaw.app"},
   {"kind":"npm",  "id":"@openai/codex",                "ver":"0.150.1"},
+  {"kind":"brew", "id":"openclaw",                     "ver":"2026.8.1", "loc":"/opt/homebrew/Caskroom/openclaw"},
   {"kind":"file", "id":"/Users/dana/.local/bin/claude"},
-  {"kind":"port", "id":"18789",                        "loc":"/opt/homebrew/…/bin/node"},
   {"kind":"ext",  "id":"kbhkmjgjmpbaeoinipbngmmpjppjlkmm","perms":"tabs,cookies,nativeMessaging,<all_urls>"}
 ]
 ```
@@ -194,7 +187,7 @@ get the raw inventory instead:
 
 You do not need all of them. Which you take depends on where the thing runs.
 
-**On the endpoint**
+**On the endpoint: the inventory**
 
 | | |
 |---|---|
@@ -212,7 +205,7 @@ You do not need all of them. Which you take depends on where the thing runs.
 | `agents.yaml` | What the evidence is matched against. Add a signature here and it re-matches evidence you already collected |
 | `routes.yaml` | How each kind of evidence is matched — a bundle id, a Debian package, an npm install, a config directory. The matcher, the validator, the coverage report and lint all read this one file, and `classify` expects it beside `agents.yaml` |
 
-**On the endpoint, matching there**
+**On the endpoint: the match**
 
 | | |
 |---|---|
@@ -220,10 +213,7 @@ You do not need all of them. Which you take depends on where the thing runs.
 | `signatures.sql` | The catalog converted to SQL. `discover --names` uses it to turn an inventory into a list of names. Keep it next to `discover`; nothing else uses it |
 | `fleet-policies.yml` | One Fleet policy per agent per platform. A policy fails on a host that has the agent, which puts those hosts on Fleet's failing list. Load with `fleetctl apply -f fleet-policies.yml` |
 
-All three are **generated** from `agents.yaml`, and CI checks they find the same agents as
-`classify`. When you add a signature to the catalog, you have to redeploy these files for them
-to see it. The JSON inventory does not need that, because it is matched later, off the
-machine.
+These three are generated from `agents.yaml`; redeploy them when the catalog changes.
 
 **Or, instead of the endpoint half: one file**
 
@@ -251,9 +241,6 @@ They **never**:
 - touch browser history, cookies, or saved passwords
 - execute a discovered binary to ask it anything
 
-The strength of shipping queries rather than an agent is that you do not have to take that on
-trust. It is SQL. Read `dist/discovery-darwin.sql` in ten minutes and verify it yourself.
-
 This tool also **does nothing to the machine**. No blocking, no remediation, and no network
 call from anything that runs on the endpoint. It reports; you decide.
 
@@ -261,15 +248,6 @@ call from anything that runs on the endpoint. It reports; you decide.
 anonymous usage event per run, counts only — never a path, a hostname or an agent identifier.
 `--telemetry-check` prints exactly what would be sent, `AI_DISCOVERY_TELEMETRY=0` turns it
 off, and [`docs/telemetry.md`](docs/telemetry.md) lists every field.
-
-### 📋 What it looks for — [`docs/agents.md`](docs/agents.md)
-
-Every agent in the catalog, every identifier each is matched on, and the CI scenario that
-installs the real software and proves it. Generated and gated by lint, so it cannot describe a
-catalog that has moved on without it. What the suite *cannot* prove is kept beside it, in
-[`docs/limits.md`](docs/limits.md).
-
-**[Open the coverage report →](docs/agents.md)**
 
 ## What it cannot see
 
