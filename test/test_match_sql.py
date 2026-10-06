@@ -148,7 +148,6 @@ def assert_mode(argv):
     classify = R.load_classify()
     catalog = classify.load_catalog(R.CATALOG)
     routes = classify.load_routes()
-    sigs = R.signatures(classify, catalog, classify.Registry(routes))
     osqi = None
     if not (a.agents and a.parity):
         osqi = osqueryi_path()
@@ -165,21 +164,31 @@ def assert_mode(argv):
     check(f"match SQL agrees with the classifier on {sum(want.values())} evidence rows",
           want == got, diff(want, got))
 
-    # The standalone artifact, live. It cannot see container kinds, so an agent whose
-    # signatures are all images is not expected here -- and is still expected above,
-    # where the payload carries the bounded container branch.
+    # The standalone artifact, live. It has no container branch, so it is expected to
+    # find an agent only when THIS PAYLOAD found it through a kind the artifact reads.
+    #
+    # DECIDED FROM THE EVIDENCE, NOT THE CATALOG. This first asked whether the agent had
+    # any non-container signature, and aider does -- a state dir and a pipx/uv name --
+    # so 79-linux-image, which installs aider only as an image, demanded the standalone
+    # file find it and failed. Whether an agent is reachable here is a fact about how it
+    # was installed on this machine, which only the classifier's evidence records. An
+    # agent found only through images is still asserted above, by the parity check over
+    # a payload that carries the bounded container branch.
     live = (json.load(open(a.agents)) if a.agents
             else run_sql(osqi, (pathlib.Path(a.root) / "dist" / f"agents-{plat}.sql")
                          .read_text(), privileged=True))
     live_found = {r["agent"] for r in live}
     inline_kinds = {k for q in R.build.queries() if not q["expensive"]
                     and plat in q["platforms"] for k in q["kinds"]}
-    visible = {s[0] for s in sigs if s[3] in inline_kinds}
+    found_by = collections.defaultdict(set)
+    for agent, kind, _, _ in want:
+        found_by[agent].add(kind)
     want_c = expected.get("classified") or {}
     for agent in want_c.get("must_find", []):
-        if agent not in visible:
-            print(f"  (dist/agents-{plat}.sql cannot see {agent!r}: image-only; "
-                  f"covered by the parity check above)")
+        if not found_by.get(agent, set()) & inline_kinds:
+            kinds = ", ".join(sorted(found_by.get(agent, set()))) or "nothing"
+            print(f"  (dist/agents-{plat}.sql cannot see {agent!r} here: this payload "
+                  f"found it only through {kinds}; covered by the parity check above)")
             continue
         check(f"dist/agents-{plat}.sql finds {agent!r}", agent in live_found,
               f"found {sorted(live_found)}")
