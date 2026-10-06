@@ -19,7 +19,7 @@ and the CI test behind each one.
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 61 of 61. Anything below complete is a red build, so there is no partial number to read here.
+**Every identifier is proved by a real install in CI** — 61 of 61. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all; the build rejects it.
 
 ## 🧪 Why a real install is the bar
 
@@ -28,12 +28,9 @@ Mac. `aider` installs as `aider-chat` under `uv` and `pipx` while its state dire
 is `~/.aider`, so evidence and signature never met. Both were silent and both survived
 review.
 
-Coverage is counted **per identifier**, from what each scenario recorded in its own
-`observed.json`, and only from scenarios in the CI matrix — an agent can pass while
-carrying an identifier nothing exercised.
-
-`tools/validate_catalog.py` refuses an agent no scenario installs. There is no block
-that buys an exception, so an unproved signature cannot enter at all.
+Proof is counted **per identifier**, not per agent. Installing an agent vouches
+only for the identifiers that run actually matched, so a sibling identifier on the
+same agent is not covered by association.
 
 # Agents (22)
 
