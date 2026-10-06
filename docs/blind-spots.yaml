@@ -1,4 +1,4 @@
-# What these queries CANNOT see. The canonical list, and the only copy: docs/agents.md
+# What these queries CANNOT see. The canonical list, and the only copy: docs/limits.md
 # renders it and README points at that, so a reader meets these once.
 #
 # These are properties of the platform and the osquery tables. No amount of test coverage
@@ -20,6 +20,8 @@ blind_spots:
     why: "osquery has no `snap_packages` or `flatpak_packages` table at any version, checked against the source at 5.10.0 and 5.23.1. A snap- or flatpak-installed agent is invisible on every package route"
   - spot: "AppImage and tarball installs on Linux"
     why: "Neither leaves a package record, and Cursor's primary Linux download is an AppImage. Only `desktop_ids` can see one, and only if the install writes a `.desktop` entry"
+  - spot: "An NSS-only account whose home directory is outside /home or /root"
+    why: "Since osquery 5.13.1 the unconstrained Linux `users` table reads /etc/passwd directly, so an account that only an NSS module knows -- GCE OS Login, SSSD, LDAP, Active Directory -- is not in it. The browser and VS Code branches take their uids from the home directories on disk as well, which covers every such account that has logged in under /home or /root. One whose home was placed elsewhere, or one that has never logged in, is reached by neither list. Read off osquery's linux/users.cpp at 5.23.1"
   - spot: "Which agent installed a systemd unit"
     why: "No unit name is a signature. The macOS launchd prefixes were read off live installs; no Linux unit name has been, so the route carries no values and unit rows stay evidence"
   - spot: "A systemd unit the running manager has not loaded"

@@ -123,6 +123,7 @@ jobs:
           - 00-baseline
           - 10-desktop-apps
           - 11-perplexity-desktop
+          - 12-chatgpt-pre-rename
           - 20-cli-agents
           - 21-cli-agents-homebrew
           - 25-python-agents
@@ -348,9 +349,13 @@ jobs:
           # --platform, alongside --os and --arch. `os` alone holds "24.04", which names a
           # distro release and not a platform family, so coverage could not be counted per
           # platform without it.
+          # --os CARRIES THE DISTRO AND ITS RELEASE, `ubuntu-24.04`, because the record is
+          # read beside Debian's `12` and Rocky's `9.x` now and a bare number names a
+          # distro only to a reader who already knows whose numbering it is. The same
+          # expression runs in the container job and in test/run-linux.sh.
           python3 tools/agent_status.py --record /tmp/out.json \
             test/scenarios/${{ matrix.scenario }} \
-            --platform linux --os "$(. /etc/os-release && echo "$VERSION_ID")" \
+            --platform linux --os "$(. /etc/os-release && echo "$ID-$VERSION_ID")" \
             --arch "$(uname -m)" --run-id "${{ github.run_id }}"
       - name: Upload the observation
         if: steps.provision.outputs.runnable == 'true'
@@ -360,38 +365,89 @@ jobs:
           path: test/scenarios/${{ matrix.scenario }}/observed.json
           if-no-files-found: error
 
-  # The RPM family, in a container on the same runner, because GitHub offers no
-  # RPM-distro runner. It is a separate job rather than a matrix entry because
-  # `container:` applies to the whole job.
+  # THE OTHER FAMILIES, in containers on the same runner, because GitHub offers no Debian
+  # or RHEL-family runner. A separate job because `container:` applies to a whole job, and
+  # a matrix of images because the Linux artifact had been proved on one distro while a
+  # Compute Engine fleet boots three: Debian 12 by default, Ubuntu LTS by choice, Rocky or
+  # RHEL 9 where a policy says so. fedora:41 stays as the rpm control it has been.
   #
-  # WHAT IT REALLY GUARDS is that ONE dist/discovery-linux.sql serves both families: the
-  # artifact names deb_packages and rpm_packages, and the absent one has to return no rows
-  # rather than error the statement. A genuinely missing table does the opposite --
-  # snap_packages returns [] and exits 1 -- so this is the run that keeps the difference
-  # honest.
-  scenario-linux-rpm:
+  # WHAT IT REALLY GUARDS is that ONE dist/discovery-linux.sql serves every family: the
+  # artifact names deb_packages and rpm_packages, and the absent one has to return no
+  # rows rather than error the statement. A genuinely missing table does the opposite --
+  # snap_packages returns [] and exits 1 -- so these are the runs that keep the
+  # difference honest.
+  #
+  # WHAT A CONTAINER CANNOT HOST, the scenario says itself: 76 has no system bus and 79
+  # has no daemon, and both exit 3 here. They run on the ubuntu job above, and on a real
+  # VM through test/run-gce.sh, which is also where OS Login and a shared-core shape are.
+  scenario-linux-container:
     needs: scope
     if: needs.scope.outputs.runtime == 'true'
-    name: ${{ matrix.scenario }} on fedora
+    name: ${{ matrix.scenario }} on ${{ matrix.label }}
     runs-on: ubuntu-24.04
-    container: fedora:41
+    container: ${{ matrix.image }}
     strategy:
       fail-fast: false
       matrix:
+        # PINNED TO A MAJOR, NOT A POINT RELEASE, because that is what a GCE image family
+        # is: `debian-12` and `rocky-linux-9` move with the point release underneath,
+        # and the record carries the exact one through --os. quay.io for Rocky because
+        # Docker Hub's `rockylinux` library image stopped at 9.3; the Rocky project's
+        # own repository tracks the current point release.
+        image: ["debian:12", "quay.io/rockylinux/rockylinux:9", "fedora:41"]
         scenario:
+          - 70-linux-baseline
+          - 71-linux-cli-agents
+          - 72-linux-python-agents
+          - 73-linux-deb
+          - 74-linux-dpkg-removed
+          - 75-linux-browser
+          - 76-linux-systemd
           - 77-linux-rpm
+          - 78-linux-vscode
+          - 79-linux-image
+        # A label per image, because an artifact name may not contain `:` or `/` and
+        # upload-artifact@v4 fails outright on one that does.
+        include:
+          - image: "debian:12"
+            label: debian-12
+          - image: "quay.io/rockylinux/rockylinux:9"
+            label: rocky-9
+          - image: "fedora:41"
+            label: fedora-41
     steps:
       - name: Install prerequisites
-        run: dnf -q -y install git curl tar python3 python3-pip findutils
+        run: |
+          # What checkout and the scenarios need that a base image does not carry. The
+          # family is read off the image rather than off the matrix, so the step cannot
+          # disagree with the container it runs in. --allowerasing because Rocky ships
+          # curl-minimal, which conflicts with curl and otherwise fails the whole
+          # transaction -- pyyaml included -- while leaving every other step green.
+          if command -v apt-get >/dev/null 2>&1; then
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get -qq update
+            apt-get -qq install -y git curl ca-certificates tar python3 python3-yaml sudo procps
+          else
+            dnf -q -y install --allowerasing git curl tar python3 python3-pyyaml findutils procps-ng
+          fi
       - uses: actions/checkout@v4
       - name: Install osquery
         run: |
-          curl -fsSL -o /tmp/osquery.rpm \
-            https://pkg.osquery.io/rpm/osquery-5.23.1-1.linux.x86_64.rpm
-          rpm -i --nodeps /tmp/osquery.rpm
+          # The deb and the rpm both install osqueryi to /usr/bin/osqueryi -- verified on
+          # Ubuntu 24.04 and Fedora 41 -- which is where bin/container-scan's
+          # osqueryi_path() looks.
+          if command -v dpkg >/dev/null 2>&1; then
+            curl -fsSL -o /tmp/osquery.deb \
+              https://pkg.osquery.io/deb/osquery_5.23.1-1.linux_amd64.deb
+            dpkg -i /tmp/osquery.deb
+          else
+            curl -fsSL -o /tmp/osquery.rpm \
+              https://pkg.osquery.io/rpm/osquery-5.23.1-1.linux.x86_64.rpm
+            # dnf, not `rpm -i --nodeps`: a missing library would otherwise surface as
+            # a runtime failure two steps later rather than as a named dependency here.
+            dnf -q -y install /tmp/osquery.rpm
+          fi
           osqueryi --version
-      - name: Install pyyaml
-        run: pip3 install --quiet pyyaml || dnf -q -y install python3-pyyaml
       - name: Provision
         id: provision
         run: |
@@ -401,6 +457,8 @@ jobs:
           set -e
           if [ "$rc" = 3 ]; then
             echo "runnable=false" >> "$GITHUB_OUTPUT"
+            echo "### SKIPPED: the scenario reported this image cannot host it" \
+              >> "$GITHUB_STEP_SUMMARY"
           elif [ "$rc" != 0 ]; then exit "$rc"
           else echo "runnable=true" >> "$GITHUB_OUTPUT"; fi
       - name: Query and assert
@@ -408,26 +466,33 @@ jobs:
         run: |
           # No sudo in the container -- it runs as root, which is also why
           # test/lib/guest-linux.sh's sudo_maybe exists rather than assuming one shape.
-          /usr/bin/osqueryi --json < dist/discovery-linux.sql > /tmp/out.json
+          # The deep branch is the same choice the ubuntu job makes, read from the same
+          # field; 79 exits 3 before reaching it here, and tools/check_workflows.py asks
+          # that a job listing a deep scenario honours it.
+          if python3 -c "import json,sys; sys.exit(0 if json.load(open('test/scenarios/${{ matrix.scenario }}/expected.json')).get('deep') else 1)"; then
+            bin/discover --deep > /tmp/out.json
+          else
+            /usr/bin/osqueryi --json < dist/discovery-linux.sql > /tmp/out.json
+          fi
           test/assert.sh /tmp/out.json test/scenarios/${{ matrix.scenario }}/expected.json
       - name: Record which identifiers this run matched
         if: steps.provision.outputs.runnable == 'true'
         run: |
           python3 tools/agent_status.py --record /tmp/out.json \
             test/scenarios/${{ matrix.scenario }} \
-            --platform linux --os "$(. /etc/os-release && echo "$VERSION_ID")" \
+            --platform linux --os "$(. /etc/os-release && echo "$ID-$VERSION_ID")" \
             --arch "$(uname -m)" --run-id "${{ github.run_id }}"
       - name: Upload the observation
         if: steps.provision.outputs.runnable == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: observed-${{ matrix.scenario }}--fedora
+          name: observed-${{ matrix.scenario }}--${{ matrix.label }}
           path: test/scenarios/${{ matrix.scenario }}/observed.json
           if-no-files-found: error
 
   collect:
     name: Coverage, and commit observations on main
-    needs: [scope, scenario, scenario-linux, scenario-linux-rpm]
+    needs: [scope, scenario, scenario-linux, scenario-linux-container]
     # always() so a green scenario's observation still lands when a DIFFERENT scenario
     # failed. Each observation is independent evidence, and discarding all of them because
     # one scenario broke would throw away the runs that worked.
@@ -498,16 +563,39 @@ jobs:
         # to be CHECKED. Those are different statements and are now in different steps.
         if: github.ref == 'refs/heads/main'
         run: |
-          python3 tools/agent_status.py --write
-          git add test/scenarios/*/observed.json docs/agents.md README.md
-          if git diff --cached --quiet; then
-            echo "Coverage unchanged. Nothing to commit."
-            exit 0
-          fi
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit \
-            -m "docs: record identifier coverage observed by the scenario run" \
-            -m "Written by tools/agent_status.py --record from each scenario's own output. Triggered by ${{ github.sha }}."
-          git push
-          python3 tools/agent_status.py | tail -5 >> "$GITHUB_STEP_SUMMARY"
+          # ON TOP OF THE CURRENT MAIN, NOT THE COMMIT THIS RUN WAS FOR. This job checks out
+          # the run's own commit, and main may have moved since: a parallel run's collect, or
+          # this run's own first attempt when a failed job is re-run. Pushing from the old
+          # base is rejected with "fetch first" -- self-healing, since the next run records
+          # the same observations, but red, and a red run is what a releaser reads as a broken
+          # suite. Run 37255856907: two macOS jobs were re-run after an upload timeout, both
+          # passed, and this step went red for a reason nobody needed to act on.
+          #
+          # So the merge is redone on the latest main before every push, which is correct
+          # rather than merely safe: tools/merge_observations.py merges by key and the newest
+          # run wins, so the result on any base is the same files. Three attempts, because
+          # the window between fetch and push is a few seconds and another collect can still
+          # land inside it; the third failure is reported as the error it is.
+          for attempt in 1 2 3; do
+            git fetch -q origin main
+            git checkout -q -f -B main origin/main
+            python3 tools/merge_observations.py /tmp/observed test/scenarios
+            python3 tools/agent_status.py --write
+            git add test/scenarios/*/observed.json docs/agents.md README.md
+            if git diff --cached --quiet; then
+              echo "Coverage unchanged against $(git rev-parse --short HEAD). Nothing to commit."
+              exit 0
+            fi
+            git commit -q \
+              -m "docs: record identifier coverage observed by the scenario run" \
+              -m "Written by tools/agent_status.py --record from each scenario's own output. Triggered by ${{ github.sha }}."
+            if git push -q origin main; then
+              python3 tools/agent_status.py | tail -5 >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "push rejected on attempt $attempt of 3: another collect landed; catching up and merging again"
+          done
+          echo "::error::could not push the observations after 3 attempts. Re-run this job."
+          exit 1

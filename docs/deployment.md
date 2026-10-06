@@ -33,7 +33,7 @@ a clean machine.
 
 ## One file, when your platform can host a script and not a package
 
-A release attaches thirteen loose files, and they only work in the layout this repo has:
+The loose files a release attaches only work in the layout this repo has:
 `bin/container-scan` resolves `dist/discovery-deep.sql` relative to its own parent, and
 `bin/discover` sources `bin/container-scan`. Putting files in a fixed place on a managed
 machine is the part a management platform is worst at — it wants a package, which on macOS
@@ -152,9 +152,9 @@ agent can be found through — Claude Code on macOS reads the filesystem and npm
 nothing else — so it costs what its routes cost rather than the whole inventory.
 
 Two things a policy cannot do. It carries no version: a policy is yes or no, and the
-evidence rows are in `bin/discover --write`. And it never reads the container branch:
-osqueryd has no per-query wall clock and `docker_images` can block forever, so agents that
-ship only as an image have no policy, and the file's header names them.
+evidence rows are in `bin/discover --write`. And it never reads the container branch, which
+needs a wall-clock bound osqueryd cannot give it ([containers.md](containers.md)), so agents
+that ship only as an image have no policy, and the file's header names them.
 
 `dist/agents-darwin.sql` and `dist/agents-linux.sql` are the same match as one query per
 platform, for anyone with `osqueryi` and a question — one row per agent found, with the
@@ -194,16 +194,9 @@ fleet learns to ignore. The per-branch token still says `containers=absent` whet
 the line degrades, so a consumer counting machines with no container runtime at all narrows
 on that — a Docker-less machine that runs Podman says `containers=unreadable:podman`.
 
-**`unreadable:*` is on the degrading side, and it is what makes the other side safe.** A
-Podman host used to report `absent` too, so excusing `absent` alone would have excused the
-machines most worth looking at.
-
-`stale:<seconds>` used to be listed here and is retired: nothing emitted it. Judge staleness
-from the marker row's `ver`, which holds the unix time of the scan — that is what
-`bin/classify` does, and it lets the reader pick the threshold rather than the writer.
-
-**Judge freshness on that timestamp, not the file's mtime** — redeploying a file resets the
-mtime without changing the truth.
+**Judge freshness from the marker row's `ver`**, the unix time of the scan, and not from the
+file's mtime — redeploying a file resets the mtime without changing the truth. There is no
+`stale:` token: the reader picks the threshold, not the writer.
 
 ## On Linux, which is the same shape with three differences
 
@@ -226,17 +219,58 @@ unchanged. Three things differ and are worth knowing before you deploy:
   produces. Read it the way you read the container marker, because "no agent units" and
   "we could not read the unit list" are different answers.
 
+### On a Compute Engine VM
+
+A VM is a headless, often multi-user server, which is a different machine from a laptop.
+Four things about it are worth knowing, each checked rather than assumed.
+
+**Which images.** CI runs every Linux scenario on Debian 12, Rocky Linux 9 and Fedora 41
+containers and on an Ubuntu 24.04 runner, so the one `dist/discovery-linux.sql` is proved
+on the three families a GCE fleet boots and on the deb and rpm sides of each. A container
+cannot host systemd or OS Login, so `test/run-gce.sh` runs the same scenarios on one real
+VM per family and brings the observations back into the tree.
+
+**OS Login.** With OS Login on, accounts come from an NSS module rather than `/etc/passwd`,
+and a home directory appears on first login. osquery's Linux `users` table has read
+`/etc/passwd` directly when unconstrained since 5.13.1, so that an LDAP site does not pay a
+directory query per scan — which means **`users` does not list OS Login accounts at all**,
+nor SSSD, LDAP or Active Directory ones. Measured 2026-10-04 on e2-small VMs of all three
+families with OS Login on: the unconstrained table returned exactly the `/etc/passwd` count,
+a lookup of the login account's uid returned nothing, and the same lookup with
+`include_remote = 1` returned the account. The path branches never depended on it: they
+glob `/home/%/` and `/root/` on disk. The two branches that join `users`, browser extensions
+and VS Code extensions, take their uids from the home directories on disk as well as from
+`users`, because a lookup by one uid does reach NSS. On each VM a Chrome profile owned by
+the OS Login account produced **0 extension rows through the `users` join and 1 through the
+shipped artifact.** So an account that has logged in is covered, and one that never has owns
+nothing to find. The remaining gap is an NSS-only account with a home outside `/home` or
+`/root`, which `docs/blind-spots.yaml` records.
+
+**Headless.** No desktop session means the desktop-entry, browser and native-messaging
+branches return no rows, and that is the correct answer rather than a silent one: each is
+a glob over paths that exist or do not, with nothing that can fail soft. On the write path
+every branch still gets its own dated `kind=scan` row, so `status.txt` on a headless VM
+reads `browser=ok desktop-linux=ok native-messaging-linux=ok`, and a reader can tell
+"looked, nothing there" from a branch that never ran. The `systemd` marker is the one that
+changes on a VM: with systemd as PID 1 and osquery running as root it reads `ok` and the
+`unit` rows are real, where every container run reports `absent`.
+
+**Small shapes.** A shared-core `e2-small` does not promise the same number twice: the same
+Rocky image measured the composed artifact at 2.4s cold on one VM and 14.0s on another the
+same afternoon, with `systemd_units` alone at 5.5s against 1.2s.
+[`queries/COST.md`](../queries/COST.md#compute-engine-e2-small-2026-10-04) has the table. It
+is why `queries/runtime-linux.sql` is banded `slow`, and why a scheduled `--write`, where each
+branch has its own bound, is the shape to prefer over anything that waits.
+
 ## The `python3` stub, which used to bite only on a fleet
 
 On a Mac without Command Line Tools installed, `/usr/bin/python3` is a **stub**: it prints an
 install prompt on stderr and exits 1 with empty stdout. The scheduled writer was built on it
 and produced nothing at all there.
 
-**This page said that surfaced as `no-cache`. It did not.** The `no-cache` marker row — the
-one thing that tells a reader the writer never ran — was itself emitted by `python3`, so on
-the machine this section describes it surfaced as **silence**, which a collector that records
-stdout and discards the exit status reads as a machine with nothing on it. The reason and the
-failure shared an interpreter, and the reason lost.
+It did not even surface as `no-cache`: that marker row — the one thing that tells a reader
+the writer never ran — was itself emitted by `python3`, so the failure surfaced as **silence**,
+which a collector that discards the exit status reads as a machine with nothing on it.
 
 Neither endpoint script uses `python3` now. `bin/discover` and `bin/container-scan` are bash
 and `osqueryi`; marker rows are built by `printf`, so the row that says the writer never ran

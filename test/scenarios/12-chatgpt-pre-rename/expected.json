@@ -1,0 +1,33 @@
+{
+  "description": "The last ChatGPT Desktop build before the Codex rename, downloaded from OpenAI's own URL, so com.openai.chat is proved by a real install instead of by a record from a retired runner image.",
+  "platform": "darwin",
+  "counts": {
+    "app": ">=1",
+    "brew": ">=0",
+    "npm": ">=0",
+    "file": ">=1",
+    "ext": ">=0",
+    "nmh": ">=0",
+    "daemon": ">=0",
+    "port": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "chatgpt-desktop"
+    ]
+  },
+  "why": "com.openai.chat is a single value here, not 10-desktop-apps' either-or list, because pinning it is the reason this scenario exists. must_find alone cannot do that: com.openai.codex satisfies it too. forbid_rows asserts the current build is absent, so the evidence comes only from the pre-rename build.",
+  "must_contain": [
+    "com.openai.chat"
+  ],
+  "forbid_rows": [
+    {
+      "kind": "app",
+      "id": "com.openai.codex"
+    }
+  ],
+  "known_gaps": [
+    "The bundle id only. A direct download leaves no Homebrew record, so the `chatgpt` brew route is not exercised here; 10-desktop-apps covers it."
+  ]
+}

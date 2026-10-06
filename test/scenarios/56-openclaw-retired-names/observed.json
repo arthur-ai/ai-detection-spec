@@ -32,7 +32,16 @@
       "agent_version": "2026.1.24-3",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37349545842"
+    },
+    {
+      "agent": "openclaw",
+      "route": "npm",
+      "value": "clawdbot",
+      "agent_version": "2026.1.24-3",
+      "os": "26.6.2",
+      "arch": "arm64",
+      "run": "37349545842"
     },
     {
       "agent": "openclaw",
@@ -65,7 +74,16 @@
       "agent_version": "0.1.0",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37349545842"
+    },
+    {
+      "agent": "openclaw",
+      "route": "npm",
+      "value": "moltbot",
+      "agent_version": "0.1.0",
+      "os": "26.6.2",
+      "arch": "arm64",
+      "run": "37349545842"
     }
   ]
 }

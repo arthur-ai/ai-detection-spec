@@ -30,9 +30,7 @@ queries you can read in ten minutes and a catalog you can check line by line.
 Take all of it, take one query, or take just the catalog and match it your own way. MIT, no
 runtime dependencies beyond osquery. **Nothing that runs on the endpoint makes a network
 call** — the only socket it touches is the local Docker one, and only when you ask for a
-container scan. The classifier, which runs off the machine, sends one anonymous usage event
-per run: counts, never identifiers, described field by field in
-[`docs/telemetry.md`](docs/telemetry.md) and switched off with `AI_DISCOVERY_TELEMETRY=0`.
+container scan.
 
 ### Why you might like it
 
@@ -45,7 +43,7 @@ per run: counts, never identifiers, described field by field in
   [the report](docs/agents.md) is generated, so it cannot flatter itself.
 - **🧩 Add an agent without touching the endpoint.** The queries carry no product names, so a new
   signature re-matches evidence you already collected — nothing to redeploy to the fleet.
-- **🗺 Blind spots stated up front.** [Written down](docs/agents.md), because a discovery tool
+- **🗺 Blind spots stated up front.** [Written down](docs/limits.md), because a discovery tool
   that hides them is worse than none.
 
 ## What you get
@@ -68,15 +66,13 @@ collector: a Smart Group matches on one printed value, a Fleet policy is one que
 signature reaches either only by redeploying it. It is generated from the same catalog, so
 there is still one place a signature lives.
 
-[`docs/agents.md`](docs/agents.md) lists which agents are covered and the CI test that proves
-each one, generated so the numbers are counted rather than typed.
 **[What a release attaches](#what-a-release-attaches)** names every file and says which machine
 it belongs on.
 
 ## Scope, so you know what you are getting
 
-**macOS and Linux ship. Windows does not.** CI installs the real software on macOS runners and
-on `ubuntu-24.04`, plus a `fedora:41` container for the rpm family, so both platforms are held
+**macOS and Linux ship. Windows does not.** CI installs the real software on macOS runners, on
+`ubuntu-24.04`, and in Debian 12, Rocky 9 and Fedora 41 containers, so both platforms are held
 to the same standard: a signature is verified when a scenario installs the actual software and
 asserts the classifier finds it.
 
@@ -119,19 +115,10 @@ one.
 | `python3` | **3.7** (`subprocess` `capture_output`) — for `bin/classify` and `tools/`. **Nothing on the endpoint needs it** |
 | PyYAML | Only for the tools that read the catalog: `bin/classify` and `tools/validate_catalog.py` |
 
-**Running the queries needs osquery alone, and so does everything else that runs on the
-endpoint.** `bin/discover` and `bin/container-scan` are bash and `osqueryi` — the JSON they
-read is parsed by `osqueryi`'s own SQLite, and the rows they write are built by `printf`.
-The one other binary either touches is `curl`, for the Docker health probe, and
-[`docs/deployment.md`](docs/deployment.md) says why that is not written up as a prerequisite.
-`python3` and PyYAML are for the classifier and the tools, which run off the machine.
-**The one-file bundle is the exception, and it costs two:** it extracts a `tar` from `base64`
-before the runner starts, so a machine running one needs those as well. Unpacking `bin/` and
-`dist/` yourself needs neither — [`docs/deployment.md`](docs/deployment.md) has it.
-`CLAUDE.md` carries that rule and `test/lint.sh` gates it, for a reason `docs/deployment.md`
-also records: on a Mac without Command Line Tools `/usr/bin/python3` is a stub, and a marker
-row that needs an interpreter cannot report a broken interpreter. Which OS versions each
-scenario has actually run on is recorded in [`docs/agents.md`](docs/agents.md).
+**Everything that runs on the endpoint needs osquery alone.** `bin/discover` and
+`bin/container-scan` are bash and `osqueryi`; `python3` and PyYAML are for the classifier and
+the tools, which run off the machine. [`docs/deployment.md`](docs/deployment.md) says why that
+is a rule rather than a detail, why `curl` is not listed, and what the one-file bundle adds.
 
 `sudo` is needed because some tables read other users' home directories. Without it you see
 only your own account.
@@ -157,12 +144,6 @@ $ sudo osqueryi --json < dist/discovery-linux.sql | bin/classify
 `dist/` is committed, so a clone is ready to run — there is nothing to build. Pinning a
 tagged release is the recommended posture, and one ships the same artifacts plus the
 catalog; see [SECURITY.md](SECURITY.md).
-
-**`bin/classify` sends one anonymous usage event per run.** It carries counts — never a
-path, a hostname or an agent identifier. `bin/classify --telemetry-check` prints exactly
-what would be sent without sending it, `AI_DISCOVERY_TELEMETRY=0` turns it off, and
-[`docs/telemetry.md`](docs/telemetry.md) lists every field. Nothing that runs on an
-endpoint sends anything.
 
 For a fleet, do not run either of those on a synchronous reporting path — schedule
 `bin/discover --write` and `cat` the file. See [Running it on a fleet](docs/deployment.md).
@@ -264,26 +245,25 @@ trust. It is SQL. Read `dist/discovery-darwin.sql` in ten minutes and verify it 
 This tool also **does nothing to the machine**. No blocking, no remediation, and no network
 call from anything that runs on the endpoint. It reports; you decide.
 
-`bin/classify`, which runs off the endpoint, is the one part that talks to the network: it
-sends a single anonymous usage event per run so that questions like "is anyone on a stale
-catalog" have an answer. It carries counts — never a path, a hostname, or an agent
-identifier. `bin/classify --telemetry-check` prints exactly what would be sent and sends
-nothing; `AI_DISCOVERY_TELEMETRY=0` turns it off; [`docs/telemetry.md`](docs/telemetry.md)
-lists every field.
+`bin/classify`, which runs off the endpoint, is the one part that talks to the network: one
+anonymous usage event per run, counts only — never a path, a hostname or an agent identifier.
+`--telemetry-check` prints exactly what would be sent, `AI_DISCOVERY_TELEMETRY=0` turns it
+off, and [`docs/telemetry.md`](docs/telemetry.md) lists every field.
 
 ### 📋 What it looks for — [`docs/agents.md`](docs/agents.md)
 
 Every agent in the catalog, every identifier each is matched on, and the CI scenario that
 installs the real software and proves it. Generated and gated by lint, so it cannot describe a
-catalog that has moved on without it — and it names what the suite *cannot* prove alongside
-what it can.
+catalog that has moved on without it. What the suite *cannot* prove is kept beside it, in
+[`docs/limits.md`](docs/limits.md).
 
 **[Open the coverage report →](docs/agents.md)**
 
 ## What it cannot see
 
 A discovery tool that hides its blind spots is worse than none, so they live in one place —
-[`docs/blind-spots.yaml`](docs/blind-spots.yaml) — and are rendered into the report. They are
+[`docs/blind-spots.yaml`](docs/blind-spots.yaml) — and are rendered into
+[`docs/limits.md`](docs/limits.md). They are
 properties of the platform and the osquery tables rather than gaps in the test suite: no
 amount of coverage moves them.
 
@@ -291,63 +271,34 @@ The ones most likely to matter to you: anything inside a VM or a container, snap
 packages (osquery has no table for either), AppImage installs, and what an agent *does* as
 opposed to what it is permitted to do.
 
-**[Read them in context →](docs/agents.md#what-osquery-cannot-see)**
+**[Read them in context →](docs/limits.md#what-osquery-cannot-see)**
 
 ## Containers
 
-An agent in a container is invisible to every other query here — no `.app` bundle, no
-Homebrew entry, no npm global, no dotdir on the host. This is the only branch that sees it,
-and it is opt-in because it is the only part of this that talks to a daemon.
+An agent in a container leaves nothing on the host that any other query reads, so one opt-in
+branch asks the Docker daemon — under a wall-clock bound, because `docker_images` never
+returns against a daemon that accepts the connection and does not answer.
 
 ```console
-$ sudo bin/discover --deep | bin/classify     # base inventory plus container images
-$ sudo bin/container-scan | bin/classify      # containers alone
+$ sudo bin/discover --deep | bin/classify     # base inventory plus containers
 ```
-
-Opt-in because `docker_images` cannot be bounded from inside osquery: against a daemon that
-accepts the connection and never answers, the query never returns, so the bound has to be a
-kill on a separate process. Every outcome carries a reason rather than an empty result.
 
 **[How the bound works, the exit codes, and how image names resolve →](docs/containers.md)**
 
 ## Running it on a fleet
 
 **Do not put these queries on a synchronous reporting path** — they can hang rather than fail.
-Schedule the writer and read the file:
+Schedule `bin/discover --write` and read the file; the `status.txt` beside it is one line whose
+vocabulary is a contract, so a consumer can always tell a clean machine from a branch that
+could not look. Scheduling and transport are yours to supply, and so is classification at
+scale unless you match on the endpoint; this repo ships the queries, the runner, the guard and
+the bound.
 
-```console
-# on a schedule, as root
-$ bin/discover --write /var/lib/ai-discovery/inventory.json \
-               --status /var/lib/ai-discovery/status.txt
+**If your channel is one printed value**, such as a Jamf Extension Attribute, `bin/discover
+--names` prints the agents found and that same status line instead of the payload. On Fleet,
+`fleet-policies.yml` is one policy per agent.
 
-# from wherever you collect, whenever you like
-$ cat /var/lib/ai-discovery/inventory.json
-$ cat /var/lib/ai-discovery/status.txt
-```
-
-**If your platform can host a script and not a package**, take `ai-discovery-darwin.sh` or
-`ai-discovery-linux.sh` from the release — one self-extracting file that takes those same
-arguments and installs nothing. `tools/bundle.py` is what builds them, and `--driver` wraps your
-own collector in one; [`docs/deployment.md`](docs/deployment.md) has that. A bundle carries the
-endpoint half only, so classification still happens off the machine —
-[What a release attaches](#what-a-release-attaches) says which file does what.
-
-`status.txt` is one line and its vocabulary is a contract, so a consumer can always tell a
-clean machine from a branch that could not look.
-
-**If your channel is one printed value** — a Jamf Extension Attribute, a Smart Group — ask for
-the names instead of the payload:
-
-```console
-$ bin/discover --names --cache /var/lib/ai-discovery/inventory.json
-Claude Code 2.0.1, Cursor 1.7.44; ok 2026-10-05T13:20:11Z rows=775 apps=ok … containers=absent
-```
-
-One line: the agents found, then that same status line, so `none` and "could not look" are
-never the same value. Scheduling and transport are yours to supply; this repo ships the
-queries, the runner, the guard, the bound, and both ways of matching.
-
-**[The status contract, and what a deployment has to supply →](docs/deployment.md)**
+**[The scheduled writer, the status contract, the one-file bundle, and matching on the endpoint →](docs/deployment.md)**
 
 ## Contributing — genuinely, please do
 

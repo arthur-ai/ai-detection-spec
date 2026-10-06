@@ -20,19 +20,39 @@ source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest-linux.sh"
 need_curl
 need_user
 
-arch=$(dpkg --print-architecture 2>/dev/null || echo amd64)
+arch=$(uname -m)
 # Google ships no Linux arm64 Chrome at all. Chromium would need a snap on Ubuntu, and a
 # snap relocates the profile to ~/snap/chromium/common/chromium -- which osquery DOES
 # scan, but that is a different path than the one a fleet's Chrome uses. Skipping is
 # honest here: the CI runner is x86_64 and runs this for real.
-[ "$arch" = amd64 ] || { echo "SKIP: Google ships no Linux $arch Chrome build"; exit 3; }
+[ "$arch" = x86_64 ] || { echo "SKIP: Google ships no Linux $arch Chrome build"; exit 3; }
 
-curl -fsSLo /tmp/chrome.deb \
-  https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
-  || { echo "SKIP: Chrome download failed"; exit 3; }
-try "installing the Chrome deb" sudo_maybe apt-get -qq install -y /tmp/chrome.deb \
-  || echo "WARN: Chrome did not install"
-rm -f /tmp/chrome.deb
+# THE PACKAGE FOLLOWS THE FAMILY. Google publishes the deb and the rpm from the same URL
+# shape, and what is under test -- the profile osquery reads and the native-messaging
+# directories beside it -- is the same install either way. The rpm goes through dnf
+# rather than rpm -i so its dependencies resolve: Chrome needs the X libraries to start
+# even headless.
+#
+# mktemp, with the suffix the package manager keys on: apt-get and dnf treat an argument
+# as a local package only when it ends in .deb or .rpm. A fixed /tmp name is a symlink
+# waiting to be planted between the download and the privileged install.
+case "$(pm)" in
+  apt) pkg=$(mktemp /tmp/chrome.XXXXXX.deb)
+       curl -fsSLo "$pkg" \
+         https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+         || { rm -f "$pkg"; echo "SKIP: Chrome download failed"; exit 3; }
+       try "installing the Chrome deb" sudo_maybe apt-get -qq install -y "$pkg" \
+         || echo "WARN: Chrome did not install"
+       rm -f "$pkg" ;;
+  dnf) pkg=$(mktemp /tmp/chrome.XXXXXX.rpm)
+       curl -fsSLo "$pkg" \
+         https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm \
+         || { rm -f "$pkg"; echo "SKIP: Chrome download failed"; exit 3; }
+       try "installing the Chrome rpm" sudo_maybe dnf -q -y install "$pkg" \
+         || echo "WARN: Chrome did not install"
+       rm -f "$pkg" ;;
+  *)   echo "SKIP: no package manager this scenario can install Chrome with"; exit 3 ;;
+esac
 google-chrome --version 2>&1 | head -1 || true
 
 # LET CHROME SCAFFOLD ITS OWN PROFILE. This is the step that cannot be faked: three

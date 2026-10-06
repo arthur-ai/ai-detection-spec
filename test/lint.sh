@@ -228,9 +228,16 @@ for f in sorted(glob.glob(os.path.join(here, "scenarios/*/expected.json"))):
         print(f"FAIL: {name} ({platform}) does not pin {sorted(missing)}")
         bad = True
     for k, v in counts.items():
-        if k not in want:
-            print(f"FAIL: {name} ({platform}) pins {k!r}, which no {platform} route "
-                  f"produces"); bad = True
+        # A `+` KEY SUMS KINDS -- test/lib/assert.sh reads it -- and every part of it
+        # must be a kind this platform emits. It proves the SUM, so it covers neither
+        # part below: `deb+rpm >= 1` says the package branch ran, not that either
+        # family was installed.
+        for part in k.split("+"):
+            if part not in want:
+                print(f"FAIL: {name} ({platform}) pins {part!r}, which no {platform} "
+                      f"route produces"); bad = True
+        if "+" in k:
+            continue
         if isinstance(v, str) and not v.startswith(">="):
             print(f"FAIL: {name}.{k} = {v!r}, want an int or '>=N'"); bad = True
         # A FLOOR OF ZERO IS NOT EVIDENCE. `">=0"` used to count a kind as exercised,

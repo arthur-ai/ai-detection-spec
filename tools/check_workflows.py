@@ -218,9 +218,9 @@ if _docs.exists():
         if _parts and _parts[0] in ("catalog", "docs", "test", "bin"):
             _needed.add("/".join(_parts))
     for _need in sorted(_needed):
-        # docs/agents.md is the OUTPUT, and docs/ is deliberately excluded from the
-        # trigger so the commit this workflow pushes does not re-trigger it.
-        if _need.startswith("docs/agents.md"):
+        # docs/agents.md and docs/limits.md are the OUTPUTS, and docs/ is deliberately
+        # excluded from the trigger so the commit this workflow pushes does not re-trigger it.
+        if _need.startswith(("docs/agents.md", "docs/limits.md")):
             continue
         # Compare on the LITERAL prefix of each trigger path -- everything up to its
         # first glob -- so `test/scenarios/*/expected.json` is understood to cover

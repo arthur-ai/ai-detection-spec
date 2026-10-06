@@ -68,15 +68,17 @@ it — a scenario must pin the kinds **its own platform's queries actually emit*
 
 ## Adding a signature
 
-1. Install the real thing on a Mac. Do not guess identifiers from vendor documentation.
+1. Install the real thing, on the platform it ships for. Do not guess identifiers from vendor
+   documentation.
 2. Find how it actually presents:
    ```console
    $ osqueryi "SELECT bundle_identifier, bundle_short_version, path FROM apps WHERE path LIKE '%Thing%'"
-   $ plutil -extract CFBundleIdentifier raw /Applications/Thing.app/Contents/Info.plist
+   $ osqueryi "SELECT name, version FROM deb_packages WHERE name LIKE '%thing%' AND status LIKE '%ok installed'"
    ```
 3. Add a test scenario under `test/scenarios/`, with a `setup.sh` that installs it and an
    `expected.json` that says what should be found.
-4. Open a PR. CI checks the scenario is well-formed; the full run happens on a macOS runner.
+4. Open a PR. CI checks the scenario is well-formed; the full run happens on a runner for its
+   platform.
 
 **Check every install route.** A single tool often ships several ways, and each lands somewhere
 different. OpenClaw ships as a Homebrew cask *and* an npm global *and* a `curl | bash` installer
@@ -100,7 +102,6 @@ ships through**:
   npm: [openclaw, clawdbot, moltbot]
   state_dirs: ["~/.openclaw"]
   launchd_prefixes: [ai.openclaw.]
-  ports: [18789]
 ```
 
 `tools/validate_catalog.py` checks it and runs in CI. It is strict about the mistakes that
@@ -120,9 +121,8 @@ Detecting either says a developer imported a protocol or proxied some traffic, n
 anything is acting on anyone's behalf.
 
 **Model runners went the same way** — `ollama`, `lm-studio`, `jan`, `llama-cpp`. They serve
-language models; an agent is what drives one. The `model` query branch went with them, because
-no agent is found through a model store and `bin/classify` never had a `model` key in
-`KIND_ROUTES` — every one of those rows was *dropped*, the same failure as `ext`.
+language models; an agent is what drives one. The `model` query branch went with them: no
+agent is found through a model store, so its rows were payload nobody read.
 
 A **container runtime** went too. `containers.sql` exists because agents hide in containers —
 so what belongs in the catalog is the agent **image** (`paulgauthier/aider`), not Docker. The
@@ -142,69 +142,32 @@ errors this catalog exists to avoid: `bot.molt.mac` came from OpenClaw's own Hom
 metadata and matched nothing on any Mac, and `aider` installs as `aider-chat` while its
 state directory is `~/.aider`, so evidence and signature never met. Both passed review.
 
-So add the agent to a scenario's `classified.must_find`. **There is no longer a way to record
-an exception instead** — `tools/validate_catalog.py` refuses an agent no scenario installs,
-unconditionally.
-
-There used to be. An `unverified:` block let an agent enter on an `evidence:` grade, and its
-weakest grade was `vendor-documentation` — the source this repo exists to distrust. The
-register was built so a guess could not hide, and nothing ever hid in it because nothing was
-ever written to it: zero entries for its whole life, while remaining the one way in that did
-not require a machine to have run the software.
+So add the agent to a scenario's `classified.must_find`. A fixture proves the matcher; only a
+CI scenario proves the identifier is what the software ships today. **There is no way to
+record an exception instead** — `tools/validate_catalog.py` refuses an agent no scenario
+installs, unconditionally. There used to be an `unverified:` block whose weakest grade was
+`vendor-documentation`, the source this repo exists to distrust; it held nothing for its whole
+life, and [`docs/signature-lifecycle-v2.md`](docs/signature-lifecycle-v2.md#what-was-deleted-and-why)
+records what went with it.
 
 If no scenario can install your agent, it is not a signature yet. Say so in
 [`docs/blind-spots.yaml`](docs/blind-spots.yaml), which is the file for what this repo cannot
 see, rather than shipping the identifier with a note attached.
 
-**An identifier that WAS proved and can no longer be is a different case**, and it keeps its
-place — see [`docs/signature-lifecycle-v2.md`](docs/signature-lifecycle-v2.md). The test is
-whether any run ever produced it:
-
-```console
-$ grep -rl '"value": "<the value>"' test/scenarios/*/observed.json
-```
-
 ### Regenerate the doc in the same commit
 
 [`docs/agents.md`](docs/agents.md) lists every agent, its identifiers and the evidence
-behind each one. It is **generated**, exactly as `dist/` is:
+behind each one; [`docs/limits.md`](docs/limits.md) lists what osquery cannot see and what
+each scenario leaves unproved. Both are **generated**, exactly as `dist/` is:
 
 ```console
 $ python3 tools/agent_status.py            # read it in the terminal
-$ python3 tools/agent_status.py --write    # regenerate docs/agents.md
+$ python3 tools/agent_status.py --write    # regenerate docs/agents.md and docs/limits.md
 ```
 
-`test/lint.sh` fails if it is stale, so change the catalog and regenerate in the same
+`test/lint.sh` fails if either is stale, so change the catalog and regenerate in the same
 commit. A workflow also regenerates it on `main` as a safety net, which covers a direct
 push or a merge that moves coverage without touching the catalog.
-
-**Nothing ships without a real test.** Coverage is counted per identifier and against **CI**,
-because a scenario that only runs on a maintainer's Mac catches nothing on a pull request. A
-**fixture** proves the matcher works; only a **real install in a CI scenario** proves the
-identifier is what the software ships today — the failure that produced `bot.molt.mac`, a
-vendor-documented identifier matching nothing on any Mac.
-
-### `observed.json` is what coverage is counted from
-
-Each scenario records what it actually matched in `test/scenarios/<name>/observed.json`, and
-`tools/agent_status.py` counts coverage from those files rather than from what `expected.json`
-asserts — an agent can pass while carrying an identifier nothing exercised.
-
-The `collect` job writes them and it runs **only on `main`**: a pull request asserts and
-uploads without committing, because a PR must not be able to move recorded coverage. So **a PR
-that adds an identifier's first real install should commit the observation itself** — otherwise
-the generated page reports that identifier as uncovered until the merge lands, while the
-scenario proving it sits green on the same PR.
-
-```console
-$ python3 tools/agent_status.py --record /tmp/out.json test/scenarios/<name> \
-    --platform linux --os 24.04 --arch x86_64
-```
-
-Records merge and are refused when they shrink: a run proving fewer identifiers than the
-committed file already holds stops rather than overwriting it, because that is also what a
-query that quietly broke looks like. `--allow-shrink` is the deliberate override, for an
-identifier genuinely removed from the catalog.
 
 ### `observed.json` is what coverage is counted from
 
@@ -229,28 +192,19 @@ query that quietly broke looks like. `--allow-shrink` is the deliberate override
 identifier genuinely removed from the catalog.
 
 The state to read closely is **`did not appear`**: a scenario installed the agent and this
-identifier never showed up. It means one of four things, and telling them apart is the work:
+identifier never showed up. It has five causes, and
+[`docs/signature-lifecycle-v2.md`](docs/signature-lifecycle-v2.md#triage-why-did-it-stop-appearing)
+is the triage. The pair to get right is *wrong identifier* against *no longer installable*:
+they look identical in the report, take opposite actions, and are told apart by whether any
+run ever produced the value —
 
-| it means | what to do |
-|---|---|
-| the scenario installs by another route | install that route in a **separate** scenario — two routes claiming one binary name cannot share a machine, which is why `21-cli-agents-homebrew` exists beside `20-cli-agents` |
-| the artifact only exists once the agent **runs** | invoke it. A state directory does not exist until first run |
-| **the identifier is wrong** | remove it, and keep its row as a negative control |
-| **the identifier is right and is no longer installable** | **keep it.** The software moved on and the machines on the old build still report it — supersede it, which is the next section |
+```console
+$ grep -rl '"value": "<the value>"' test/scenarios/*/observed.json
+```
 
-The last two look identical in the report and take opposite actions, so tell them apart
-before you edit anything. The discriminator is whether any run has ever produced the value:
-`grep -rl '"value": "<the value>"' test/scenarios/*/observed.json`. A wrong identifier has
-no such record, because nothing can produce a name that belongs to other software.
-
-Neither case is hypothetical. Both catalog bugs found so far were the wrong-identifier one:
-npm `mcp` is Mintlify's package, and npm `aider` is *"Lightweight website popular article
-component for static website"*. [`docs/signature-lifecycle-v2.md`](docs/signature-lifecycle-v2.md)
-is the full lifecycle as the tree runs it today — how coverage is proved, how several
-generations of one signature coexist, what fires when one stops appearing, and how something
-genuinely unverifiable is recorded rather than guessed at. Its closing section, `NOT BUILT:
-naming the successor with a model`, is the one part that is a design record rather than a
-description of the tree, and it is marked where it begins and nowhere else.
+No record means wrong, and both catalog bugs found so far were that: npm `mcp` is Mintlify's
+package, and npm `aider` is a static-site component. A record means the software moved on
+while machines on the old build still report it — keep the value and supersede it.
 
 ### Superseding an identifier
 
@@ -269,24 +223,13 @@ prints the record to paste under the agent that owns the value:
          last_proved: 2026-09-14, by: 57-example-era, run: 34840592589}
 ```
 
-Three things about that block are not stylistic:
-
-- **The value STAYS on its route.** Supersession marks a signature; it never moves it. Leaving
-  it on the route is the whole point — it is what keeps the machines on the old build matching,
-  and they are the machines an inventory most wants to name.
-- **The provenance cannot be typed.** `by` names the scenario whose `observed.json` is read,
-  and `route`, `value`, `run` and `last_version` must all match an entry in that file's
-  `archived` list — `tools/validate_catalog.py` refuses a record nothing backs. A `?` in the
-  printed block is therefore a refusal waiting to happen, and `--supersede` warns when it emits
-  one: re-record on CI rather than filling the gap in by hand.
-- **It is a deliberate mode and must stay one.** A vendor pulling a download for a week is
-  indistinguishable from a rename for that week, so nothing archives on its own. Accepting the
-  first red run is how a live signature gets superseded on one bad afternoon.
-
-**The `retired:` list this used to be written in is gone.** It was a flat list of strings that
-exempted every value it named from the coverage gate and asked for nothing in return. Unknown
-agent fields are an error, so an out-of-date habit fails the build rather than quietly shipping
-a value nothing checks.
+Three things about that block are not stylistic, and the lifecycle page carries the reasoning:
+the value **stays on its route**, which is what keeps machines on the old build matching; the
+provenance **cannot be typed** — `tools/validate_catalog.py` refuses a record no archived
+observation backs field for field, so a `?` in the printed block is a refusal waiting to
+happen, and the fix is to re-record on CI; and it is **a deliberate mode**, because a vendor
+pulling a download for a week looks exactly like a rename for that week. There is no `retired:`
+list any more, and an unknown agent field fails the build.
 
 ### The `images` route
 
@@ -295,20 +238,20 @@ against the normalised tag, and the normalisation was read off 28 real images ra
 reasoned about:
 
 ```yaml
-  images: [ollama/ollama]                 # Docker Hub: no docker.io/, no library/
-  images: ["ghcr.io/ggml-org/llama.cpp"]  # anywhere else: the registry host IS part of it
+  images: [paulgauthier/aider]        # Docker Hub: no docker.io/, no library/
+  images: ["ghcr.io/block/goose"]     # anywhere else: the registry host IS part of it
 ```
 
 Three things to know before adding one:
 
-- **Give the repository, never a tag.** `ollama/ollama:latest` in the catalog normalises to
-  `ollama/ollama` on the row side and would simply never match. `validate_catalog.py` rejects
-  it, because the failure is otherwise silent — the agent just stops being found.
+- **Give the repository, never a tag.** `paulgauthier/aider:latest` in the catalog normalises
+  to `paulgauthier/aider` on the row side and would simply never match. `validate_catalog.py`
+  rejects it, because the failure is otherwise silent — the agent just stops being found.
 - **Prefer the two-segment published name.** A locally built image is shaped exactly like a
-  Docker Hub library image, so a bare `ollama` would claim anyone's `ollama:latest` build.
+  Docker Hub library image, so a bare `aider` would claim anyone's `aider:latest` build.
 - **This route is weaker evidence than the others, and the difference is real.** Every other
   identifier here is chosen by a vendor. An image name is chosen by whoever ran `docker tag`,
-  so `docker tag alpine ollama/ollama` yields an Ollama finding that nothing can tell from
+  so `docker tag alpine paulgauthier/aider` yields an aider finding that nothing can tell from
   the genuine image. Say so when you use it; do not treat an image row as a bundle id.
 
 **Verification: pull it and read the row.** Identifiers are facts read off real installs, and
@@ -409,17 +352,21 @@ Scenarios, which install real software and are therefore per platform:
 $ test/run.sh 00-baseline           # macOS, in a disposable VM
 $ test/run-linux.sh 70-linux-baseline   # Linux, in a disposable container
 $ test/run-linux.sh                 # every Linux scenario
+$ LINUX_IMAGE=quay.io/rockylinux/rockylinux:9 test/run-linux.sh   # on another distro
+$ test/run-gce.sh --family debian-12    # on a real Compute Engine VM; needs gcloud
 ```
 
-**The two harnesses differ because the platforms do.** `test/run.sh` uses
+**The harnesses differ because the platforms do.** `test/run.sh` uses
 [Tart](https://tart.run), which needs an Apple Silicon Mac and a base image of roughly 25GB.
 `test/run-linux.sh` needs only Docker, because a Linux scenario needs no hypervisor — which
-is also why the Linux CI jobs run directly on the runner with no VM layer.
+is also why the Linux CI jobs run directly on the runner with no VM layer, and in Debian,
+Rocky and Fedora containers beside it. `test/run-gce.sh` exists for what neither can stage:
+systemd as PID 1 on every family, OS Login accounts, and a shared-core machine shape.
 
-Two Linux scenarios **skip** in a container and run for real in CI, and both reasons are
-facts about the container rather than about the software: `75-linux-browser` needs an x86_64
-host because Google ships no Linux arm64 Chrome, and `76-linux-systemd` needs a real system
-bus, which a container has no PID 1 to provide.
+Three Linux scenarios **skip** in a container and run for real elsewhere, and every reason is
+a fact about the container rather than about the software: `75-linux-browser` needs an x86_64
+host because Google ships no Linux arm64 Chrome, `76-linux-systemd` needs a real system bus,
+which a container has no PID 1 to provide, and `79-linux-image` needs a Docker daemon.
 
 **Scenarios run on every pull request that changes anything but prose**, on macOS and Linux
 both. You do not need to run them locally to contribute: push the branch and let CI do it.
@@ -467,10 +414,8 @@ publicly would be unwise, see
 
 ## Scope
 
-**macOS and Linux both ship. Windows does not** — no queries, no routes, no runner, and
-`tools/validate_catalog.py` refuses to let an agent claim a platform nothing can find it on.
-
 The catalog describes **what software is present**, not whether it is good, safe or
-permitted. Classifications like `Personal agent`
-describe deployment shape. Whether a given agent is acceptable is your judgement about your
-fleet, not ours about a vendor.
+permitted. Classifications like `Personal agent` describe deployment shape. Whether a given
+agent is acceptable is your judgement about your fleet, not ours about a vendor. Which
+platforms ship is the README's to say; `tools/validate_catalog.py` refuses an agent claiming
+one nothing can find it on.

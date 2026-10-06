@@ -82,73 +82,13 @@ Software that acts on the user's behalf. This is what the catalog is for.
 
 | name | identifiers | scenarios |
 |---|---|---|
-| **ChatGPT Desktop** | **`com.openai.codex`**, **`com.openai.chat`**, **`chatgpt`** | 10-desktop-apps, 90-demo-fleet |
+| **ChatGPT Desktop** | **`com.openai.codex`**, **`com.openai.chat`**, **`chatgpt`** | 10-desktop-apps, 12-chatgpt-pre-rename, 90-demo-fleet |
 | **Claude Desktop** | **`com.anthropic.claudefordesktop`**, **`claude`**, **`com.anthropic.claude_browser_extension.json`** | 10-desktop-apps, 90-demo-fleet |
 | **Perplexity** | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
 
 > **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = superseded: a run proved it and the current release no longer emits it. ∅ = no CI runner for its platform. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it.
 
-## 🚧 What osquery cannot see
-
-These are properties of the platform and the tables, not of any one scenario, so
-they are stated once. No amount of test coverage moves them.
-
-| blind spot | why |
-|---|---|
-| Anything inside a VM, a Codespace or a cloud dev box | The scanner sees the machine it runs on. Containers are the exception and only partly: `--deep` reads images, running containers and their vendor labels, so an agent IN a container is now visible from outside it |
-| What a process inside a container is doing | `docker_containers` gives the container's own command and entrypoint, which is what it was started as. The processes actually running inside it are in `docker_container_processes`, which requires a constraint on the container id -- reachable through a join, verified -- and is not collected, because a cmdline can carry `--api-key` and redaction is not designed yet |
-| A container that is not running | `docker_containers` lists RUNNING containers only. Measured 2026-09-11 on Docker 28.4.0: two exited containers produced zero rows. A stopped agent container is seen through its image and not as a container, so an empty container list is not an empty machine |
-| Containers outside Docker Desktop, and Podman anywhere | Colima, Rancher Desktop and Podman keep their sockets elsewhere, and `docker_images` cannot read containerd or Podman image stores. Podman's socket is deliberately not probed: it would pass the health check and return zero images, which reads as "we looked". The runtime is NAMED instead: `bin/container-scan` looks for a socket or a binary on disk -- presence only, no daemon conversation -- and the marker row reads `unreadable:podman` rather than `absent`, which is the word a machine with no containers gets. What is still unknown is whether it holds any containers at all, and what they are |
-| Whether an image is really the vendor's, when the vendor sets no label | An image name is chosen by whoever tags it, so `docker tag alpine paulgauthier/aider` produces the same finding. The `image_labels` route closes this for vendors who set `org.opencontainers.image.source`, which a retagger cannot forge -- but that is a fact about a project's release pipeline, not about being an agent. Measured 2026-09-11: the currently published ghcr.io/openhands/openhands and ghcr.io/block/goose carry it; paulgauthier/aider carries no labels at all and sweagent/swe-agent only its base image's, so for those two a finding is exactly as forgeable as the tag |
-| An untagged (dangling) image | Untested -- no dangling image existed on the machine this was measured on. Unknown, not covered |
-| Snap and Flatpak packages | osquery has no `snap_packages` or `flatpak_packages` table at any version, checked against the source at 5.10.0 and 5.23.1. A snap- or flatpak-installed agent is invisible on every package route |
-| AppImage and tarball installs on Linux | Neither leaves a package record, and Cursor's primary Linux download is an AppImage. Only `desktop_ids` can see one, and only if the install writes a `.desktop` entry |
-| Which agent installed a systemd unit | No unit name is a signature. The macOS launchd prefixes were read off live installs; no Linux unit name has been, so the route carries no values and unit rows stay evidence |
-| A systemd unit the running manager has not loaded | `systemd_units` lists loaded units, not unit files on disk -- unlike macOS's `launchd`. So a unit installed but never started is invisible, and so is anything under `systemctl --user`, which reads a different bus |
-| Windows, entirely | No queries, no routes, no runner. It is a parallel PowerShell implementation rather than a port: `bin/` is bash and every scenario is a shell script |
-| Which filesystem roots an MCP server exposes | Requires parsing arbitrary JSON config; osquery has no table for it |
-| Outbound destinations by hostname | `process_open_sockets` returns an IP, not a name |
-| Which agent holds a listening port | A port is only attributable when the process holding it already names the agent, so it never identifies anything on its own -- 8080-held-by-java would read as llama.cpp. Ports are collected as evidence and are never a signature |
-| A cloned-but-never-run source checkout | Nothing has been created on disk yet |
-| What an agent *does* | Every route reports presence and declared capability. `permissions` says an extension **may** read every page, never that it did |
-| The identity of a sideloaded extension | osquery derives `identifier` from the manifest `key`, which unpacked and sideloaded extensions do not carry, so they report an empty one. A Web Store CRX does carry it |
-| GitHub Copilot inside VS Code | Copilot Chat now ships BUILT IN: VS Code's own bundle carries `GitHub.copilot-chat` 0.64.1 among its 97 built-in extensions, and `vscode_extensions` reports only the user extension directories -- a run with 97 built-ins present returned 2 rows, both user-installed. The marketplace `github.copilot` cannot be installed over it either, because it pins `github.copilot-chat` 0.48.1 and VS Code refuses to downgrade a built-in, so no scenario can produce the identifier. Measured on VS Code stable, 2026-09-05. The route therefore cannot identify Copilot at all, which is why no signature is carried rather than one that would match every VS Code install -- `copilot-cli` is the Copilot this catalog can prove. Detecting the built-in would report the EDITOR, not a fleet's choice of agent |
-| VS Code extensions on osquery below 5.11.0 | `vscode_extensions` arrived in 5.11.0, above this repo's 5.10.0 floor, so `queries/vscode.sql` declares its own minimum and returns nothing on an older endpoint. The `vscode_edition` column that tells VS Code from Cursor and Windsurf came in 5.15.0 |
-| Behaviour that only appears after launch or sign-in | Nothing here launches an app -- `open -a` needs an Aqua session and SSH has none -- so first-launch daemons, ports and state directories go unobserved, and account-gated products are never signed in to |
-
-## 🧩 What the scenarios do not prove
-
-The install succeeded and the identifier matched. These are the ways it still falls short of the real thing -- each one fixable by work, none of them catchable by a table of counts.
-
-| scenario | not proven |
-|---|---|
-| 10-desktop-apps, 11-perplexity-desktop | Paid or account-gated in several cases. The install is unattended and the sign-in is not, so nothing exercises behaviour that only appears once a user is signed in. |
-| 10-desktop-apps | Kiro CLI is not installed here. It is a separate product whose app ships bundle id com.amazon.codewhisperer under cask `kiro-cli` (old tokens amazon-q, codewhisperer), and it is uncatalogued, so this run says nothing about it. Its dmg is 1.05GB, which is why. |
-| 45-claude-extension | The CRX is unpacked into a real profile rather than installed by Chrome, so the identifier is genuine but the browser's install, update and enterprise-policy paths are all untested. Whether ExtensionInstallForcelist needs an MDM-delivered profile on macOS is UNVERIFIED. |
-| 55-openclaw-npm | The gateway runs with --allow-unconfigured --auth none, which is not how a real deployment runs it: enough to open the listener this scenario asserts, with no channel connected and no model reachable. |
-| 56-openclaw-retired-names | The npm names only. The macOS side of this lineage is 57-clawdbot-era, which installs the Clawdbot-era app and proves its bundle id. |
-| 57-clawdbot-era | The bundle id only. com.clawdbot. as a launchd prefix is NOT asserted: the binary contains com.clawdbot.gateway, but a LaunchAgent is registered when the app RUNS and this scenario only installs. Unverified, so not in the catalog either. |
-| 57-clawdbot-era | Clawdis, the generation before this one, ships its own macOS app and is not covered. Its bundle id has not been read off the artifact, so nothing is claimed about it. |
-| 70-linux-baseline | Runs on whatever base image the job uses, so it proves nothing about a loaded desktop. 00-baseline has the same limitation on macOS. |
-| 71-linux-cli-agents | Claude Code's npm identifier is not exercised here -- the native installer is its primary route and the two would fight over the same binary name. 21-cli-agents-homebrew makes the same argument on macOS. |
-| 72-linux-python-agents | Whether ~/.hermes appears depends on the install route: the vendor's curl installer creates it, a uv install does not until the agent runs. The run records what appeared rather than asserting it. |
-| 73-linux-deb | The AppImage, which is Cursor's primary Linux download, is not installed here. desktop_ids is the route that would catch it, and this scenario exercises that route through the .deb's own entry instead. |
-| 74-linux-dpkg-removed | Asserts on a pair of ordinary packages rather than on an agent, because no catalogued agent's deb can be installed and removed without also removing the evidence this checks for. |
-| 75-linux-browser | No real extension identifier. 45-claude-extension gets one on macOS by unpacking the Web Store's signed CRX, which does carry the key; the same route would work here and is not yet built. |
-| 75-linux-browser | Google ships no Linux arm64 Chrome, so this skips on arm64 runners. |
-| 76-linux-systemd | Skips wherever there is no system dbus -- a container has none, which is what the kind=scan marker in queries/runtime-linux.sql exists to report. It runs for real on a GitHub ubuntu runner, where systemd is PID 1. |
-| 76-linux-systemd | No agent's systemd unit name has been read off a real install, so this proves the query and the matcher and not any vendor's naming. The route is registered and carries no values for exactly that reason. |
-| 76-linux-systemd | systemd user units (systemctl --user) are not visible to the table at all, and a per-user agent gateway is exactly the thing that would be one. |
-| 77-linux-rpm | Runs in a fedora container on an ubuntu runner, because GitHub offers no RPM-distro runner. A container has no systemd, so `unit` is 0 here and the systemd marker reports absent -- correctly. |
-| 78-linux-vscode | min-osquery for this branch is 5.11.0, above the 5.10.0 the rest of the repo declares. On a 5.10.x endpoint the query returns [] and exits 1, which is why it is its own pack entry and its own composed branch. |
-| 78-linux-vscode | Neither agent's state directory is exercised. ~/.continue does not exist after `code --install-extension` -- verified on a real install -- because it appears on first activation in the editor, and nothing here opens a GUI session. So this proves the extension route and says nothing about the path routes for either. |
-| 78-linux-vscode | vscode_edition is reported but not asserted beyond the forbid: this installs into VS Code only, so the cursor, windsurf, vscodium and trae editions the column can report are unexercised. |
-| 79-linux-image | A pull proves the registry still serves this repository under this name. It does not prove the image is the vendor's: an image name is chosen by whoever tags it, so `docker tag alpine paulgauthier/aider` produces the same finding. The `image_labels` route is the answer to that for the agents whose vendors set labels, and aider and swe-agent are exactly the ones who do not -- so for those two the finding remains as forgeable as the tag. |
-| 79-linux-image | The container probe runs `sleep`, not the agent. It proves the daemon reports a running container from a catalogued image and that the route matches it; it proves nothing about an agent actually working, which would need credentials and a model endpoint this scenario deliberately does not hold. |
-| 79-linux-image | Nothing here reads processes inside the container. docker_container_processes requires a constraint on the container id and can be reached through a join, but the cmdline it returns can carry an API key, so it is not collected until redaction is designed. |
-| 79-linux-image | swe-agent's `latest` tag was built 2024-12-07, twenty-one months before this scenario was written. The pull proves the registry still serves it; it does not prove anyone still publishes there. |
-
-`11-perplexity-desktop`, `50-autonomous`, `57-clawdbot-era` need macOS 15 or newer, so CI skips them on older runners rather than failing them. Each scenario's `requires.json` carries the reason.
+**What it cannot see is a separate page.** [`docs/limits.md`](limits.md) carries what osquery cannot see on any machine and what each scenario leaves unproved after its install succeeds -- rendered from the same inputs, gated the same way.
 
 ## 🎯 What counts as an agent
 

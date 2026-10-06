@@ -16,7 +16,7 @@
       "agent_version": "2.12.2",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37349545842"
     },
     {
       "agent": "antigravity",
@@ -24,7 +24,8 @@
       "value": "com.google.antigravity",
       "agent_version": "2.12.2",
       "os": "26.6.2",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "37349545842"
     },
     {
       "agent": "antigravity",
@@ -41,7 +42,7 @@
       "agent_version": "2.5.5",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37349545842"
     },
     {
       "agent": "antigravity",
@@ -49,7 +50,8 @@
       "value": "com.google.antigravity-ide",
       "agent_version": "2.5.5",
       "os": "26.6.2",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "37349545842"
     },
     {
       "agent": "antigravity",
@@ -66,7 +68,7 @@
       "agent_version": "2.12.2,6298742303883264",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37349545842"
     },
     {
       "agent": "antigravity",
@@ -74,7 +76,8 @@
       "value": "antigravity",
       "agent_version": "2.12.2,6298742303883264",
       "os": "26.6.2",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "37349545842"
     },
     {
       "agent": "antigravity",
@@ -91,7 +94,7 @@
       "agent_version": "2.5.5,4923483625488384",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37349545842"
     },
     {
       "agent": "antigravity",
@@ -99,7 +102,8 @@
       "value": "antigravity-ide",
       "agent_version": "2.5.5,4923483625488384",
       "os": "26.6.2",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "37349545842"
     },
     {
       "agent": "chatgpt-desktop",
@@ -132,15 +136,16 @@
       "agent_version": "26.901.51231",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37349545842"
     },
     {
       "agent": "chatgpt-desktop",
       "route": "bundle_ids",
       "value": "com.openai.codex",
-      "agent_version": "26.901.41123",
+      "agent_version": "26.901.51231",
       "os": "26.6.2",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "37349545842"
     },
     {
       "agent": "chatgpt-desktop",
@@ -173,15 +178,16 @@
       "agent_version": "26.901.51231",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37349545842"
     },
     {
       "agent": "chatgpt-desktop",
       "route": "homebrew",
       "value": "chatgpt",
-      "agent_version": "26.901.41123",
+      "agent_version": "26.901.51231",
       "os": "26.6.2",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "37349545842"
     },
     {
       "agent": "claude-desktop",
@@ -214,15 +220,16 @@
       "agent_version": "1.46388.4",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37349545842"
     },
     {
       "agent": "claude-desktop",
       "route": "bundle_ids",
       "value": "com.anthropic.claudefordesktop",
-      "agent_version": "1.46388.3",
+      "agent_version": "1.46388.4",
       "os": "26.6.2",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "37349545842"
     },
     {
       "agent": "claude-desktop",
@@ -255,15 +262,16 @@
       "agent_version": "1.46388.4,50e62f90a2c85243eef42913398f7c8f1534abef",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37349545842"
     },
     {
       "agent": "claude-desktop",
       "route": "homebrew",
       "value": "claude",
-      "agent_version": "1.46388.3,f1b512995860e5f5e88248c50bd938885b4adb88",
+      "agent_version": "1.46388.4,50e62f90a2c85243eef42913398f7c8f1534abef",
       "os": "26.6.2",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "37349545842"
     },
     {
       "agent": "cursor",
@@ -296,15 +304,16 @@
       "agent_version": "3.19.13",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37349545842"
     },
     {
       "agent": "cursor",
       "route": "bundle_ids",
       "value": "com.todesktop.230313mzl4w4u92",
-      "agent_version": "3.19.7",
+      "agent_version": "3.19.13",
       "os": "26.6.2",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "37349545842"
     },
     {
       "agent": "cursor",
@@ -337,15 +346,16 @@
       "agent_version": "3.19.13,dd066f332fcea7382764400fde902f61920648d5",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37349545842"
     },
     {
       "agent": "cursor",
       "route": "homebrew",
       "value": "cursor",
-      "agent_version": "3.19.7,90de2327392570a5f5f625c656c6749d228e6437",
+      "agent_version": "3.19.13,dd066f332fcea7382764400fde902f61920648d5",
       "os": "26.6.2",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "37349545842"
     },
     {
       "agent": "kiro",
@@ -362,7 +372,7 @@
       "agent_version": "1.0.437",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37349545842"
     },
     {
       "agent": "kiro",
@@ -370,7 +380,8 @@
       "value": "dev.kiro.desktop",
       "agent_version": "1.0.437",
       "os": "26.6.2",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "37349545842"
     },
     {
       "agent": "kiro",
@@ -387,7 +398,7 @@
       "agent_version": "1.0.437",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37349545842"
     },
     {
       "agent": "kiro",
@@ -395,7 +406,8 @@
       "value": "kiro",
       "agent_version": "1.0.437",
       "os": "26.6.2",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "37349545842"
     },
     {
       "agent": "orion",
@@ -428,7 +440,7 @@
       "agent_version": "1.1.2",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37349545842"
     },
     {
       "agent": "orion",
@@ -436,7 +448,8 @@
       "value": "com.kagi.kagimacOS",
       "agent_version": "1.1.2",
       "os": "26.6.2",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "37349545842"
     },
     {
       "agent": "orion",
@@ -469,7 +482,7 @@
       "agent_version": "1.1.2,151",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37349545842"
     },
     {
       "agent": "orion",
@@ -477,7 +490,8 @@
       "value": "orion",
       "agent_version": "1.1.2,151",
       "os": "26.6.2",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "37349545842"
     },
     {
       "agent": "perplexity-comet",
@@ -510,15 +524,16 @@
       "agent_version": "153.0.8010.222",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37349545842"
     },
     {
       "agent": "perplexity-comet",
       "route": "bundle_ids",
       "value": "ai.perplexity.comet",
-      "agent_version": "151.0.7922.247",
+      "agent_version": "153.0.8010.222",
       "os": "26.6.2",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "37349545842"
     },
     {
       "agent": "perplexity-comet",
@@ -551,7 +566,7 @@
       "agent_version": "145.2.7632.4581",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37349545842"
     },
     {
       "agent": "perplexity-comet",
@@ -559,7 +574,8 @@
       "value": "comet",
       "agent_version": "145.2.7632.4581",
       "os": "26.6.2",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "37349545842"
     },
     {
       "agent": "windsurf",
@@ -592,7 +608,7 @@
       "agent_version": "3.8.20",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37349545842"
     },
     {
       "agent": "windsurf",
@@ -600,7 +616,8 @@
       "value": "com.exafunction.windsurf",
       "agent_version": "3.8.20",
       "os": "26.6.2",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "37349545842"
     },
     {
       "agent": "windsurf",
@@ -633,7 +650,7 @@
       "agent_version": "3.8.20,2d9020110aa91587b3c3b0fcf7d1faaf601fc7b8",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37349545842"
     },
     {
       "agent": "windsurf",
@@ -641,7 +658,8 @@
       "value": "devin-desktop",
       "agent_version": "3.8.20,2d9020110aa91587b3c3b0fcf7d1faaf601fc7b8",
       "os": "26.6.2",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "37349545842"
     }
   ]
 }

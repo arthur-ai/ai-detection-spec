@@ -34,9 +34,17 @@ expected = json.load(open(sys.argv[2]))
 got = collections.Counter(r["kind"] for r in actual)
 want = expected["counts"]
 fail = False
+# A `+` IN A KEY SUMS THE KINDS IT JOINS. It exists for one assertion: "the package
+# branch ran". A Linux box always has packages, so a zero there is a branch that did not
+# run rather than a clean machine -- but which kind carries them is the distro's
+# choice, `deb` on Debian and Ubuntu, `rpm` on Rocky and Fedora. Pinning `deb >= 1`
+# said Ubuntu; `deb+rpm >= 1` says Linux, and the per-kind floors beside it stay.
+def count(key):
+    return sum(got.get(k, 0) for k in key.split("+"))
+covered = {k for key in want for k in key.split("+")}
 print(f"{'kind':10} {'want':>8} {'got':>8}")
-for kind in sorted(set(want) | set(got)):
-    w, g = want.get(kind), got.get(kind, 0)
+for kind in sorted(set(want) | (set(got) - covered)):
+    w, g = want.get(kind), count(kind)
     if w is None:
         print(f"{kind:10} {'-':>8} {g:>8}  UNEXPECTED KIND"); fail = True; continue
     if isinstance(w, str) and w.startswith(">="):

@@ -28,7 +28,15 @@
       "value": "aider-chat",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37349545842"
+    },
+    {
+      "agent": "aider",
+      "route": "pypi",
+      "value": "aider-chat",
+      "os": "26.6.2",
+      "arch": "arm64",
+      "run": "37349545842"
     },
     {
       "agent": "aider",
@@ -57,7 +65,15 @@
       "value": "~/.aider",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37349545842"
+    },
+    {
+      "agent": "aider",
+      "route": "state_dirs",
+      "value": "~/.aider",
+      "os": "26.6.2",
+      "arch": "arm64",
+      "run": "37349545842"
     },
     {
       "agent": "hermes",
@@ -86,7 +102,15 @@
       "value": "~/.local/bin/hermes",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37349545842"
+    },
+    {
+      "agent": "hermes",
+      "route": "binaries",
+      "value": "~/.local/bin/hermes",
+      "os": "26.6.2",
+      "arch": "arm64",
+      "run": "37349545842"
     },
     {
       "agent": "hermes",
@@ -115,7 +139,15 @@
       "value": "hermes-agent",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37349545842"
+    },
+    {
+      "agent": "hermes",
+      "route": "pypi",
+      "value": "hermes-agent",
+      "os": "26.6.2",
+      "arch": "arm64",
+      "run": "37349545842"
     },
     {
       "agent": "hermes",
@@ -144,7 +176,15 @@
       "value": "~/.hermes",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37118799385"
+      "run": "37349545842"
+    },
+    {
+      "agent": "hermes",
+      "route": "state_dirs",
+      "value": "~/.hermes",
+      "os": "26.6.2",
+      "arch": "arm64",
+      "run": "37349545842"
     }
   ]
 }

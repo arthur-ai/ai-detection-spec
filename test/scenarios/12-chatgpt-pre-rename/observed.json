@@ -1,0 +1,23 @@
+{
+  "scenario": "12-chatgpt-pre-rename",
+  "identifiers": [
+    {
+      "agent": "chatgpt-desktop",
+      "route": "bundle_ids",
+      "value": "com.openai.chat",
+      "agent_version": "1.2026.160",
+      "os": "15.7.9",
+      "arch": "arm64",
+      "run": "37349545842"
+    },
+    {
+      "agent": "chatgpt-desktop",
+      "route": "bundle_ids",
+      "value": "com.openai.chat",
+      "agent_version": "1.2026.160",
+      "os": "26.6.2",
+      "arch": "arm64",
+      "run": "37349545842"
+    }
+  ]
+}

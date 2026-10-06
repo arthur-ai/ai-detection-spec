@@ -2,7 +2,8 @@
   "description": "PyPI-installed agents under uv on Linux, plus LiteLLM as a negative control.",
   "platform": "linux",
   "counts": {
-    "deb": ">=1",
+    "deb": ">=0",
+    "deb+rpm": ">=1",
     "desktop": ">=0",
     "ext": ">=0",
     "file": ">=3",

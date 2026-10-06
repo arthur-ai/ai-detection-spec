@@ -2,7 +2,8 @@
   "description": "Five CLI agents on Linux, all found through identifiers the catalog already had.",
   "platform": "linux",
   "counts": {
-    "deb": ">=1",
+    "deb": ">=0",
+    "deb+rpm": ">=1",
     "desktop": ">=0",
     "ext": ">=0",
     "file": ">=2",
