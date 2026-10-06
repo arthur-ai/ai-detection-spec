@@ -324,6 +324,17 @@ fi
 bash -c '. "'"$HERE"'/../bin/container-scan" && type -t run_bounded docker_healthy docker_socket_path marker json_str json_row osq_run json_concat pack_branches merge_sql merge_branches >/dev/null' \
   || { echo "FAIL: bin/container-scan is no longer safely sourceable, or a shared function was renamed"; fail=1; }
 
+# test/lib/assert.sh is sourced by test/assert.sh, test/run.sh and test/run-gce.sh. `bash -n`
+# cannot see a function that is missing, and a scenario found exactly that: assert_match_sql
+# was dropped in an edit, the file parsed, and every scenario went red at "command not found".
+# The library sets -e, so the lookup runs with it switched back off and reports its own
+# status; as an `&&` list under -e the failure came back as 0 and the check never fired.
+_fns_missing="$(bash -c '. "'"$HERE"'/lib/assert.sh"; set +e; m=""
+  for f in assert_counts assert_classified assert_match_sql; do
+    type -t "$f" >/dev/null 2>&1 || m="$m $f"; done; printf "%s" "$m"')"
+[ -z "$_fns_missing" ] \
+  || { echo "FAIL: test/lib/assert.sh no longer defines:$_fns_missing (test/assert.sh calls them)"; fail=1; }
+
 # NOTHING ON THE ENDPOINT IS PYTHON, AND THE FAILURE IT PREVENTS IS SILENCE RATHER THAN AN
 # ERROR. These two scripts run on managed Macs where /usr/bin/python3 is a STUB -- no Command
 # Line Tools, so it prints an install prompt on stderr and exits 1 with empty stdout. That

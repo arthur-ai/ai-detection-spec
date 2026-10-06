@@ -230,45 +230,14 @@ jobs:
           # --names IN EVERY SHAPE IT COMPOSES WITH. One line each; the right half is the
           # status line and must obey its vocabulary; and the --write form's right half
           # must be the status file the same run wrote, byte for byte -- one statement
-          # produces both, and this is what holds it to that.
+          # produces both. test/check_names_line.py holds it to that, for both platforms.
           sudo -n env OSQI="$OSQI" bin/discover --names --cache /tmp/inv.json > /tmp/names.cache
           sudo -n env OSQI="$OSQI" bin/discover --names \
             --write /tmp/inv2.json --status /tmp/inv2.status > /tmp/names.write
           sudo -n env OSQI="$OSQI" bin/discover --names > /tmp/names.base
           cat /tmp/names.write
-          python3 - <<'EOF'
-          import re, sys
-          for path in ("/tmp/names.cache", "/tmp/names.write", "/tmp/names.base"):
-              text = open(path).read()
-              if text.count("\n") != 1:
-                  sys.exit(f"::error::{path}: --names must print exactly one line, got {text!r}")
-              left, sep, right = text.rstrip("\n").partition("; ")
-              if not sep:
-                  sys.exit(f"::error::{path}: no '; ' between the names and the status: {text!r}")
-              if left != "none" and not all(p.strip() for p in left.split(",")):
-                  sys.exit(f"::error::{path}: names half is neither 'none' nor a list: {left!r}")
-              first, stamp, rest = (right.split(maxsplit=2) + ["", ""])[:3]
-              if first not in ("ok", "degraded"):
-                  sys.exit(f"::error::{path}: status half starts {first!r}, want ok or degraded")
-              if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", stamp):
-                  sys.exit(f"::error::{path}: status timestamp is not ISO-8601 UTC: {stamp!r}")
-              if not rest.startswith("rows="):
-                  sys.exit(f"::error::{path}: status half carries no rows= token: {right!r}")
-              for k, v in (p.split("=", 1) for p in rest.split()[1:] if "=" in p):
-                  if not (v in ("ok", "absent", "error")
-                          or v.startswith(("unhealthy:", "timeout:", "unreadable:"))):
-                      sys.exit(f"::error::{path}: unknown outcome {v!r} for {k}")
-          status = open("/tmp/inv2.status").read().rstrip("\n")
-          right = open("/tmp/names.write").read().rstrip("\n").partition("; ")[2]
-          if right != status:
-              sys.exit("::error::--names printed a status that differs from the file the "
-                       f"same run wrote:\n  {right}\n  {status}")
-          base = open("/tmp/names.base").read().rstrip("\n").partition("; ")[2]
-          if base.endswith(" "):
-              sys.exit(f"::error::the base path's status half has a trailing space: {base!r}")
-          print("names: one line in every mode, status half in vocabulary and identical to "
-                "status.txt")
-          EOF
+          python3 test/check_names_line.py --status-file /tmp/inv2.status \
+            /tmp/names.write /tmp/names.cache /tmp/names.base
 
       # THE STATUS LINE IS A CONTRACT. Its vocabulary is what a consumer branches on, so
       # it must not grow silently. The payload's size and any transport framing are the
@@ -610,46 +579,13 @@ jobs:
                            f"on this vocabulary and it must not grow silently")
           print(f"{len(inv)} rows, {len(scans)} branches, every outcome in vocabulary")
           EOF
-          # --names in every shape it composes with; the same assertions as the macOS job.
+          # --names in every shape it composes with; the same check as the macOS job.
           sudo -n bin/discover --names --cache /tmp/inv.json > /tmp/names.cache
           sudo -n bin/discover --names --write /tmp/inv2.json --status /tmp/inv2.status > /tmp/names.write
           sudo -n bin/discover --names > /tmp/names.base
           cat /tmp/names.write
-          python3 - <<'EOF'
-          import re, sys
-          for path in ("/tmp/names.cache", "/tmp/names.write", "/tmp/names.base"):
-              text = open(path).read()
-              if text.count("\n") != 1:
-                  sys.exit(f"::error::{path}: --names must print exactly one line, got {text!r}")
-              left, sep, right = text.rstrip("\n").partition("; ")
-              if not sep:
-                  sys.exit(f"::error::{path}: no '; ' between the names and the status: {text!r}")
-              if left != "none" and not all(p.strip() for p in left.split(",")):
-                  sys.exit(f"::error::{path}: names half is neither 'none' nor a list: {left!r}")
-              first, stamp, rest = (right.split(maxsplit=2) + ["", ""])[:3]
-              if first not in ("ok", "degraded"):
-                  sys.exit(f"::error::{path}: status half starts {first!r}, want ok or degraded")
-              if not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", stamp):
-                  sys.exit(f"::error::{path}: status timestamp is not ISO-8601 UTC: {stamp!r}")
-              if not rest.startswith("rows="):
-                  sys.exit(f"::error::{path}: status half carries no rows= token: {right!r}")
-              for k, v in (p.split("=", 1) for p in rest.split()[1:] if "=" in p):
-                  if not (v in ("ok", "absent", "error")
-                          or v.startswith(("unhealthy:", "timeout:", "unreadable:"))):
-                      sys.exit(f"::error::{path}: unknown outcome {v!r} for {k}")
-          status = open("/tmp/inv2.status").read().rstrip("\n")
-          right = open("/tmp/names.write").read().rstrip("\n").partition("; ")[2]
-          if right != status:
-              sys.exit("::error::--names printed a status that differs from the file the "
-                       f"same run wrote:\n  {right}\n  {status}")
-          # The base path has no marker rows, and runtime-linux.sql's own systemd marker is
-          # the one exception: it is computed in SQL, so it rides in the composed artifact.
-          base = open("/tmp/names.base").read().rstrip("\n").partition("; ")[2]
-          if base.endswith(" "):
-              sys.exit(f"::error::the base path's status half has a trailing space: {base!r}")
-          print("names: one line in every mode, status half in vocabulary and identical to "
-                "status.txt")
-          EOF
+          python3 test/check_names_line.py --status-file /tmp/inv2.status \
+            /tmp/names.write /tmp/names.cache /tmp/names.base
 
       # THE BUNDLE IS THE DEPLOYABLE SHAPE, AND IT IS ONLY PROVEN AWAY FROM THE CHECKOUT.
       # tools/bundle.py packs bin/ and dist/ into one self-extracting script, for a

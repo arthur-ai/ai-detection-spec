@@ -217,7 +217,9 @@ def kinds_of(sql):
     """The row kinds a query emits, by the rule test/lint.sh already applies: every
     `SELECT '<kind>'` literal. tools/render_match.py picks the branches a per-agent
     Fleet policy needs by these, so the rule lives here once rather than twice."""
-    return sorted(set(re.findall(r"SELECT\s+'(\w+)'", sql)))
+    # re.I, as lint's copy has: a lowercase `select 'nmh'` must not pass the kind-coverage
+    # check there and then vanish from a Fleet policy here.
+    return sorted(set(re.findall(r"SELECT\s+'(\w+)'", sql, re.I)))
 
 
 def queries(files=None):

@@ -133,7 +133,8 @@ A few things to know:
   `none; degraded <time> rows=1 inventory=no-cache` and exits 1.
 - If the summary itself fails, nothing is printed and the exit code is 1. It never prints
   `none` for a machine it could not read.
-- The version shown is the highest version string seen in the evidence for that agent. Some
+- The version shown is one of the versions seen in the evidence for that agent, not
+  necessarily the highest if several are installed. Some
   evidence, like a config directory, has no version, so an agent can appear without one.
 
 The names come from `dist/signatures.sql`, which is the catalog converted to SQL by

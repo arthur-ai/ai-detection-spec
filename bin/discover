@@ -218,12 +218,17 @@ status_sql() {
 }
 
 # The names expression, over `hit` -- which dist/signatures.sql defines from `ev`. One
-# entry per agent, name then a version when any evidence row carried one: max() over
-# the rows, which is A version seen and not a resolution across routes. `none` when the
+# entry per agent, name then a version when any evidence row carried one. `none` when the
 # join is empty, which is a value and never the absence of one.
+#
+# THE VERSION IS ONE OF THOSE SEEN, NOT THE HIGHEST. max() over strings is alphabetical, so
+# 1.9.0 beats 1.10.0; comparing versions properly is not a thing this SQL should attempt.
+# Container rows are left out of it entirely: queries/containers.sql puts the container's
+# STATE in `ver`, so without the guard a running aider container printed `aider running`.
 names_sql() {
   printf "(SELECT coalesce(group_concat(name || CASE WHEN ver != '' THEN ' ' || ver"
-  printf " ELSE '' END, ', '), 'none') FROM (SELECT name, max(ver) AS ver FROM hit"
+  printf " ELSE '' END, ', '), 'none') FROM (SELECT name,"
+  printf " max(CASE WHEN kind = 'container' THEN '' ELSE ver END) AS ver FROM hit"
   printf " GROUP BY agent ORDER BY name))"
 }
 
@@ -327,6 +332,13 @@ if [ -n "$CACHE_PATH" ]; then
               "interrupted; it writes by rename, so this should not happen." >&2
          # A corrupt cache said nothing at all before this, which is the same silence a
          # stubbed interpreter produced. `error` is already in the kind=scan vocabulary.
+         # With --names the same fact goes out in the one-line shape, like the
+         # missing-cache arm above: a JSON row here would be stored as the attribute's
+         # value, and a Smart Group matching `degraded` would miss exactly this machine.
+         if [ "$NAMES" = 1 ]; then
+           printf 'none; degraded %s rows=1 inventory=error\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+           exit 1
+         fi
          printf '[%s]\n' "$(json_row scan inventory "$(date +%s)" "$CACHE_PATH" error '')"
          exit 1 ;;
     # A BROKEN VALIDATOR IS NOT A BROKEN CACHE, and reporting one as the other would send

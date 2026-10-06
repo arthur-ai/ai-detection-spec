@@ -12,8 +12,8 @@
 -- PLATFORM: darwin. Run this only on darwin; see dist/discovery-darwin.sql for why.
 --
 -- Returns one row per agent found: agent, name, classification, ver, rows, only_superseded.
--- `ver` is the highest version string among that agent's evidence; some evidence, like a
--- config directory, has no version. `only_superseded` is 1 when everything that matched is
+-- `ver` is one of the version strings seen in that agent's evidence, not necessarily the
+-- highest; some evidence, like a config directory, has no version. `only_superseded` is 1 when everything that matched is
 -- an identifier the vendor has since replaced.
 --
 -- This query does not look at containers. A container query can hang, and the only way
@@ -161,10 +161,10 @@ SELECT 'vscodeext' AS kind, name AS id, version AS ver, path AS loc,
 )
 , sig(agent, name, classification, kind, mode, value, superseded) AS (VALUES
   ('aider','aider','Coding agent','brew','exact','aider',0),
-  ('aider','aider','Coding agent','container','regex','(?:^|,)(?:(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)/)?paulgauthier/aider(?::[^/,]*)?(?:,|$)',0),
-  ('aider','aider','Coding agent','file','regex','^(?:/Users/[^/]+/|/home/[^/]+/|/root/)\.aider/?$',0),
+  ('aider','aider','Coding agent','container','image','(?:^|,)(?:(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)/)?paulgauthier/aider(?::[^/,]*)?(?:,|$)',0),
+  ('aider','aider','Coding agent','file','path','^(?:/Users/[^/]+/|/home/[^/]+/|/root/)\.aider/?$',0),
   ('aider','aider','Coding agent','file','tool-dir','aider-chat',0),
-  ('aider','aider','Coding agent','image','regex','(?:^|,)(?:(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)/)?paulgauthier/aider(?::[^/,]*)?(?:,|$)',0),
+  ('aider','aider','Coding agent','image','image','(?:^|,)(?:(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)/)?paulgauthier/aider(?::[^/,]*)?(?:,|$)',0),
   ('antigravity','Google Antigravity','Coding agent','app','exact','com.google.antigravity',0),
   ('antigravity','Google Antigravity','Coding agent','app','exact','com.google.antigravity-ide',0),
   ('antigravity','Google Antigravity','Coding agent','brew','exact','antigravity',0),
@@ -172,9 +172,8 @@ SELECT 'vscodeext' AS kind, name AS id, version AS ver, path AS loc,
   ('chatgpt-desktop','ChatGPT Desktop','Desktop assistant','app','exact','com.openai.chat',0),
   ('chatgpt-desktop','ChatGPT Desktop','Desktop assistant','app','exact','com.openai.codex',0),
   ('chatgpt-desktop','ChatGPT Desktop','Desktop assistant','brew','exact','chatgpt',0),
-  ('claude-code','Claude Code','Coding agent','file','regex','^(?:/Users/[^/]+/|/home/[^/]+/|/root/)\.claude/?$',0),
-  ('claude-code','Claude Code','Coding agent','file','regex','^(?:/Users/[^/]+/|/home/[^/]+/|/root/)\.local/bin/claude',0),
-  ('claude-code','Claude Code','Coding agent','file','tool-dir','@anthropic-ai/claude-code',0),
+  ('claude-code','Claude Code','Coding agent','file','path','^(?:/Users/[^/]+/|/home/[^/]+/|/root/)\.claude/?$',0),
+  ('claude-code','Claude Code','Coding agent','file','path','^(?:/Users/[^/]+/|/home/[^/]+/|/root/)\.local/bin/claude',0),
   ('claude-code','Claude Code','Coding agent','npm','exact','@anthropic-ai/claude-code',0),
   ('claude-desktop','Claude Desktop','Desktop assistant','app','exact','com.anthropic.claudefordesktop',0),
   ('claude-desktop','Claude Desktop','Desktop assistant','brew','exact','claude',0),
@@ -184,12 +183,10 @@ SELECT 'vscodeext' AS kind, name AS id, version AS ver, path AS loc,
   ('cline','Cline','Coding agent','npm','exact','cline',0),
   ('cline','Cline','Coding agent','vscodeext','exact','saoudrizwan.claude-dev',0),
   ('codex-cli','Codex CLI','Coding agent','brew','exact','codex',0),
-  ('codex-cli','Codex CLI','Coding agent','file','regex','^(?:/Users/[^/]+/|/home/[^/]+/|/root/)\.codex/?$',0),
-  ('codex-cli','Codex CLI','Coding agent','file','tool-dir','@openai/codex',0),
+  ('codex-cli','Codex CLI','Coding agent','file','path','^(?:/Users/[^/]+/|/home/[^/]+/|/root/)\.codex/?$',0),
   ('codex-cli','Codex CLI','Coding agent','npm','exact','@openai/codex',0),
   ('continue','Continue','Coding agent','vscodeext','exact','continue.continue',0),
   ('copilot-cli','GitHub Copilot CLI','Coding agent','brew','exact','copilot-cli',0),
-  ('copilot-cli','GitHub Copilot CLI','Coding agent','file','tool-dir','@github/copilot',0),
   ('copilot-cli','GitHub Copilot CLI','Coding agent','npm','exact','@github/copilot',0),
   ('cursor','Cursor','Coding agent','app','exact','com.todesktop.230313mzl4w4u92',0),
   ('cursor','Cursor','Coding agent','brew','exact','cursor',0),
@@ -197,14 +194,13 @@ SELECT 'vscodeext' AS kind, name AS id, version AS ver, path AS loc,
   ('cursor','Cursor','Coding agent','desktop','exact','cursor.desktop',0),
   ('cursor','Cursor','Coding agent','rpm','exact','cursor',0),
   ('gemini-cli','Gemini CLI','Coding agent','brew','exact','gemini-cli',0),
-  ('gemini-cli','Gemini CLI','Coding agent','file','tool-dir','@google/gemini-cli',0),
   ('gemini-cli','Gemini CLI','Coding agent','npm','exact','@google/gemini-cli',0),
-  ('goose','goose','Coding agent','container','regex','(?:^|,)(?:(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)/)?ghcr\.io/block/goose(?::[^/,]*)?(?:,|$)',0),
+  ('goose','goose','Coding agent','container','image','(?:^|,)(?:(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)/)?ghcr\.io/block/goose(?::[^/,]*)?(?:,|$)',0),
   ('goose','goose','Coding agent','ilabel','exact','https://github.com/block/goose',0),
-  ('goose','goose','Coding agent','image','regex','(?:^|,)(?:(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)/)?ghcr\.io/block/goose(?::[^/,]*)?(?:,|$)',0),
+  ('goose','goose','Coding agent','image','image','(?:^|,)(?:(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)/)?ghcr\.io/block/goose(?::[^/,]*)?(?:,|$)',0),
   ('hermes','Hermes Agent','Personal agent','brew','exact','hermes-agent',0),
-  ('hermes','Hermes Agent','Personal agent','file','regex','^(?:/Users/[^/]+/|/home/[^/]+/|/root/)\.hermes/?$',0),
-  ('hermes','Hermes Agent','Personal agent','file','regex','^(?:/Users/[^/]+/|/home/[^/]+/|/root/)\.local/bin/hermes',0),
+  ('hermes','Hermes Agent','Personal agent','file','path','^(?:/Users/[^/]+/|/home/[^/]+/|/root/)\.hermes/?$',0),
+  ('hermes','Hermes Agent','Personal agent','file','path','^(?:/Users/[^/]+/|/home/[^/]+/|/root/)\.local/bin/hermes',0),
   ('hermes','Hermes Agent','Personal agent','file','tool-dir','hermes-agent',0),
   ('kiro','Kiro','Coding agent','app','exact','dev.kiro.desktop',0),
   ('kiro','Kiro','Coding agent','brew','exact','kiro',0),
@@ -212,26 +208,26 @@ SELECT 'vscodeext' AS kind, name AS id, version AS ver, path AS loc,
   ('openclaw','OpenClaw','Personal agent','app','exact','com.clawdbot.mac',0),
   ('openclaw','OpenClaw','Personal agent','brew','exact','openclaw',0),
   ('openclaw','OpenClaw','Personal agent','daemon','prefix','ai.openclaw.',0),
-  ('openclaw','OpenClaw','Personal agent','file','regex','^(?:/Users/[^/]+/|/home/[^/]+/|/root/)\.openclaw/?$',0),
+  ('openclaw','OpenClaw','Personal agent','file','path','^(?:/Users/[^/]+/|/home/[^/]+/|/root/)\.openclaw/?$',0),
   ('openclaw','OpenClaw','Personal agent','file','tool-dir','clawdbot',0),
   ('openclaw','OpenClaw','Personal agent','file','tool-dir','moltbot',0),
   ('openclaw','OpenClaw','Personal agent','file','tool-dir','openclaw',0),
   ('openclaw','OpenClaw','Personal agent','npm','exact','clawdbot',0),
   ('openclaw','OpenClaw','Personal agent','npm','exact','moltbot',0),
   ('openclaw','OpenClaw','Personal agent','npm','exact','openclaw',0),
-  ('openhands','OpenHands','Coding agent','container','regex','(?:^|,)(?:(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)/)?ghcr\.io/all\-hands\-ai/openhands(?::[^/,]*)?(?:,|$)',0),
-  ('openhands','OpenHands','Coding agent','container','regex','(?:^|,)(?:(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)/)?ghcr\.io/openhands/openhands(?::[^/,]*)?(?:,|$)',0),
+  ('openhands','OpenHands','Coding agent','container','image','(?:^|,)(?:(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)/)?ghcr\.io/all\-hands\-ai/openhands(?::[^/,]*)?(?:,|$)',0),
+  ('openhands','OpenHands','Coding agent','container','image','(?:^|,)(?:(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)/)?ghcr\.io/openhands/openhands(?::[^/,]*)?(?:,|$)',0),
   ('openhands','OpenHands','Coding agent','ilabel','exact','https://github.com/OpenHands/OpenHands',0),
-  ('openhands','OpenHands','Coding agent','image','regex','(?:^|,)(?:(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)/)?ghcr\.io/all\-hands\-ai/openhands(?::[^/,]*)?(?:,|$)',0),
-  ('openhands','OpenHands','Coding agent','image','regex','(?:^|,)(?:(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)/)?ghcr\.io/openhands/openhands(?::[^/,]*)?(?:,|$)',0),
+  ('openhands','OpenHands','Coding agent','image','image','(?:^|,)(?:(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)/)?ghcr\.io/all\-hands\-ai/openhands(?::[^/,]*)?(?:,|$)',0),
+  ('openhands','OpenHands','Coding agent','image','image','(?:^|,)(?:(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)/)?ghcr\.io/openhands/openhands(?::[^/,]*)?(?:,|$)',0),
   ('orion','Orion','AI browser','app','exact','com.kagi.kagimacOS',0),
   ('orion','Orion','AI browser','brew','exact','orion',0),
   ('perplexity-comet','Perplexity Comet','AI browser','app','exact','ai.perplexity.comet',0),
   ('perplexity-comet','Perplexity Comet','AI browser','brew','exact','comet',0),
   ('perplexity-desktop','Perplexity','Desktop assistant','app','exact','ai.perplexity.macv3',0),
   ('perplexity-desktop','Perplexity','Desktop assistant','brew','exact','perplexity',0),
-  ('swe-agent','SWE-agent','Coding agent','container','regex','(?:^|,)(?:(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)/)?sweagent/swe\-agent(?::[^/,]*)?(?:,|$)',0),
-  ('swe-agent','SWE-agent','Coding agent','image','regex','(?:^|,)(?:(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)/)?sweagent/swe\-agent(?::[^/,]*)?(?:,|$)',0),
+  ('swe-agent','SWE-agent','Coding agent','container','image','(?:^|,)(?:(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)/)?sweagent/swe\-agent(?::[^/,]*)?(?:,|$)',0),
+  ('swe-agent','SWE-agent','Coding agent','image','image','(?:^|,)(?:(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)/)?sweagent/swe\-agent(?::[^/,]*)?(?:,|$)',0),
   ('windsurf','Windsurf','Coding agent','app','exact','com.exafunction.windsurf',0),
   ('windsurf','Windsurf','Coding agent','brew','exact','devin-desktop',0)),
 hit AS (SELECT s.agent, s.name, s.classification, s.superseded,
@@ -239,11 +235,14 @@ hit AS (SELECT s.agent, s.name, s.classification, s.superseded,
   FROM ev e JOIN sig s ON s.kind = e.kind AND CASE s.mode
     WHEN 'exact'    THEN e.id = s.value
     WHEN 'prefix'   THEN substr(e.id, 1, length(s.value)) = s.value
-    WHEN 'regex'    THEN regex_match(e.id, s.value, 0) IS NOT NULL
+    WHEN 'path'     THEN regex_match(e.id, s.value, 0) IS NOT NULL
                       OR regex_match(e.loc, s.value, 0) IS NOT NULL
+    WHEN 'image'    THEN regex_match(e.id, s.value, 0) IS NOT NULL
     WHEN 'tool-dir' THEN regex_match(e.id, '^(?:/Users/[^/]+/|/home/[^/]+/|/root/)\.local/(?:pipx/venvs|share/uv/tools)/([^/]+)/?$', 1) = s.value
                       OR regex_match(e.loc, '^(?:/Users/[^/]+/|/home/[^/]+/|/root/)\.local/(?:pipx/venvs|share/uv/tools)/([^/]+)/?$', 1) = s.value
     ELSE 0 END)
-SELECT agent, name, classification, max(ver) AS ver, count(*) AS rows,
+SELECT agent, name, classification,
+       max(CASE WHEN kind = 'container' THEN '' ELSE ver END) AS ver,
+       count(*) AS rows,
        min(superseded) AS only_superseded
   FROM hit GROUP BY agent ORDER BY name;

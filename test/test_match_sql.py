@@ -48,15 +48,15 @@ def check(label, condition, detail=""):
 
 
 def osqueryi_path():
-    """The same candidates, in the same order, as bin/container-scan's osqueryi_path."""
-    for c in (os.environ.get("OSQI"), "/usr/local/bin/osqueryi",
-              "/opt/osquery/lib/osquery.app/Contents/MacOS/osqueryi", "/usr/bin/osqueryi"):
-        if c and os.access(c, os.X_OK):
-            return c
-    for d in os.environ.get("PATH", "").split(os.pathsep):
-        c = os.path.join(d, "osqueryi")
-        if os.access(c, os.X_OK):
-            return c
+    """$OSQI, then tools/measure.py's candidate list -- one list, not a third copy."""
+    import shutil
+    import measure
+    for c in [os.environ.get("OSQI")] + list(measure.OSQI_CANDIDATES):
+        if not c:
+            continue
+        found = c if os.path.isabs(c) and os.access(c, os.X_OK) else shutil.which(c)
+        if found:
+            return found
     return None
 
 

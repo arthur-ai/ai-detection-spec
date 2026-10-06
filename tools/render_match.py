@@ -56,8 +56,8 @@ CATALOG = ROOT / "catalog" / "agents.yaml"
 OUTPUTS = ("signatures.sql", "agents-darwin.sql", "agents-linux.sql", "fleet-policies.yml")
 
 # A VALUES list this long is a catalog that has outgrown a literal table, and the day
-# that happens the fragment should become something a reader can still open. 74 rows
-# today; the ceiling is a prompt, not a budget.
+# that happens the fragment should become something a reader can still open. The ceiling
+# is a prompt, not a budget; `render_match.py --check` prints the current count.
 MAX_SIGS = 400
 
 PLATFORM_LABEL = {"darwin": "macOS", "linux": "Linux"}
@@ -92,8 +92,8 @@ AGENTS_NOTE = """--
 -- PLATFORM: {platform}. Run this only on {platform}; see dist/discovery-{platform}.sql for why.
 --
 -- Returns one row per agent found: agent, name, classification, ver, rows, only_superseded.
--- `ver` is the highest version string among that agent's evidence; some evidence, like a
--- config directory, has no version. `only_superseded` is 1 when everything that matched is
+-- `ver` is one of the version strings seen in that agent's evidence, not necessarily the
+-- highest; some evidence, like a config directory, has no version. `only_superseded` is 1 when everything that matched is
 -- an identifier the vendor has since replaced.
 --
 -- This query does not look at containers. A container query can hang, and the only way
@@ -161,7 +161,7 @@ def image_regex(repo):
 
 def signatures(classify, catalog, registry):
     """Every signature as (agent, name, classification, kind, mode, value, superseded),
-    sorted. `mode` is the SQL predicate: exact, prefix, regex or tool-dir."""
+    sorted. `mode` is the SQL predicate: exact, prefix, path, image or tool-dir."""
     exact, prefix, glob = classify.build_index(catalog, registry)
     kind_of = {r: spec["kind"] for r, spec in registry.routes.items()}
     tool_dir_kinds = sorted({kind_of[r] for r, m in registry.match.items() if m == "tool-dir"})
@@ -186,13 +186,16 @@ def signatures(classify, catalog, registry):
         mode = registry.match[route]
         if mode == "exact":
             add(meta, kind_of[route], "exact", value)
-            if route in npm_routes:
+            # A scoped name (`@openai/codex`) contains a '/', and the directory name the
+            # bridge captures never can -- the classifier's lookup cannot meet it either.
+            # Skipped so the fragment carries no signature nothing can satisfy.
+            if route in npm_routes and "/" not in str(value):
                 for kind in tool_dir_kinds:
                     add(meta, kind, "tool-dir", value)
         elif mode == "tool-dir":
             add(meta, kind_of[route], "tool-dir", value)
         elif mode == "exact-normalised":
-            add(meta, kind_of[route], "regex", image_regex(value))
+            add(meta, kind_of[route], "image", image_regex(value))
         else:
             sys.exit(f"render_match: route {route} has match mode {mode!r}, which has "
                      f"no renderer here. Add one; do not skip the route.")
@@ -205,7 +208,7 @@ def signatures(classify, catalog, registry):
                      f"{registry.match[route]} route, which is not rendered")
         add(meta, kind_of[route], "prefix", pre)
     for pattern, route, meta in glob:
-        add(meta, kind_of[route], "regex", pattern.pattern)
+        add(meta, kind_of[route], "path", pattern.pattern)
 
     rows = sorted(rows)
     if len(rows) > MAX_SIGS:
@@ -226,7 +229,7 @@ def signatures(classify, catalog, registry):
     for agent, _, _, kind, mode, value, _ in rows:
         if "\n" in value or "\r" in value:
             sys.exit(f"render_match: {agent}'s {kind} value contains a line break")
-        if mode == "regex":
+        if mode in ("path", "image"):
             try:
                 re.compile(value)
             except re.error as exc:
@@ -256,14 +259,19 @@ def fragment(sigs, tool_dir):
         "  FROM ev e JOIN sig s ON s.kind = e.kind AND CASE s.mode\n"
         "    WHEN 'exact'    THEN e.id = s.value\n"
         "    WHEN 'prefix'   THEN substr(e.id, 1, length(s.value)) = s.value\n"
-        "    WHEN 'regex'    THEN regex_match(e.id, s.value, 0) IS NOT NULL\n"
+        "    WHEN 'path'     THEN regex_match(e.id, s.value, 0) IS NOT NULL\n"
         "                      OR regex_match(e.loc, s.value, 0) IS NOT NULL\n"
+        "    WHEN 'image'    THEN regex_match(e.id, s.value, 0) IS NOT NULL\n"
         f"    WHEN 'tool-dir' THEN regex_match(e.id, {td}, 1) = s.value\n"
         f"                      OR regex_match(e.loc, {td}, 1) = s.value\n"
         "    ELSE 0 END)\n")
 
 
-AGENTS_SELECT = ("SELECT agent, name, classification, max(ver) AS ver, count(*) AS rows,\n"
+# The version is ONE OF THOSE SEEN: max() over strings is alphabetical. Container rows are
+# excluded because their `ver` is the container state, not a version.
+AGENTS_SELECT = ("SELECT agent, name, classification,\n"
+                 "       max(CASE WHEN kind = 'container' THEN '' ELSE ver END) AS ver,\n"
+                 "       count(*) AS rows,\n"
                  "       min(superseded) AS only_superseded\n"
                  "  FROM hit GROUP BY agent ORDER BY name;\n")
 
