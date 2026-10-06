@@ -36,7 +36,8 @@ container scan.
 
 - **🔍 Nothing hidden.** It is SQL. Read `dist/discovery-darwin.sql` (or
   `dist/discovery-linux.sql`) and you know exactly what it collects: names, paths, versions
-  and declared permissions, and nothing else.
+  and declared permissions, and nothing else. Read `dist/agents-darwin.sql` and you also see
+  every identifier it matches on.
 - **✅ Every signature tested against a real install.** Not against documentation — which is how
   this repo once shipped an identifier that matched nothing on any Mac. **Every identifier** is
   covered by a test that runs in CI — lint fails on one that is not — and
