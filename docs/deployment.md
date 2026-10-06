@@ -99,9 +99,9 @@ which this project has already done to one downstream repo by removing `bin/disc
 
 ## Getting the agent names as one line (Jamf Extension Attributes)
 
-A Jamf Extension Attribute stores one text value per Mac. Smart Groups and searches work on
-that value. The JSON inventory is too big and too structured for it, so `bin/discover` can
-print the agent names instead:
+A Jamf Extension Attribute stores one text value per Mac, and Smart Groups and searches work
+on that value. `bin/discover --names` is built for it. It matches the inventory against the
+catalog on the machine and prints the agent names as one line:
 
 ```console
 $ bin/discover --names --cache /var/lib/ai-discovery/inventory.json
@@ -305,12 +305,11 @@ consumer and would rot in a public repo:
   enough; on a reference Mac 121 KB of rows becomes about 19 KB. The 30KB figure this repo
   keeps to is a **Jamf Extension Attribute convention and self-imposed on both platforms** —
   Linux has no such channel at all, so do not restate it as a limit there.
-- **Classification at scale, one of two ways.** `bin/classify` is the reference
-  implementation and answers "what is on this machine". For a fleet with a collector, collect
-  the rows and match them where the catalog lives, so that adding a signature re-matches
-  evidence you already hold instead of requiring a re-scan. For a fleet whose channel is one
-  printed value, or whose tool runs policies, match on the endpoint with the rendered SQL
-  above — and redeploy it when the catalog changes, which is what the first way avoids.
+- **A choice of where to match.** Both ways ship here and both read the same catalog. Match
+  on the machine with `agents-<platform>.sql`, `fleet-policies.yml` or `bin/discover
+  --names`, and redeploy those files when the catalog changes. Or collect the JSON and match
+  it with `bin/classify` where the catalog lives, so a new signature re-matches evidence you
+  already hold. What you do not get here is the collector itself.
 
 ## Two things that are deliberately not prerequisites
 

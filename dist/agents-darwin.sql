@@ -2,10 +2,11 @@
 -- Built from catalog/agents.yaml and catalog/routes.yaml (catalog sha256 8d0718debcc8).
 -- To change it, edit the catalog and run tools/render_match.py.
 --
--- This file contains agent names and identifiers. The other queries in dist/ do not:
--- they only list what is installed, and the matching happens later, off the machine.
--- This file is for the cases where that is not possible -- a Jamf Extension Attribute,
--- a Fleet policy, or a one-off osqueryi run -- so the matching happens here instead.
+-- This file matches ON the machine: it contains the agent names and identifiers from the
+-- catalog, so osquery can answer "which agents are here" directly. It is what a Jamf
+-- Extension Attribute, a Fleet policy and a one-off osqueryi run use. The other queries
+-- in dist/ take the other route: they list what is installed and bin/classify matches it
+-- later, off the machine. Both routes read the same catalog and find the same agents.
 -- When the catalog changes, redeploy this file to pick up the change.
 --
 -- PLATFORM: darwin. Run this only on darwin; see dist/discovery-darwin.sql for why.

@@ -145,11 +145,12 @@ Matching happens off the machine, in `bin/classify`, against `catalog/agents.yam
 what lets a new signature re-match evidence already collected, and it is why
 `tools/check_no_catalog.py` fails the build if an agent identifier leaks into those queries.
 
-**One generated family takes that trade the other way, on purpose.** `tools/render_match.py`
-renders the catalog into `dist/signatures.sql`, `dist/agents-<platform>.sql` and
-`dist/fleet-policies.yml` — matching **on** the endpoint, for the readers who have no
-collector: a Jamf Extension Attribute (`bin/discover --names`), a Fleet policy, `osqueryi`
-with a question. The rules that keep it honest:
+**The second way to match is on the endpoint, and it is a peer, not a fallback.**
+`tools/render_match.py` renders the catalog into `dist/signatures.sql`,
+`dist/agents-<platform>.sql` and `dist/fleet-policies.yml`: a Jamf Extension Attribute
+(`bin/discover --names`), a Fleet policy, or `osqueryi` with a question gets agent names
+straight from SQL. Docs present the two ways side by side; neither is "when you cannot do
+the other". The rules that keep the rendered family honest:
 
 - The signature rows come out of `bin/classify`'s own `build_index`, and the SQL matches
   the same six-column rows the classifier does, so agreement is structural. Where the
