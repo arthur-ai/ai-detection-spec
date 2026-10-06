@@ -44,7 +44,7 @@ So: the layout, inside one script.
 
 ```console
 $ python3 tools/bundle.py --platform darwin        # or download it from the release
-wrote artifacts/ai-discovery-darwin.sh (37 KB, 5 files, darwin)
+wrote artifacts/ai-discovery-darwin.sh (46 KB, 6 files, darwin)
 
 $ ./artifacts/ai-discovery-darwin.sh --write /var/lib/ai-discovery/inventory.json \
                                     --status /var/lib/ai-discovery/status.txt
@@ -65,10 +65,11 @@ disjoint sets of tables and `bin/discover` picks by `uname -s`, so a bundle clai
 would be tested on whichever one built it. The wrong one exits 1 saying which artifact it
 carries, before it unpacks anything.
 
-**`catalog/` and `bin/classify` are not in it.** The endpoint enumerates and matches nothing;
-the classifier runs where you collect. That is what lets a new signature re-match evidence
-you already have, and it is why the machine being inventoried never carries the signatures
-it is supposed to enumerate past.
+**`catalog/` and `bin/classify` are not in it; `dist/signatures.sql` is.** The enumeration
+matches nothing and the classifier runs where you collect — that is what lets a new
+signature re-match evidence you already have. The one file that does name agents is the
+catalog rendered into SQL, carried so that `--names` can print a line on a machine that can
+host nothing but this script; see [One line for an Extension Attribute](#one-line-for-an-extension-attribute).
 
 ### Wrapping it
 
@@ -95,6 +96,81 @@ $ python3 tools/bundle.py --platform darwin --member driver ./my-bundle.sh
 That is a supported interface, not a debugging trick — `read_member()` in Python is the same
 thing. Reaching into the file yourself is how a consumer ends up pinned to an internal detail,
 which this project has already done to one downstream repo by removing `bin/discover --framed`.
+
+## Getting the agent names as one line (Jamf Extension Attributes)
+
+A Jamf Extension Attribute stores one text value per Mac, and Smart Groups and searches work
+on that value. `bin/discover --names` is built for it. It matches the inventory against the
+catalog on the machine and prints the agent names as one line:
+
+```console
+$ bin/discover --names --cache /var/lib/ai-discovery/inventory.json
+Claude Code 2.0.1, Cursor 1.7.44; ok 2026-10-05T13:20:11Z rows=775 apps=ok browser=ok containers=absent filesystem=ok homebrew=ok native-messaging=ok packages=ok ports=ok runtime=ok vscode=ok
+```
+
+That command is the whole Extension Attribute script. It reads the file written by the
+scheduled `bin/discover --write` from the top of this page.
+
+The line has two parts, separated by `; `:
+
+- **Before the `; `**: the agents found, with a version where one was available, or `none`
+  if nothing was found.
+- **After the `; `**: the same status line that goes into `status.txt`. It tells you whether
+  every part of the scan worked.
+
+So a Smart Group can match `contains "Cursor"` to find machines with Cursor, and another can
+match `contains "degraded"` to find machines where part of the scan failed. A machine that
+reports `none; degraded ...` found no agents, but could not check everything, so it is not
+the same as a clean machine.
+
+`--names` works with the other flags too. `bin/discover --names` runs the scan directly,
+`--names --deep` includes containers, and `--names --write PATH --status TXT` writes the files
+and prints the line. The one-file bundle accepts it as well.
+
+A few things to know:
+
+- If the scheduled writer has never run, `--names --cache` prints
+  `none; degraded <time> rows=1 inventory=no-cache` and exits 1.
+- If the summary itself fails, nothing is printed and the exit code is 1. It never prints
+  `none` for a machine it could not read.
+- The version shown is one of the versions seen in the evidence for that agent, not
+  necessarily the highest if several are installed. Some
+  evidence, like a config directory, has no version, so an agent can appear without one.
+
+The names come from `dist/signatures.sql`, which is the catalog converted to SQL by
+`tools/render_match.py`. **When the catalog gains a signature, you have to redeploy that file
+for `--names` to pick it up.** The JSON inventory does not have this problem, because it is
+matched against the catalog later, off the machine.
+
+## Fleet policies
+
+`dist/fleet-policies.yml` contains one [Fleet](https://fleetdm.com) policy for each agent, for
+each platform the agent runs on. Load it with:
+
+```console
+$ fleetctl apply -f dist/fleet-policies.yml
+```
+
+A policy **passes when the agent is not on the host** and fails when it is. That matches how
+Fleet is normally used: the list of failing hosts is the list of machines that have the
+agent, and Fleet's alerts fire on failures. If you want it the other way round, change
+`NOT EXISTS` to `EXISTS` in the query.
+
+Each policy only reads the parts of the system where its agent can be found. The Claude Code
+policy on macOS looks at home directories and npm packages and nothing else, so it costs
+much less than a full inventory scan.
+
+Two limits:
+
+- Policies do not report versions. A policy is a yes or no answer. For versions, use the JSON
+  inventory from `bin/discover --write`.
+- Policies do not look at containers, because a container query can hang and osqueryd
+  cannot put a time limit on one query (see [containers.md](containers.md)). Agents that
+  only ship as container images have no policy. The file lists them at the top.
+
+`dist/agents-darwin.sql` and `dist/agents-linux.sql` do the same matching as one query you
+can run with `osqueryi`. They return one row per agent found. They have the same limit on
+containers; `bin/discover --names --deep` is the way to see container-only agents.
 
 ## `status.txt`, whose vocabulary is a contract
 
@@ -230,9 +306,11 @@ consumer and would rot in a public repo:
   enough; on a reference Mac 121 KB of rows becomes about 19 KB. The 30KB figure this repo
   keeps to is a **Jamf Extension Attribute convention and self-imposed on both platforms** —
   Linux has no such channel at all, so do not restate it as a limit there.
-- **Classification at scale.** `bin/classify` is the reference implementation and answers "what
-  is on this machine". For a fleet, collect the rows and match them where the catalog lives, so
-  that adding a signature re-matches evidence you already hold instead of requiring a re-scan.
+- **A choice of where to match.** Both ways ship here and both read the same catalog. Match
+  on the machine with `agents-<platform>.sql`, `fleet-policies.yml` or `bin/discover
+  --names`, and redeploy those files when the catalog changes. Or collect the JSON and match
+  it with `bin/classify` where the catalog lives, so a new signature re-matches evidence you
+  already hold. What you do not get here is the collector itself.
 
 ## Two things that are deliberately not prerequisites
 

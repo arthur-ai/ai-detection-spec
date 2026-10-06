@@ -324,6 +324,17 @@ fi
 bash -c '. "'"$HERE"'/../bin/container-scan" && type -t run_bounded docker_healthy docker_socket_path marker json_str json_row osq_run json_concat pack_branches merge_sql merge_branches >/dev/null' \
   || { echo "FAIL: bin/container-scan is no longer safely sourceable, or a shared function was renamed"; fail=1; }
 
+# test/lib/assert.sh is sourced by test/assert.sh, test/run.sh and test/run-gce.sh. `bash -n`
+# cannot see a function that is missing, and a scenario found exactly that: assert_match_sql
+# was dropped in an edit, the file parsed, and every scenario went red at "command not found".
+# The library sets -e, so the lookup runs with it switched back off and reports its own
+# status; as an `&&` list under -e the failure came back as 0 and the check never fired.
+_fns_missing="$(bash -c '. "'"$HERE"'/lib/assert.sh"; set +e; m=""
+  for f in assert_counts assert_classified assert_match_sql; do
+    type -t "$f" >/dev/null 2>&1 || m="$m $f"; done; printf "%s" "$m"')"
+[ -z "$_fns_missing" ] \
+  || { echo "FAIL: test/lib/assert.sh no longer defines:$_fns_missing (test/assert.sh calls them)"; fail=1; }
+
 # NOTHING ON THE ENDPOINT IS PYTHON, AND THE FAILURE IT PREVENTS IS SILENCE RATHER THAN AN
 # ERROR. These two scripts run on managed Macs where /usr/bin/python3 is a STUB -- no Command
 # Line Tools, so it prints an install prompt on stderr and exits 1 with empty stdout. That
@@ -403,7 +414,7 @@ done
 # carries the copy, so a check counting its own documentation is one nobody can satisfy.
 _envs_clean=1
 for _f in "$HERE"/../queries/*.sql "$HERE"/../dist/*.sql "$HERE"/../dist/*.conf \
-          "$HERE/../bin/discover" "$HERE/../bin/container-scan"; do
+          "$HERE"/../dist/*.yml "$HERE/../bin/discover" "$HERE/../bin/container-scan"; do
   [ -f "$_f" ] || continue
   _hits="$( { grep -nE '(^|[^a-zA-Z0-9_])(env_variables|docker_container_envs)([^a-zA-Z0-9_]|$)' \
               "$_f" || true; } \
@@ -465,6 +476,12 @@ print(f"pack: ok, {len(pack)} queries, none carrying the separator --write split
 PY
 python3 "$HERE/../tools/validate_catalog.py" || fail=1
 python3 "$HERE/../tools/build.py" --check || fail=1
+# The rendered match SQL is generated from the catalog the way dist/ is from queries/, and
+# gated the same way. The parity test needs osqueryi and SKIPs without one, which is what
+# lets this file stay runnable on a runner with no osquery; ci.yml's runtime jobs run it
+# with --require-osqueryi.
+python3 "$HERE/../tools/render_match.py" --check || fail=1
+python3 "$HERE/../test/test_match_sql.py" >/dev/null || { echo "FAIL: match-SQL tests"; fail=1; }
 python3 "$HERE/../test/test_matcher.py" >/dev/null || { echo "FAIL: matcher tests"; fail=1; }
 python3 "$HERE/../test/test_telemetry.py" >/dev/null || { echo "FAIL: telemetry tests"; fail=1; }
 python3 "$HERE/../test/test_ci_scope.py" >/dev/null || { echo "FAIL: ci scope tests"; fail=1; }
@@ -611,9 +628,13 @@ for plat in ("darwin", "linux"):
     if names != want:
         bad.append(f"{plat}: payload is {names}, declared {want}")
 
-    # THE ENDPOINT HOLDS NO CATALOG, and this is the check that survives someone adding a
-    # file to the list for a good-sounding reason. A machine carrying the signatures it is
-    # supposed to enumerate past is the one outcome the architecture exists to prevent.
+    # THE ENDPOINT HOLDS NO CATALOG FILE AND NO CLASSIFIER, and this is the check that
+    # survives someone adding one to the list for a good-sounding reason. It DOES carry
+    # dist/signatures.sql, the catalog rendered into SQL for `--names` -- a deliberate
+    # exception tools/bundle.py's header argues, and one this check cannot see: the
+    # payload-vs-declared comparison above reads the same payload_files tuple, so
+    # dropping that file from the tuple passes here. ci.yml running `--names` through the
+    # bundle is the gate for that.
     for leak in B.FORBIDDEN:
         if any(leak in n for n in names) or leak in text:
             bad.append(f"{plat}: the bundle carries or names {leak!r}")

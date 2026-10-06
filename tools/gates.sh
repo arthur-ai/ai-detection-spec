@@ -28,6 +28,8 @@ run() {
 }
 run test/lint.sh
 run python3 tools/build.py --check
+run python3 tools/render_match.py --check
+run python3 test/test_match_sql.py
 run python3 tools/validate_catalog.py
 run python3 tools/agent_status.py --check
 run python3 tools/agent_status.py --json

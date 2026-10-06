@@ -153,3 +153,23 @@ if "unmatched_max" in want:
 sys.exit(1 if fail else 0)
 PY_INNER
 }
+
+# The rendered match SQL -- dist/signatures.sql and dist/agents-<platform>.sql -- against
+# the same real install, held to the classifier.
+#
+# The rendered SQL is derived from the classifier's own index, which makes agreement likely
+# and proves nothing; the fixtures in test/test_match_sql.py prove the predicates, and this
+# is where the two meet REAL rows from a scenario that installed real software. Two checks:
+# the fragment over the rows just collected must claim exactly the evidence rows the
+# classifier claims, and the standalone artifact, run live, must find what `must_find`
+# names (except agents this payload found only through images, which only the bounded
+# container branch carries) and nothing `forbid` names.
+#
+# Given <agents.json> and <parity.json> it runs no osqueryi: test/run.sh produces both in
+# the Tart guest and asserts on a host that may have none. Without them it runs osqueryi
+# itself, with `sudo -n` for the live artifact when not already root.
+assert_match_sql() {
+  local actual_json="$1" expected_json="$2" root="$3" agents_json="${4:-}" parity_json="${5:-}"
+  python3 "$root/test/test_match_sql.py" --assert "$actual_json" "$expected_json" \
+    --root "$root" ${agents_json:+--agents "$agents_json"} ${parity_json:+--parity "$parity_json"}
+}

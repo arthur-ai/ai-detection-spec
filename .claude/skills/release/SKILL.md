@@ -334,8 +334,9 @@ $ gh run list --workflow=release.yml --limit=1
 $ gh release view v<X.Y.Z> --json assets --jq '[.assets[].name]'
 ```
 
-**Eleven assets**, and a missing one is a broken release: `discovery-darwin.sql`,
-`discovery-linux.sql`, `discovery-deep.sql`, `ai-discovery.conf`, `discover`, `container-scan`,
+**Fifteen assets**, and a missing one is a broken release: `discovery-darwin.sql`,
+`discovery-linux.sql`, `discovery-deep.sql`, `ai-discovery.conf`, `signatures.sql`,
+`agents-darwin.sql`, `agents-linux.sql`, `fleet-policies.yml`, `discover`, `container-scan`,
 `classify`, `agents.yaml`, `routes.yaml`, `ai-discovery-darwin.sh`, `ai-discovery-linux.sh`.
 `tools/check_workflows.py` derives this list from `release.yml` and fails when the two
 disagree — it read `Nine` for a release after the bundles were added, because no gate read

@@ -41,8 +41,11 @@ container scan.
   this repo once shipped an identifier that matched nothing on any Mac. **Every identifier** is
   covered by a test that runs in CI — lint fails on one that is not — and
   [the report](docs/agents.md) is generated, so it cannot flatter itself.
-- **🧩 Add an agent without touching the endpoint.** The queries carry no product names, so a new
-  signature re-matches evidence you already collected — nothing to redeploy to the fleet.
+- **🧩 One catalog, matched where you need it.** Run the inventory query and match the result
+  off the machine, where a new signature re-matches what you already collected. Or run
+  `agents-darwin.sql` and get the agent names straight from osquery, as a Fleet policy or a
+  Jamf Extension Attribute. Both are generated from the same catalog and checked against
+  each other in CI.
 - **🗺 Blind spots stated up front.** [Written down](docs/limits.md), because a discovery tool
   that hides them is worse than none.
 
@@ -53,12 +56,22 @@ container scan.
 | 🗂 | **A query** | Runs on each machine and lists what is installed — apps, packages, browser extensions, state directories. **No agent name appears anywhere in it.** It reports what it finds; which of those findings add up to an agent is decided later, by the classifier. One per platform, because macOS and Linux read different tables |
 | ▶️ | **A runner** | Runs that query on the endpoint and prints the result as one JSON array. A second one covers agents packaged as Docker images, separately and on a time limit, because a wedged Docker daemon never answers and would otherwise hang the scan |
 | 🔎 | **A classifier and its catalog** | Reads the collected JSON and tells you which agents are on the machine, matching the evidence against **22 agents and 61 identifiers**. It runs wherever you keep the output, never on the endpoint |
+| 🧾 | **The same catalog, as SQL** | The second way to match. A query that returns the agent names directly, a set of Fleet policies, and `bin/discover --names`, which prints the names as one line for a Jamf Extension Attribute. All generated from the catalog, and CI checks they give the same answers as the classifier |
 
-**Why the split matters.** The endpoint *enumerates* and the matching happens elsewhere. A
-scanner that knows the agent names has to be redeployed to the whole fleet every time the list
-changes, and can only ever find what it already knew to look for. This one collects the
-evidence once and answers new questions about it later — add a signature to the catalog and it
-re-matches evidence you already have, without going back to the fleet.
+**Two ways to match, one catalog.** Pick the one that fits how you collect:
+
+- **Match off the machine.** The endpoint runs the inventory query and the classifier matches
+  the result against the catalog wherever you keep it. Add a signature to the catalog and it
+  re-matches the evidence you already have, without going back to the fleet. This is the
+  shape for a collector that stores the JSON.
+- **Match on the machine.** Run `agents-darwin.sql` or `agents-linux.sql` and get the agent
+  names straight from osquery, load `fleet-policies.yml` into Fleet, or point a Jamf
+  Extension Attribute at `bin/discover --names`. This is the shape for tools that work with
+  one query or one value per machine. A new signature reaches these files when you redeploy
+  them.
+
+Both are generated from `catalog/agents.yaml`, and CI checks that they find the same agents
+on the same evidence. There is one place to add a signature either way.
 
 **[What a release attaches](#what-a-release-attaches)** names every file and says which machine
 it belongs on.
@@ -124,6 +137,12 @@ $ git clone https://github.com/arthur-ai/osquery-ai-discovery
 $ cd osquery-ai-discovery              # or download the assets from a tagged release
 $ brew install --cask osquery          # or https://osquery.io/downloads
 $ python3 -m pip install pyyaml        # for bin/classify only -- the endpoint needs nothing
+
+# Match on the machine: one query, agent names out
+$ sudo osqueryi --json < dist/agents-darwin.sql
+$ sudo bin/discover --names                   # the same as one line, for a Jamf Extension Attribute
+
+# Match off the machine: inventory out, classify wherever you keep the output
 $ sudo osqueryi --json < dist/discovery-darwin.sql | bin/classify
 $ sudo bin/discover --deep | bin/classify     # the same, plus container images
 
@@ -168,8 +187,9 @@ get the raw inventory instead:
 
 ## What a release attaches
 
-**Eleven assets**: `discovery-darwin.sql`, `discovery-linux.sql`, `discovery-deep.sql`,
-`ai-discovery.conf`, `discover`, `container-scan`, `classify`, `agents.yaml`, `routes.yaml`,
+**Fifteen assets**: `discovery-darwin.sql`, `discovery-linux.sql`, `discovery-deep.sql`,
+`ai-discovery.conf`, `signatures.sql`, `agents-darwin.sql`, `agents-linux.sql`,
+`fleet-policies.yml`, `discover`, `container-scan`, `classify`, `agents.yaml`, `routes.yaml`,
 `ai-discovery-darwin.sh`, `ai-discovery-linux.sh`.
 
 You do not need all of them. Which you take depends on where the thing runs.
@@ -192,15 +212,29 @@ You do not need all of them. Which you take depends on where the thing runs.
 | `agents.yaml` | What the evidence is matched against. Add a signature here and it re-matches evidence you already collected |
 | `routes.yaml` | How each kind of evidence is matched — a bundle id, a Debian package, an npm install, a config directory. The matcher, the validator, the coverage report and lint all read this one file, and `classify` expects it beside `agents.yaml` |
 
+**On the endpoint, matching there**
+
+| | |
+|---|---|
+| `agents-darwin.sql`<br>`agents-linux.sql` | A query that returns the agent names directly, one row per agent found. Run it with `sudo osqueryi --json < agents-darwin.sql`. It does not look at container images, because that part of the scan needs a time limit that only `container-scan` provides |
+| `signatures.sql` | The catalog converted to SQL. `discover --names` uses it to turn an inventory into a list of names. Keep it next to `discover`; nothing else uses it |
+| `fleet-policies.yml` | One Fleet policy per agent per platform. A policy fails on a host that has the agent, which puts those hosts on Fleet's failing list. Load with `fleetctl apply -f fleet-policies.yml` |
+
+All three are **generated** from `agents.yaml`, and CI checks they find the same agents as
+`classify`. When you add a signature to the catalog, you have to redeploy these files for them
+to see it. The JSON inventory does not need that, because it is matched later, off the
+machine.
+
 **Or, instead of the endpoint half: one file**
 
 | | |
 |---|---|
-| `ai-discovery-darwin.sh`<br>`ai-discovery-linux.sh` | Everything in the endpoint table above, for one platform, packed into one self-extracting script — for a machine that can host a script and not a package. It takes the same arguments as `bin/discover` and installs nothing |
+| `ai-discovery-darwin.sh`<br>`ai-discovery-linux.sh` | Everything in the endpoint table above plus `signatures.sql`, for one platform, packed into one self-extracting script — for a machine that can host a script and not a package. It takes the same arguments as `bin/discover` and installs nothing |
 
-**A bundle carries no catalog and no classifier**, so it enumerates and cannot name an agent.
-That is the same split as everything else here: you classify off the machine, from whatever the
-bundle wrote. It also costs two prerequisites the loose files do not — `base64` and `tar`.
+**A bundle does not contain the catalog or the classifier.** It does contain `signatures.sql`,
+so `--names` works from a bundle. Everything else it produces is the raw inventory, which you
+classify off the machine as before. A bundle also needs `base64` and `tar` on the machine,
+which the loose files do not.
 
 If you take the loose files, ship `bin/`, `dist/` and `catalog/` **side by side**. Both
 `bin/discover` and `bin/classify` resolve what they need relative to their own parent, so loose
@@ -268,10 +302,15 @@ $ sudo bin/discover --deep | bin/classify     # base inventory plus containers
 **Do not put these queries on a synchronous reporting path** — they can hang rather than fail.
 Schedule `bin/discover --write` and read the file; the `status.txt` beside it is one line whose
 vocabulary is a contract, so a consumer can always tell a clean machine from a branch that
-could not look. Scheduling, transport and classification at scale are yours to supply; this
-repo ships the queries, the runner, the guard and the bound.
+could not look. Scheduling and transport are yours to supply; this repo ships the queries,
+the runner, the guard, the bound, and the matching, either on the machine or off it.
 
-**[The scheduled writer, the status contract, and the one-file bundle →](docs/deployment.md)**
+**With Jamf**, point an Extension Attribute at `bin/discover --names`. It prints the agent
+names and the status as one line, which Smart Groups can match on. **With Fleet**, load
+`fleet-policies.yml` to get one policy per agent. **With your own collector**, store the JSON
+and run `bin/classify` over it.
+
+**[The scheduled writer, the status line, the one-file bundle, and the one-line and Fleet options →](docs/deployment.md)**
 
 ## Contributing — genuinely, please do
 

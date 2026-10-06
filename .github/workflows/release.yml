@@ -124,6 +124,8 @@ jobs:
           gh release upload "$TAG" \
             dist/discovery-darwin.sql dist/discovery-linux.sql \
             dist/discovery-deep.sql dist/ai-discovery.conf \
+            dist/signatures.sql dist/agents-darwin.sql dist/agents-linux.sql \
+            dist/fleet-policies.yml \
             bin/discover bin/container-scan bin/classify \
             catalog/agents.yaml catalog/routes.yaml \
             artifacts/ai-discovery-darwin.sh artifacts/ai-discovery-linux.sh --clobber

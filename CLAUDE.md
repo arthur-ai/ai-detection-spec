@@ -140,10 +140,36 @@ limits.
 
 ## Architecture, briefly
 
-The endpoint **enumerates**; it holds no catalog and does no filtering. Matching happens off the
-machine, in `bin/classify`, against `catalog/agents.yaml`. That is what lets a new signature
-re-match evidence already collected, and it is why `tools/check_no_catalog.py` fails the build if
-an agent identifier leaks back into the SQL.
+The endpoint **enumerates**; the enumeration queries hold no catalog and do no filtering.
+Matching happens off the machine, in `bin/classify`, against `catalog/agents.yaml`. That is
+what lets a new signature re-match evidence already collected, and it is why
+`tools/check_no_catalog.py` fails the build if an agent identifier leaks into those queries.
+
+**The second way to match is on the endpoint, and it is a peer, not a fallback.**
+`tools/render_match.py` renders the catalog into `dist/signatures.sql`,
+`dist/agents-<platform>.sql` and `dist/fleet-policies.yml`: a Jamf Extension Attribute
+(`bin/discover --names`), a Fleet policy, or `osqueryi` with a question gets agent names
+straight from SQL. Docs present the two ways side by side; neither is "when you cannot do
+the other". The rules that keep the rendered family honest:
+
+- The signature rows come out of `bin/classify`'s own `build_index`, and the SQL matches
+  the same six-column rows the classifier does, so agreement is structural. Where the
+  classifier uses a regex, the SQL uses `regex_match` with the classifier's pattern.
+- `test/test_match_sql.py` holds the two to the **same evidence rows, per row**, on every
+  fixture, on controls that must and must not match, and in every scenario on the rows a
+  real install produced. It needs `osqueryi` and SKIPs loudly without one; the CI runtime
+  jobs run it with `--require-osqueryi`.
+- A route whose match mode the renderer cannot express **fails the build**; a value two
+  agents both claim fails the build. A join reports every signature a row satisfies and
+  the classifier picks one, so those are the two ways they could disagree.
+- `check_no_catalog.py` exempts those four files **by name** and requires each to carry
+  identifiers; every other file in `dist/` is still held to the rule.
+- `regex_match` returns NULL on a miss, an invalid pattern aborts the whole statement, and
+  `LIKE` is case-insensitive — so the join is a `CASE`, every regex is compiled before it is
+  written, and a prefix is `substr`.
+- A signature added to the catalog reaches the rendered files only by redeploying them. The
+  payload still re-matches. The bundle carries `signatures.sql` for `--names` and nothing
+  else that names an agent.
 
 Every row is the **six-column contract**: `kind, id, ver, loc, extra, perms`.
 
@@ -218,6 +244,9 @@ were both left out for that reason, and its header says so.
 | `dist/discovery-deep.sql` | the `expensive` queries — a **supplement, not a superset**. One file, because every expensive query is `posix`; `build.py` fails loudly if one stops being |
 | `dist/ai-discovery.conf` | the pack, carrying every platform's queries with osqueryd's own per-query `platform` field |
 | `bin/container-scan` | not a query. The only supported way to run the deep artifact, because that artifact can block forever and the bound lives in the runner |
+| `dist/signatures.sql` | **rendered from the catalog**, not composed from `queries/`: the signature table and the match, as a fragment over an `ev` CTE the caller supplies. `bin/discover --names` feeds it the payload |
+| `dist/agents-darwin.sql`, `dist/agents-linux.sql` | the enumeration wrapped in that match: one row per agent found. **Never sees image-only agents** — the container branch needs the bound, so it is not in here, and the header says so |
+| `dist/fleet-policies.yml` | one Fleet policy per agent per platform, passing when absent. Each wraps only the branches its agent's routes need |
 
 **`dist/discovery.sql` is gone.** It named one platform while claiming none, and fed to the wrong
 `osqueryi` it returns `[\n\n]` — five bytes of valid, empty, plausible JSON. It does at least
@@ -230,6 +259,10 @@ scheduled.
 
 `dist/` is **generated**. Edit `queries/`, then `python3 tools/build.py`; `--check` gates it,
 in both directions — a stale artifact and an artifact nothing generates are the same drift.
+The rendered match files come from `catalog/` through `tools/render_match.py`, which needs
+PyYAML; `build.py` runs it when PyYAML is present and says so when it is not, and
+`render_match.py --check` is its own gate. `build.py` knows the rendered names only so its
+unknown-file check can tell "rendered" from "nothing generates it".
 
 ## Traps that have already cost a day
 
@@ -279,6 +312,8 @@ in both directions — a stale artifact and an artifact nothing generates are th
 ```console
 $ test/lint.sh                      # contract, first-arm aliases, kind coverage, container envs
 $ python3 tools/build.py --check    # dist/ matches queries/
+$ python3 tools/render_match.py --check   # the rendered match SQL matches the catalog
+$ python3 test/test_match_sql.py    # ...and agrees with bin/classify, row for row (needs osqueryi; SKIPs)
 $ python3 tools/validate_catalog.py # + routes.yaml, platforms, value_pattern
 $ python3 tools/check_no_catalog.py
 $ python3 test/test_matcher.py

@@ -75,13 +75,29 @@ def offenders(path):
                 yield lineno, lit, why
 
 
+def rendered_names(root):
+    """The files tools/render_match.py owns: the ONE place identifiers belong in SQL.
+
+    Read from that tool rather than listed here, so the exception is by NAME and tracks
+    the generator -- a stray `dist/stray.sql` carrying a vendor literal is still an
+    offender, and a rendered file renamed there is still exempt here.
+    """
+    sys.path.insert(0, str(root / "tools"))
+    import render_match
+    return set(render_match.OUTPUTS)
+
+
 def main():
     root = pathlib.Path(__file__).resolve().parent.parent
-    # EVERY composed artifact, discovered rather than named. There is one per platform
-    # now, and a hardcoded filename would have quietly stopped checking the moment the
-    # name changed -- leaving the D20 rule enforced on the source and not on what ships.
+    rendered = rendered_names(root)
+    # EVERY artifact in dist/, discovered rather than named, MINUS the rendered set by
+    # name. The rendered match files are the catalog written out as SQL on purpose; this
+    # rule is about the enumeration, which must stay free of it. A hardcoded filename
+    # would have quietly stopped checking the moment the name changed -- leaving the D20
+    # rule enforced on the source and not on what ships.
     targets = (sorted((root / "queries").glob("*.sql"))
-               + sorted((root / "dist").glob("discovery-*.sql")))
+               + [p for p in sorted((root / "dist").glob("*"))
+                  if p.suffix in (".sql", ".yml", ".yaml") and p.name not in rendered])
     failed = False
     for path in targets:
         if not path.exists():
@@ -96,7 +112,21 @@ def main():
         print("identifier here means a wrong entry stays wrong on every Mac until it rescans.")
         print("Move the identifier to catalog/agents.yaml, which the collector reads.")
         return 1
-    print(f"no-catalog: ok, {len(targets)} files match on no product identifier")
+    # THE INVERSE, for the rendered files: each must carry identifiers, because one that
+    # carries none is a signature table nobody rendered -- the same silence as a route
+    # with no producer, wearing a generated banner. Missing is fine here (the drift gate
+    # is tools/render_match.py --check); present and empty is not.
+    for name in sorted(rendered):
+        path = root / "dist" / name
+        if path.exists() and not any(offenders(path)):
+            print(f"FAIL: dist/{name} is a rendered match file and names no product. "
+                  f"Either the render produced no signatures or the file is not what "
+                  f"tools/render_match.py writes.")
+            failed = True
+    if failed:
+        return 1
+    print(f"no-catalog: ok, {len(targets)} files match on no product identifier; "
+          f"{len(rendered)} rendered files do, by name")
     return 0
 
 
