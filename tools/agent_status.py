@@ -764,7 +764,8 @@ def markdown(data):  # noqa: C901
            f"produced them is gone, and each names the run that last did."
            if n_st("superseded") else "")
         + " Anything below complete is a red build, so there is no partial number to read"
-          " here.",
+          " here. An agent with no test that installs it cannot be added to the catalog at"
+          " all; the build rejects it.",
         "",
         # Only describe a split when there IS one. Without one this restated the badges.
         (f"{len(agents)} entries carrying {n_ident} identifiers &mdash; "
@@ -776,9 +777,11 @@ def markdown(data):  # noqa: C901
         "is `~/.aider`, so evidence and signature never met. Both were silent and both survived",
         "review.",
         "",
-        "Coverage is counted **per identifier**, from what each scenario recorded in its own",
-        "`observed.json`, and only from scenarios in the CI matrix — an agent can pass while",
-        "carrying an identifier nothing exercised.",
+        # WRITTEN FOR A READER WHO HAS NOT SEEN THE TREE. This named observed.json and
+        # the CI matrix, which are plumbing, and buried the one fact that matters.
+        "Proof is counted **per identifier**, not per agent. Installing an agent vouches",
+        "only for the identifiers that run actually matched, so a sibling identifier on the",
+        "same agent is not covered by association.",
         "",
         # A TABLE OF ZEROS IS A CONFUSING STAT. This listed all six states with a count
         # each, and five of them are zero and must stay zero -- `--check` fails the build
@@ -806,9 +809,9 @@ def markdown(data):  # noqa: C901
               "observation is not absence of a test, and the count corrects itself once "
               "each has run.", ""])
           if data.get("ci_unrecorded") and n_st("none") + n_st("tested-absent") else []),
-        "`tools/validate_catalog.py` refuses an agent no scenario installs. There is no block",
-        "that buys an exception, so an unproved signature cannot enter at all.",
-        "",
+        # The enforcement sentence sits beside the headline count above, not here: this
+        # section answers "why", and "there is no block that buys an exception" argued
+        # against a removed `unverified:` block the reader never saw.
     ]
 
     by_class = {}
