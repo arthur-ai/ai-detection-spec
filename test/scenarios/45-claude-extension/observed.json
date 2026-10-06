@@ -29,19 +29,19 @@
       "agent": "claude-in-chrome",
       "route": "extension_ids",
       "value": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
-      "agent_version": "1.0.98",
+      "agent_version": "1.0.99",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37349545842"
+      "run": "37421140098"
     },
     {
       "agent": "claude-in-chrome",
       "route": "extension_ids",
       "value": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
-      "agent_version": "1.0.98",
+      "agent_version": "1.0.99",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "37349545842"
+      "run": "37421140098"
     }
   ]
 }
