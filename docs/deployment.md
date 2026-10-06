@@ -97,68 +97,79 @@ That is a supported interface, not a debugging trick — `read_member()` in Pyth
 thing. Reaching into the file yourself is how a consumer ends up pinned to an internal detail,
 which this project has already done to one downstream repo by removing `bin/discover --framed`.
 
-## One line for an Extension Attribute
+## Getting the agent names as one line (Jamf Extension Attributes)
 
-A Jamf Extension Attribute is one printed value per Mac, and everything Jamf does well
-hangs off it: Smart Groups match on it, searches report on it, policies scope to the groups.
-A packed JSON payload is unreadable to all of them. So the runner has a mode that prints
-the names instead:
+A Jamf Extension Attribute stores one text value per Mac. Smart Groups and searches work on
+that value. The JSON inventory is too big and too structured for it, so `bin/discover` can
+print the agent names instead:
 
 ```console
 $ bin/discover --names --cache /var/lib/ai-discovery/inventory.json
 Claude Code 2.0.1, Cursor 1.7.44; ok 2026-10-05T13:20:11Z rows=775 apps=ok browser=ok containers=absent filesystem=ok homebrew=ok native-messaging=ok packages=ok ports=ok runtime=ok vscode=ok
 ```
 
-**The whole Extension Attribute script is that command**, with the scheduled writer from the
-top of this page producing the file it reads. `--names` composes with every other mode —
-`--names` alone runs the base query, `--names --deep` adds the bounded container scan,
-`--names --write PATH --status TXT` writes both files and prints the line — and the bundle
-takes it like any other argument.
+That command is the whole Extension Attribute script. It reads the file written by the
+scheduled `bin/discover --write` from the top of this page.
 
-The line is two halves around `; `. The left is the agents found, name and a version when
-any evidence row carried one, or `none`. The right is the status line, the same vocabulary
-as `status.txt` and from the same run the same bytes, so a Smart Group can match
-`contains "Cursor"` and another can match `contains "degraded"`. **`none` and "could not
-look" are never the same value**: `none; degraded … containers=timeout:6` is a machine that
-reported no agents in the branches it could read.
+The line has two parts, separated by `; `:
 
-- `max()` over the evidence rows is **a version seen**, not a resolution across routes, and
-  `file` evidence carries none — so `Claude Code` can appear without a version.
-- When the writer never ran, `--names --cache` prints `none; degraded <stamp> rows=1
-  inventory=no-cache` and exits 1 — built by the shell, needing no osqueryi, for the
-  reason the `python3` section below gives.
-- When the summary itself fails, nothing is printed and the exit is 1. The one value this
-  mode must never produce is `none` for a machine it could not read.
+- **Before the `; `**: the agents found, with a version where one was available, or `none`
+  if nothing was found.
+- **After the `; `**: the same status line that goes into `status.txt`. It tells you whether
+  every part of the scan worked.
 
-The signatures come from `dist/signatures.sql`, the catalog rendered into SQL by
-`tools/render_match.py` and held to `bin/classify` evidence row for evidence row by
-`test/test_match_sql.py`. **A signature added to the catalog reaches `--names` only by
-redeploying that file.** The JSON payload still re-matches without a rescan; the one line
-cannot, and that is the trade.
+So a Smart Group can match `contains "Cursor"` to find machines with Cursor, and another can
+match `contains "degraded"` to find machines where part of the scan failed. A machine that
+reports `none; degraded ...` found no agents, but could not check everything, so it is not
+the same as a clean machine.
+
+`--names` works with the other flags too. `bin/discover --names` runs the scan directly,
+`--names --deep` includes containers, and `--names --write PATH --status TXT` writes the files
+and prints the line. The one-file bundle accepts it as well.
+
+A few things to know:
+
+- If the scheduled writer has never run, `--names --cache` prints
+  `none; degraded <time> rows=1 inventory=no-cache` and exits 1.
+- If the summary itself fails, nothing is printed and the exit code is 1. It never prints
+  `none` for a machine it could not read.
+- The version shown is the highest version string seen in the evidence for that agent. Some
+  evidence, like a config directory, has no version, so an agent can appear without one.
+
+The names come from `dist/signatures.sql`, which is the catalog converted to SQL by
+`tools/render_match.py`. **When the catalog gains a signature, you have to redeploy that file
+for `--names` to pick it up.** The JSON inventory does not have this problem, because it is
+matched against the catalog later, off the machine.
 
 ## Fleet policies
 
-`dist/fleet-policies.yml` is one [Fleet](https://fleetdm.com) policy per agent per platform,
-in the library format:
+`dist/fleet-policies.yml` contains one [Fleet](https://fleetdm.com) policy for each agent, for
+each platform the agent runs on. Load it with:
 
 ```console
 $ fleetctl apply -f dist/fleet-policies.yml
 ```
 
-Each policy passes when no evidence of its agent is on the host, so Fleet's **failing-hosts
-list is the machines that carry it** and a failure automation fires when one appears. Flip
-`NOT EXISTS` to `EXISTS` for the opposite reading. A policy enumerates only the branches its
-agent can be found through — Claude Code on macOS reads the filesystem and npm branches,
-nothing else — so it costs what its routes cost rather than the whole inventory.
+A policy **passes when the agent is not on the host** and fails when it is. That matches how
+Fleet is normally used: the list of failing hosts is the list of machines that have the
+agent, and Fleet's alerts fire on failures. If you want it the other way round, change
+`NOT EXISTS` to `EXISTS` in the query.
 
-Two things a policy cannot do. It carries no version: a policy is yes or no, and the
-evidence rows are in `bin/discover --write`. And it never reads the container branch, which
-needs a wall-clock bound osqueryd cannot give it ([containers.md](containers.md)), so agents
-that ship only as an image have no policy, and the file's header names them.
+Each policy only reads the parts of the system where its agent can be found. The Claude Code
+policy on macOS looks at home directories and npm packages and nothing else, so it costs
+much less than a full inventory scan.
 
-`dist/agents-darwin.sql` and `dist/agents-linux.sql` are the same match as one query per
-platform, for anyone with `osqueryi` and a question — one row per agent found, with the
-same container caveat. `bin/discover --names --deep` is how the image-only agents are seen.
+Two limits:
+
+- Policies do not report versions. A policy is a yes or no answer. For versions, use the JSON
+  inventory from `bin/discover --write`.
+- Policies do not look at containers, because a container query can hang and osqueryd
+  cannot put a time limit on one query (see [containers.md](containers.md)). Agents that
+  only ship as container images have no policy. The file lists them at the top.
+
+`dist/agents-darwin.sql` and `dist/agents-linux.sql` do the same matching as one query you
+can run with `osqueryi`. They return one row per agent found. They have the same limit on
+containers; `bin/discover --names --deep` is the way to see container-only agents.
 
 ## `status.txt`, whose vocabulary is a contract
 
