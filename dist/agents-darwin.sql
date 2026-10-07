@@ -152,13 +152,13 @@ UNION ALL
 -- BUN GLOBALS. npm_packages searches a fixed list of prefixes -- npm, nvm, asdf, fnm,
 -- mise, volta -- and never ~/.bun, so `bun add -g` was invisible (npm_packages.cpp at
 -- 5.23.1). Its `directory` constraint replaces that list and means "the directory that
--- holds node_modules", and the join pushes it down once per home. The home list is
--- queries/vscode.sql's, for the reason given there, and a directory row from `file` ends
--- in '/', so it is trimmed before the suffix goes on.
+-- holds node_modules", and the join pushes it down once per home. The homes come from the
+-- two places queries/vscode.sql takes its uids from, for the reason given there, and a
+-- directory row from `file` ends in '/', so it is trimmed before the suffix goes on.
 --
 -- `extra` IS 'bun' because bun HOISTS: a global's dependencies sit flat beside it in the
 -- one node_modules, so the structural predicate cannot drop them, and every one is a row.
--- A reader of unmatched rows needs to know why forty packages arrived with one global.
+-- A reader of unmatched rows needs to know why several packages arrived with one global.
 --
 -- Not covered: a global directory moved by BUN_INSTALL_GLOBAL_DIR or bunfig's globalDir.
 SELECT 'npm', np.name, np.version, np.path, 'bun', ''
