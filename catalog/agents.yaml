@@ -12,7 +12,8 @@
 #   darwin only   bundle_ids, homebrew, launchd_prefixes, running_apps
 #   linux only    deb_packages, rpm_packages, desktop_ids, systemd_prefixes
 #   both          npm, pypi, extension_ids, native_messaging_hosts, vscode_extensions,
-#                 jetbrains_plugins, images, state_dirs, binaries, model_stores, running_npm
+#                 jetbrains_plugins, images, state_dirs, binaries, model_stores, running_npm,
+#                 process_paths
 #
 # `platforms:` on each agent is REQUIRED and is checked against those: declaring
 # `deb_packages` without `linux` is a copy-paste error, and claiming a platform no route
@@ -209,6 +210,10 @@ agents:
     binaries: ["~/.local/bin/claude"]
     npm: ["@anthropic-ai/claude-code"]
     state_dirs: ["~/.claude"]
+    # RUNNING, where the symlink above leads. Read off 83-linux-claude-running on
+    # 2026-10-07: `claude mcp serve` as an ordinary user, osquery 5.23.1 reading its path as
+    # /home/dana/.local/share/claude/versions/2.1.292. The same shape runs on macOS.
+    process_paths: ["~/.local/share/claude/versions/"]
 
   - id: openclaw
     name: OpenClaw

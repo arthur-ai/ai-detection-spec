@@ -270,6 +270,8 @@ def main():
         ("proc", "ai.openclaw.mac", "openclaw"),               # running_apps reads bundle_ids
         ("proc", "@openai/codex", "codex-cli"),                # running_npm reads npm
         ("proc", "com.apple.finder", None),
+        ("proc", "/home/u/.local/share/claude/versions/2.1.292", "claude-code"),   # process_paths
+        ("proc", "/home/u/.local/share/claude-fork/versions/1", None),
         ("jbplugin", "cline", "cline"),
         ("jbplugin", "cline-2.0.6.jar", None),                 # a bare jar is not the directory
         ("jbplugin", "continue-intellij-extension", "continue"),

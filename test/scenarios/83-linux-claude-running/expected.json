@@ -1,0 +1,37 @@
+{
+  "description": "Claude Code running on Linux, found by the path its native process runs from.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "deb+rpm": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=1",
+    "jbplugin": ">=0",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "port": ">=0",
+    "proc": ">=1",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "claude-code"
+    ],
+    "forbid": [
+      "openclaw",
+      "cursor"
+    ]
+  },
+  "why": "The process_paths route's scenario. The proc row's loc is the executable a running Claude Code reports, under ~/.local/share/claude/versions/, which only queries/running.sql emits. must_find alone would pass on the presence routes, so the assertion is on the proc row itself.",
+  "must_contain": [
+    "\"kind\": \"proc\", \"loc\": \"/home/dana/.local/share/claude/versions/"
+  ],
+  "known_gaps": [
+    "`claude mcp serve` runs unauthenticated with no client connected, so this proves what a running Claude Code process looks like to osquery, not an agent at work.",
+    "Skips in a default container, where osquery cannot read another user's executable path. It runs for real on CI's ubuntu runner and under test/run-gce.sh."
+  ]
+}

@@ -286,6 +286,16 @@ routes:
     match: home-prefix
     table: file
     min_osquery: 5.10.0
+  process_paths:
+    # A `~/`-rooted path a RUNNING agent's executable sits under, for an agent whose process
+    # does not run from the path `binaries` names. Its own values, so every one must be
+    # produced by a CI scenario. Front-anchored like `binaries`, because a version
+    # directory follows.
+    platform: posix
+    kind: proc
+    match: home-prefix
+    table: processes
+    min_osquery: 5.10.0
   model_stores:
     # Carries no values today: it went with the model runners, which are not agents.
     # Kept registered because its kind is still collected -- see `ports` below for what
