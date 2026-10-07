@@ -1,0 +1,39 @@
+{
+  "description": "Continue and Cline as JetBrains plugins, a route osquery could not see before 5.18.0.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "deb+rpm": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=0",
+    "jbplugin": ">=2",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "port": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "cline",
+      "continue"
+    ],
+    "forbid": [
+      "cursor",
+      "windsurf",
+      "claude-code"
+    ]
+  },
+  "why": "The second editor route for the two agents 78-linux-vscode proves through VS Code. Nothing else here can name either agent: no npm cline and no VS Code are installed, so removing either catalog value turns must_find red. The identifier is the plugin directory name, because the table exposes no plugin.xml id; the directory is the root of the vendor's zip.",
+  "must_contain": [
+    "/.local/share/JetBrains/IdeaIC2025.2/continue-intellij-extension",
+    "/.local/share/JetBrains/IdeaIC2025.2/cline"
+  ],
+  "known_gaps": [
+    "The Marketplace zip is unpacked rather than installed by an IDE, so the IDE's own install, update and disable paths are untested, and so is the product directory name an installed IDE writes.",
+    "The macOS directory, ~/Library/Application Support/JetBrains/<Product>/plugins, is not exercised. Only the Linux layout has been read."
+  ]
+}

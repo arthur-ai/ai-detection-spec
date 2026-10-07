@@ -238,5 +238,21 @@
     "loc": "/opt/homebrew/lib/node_modules/hermes-engine",
     "extra": "",
     "perms": ""
+  },
+  {
+    "kind": "jbplugin",
+    "id": "cline",
+    "ver": "2.0.6",
+    "loc": "/home/dana/.local/share/JetBrains/IdeaIC2025.2/cline",
+    "extra": "Cline",
+    "perms": ""
+  },
+  {
+    "kind": "jbplugin",
+    "id": "aws-toolkit-jetbrains-standalone",
+    "ver": "3.90",
+    "loc": "/Users/alice/Library/Application Support/JetBrains/IntelliJIdea2025.2/plugins/aws-toolkit-jetbrains-standalone",
+    "extra": "AWS",
+    "perms": ""
   }
 ]

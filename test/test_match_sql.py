@@ -267,6 +267,9 @@ def main():
         ("deb", "cursor", "cursor"),
         ("npm", "@anthropic-ai/claude-code", "claude-code"),
         ("npm", "mcp", None),
+        ("jbplugin", "cline", "cline"),
+        ("jbplugin", "cline-2.0.6.jar", None),                 # a bare jar is not the directory
+        ("jbplugin", "continue-intellij-extension", "continue"),
         ("scan", "containers", None),
     ]
     rows = [{"kind": k, "id": i, "ver": "", "loc": i if k == "file" else "",

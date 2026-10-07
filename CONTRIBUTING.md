@@ -16,7 +16,7 @@ Every query branch emits **six columns, in this order**:
 | 2 | `id` | The identifier: bundle id, package name, port, path |
 | 3 | `ver` | Version if statically readable, else `''` |
 | 4 | `loc` | Where it lives on disk |
-| 5 | `extra` | Kind-specific: `browser_type` for `ext`, process name for `port` |
+| 5 | `extra` | Kind-specific: `browser_type` for `ext`, vendor for `jbplugin`, process name for `port` |
 | 6 | `perms` | Declared permissions, `ext` only |
 
 Everything composes into one `UNION ALL`, so a branch emitting five columns breaks the whole
@@ -42,6 +42,7 @@ even under `--show-unmatched`, for months, while the row counts stayed right.
 | `ext` | `extension_ids` | posix |
 | `file` | `binaries`, `model_stores`, `pypi`, `state_dirs` | posix |
 | `image` | `images` | posix |
+| `jbplugin` | `jetbrains_plugins` | posix |
 | `nmh` | `native_messaging_hosts` | posix |
 | `npm` | `npm` | posix |
 | `port` | `ports` | posix |

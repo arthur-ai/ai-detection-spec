@@ -166,6 +166,24 @@ routes:
     table: vscode_extensions
     min_osquery: 5.11.0
     value_pattern: '^[A-Za-z0-9][A-Za-z0-9._-]*\.[A-Za-z0-9][A-Za-z0-9._-]*$'
+  jetbrains_plugins:
+    # THE VALUE IS THE PLUGIN DIRECTORY NAME, the last component of the row's `path`. The
+    # plugin's own id (`bot.cline`) lives in META-INF/plugin.xml and the table does not
+    # expose it; `name` is a display name. The directory is the root of the zip the
+    # Marketplace serves, which the IDE unpacks as-is, so the vendor chose it.
+    #
+    # WHERE THE TABLE LOOKS, read off osquery's jetbrains_plugins.h at 5.23.1: Linux
+    # `~/.local/share/JetBrains/<Product>%` with NO plugins/ suffix, macOS
+    # `~/Library/Application Support/JetBrains/<Product>%/plugins`.
+    #
+    # min_osquery 5.18.0: the spec is absent at 5.17.0 and present at 5.18.0. Same
+    # consequence as vscode_extensions: its own pack entry and its own branch.
+    platform: posix
+    kind: jbplugin
+    match: exact
+    table: jetbrains_plugins
+    min_osquery: 5.18.0
+    value_pattern: '^[A-Za-z0-9][A-Za-z0-9._-]*$'
   images:
     platform: posix
     kind: image

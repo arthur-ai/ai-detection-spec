@@ -4,12 +4,9 @@
 # from osquery 5.11.0. Cline ships as a VS Code extension first, so it was invisible on
 # its primary route while the catalog listed it under npm.
 #
-# Continue is installed too and is DELIBERATELY NOT in the catalog. It is plainly an
-# agent by this repo's own test, and adding it is a separate decision from adding Linux
-# support -- so it must show up UNMATCHED rather than being claimed by Cline's signature.
-# That assertion is what distinguishes "not catalogued yet" from "route quietly broken",
-# and it is the honest way to carry a known gap: visible, in the tree, and under-reporting
-# rather than over-reporting.
+# Continue is installed too, asserted beside Cline: both are bring-your-own-model
+# extensions that edit code, so a matcher that found one and not the other would be
+# drawing a distinction nothing in the tree justifies.
 set -e
 source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest-linux.sh"
 need_curl
