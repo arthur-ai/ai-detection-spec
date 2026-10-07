@@ -267,6 +267,9 @@ def main():
         ("deb", "cursor", "cursor"),
         ("npm", "@anthropic-ai/claude-code", "claude-code"),
         ("npm", "mcp", None),
+        ("proc", "ai.openclaw.mac", "openclaw"),               # running_apps reads bundle_ids
+        ("proc", "@openai/codex", "codex-cli"),                # running_npm reads npm
+        ("proc", "com.apple.finder", None),
         ("jbplugin", "cline", "cline"),
         ("jbplugin", "cline-2.0.6.jar", None),                 # a bare jar is not the directory
         ("jbplugin", "continue-intellij-extension", "continue"),

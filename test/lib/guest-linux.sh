@@ -37,7 +37,28 @@ sudo_maybe() {
 
 need_curl() { command -v curl >/dev/null 2>&1 || need_pkgs curl ca-certificates; }
 
+# need_node [min_major]: the macOS helper's contract. Distro streams lag -- Ubuntu 24.04 and
+# Debian 12 ship 18, Rocky 9's newest module is 22 -- so a minimum the distro cannot meet
+# installs nodejs.org's own build under /usr/local, which as_user's PATH already carries.
 need_node() {
+  local want="${1:-0}" have arch v
+  have=$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)
+  if [ "$want" -gt 0 ] && [ "$have" -lt "$want" ]; then
+    case "$(uname -m)" in x86_64) arch=x64 ;; aarch64) arch=arm64 ;; *) arch="$(uname -m)" ;; esac
+    v=$(curl --retry 3 -fsSL https://nodejs.org/dist/index.json | python3 -c '
+import json, sys
+print(next(r["version"] for r in json.load(sys.stdin) if r["version"].startswith("v%s." % sys.argv[1])))' "$want") \
+      || { echo "WARN: no Node $want release found on nodejs.org" >&2; return 1; }
+    # The old npm goes first. A GitHub runner already has Node 20 in /usr/local, and
+    # unpacking over it merges two npm trees: the result exits 1 on every install and
+    # prints only where its log is. Reproduced in a container with Node 20 under /usr/local.
+    sudo_maybe rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack
+    curl --retry 3 -fsSL "https://nodejs.org/dist/$v/node-$v-linux-$arch.tar.gz" \
+      | sudo_maybe tar -xz -C /usr/local --strip-components=1 \
+      || { echo "WARN: Node $v did not unpack" >&2; return 1; }
+    hash -r
+    return 0
+  fi
   command -v npm >/dev/null 2>&1 && return 0
   # RHEL 9 and Rocky 9 ship Node as a module whose default stream is 16, which the
   # current agent CLIs refuse to install under. Enable the newest stream first. Fedora

@@ -547,6 +547,33 @@ check("...and neither claims the other's identifier",
       "substring match would silently merge two findings into one")
 
 
+# --- running: a proc row resolves through another route's values ---------------------
+# running_apps and running_npm carry no values of their own. They read bundle_ids and npm,
+# so a running agent needs no second signature, and a finding with a proc row says the
+# agent is running rather than only installed.
+_proc = [
+    {"kind": "proc", "id": "ai.openclaw.mac", "ver": "", "loc": "/Applications/OpenClaw.app",
+     "extra": "", "perms": ""},
+    {"kind": "proc", "id": "@openai/codex", "ver": "",
+     "loc": "/opt/homebrew/lib/node_modules/@openai/codex/vendor/codex", "extra": "", "perms": ""},
+    {"kind": "npm", "id": "@google/gemini-cli", "ver": "0.63.0",
+     "loc": "/usr/local/lib/node_modules/@google/gemini-cli/package.json", "extra": "", "perms": ""},
+    {"kind": "proc", "id": "com.apple.finder", "ver": "",
+     "loc": "/System/Library/CoreServices/Finder.app", "extra": "", "perms": ""},
+]
+_rp = classify_json(_proc)
+_running = {f["id"]: f.get("running") for f in _rp["findings"]}
+check("a running app resolves through bundle_ids and is marked running",
+      _running.get("openclaw") is True, f"got {_running}")
+check("a running npm package resolves through npm and is marked running",
+      _running.get("codex-cli") is True, f"got {_running}")
+check("an installed agent with no proc row is NOT marked running",
+      "gemini-cli" in _running and _running["gemini-cli"] is None, f"got {_running}")
+check("an unclaimed process is unmatched, not dropped",
+      "com.apple.finder" in unmatched_ids(_rp),
+      "a kind absent from the registry is DROPPED, not unmatched -- the `ext` bug")
+
+
 # --- version skew: warn and match, never refuse ------------------------------------
 #
 # catalog/agents.yaml carried `version:` unread for its whole life, so nothing could ever

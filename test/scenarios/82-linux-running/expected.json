@@ -1,0 +1,36 @@
+{
+  "description": "OpenClaw's gateway running on Linux, found as a running process and not only as an install.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "deb+rpm": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=1",
+    "jbplugin": ">=0",
+    "nmh": ">=0",
+    "npm": ">=1",
+    "port": ">=0",
+    "proc": ">=1",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "openclaw"
+    ],
+    "forbid": [
+      "claude-code",
+      "cursor"
+    ]
+  },
+  "why": "The proc kind's scenario. A row of kind proc whose id is openclaw can come only from queries/running.sql reading a node process whose script sits under node_modules/openclaw, and it is what marks the finding running. The npm row says the same agent is installed, so the pair is installed-and-running. The gateway renames its processes, which is why the query reads the runtime off the executable path rather than the process name.",
+  "must_contain": [
+    "\"id\": \"openclaw\", \"kind\": \"proc\""
+  ],
+  "known_gaps": [
+    "The gateway runs with a throwaway token and no channel or model. This proves what a running gateway looks like to osquery, not an agent at work."
+  ]
+}
