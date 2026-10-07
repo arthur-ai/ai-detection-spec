@@ -49,6 +49,10 @@ need_node() {
 import json, sys
 print(next(r["version"] for r in json.load(sys.stdin) if r["version"].startswith("v%s." % sys.argv[1])))' "$want") \
       || { echo "WARN: no Node $want release found on nodejs.org" >&2; return 1; }
+    # The old npm goes first. A GitHub runner already has Node 20 in /usr/local, and
+    # unpacking over it merges two npm trees: the result exits 1 on every install and
+    # prints only where its log is. Reproduced in a container with Node 20 under /usr/local.
+    sudo_maybe rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack
     curl --retry 3 -fsSL "https://nodejs.org/dist/$v/node-$v-linux-$arch.tar.gz" \
       | sudo_maybe tar -xz -C /usr/local --strip-components=1 \
       || { echo "WARN: Node $v did not unpack" >&2; return 1; }
