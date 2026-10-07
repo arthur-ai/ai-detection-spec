@@ -253,7 +253,8 @@ if ! grep -q "^$(id -un):" /etc/passwd && command -v google-chrome >/dev/null 2>
   printf '%s\n' '{"name":"Fixture agent extension, OS Login user","version":"1.0.0","manifest_version":3,"permissions":["tabs"],"host_permissions":["<all_urls>"]}' > "$ext/manifest.json"
   log "ext rows under $HOME through the users table alone: $(sudo osqueryi --line "select count(*) as n from users cross join chrome_extensions using (uid) where profile_path like '$HOME/%'" 2>/dev/null | awk '{print $NF}')"
   # ASSERTED, NOT LOGGED. The fixture's own fields -- browser_type chrome, version 1.0.0,
-  # the two permissions -- under the login account's home, in the artifact that ships.
+  # the two permissions, `unreferenced` because it was planted -- under the login account's
+  # home, in the artifact that ships.
   # A probe that only prints a count is one a reader can skim past at zero.
   probe=$(sudo osqueryi --json < dist/discovery-linux.sql 2>/dev/null \
     | python3 -c "
@@ -261,7 +262,7 @@ import json, sys
 home = sys.argv[1]
 rows = [r for r in json.load(sys.stdin) if r['kind'] == 'ext' and r['loc'].startswith(home)]
 fix = [r for r in rows if r['extra'] == 'chrome' and r['ver'] == '1.0.0'
-       and 'tabs' in r['perms'] and '<all_urls>' in r['perms']]
+       and 'tabs' in r['perms'] and '<all_urls>,unreferenced' in r['perms']]
 print(len(rows), len(fix))" "$HOME")
   log "ext rows under $HOME in the shipped artifact: ${probe%% *}, of which the fixture: ${probe##* }"
   if [ "${probe##* }" -ge 1 ] 2>/dev/null; then

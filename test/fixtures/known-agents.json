@@ -149,7 +149,7 @@
     "ver": "1.0.85",
     "loc": "/Users/x/Library/Application Support/Google/Chrome/Profile 10",
     "extra": "chrome",
-    "perms": "sidePanel,storage,activeTab,scripting,debugger,tabs,nativeMessaging,<all_urls>"
+    "perms": "sidePanel,storage,activeTab,scripting,debugger,tabs,nativeMessaging,<all_urls>,sideloaded:905a610cccf84a7af6557f0ce2e6a08e795831765e1826764da15b597b0193bf"
   },
   {
     "kind": "ext",
@@ -165,7 +165,7 @@
     "ver": "9.9.9",
     "loc": "/Users/x/Library/Application Support/Google/Chrome/Profile 1",
     "extra": "chrome",
-    "perms": "storage"
+    "perms": "storage,unreferenced"
   },
   {
     "kind": "npm",

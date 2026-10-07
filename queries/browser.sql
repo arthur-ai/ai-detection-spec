@@ -65,13 +65,28 @@
 --     + all_urls flag below .......  2.29 KB   - 38x cheaper, same signal
 --
 -- So the flag is computed HERE, in SQL, and only its result travels. 30 bytes for the
--- whole fleet-visible signal.
+-- whole fleet-visible signal. The provenance tokens below were measured the same way on
+-- 2026-10-07, on a Mac with 90 rows, 46 of them unreferenced: 2.21 KB before, 2.30 after.
 --
 -- This is a substring match over the raw manifest, so it is deliberately imprecise: it
 -- cannot distinguish host_permissions from optional_host_permissions, and an extension
 -- merely mentioning the string in a description would match. That is the correct bias
 -- under D17 - the endpoint over-selects, the collector classifies. A false positive
 -- costs one triage row, a false negative hides an extension reading every page.
+-- PROVENANCE, appended after the flag above so every existing substring still holds. One
+-- CASE, so the two tokens cannot both appear:
+--
+--   unreferenced         on disk and absent from the profile's Preferences, so Chrome
+--                        will not load it: a leftover, or a directory planted by hand
+--   sideloaded:<sha256>  registered, and not from the Web Store. The hash is osquery's
+--                        manifest_hash, carried only here because only here does it
+--                        identify something the id cannot: a sideloaded build has no key
+--
+-- `!= 'true'` and not `= 'false'`: osquery passes the stored string through, so a store
+-- install reads 'true', an unpacked one 'false', and a missing setting ''. A store row
+-- carries neither token. `from_webstore` must stay lowercase: lint splits the column
+-- list on the first upper-case FROM.
+--
 -- ALIASED, and every branch's first arm must be. A UNION ALL takes its column NAMES from
 -- the first arm only, so an unaliased first arm inherits whatever precedes it -- which is
 -- whatever sorts before it in a composed artifact, and NOTHING standalone. Run
@@ -82,7 +97,12 @@
 -- checked the column COUNT and passed it. Both now check the names.
 SELECT 'ext' AS kind, identifier AS id, version AS ver, profile_path AS loc,
        browser_type AS extra,
-       permissions || CASE WHEN manifest_json LIKE '%<all_urls>%' THEN ',<all_urls>' ELSE '' END
+       permissions
+         || CASE WHEN manifest_json LIKE '%<all_urls>%' THEN ',<all_urls>' ELSE '' END
+         || CASE WHEN referenced = 0 THEN ',unreferenced'
+                 WHEN from_webstore != 'true'
+                   THEN ',sideloaded:' || IFNULL(manifest_hash, '')
+                 ELSE '' END
          AS perms
   FROM (SELECT uid FROM users
         UNION

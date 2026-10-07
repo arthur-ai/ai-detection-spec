@@ -27,7 +27,12 @@ WITH ev AS (
 -- from browser.sql
 SELECT 'ext' AS kind, identifier AS id, version AS ver, profile_path AS loc,
        browser_type AS extra,
-       permissions || CASE WHEN manifest_json LIKE '%<all_urls>%' THEN ',<all_urls>' ELSE '' END
+       permissions
+         || CASE WHEN manifest_json LIKE '%<all_urls>%' THEN ',<all_urls>' ELSE '' END
+         || CASE WHEN referenced = 0 THEN ',unreferenced'
+                 WHEN from_webstore != 'true'
+                   THEN ',sideloaded:' || IFNULL(manifest_hash, '')
+                 ELSE '' END
          AS perms
   FROM (SELECT uid FROM users
         UNION
