@@ -18,12 +18,13 @@
       "claude-in-chrome"
     ]
   },
-  "why": "Verifies the ext route end to end: a real signed artifact, a real profile, and an identifier osquery derives from the manifest key rather than one we assert. The same method works on any Chromium browser -- osquery's chrome_extensions spans 11 browser_types and a Chromium extension id is key-derived, so it is identical in Brave, Edge and Chromium.",
+  "why": "Verifies the ext route end to end: a real signed artifact, a real profile, and an identifier osquery derives from the manifest key rather than one we assert. The same method works on any Chromium browser -- osquery's chrome_extensions spans 11 browser_types and a Chromium extension id is key-derived, so it is identical in Brave, Edge and Chromium. The extension is then registered by Chrome for Testing's --load-extension, not from the store, so the row carries sideloaded:<sha256 of manifest.json>. The hash changes with every release, so the assertion pins the token beside <all_urls>, which the provenance CASE cannot produce for an unreferenced row.",
   "must_contain": [
     "fcoeoabgfenejglbffodgkkbkcdhcgfn",
-    "nativeMessaging"
+    "nativeMessaging",
+    "<all_urls>,sideloaded:"
   ],
   "known_gaps": [
-    "The CRX is unpacked into a real profile rather than installed by Chrome, so the identifier is genuine but the browser's install, update and enterprise-policy paths are all untested. Whether ExtensionInstallForcelist needs an MDM-delivered profile on macOS is UNVERIFIED."
+    "Chrome for Testing registers the extension, because branded Chrome 137 and later refuse --load-extension. Branded Chrome's own install, update and ExtensionInstallForcelist paths are untested, and whether the policy needs an MDM-delivered profile on macOS is UNVERIFIED."
   ]
 }

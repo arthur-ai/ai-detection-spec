@@ -16,8 +16,8 @@ Every query branch emits **six columns, in this order**:
 | 2 | `id` | The identifier: bundle id, package name, port, path |
 | 3 | `ver` | Version if statically readable, else `''` |
 | 4 | `loc` | Where it lives on disk |
-| 5 | `extra` | Kind-specific: `browser_type` for `ext`, vendor for `jbplugin`, process name for `port` |
-| 6 | `perms` | Declared permissions, `ext` only |
+| 5 | `extra` | Kind-specific, one value: `browser_type` for `ext`, the vendor for `jbplugin`, the bind address for `port`. Each query's header says what its kind carries |
+| 6 | `perms` | A declared capability. For `ext`, the permissions, then `<all_urls>`, then `unreferenced` (on disk, absent from Preferences, so never loaded) or `sideloaded:<sha256 of manifest.json>` (registered, not from the Web Store). `privileged` for `container`. Otherwise `''` |
 
 Everything composes into one `UNION ALL`, so a branch emitting five columns breaks the whole
 query. `test/lint.sh` catches it in about ten seconds. Run it first.
