@@ -1,6 +1,6 @@
 -- name: packages
--- description: Every npm global package
--- tables: npm_packages
+-- description: Every npm global package, and every bun global
+-- tables: users, file, npm_packages
 -- min-osquery: 5.10.0
 -- cost: fast
 -- platform: posix
@@ -30,3 +30,23 @@
 SELECT 'npm' AS kind, name AS id, version AS ver, path AS loc, '' AS extra, '' AS perms
   FROM npm_packages
   WHERE path NOT LIKE '%/node_modules/%/node_modules/%'
+UNION ALL
+-- BUN GLOBALS. npm_packages searches a fixed list of prefixes -- npm, nvm, asdf, fnm,
+-- mise, volta -- and never ~/.bun, so `bun add -g` was invisible (npm_packages.cpp at
+-- 5.23.1). Its `directory` constraint replaces that list and means "the directory that
+-- holds node_modules", and the join pushes it down once per home. The home list is
+-- queries/vscode.sql's, for the reason given there, and a directory row from `file` ends
+-- in '/', so it is trimmed before the suffix goes on.
+--
+-- `extra` IS 'bun' because bun HOISTS: a global's dependencies sit flat beside it in the
+-- one node_modules, so the structural predicate cannot drop them, and every one is a row.
+-- A reader of unmatched rows needs to know why forty packages arrived with one global.
+--
+-- Not covered: a global directory moved by BUN_INSTALL_GLOBAL_DIR or bunfig's globalDir.
+SELECT 'npm', np.name, np.version, np.path, 'bun', ''
+  FROM (SELECT directory AS home FROM users
+        UNION
+        SELECT rtrim(path, '/') FROM file
+         WHERE path LIKE '/home/%/' OR path = '/root/' OR path LIKE '/Users/%/') h
+       CROSS JOIN npm_packages np ON np.directory = h.home || '/.bun/install/global'
+  WHERE np.path NOT LIKE '%/node_modules/%/node_modules/%'

@@ -48,7 +48,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | **Continue** | **`continue.continue`**, **`continue-intellij-extension`** | 78-linux-vscode, 80-linux-jetbrains |
 | **GitHub Copilot CLI** | **`copilot-cli`**, **`@github/copilot`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents |
 | **Cursor** | **`com.todesktop.230313mzl4w4u92`**, **`cursor`**, **`cursor`**, **`cursor`**, **`cursor.desktop`** | 10-desktop-apps, 73-linux-deb, 77-linux-rpm, 90-demo-fleet |
-| **Gemini CLI** | **`gemini-cli`**, **`@google/gemini-cli`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents |
+| **Gemini CLI** | **`gemini-cli`**, **`@google/gemini-cli`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 81-linux-bun |
 | **goose** | **`ghcr.io/block/goose`**, **`https://github.com/block/goose`** | 79-linux-image |
 | **Kiro** | **`dev.kiro.desktop`**, **`kiro`** | 10-desktop-apps |
 | **OpenHands** | **`ghcr.io/openhands/openhands`**, **`ghcr.io/all-hands-ai/openhands`**, **`https://github.com/OpenHands/OpenHands`** | 79-linux-image |

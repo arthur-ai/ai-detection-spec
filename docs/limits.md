@@ -75,5 +75,8 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 79-linux-image | swe-agent's `latest` tag was built 2024-12-07, twenty-one months before this scenario was written. The pull proves the registry still serves it; it does not prove anyone still publishes there. |
 | 80-linux-jetbrains | The Marketplace zip is unpacked rather than installed by an IDE, so the IDE's own install, update and disable paths are untested, and so is the product directory name an installed IDE writes. |
 | 80-linux-jetbrains | The macOS directory, ~/Library/Application Support/JetBrains/<Product>/plugins, is not exercised. Only the Linux layout has been read. |
+| 81-linux-bun | bun blocks the lifecycle scripts of untrusted packages, and gemini-cli has none. Whether a global that needs its postinstall is still reported after bun skipped it is not proved here. |
+| 81-linux-bun | A global directory moved by BUN_INSTALL_GLOBAL_DIR or bunfig's globalDir is not searched. |
+| 81-linux-bun | Packages run through bunx and never installed land in bun's cache, the same gap npx has, noted in queries/filesystem.sql. |
 
 `11-perplexity-desktop`, `50-autonomous`, `57-clawdbot-era` need macOS 15 or newer, so CI skips them on older runners rather than failing them. Each scenario's `requires.json` carries the reason.
