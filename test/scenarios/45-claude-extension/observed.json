@@ -40,8 +40,39 @@
       "value": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
       "agent_version": "1.0.99",
       "os": "26.6.2",
-      "arch": "arm64",
-      "run": "37583703186"
+      "arch": "arm64"
+    },
+    {
+      "agent": "harpa",
+      "route": "extension_ids",
+      "value": "eanggfilgoajaocelnaflolkadkeghjp",
+      "agent_version": "14.4.0",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "merlin",
+      "route": "extension_ids",
+      "value": "camppjleccjaphfdbohjdohecfnoikec",
+      "agent_version": "8.3.0",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "monica",
+      "route": "extension_ids",
+      "value": "ofpnmcalabcbjgholdjcjblkibolbppb",
+      "agent_version": "9.0.22",
+      "os": "26.6.2",
+      "arch": "arm64"
+    },
+    {
+      "agent": "sider",
+      "route": "extension_ids",
+      "value": "difoiogjjojoaoomphldepapgpbgkhkb",
+      "agent_version": "5.34.1",
+      "os": "26.6.2",
+      "arch": "arm64"
     }
   ]
 }

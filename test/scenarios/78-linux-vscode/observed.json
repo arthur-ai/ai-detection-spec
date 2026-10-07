@@ -53,7 +53,7 @@
       "agent": "cline",
       "route": "vscode_extensions",
       "value": "saoudrizwan.claude-dev",
-      "agent_version": "4.1.17",
+      "agent_version": "4.1.23",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64"

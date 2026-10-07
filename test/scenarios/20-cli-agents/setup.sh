@@ -31,7 +31,8 @@ npm install -g @openai/codex || echo "WARN: codex install failed"
 # `|| echo WARN` so a network failure does not abort the whole scenario. It still
 # FAILS, in the assertion, where the reason is visible: a missing must_find names the
 # agent, while an aborted setup names nothing.
-for pkg in @google/gemini-cli @github/copilot cline; do
+for pkg in @google/gemini-cli @github/copilot cline \
+           opencode-ai @continuedev/cli @kilocode/cli @augmentcode/auggie; do
   npm install -g "$pkg" || echo "WARN: $pkg install failed"
 done
 

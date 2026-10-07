@@ -1,0 +1,44 @@
+{
+  "description": "Agents that ship as JetBrains plugins, beside the two 80-linux-jetbrains proves.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "deb+rpm": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=0",
+    "jbplugin": ">=4",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "port": ">=0",
+    "proc": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "copilot-cli",
+      "gemini-code-assist",
+      "amazon-q",
+      "cody"
+    ],
+    "forbid": [
+      "cline",
+      "continue",
+      "gemini-cli"
+    ]
+  },
+  "why": "The plugin directory is the only witness on this host for each agent -- no npm Copilot, no VS Code, no Gemini CLI -- so removing a value turns must_find red. gemini-cli is forbidden because Gemini Code Assist's directory is just `gemini`, and a separate Google product must not be read from it. cline and continue are forbidden because 80 installs those into the same kind of directory and none is installed here.",
+  "must_contain": [
+    "/.local/share/JetBrains/IdeaIC2025.2/github-copilot-intellij",
+    "/.local/share/JetBrains/IdeaIC2025.2/gemini",
+    "/.local/share/JetBrains/IdeaIC2025.2/plugin-amazonq",
+    "/.local/share/JetBrains/IdeaIC2025.2/Sourcegraph"
+  ],
+  "known_gaps": [
+    "Unpacked from the Marketplace zip, not installed by an IDE, as in 80: the IDE's own install and update paths are untested.",
+    "Amazon Q's plugin needs AWS Core (aws.toolkit.core) to load in an IDE. It is not installed, because only the directory is under test."
+  ]
+}

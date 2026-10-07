@@ -47,6 +47,6 @@
   ],
   "known_gaps": [
     "Paid or account-gated in several cases. The install is unattended and the sign-in is not, so nothing exercises behaviour that only appears once a user is signed in.",
-    "Kiro CLI is not installed here. It is a separate product whose app ships bundle id com.amazon.codewhisperer under cask `kiro-cli` (old tokens amazon-q, codewhisperer), and it is uncatalogued, so this run says nothing about it. Its dmg is 1.05GB, which is why."
+    "Kiro CLI is not installed here, though it shares a vendor with kiro: it is a different product, and 21-cli-agents-homebrew installs its cask beside the other CLIs."
   ]
 }

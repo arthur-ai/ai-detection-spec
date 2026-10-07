@@ -14,9 +14,14 @@
 # Tokens verified against the Homebrew API before being written here -- two are casks and
 # three are formulae, which is not guessable from the product name:
 #
-#     codex        cask        copilot-cli  cask
-#     aider        formula     gemini-cli   formula
-#     hermes-agent formula
+#     codex        cask        copilot-cli      cask
+#     aider        formula     gemini-cli       formula
+#     hermes-agent formula     opencode         formula
+#     cursor-cli   cask        block-goose-cli  formula
+#     kiro-cli     cask, with an app whose bundle id is com.amazon.codewhisperer
+#
+# cursor-cli's binary is cursor-agent and block-goose-cli's is goose, so none of the four
+# collides with a command already installed here.
 #
 # hermes-agent is the formula token, and it is NOT the command it installs: the formula's
 # install block writes three commands -- hermes, hermes-agent, hermes-acp -- while
@@ -28,10 +33,10 @@ need_brew
 
 # WARN rather than exit: a download failing is a network fact, and the assertion is where a
 # missing agent should be reported, because it names WHICH one.
-for f in aider gemini-cli hermes-agent; do
+for f in aider gemini-cli hermes-agent opencode block-goose-cli; do
   brew install "$f" || echo "WARN: formula $f failed"
 done
-for c in codex copilot-cli; do
+for c in codex copilot-cli cursor-cli kiro-cli; do
   brew install --cask "$c" || echo "WARN: cask $c failed"
 done
 brew list --versions 2>/dev/null | sed 's/^/  /'

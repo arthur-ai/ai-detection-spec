@@ -1,5 +1,5 @@
 #!/bin/zsh
-# 45-claude-extension -- the Claude browser extension, matched by id.
+# 45-claude-extension -- the browser-agent extensions, matched by id. Claude's came first.
 #
 # STILL OPEN: two further ids circulate for Anthropic-related extensions and neither is in
 # the catalog. Nothing here is blocked on them -- the method below needs only a Web Store
@@ -46,7 +46,15 @@
 set -u
 . "$(cd "$(dirname "$0")/../../lib" && pwd)/guest.sh"
 
-EXT_ID=fcoeoabgfenejglbffodgkkbkcdhcgfn
+# EVERY BROWSER AGENT THE CATALOG MATCHES BY ID, not only Claude's -- the name predates the
+# list, and it is kept because eleven files and this scenario's observed.json key on it.
+#   fcoeoabgfenejglbffodgkkbkcdhcgfn  Claude
+#   eanggfilgoajaocelnaflolkadkeghjp  HARPA AI
+#   ofpnmcalabcbjgholdjcjblkibolbppb  Monica
+#   difoiogjjojoaoomphldepapgpbgkhkb  Sider
+#   camppjleccjaphfdbohjdohecfnoikec  Merlin
+EXT_IDS=(fcoeoabgfenejglbffodgkkbkcdhcgfn eanggfilgoajaocelnaflolkadkeghjp ofpnmcalabcbjgholdjcjblkibolbppb
+         difoiogjjojoaoomphldepapgpbgkhkb camppjleccjaphfdbohjdohecfnoikec)
 UDD="$HOME/Library/Application Support/Google/Chrome"
 
 # python3 below, and /usr/bin/python3 is a stub until the Command Line Tools are installed.
@@ -76,55 +84,104 @@ launch() {
   sleep 3
 }
 
-URL="https://clients2.google.com/service/update2/crx?response=redirect&prodversion=155.0&acceptformat=crx3&x=id%3D${EXT_ID}%26uc"
-curl --retry 3 -sL "$URL" -o /tmp/ext.crx || true
-# A network failure here is the lab, not the query. Exit 3 = SKIP, per run.sh.
-[ -s /tmp/ext.crx ] || { echo "Web Store unreachable; cannot fetch the signed artifact."; exit 3; }
+# No answer for ANY id is the lab, not the query: exit 3 = SKIP, per run.sh. No answer for
+# SOME of them is an extension the Web Store stopped serving, and that must stay red -- the
+# agent's must_find fails and names it.
+DIRS=()
+for EXT_ID in $EXT_IDS; do
+  URL="https://clients2.google.com/service/update2/crx?response=redirect&prodversion=155.0&acceptformat=crx3&x=id%3D${EXT_ID}%26uc"
+  curl --retry 3 -sL "$URL" -o "/tmp/$EXT_ID.crx" || true
+  [ -s "/tmp/$EXT_ID.crx" ] || { echo "WARN: the Web Store returned nothing for $EXT_ID"; continue; }
 
-VER=$(python3 - <<'PY'
-import struct, zipfile, io, json, pathlib
-raw = pathlib.Path("/tmp/ext.crx").read_bytes()
-assert raw[:4] == b"Cr24"
+  # THE KEY IS WRITTEN THE WAY CHROME WRITES IT. Without a manifest `key` osquery reports
+  # an EMPTY identifier. Claude ships one; HARPA and Monica do not, because Chrome's own
+  # unpacker copies the publisher key out of the CRX header into the installed manifest.
+  # This does the same: the developer proof is the one whose SHA-256 begins with the
+  # header's signed crx_id, and the id it derives must be the one requested.
+  VER=$(python3 - "$EXT_ID" <<'PY'
+import base64, hashlib, io, json, os, struct, sys, zipfile
+eid = sys.argv[1]
+raw = open("/tmp/%s.crx" % eid, "rb").read()
+assert raw[:4] == b"Cr24", "not a CRX3"
 hlen = struct.unpack("<II", raw[4:12])[1]
+
+def fields(buf):
+    # Length-delimited protobuf fields, which is all of a CRX3 header that matters here.
+    i = 0
+    while i < len(buf):
+        tag = shift = 0
+        while True:
+            b = buf[i]; i += 1; tag |= (b & 0x7F) << shift; shift += 7
+            if b < 0x80: break
+        if tag & 7 == 0:
+            while buf[i] >= 0x80: i += 1
+            i += 1
+            continue
+        n = shift = 0
+        while True:
+            b = buf[i]; i += 1; n |= (b & 0x7F) << shift; shift += 7
+            if b < 0x80: break
+        yield tag >> 3, buf[i:i + n]
+        i += n
+
+proofs, crx_id = [], b""
+for num, val in fields(raw[12:12 + hlen]):
+    if num in (2, 3):                 # sha256_with_rsa, sha256_with_ecdsa
+        proofs += [v for n, v in fields(val) if n == 1]
+    elif num == 10000:                # signed_header_data
+        crx_id = next((v for n, v in fields(val) if n == 1), b"")
 z = zipfile.ZipFile(io.BytesIO(raw[12 + hlen:]))
-m = json.loads(z.read("manifest.json"))
-# Unpack under the version Chrome would use, and assert the key is present -- without it
-# osquery reports an empty identifier and this scenario would prove nothing.
-assert m.get("key"), "manifest has no key; identifier would come back empty"
-import os
+m = json.loads(z.read("manifest.json").decode("utf-8-sig"))
+injected = not m.get("key")
+if injected:
+    dev = [k for k in proofs if hashlib.sha256(k).digest()[:16] == crx_id]
+    assert dev, "no developer key in the CRX header"
+    m["key"] = base64.b64encode(dev[0]).decode()
+derived = "".join(chr(97 + int(c, 16))
+                  for c in hashlib.sha256(base64.b64decode(m["key"])).hexdigest()[:32])
+assert derived == eid, "key derives %s, not %s" % (derived, eid)
 dest = os.path.expanduser("~/Library/Application Support/Google/Chrome/Default/Extensions/"
-                          "fcoeoabgfenejglbffodgkkbkcdhcgfn/%s_0" % m["version"])
+                          "%s/%s_0" % (eid, m["version"]))
 os.makedirs(dest, exist_ok=True)
 z.extractall(dest)
+if injected:
+    with open(os.path.join(dest, "manifest.json"), "w") as f:
+        json.dump(m, f, indent=2)
 print(m["version"])
 PY
-) || { echo "FAIL: could not unpack the CRX" >&2; exit 1; }
-EXT_DIR="$UDD/Default/Extensions/$EXT_ID/${VER}_0"
-echo "unpacked $EXT_ID version $VER with its manifest key"
-echo "manifest sha256, which osquery reports as manifest_hash: $(shasum -a 256 "$EXT_DIR/manifest.json" | cut -c1-64)"
+) || { echo "FAIL: could not unpack the CRX for $EXT_ID" >&2; exit 1; }
+  DIRS+=("$UDD/Default/Extensions/$EXT_ID/${VER}_0")
+  echo "unpacked $EXT_ID version $VER; manifest sha256, which osquery reports as manifest_hash: $(shasum -a 256 "${DIRS[-1]}/manifest.json" | cut -c1-64)"
+done
+[ ${#DIRS} -gt 0 ] || { echo "Web Store unreachable; cannot fetch any signed artifact."; exit 3; }
 
-launch --load-extension="$EXT_DIR"
+launch --load-extension="${(j:,:)DIRS}"
 [ -f "$UDD/Local State" ] || { echo "FAIL: chrome never wrote Local State" >&2; exit 1; }
 [ -f "$UDD/Default/Preferences" ] || { echo "FAIL: no Default/Preferences" >&2; exit 1; }
 echo "profile written: Local State and Default/Preferences both present"
 # THE THING UNDER TEST, so a failure here is red and not a skip: if Chrome did not register
-# the directory, the row reads `unreferenced` and the sideloaded path proves nothing.
-python3 - "$UDD" "$EXT_ID" "$VER" <<'PY'
+# a directory, its row reads `unreferenced` and the sideloaded path proves nothing.
+python3 - "$UDD" $DIRS <<'PY'
 import json, os, sys
-udd, eid, ver = sys.argv[1:]
+udd, dirs = sys.argv[1], sys.argv[2:]
+settings = {}
 for f in ("Secure Preferences", "Preferences"):
     p = os.path.join(udd, "Default", f)
-    if not os.path.exists(p):
-        continue
-    s = json.load(open(p)).get("extensions", {}).get("settings", {}).get(eid)
-    if s:
-        print(f"settings entry in {f}: path={s.get('path')} location={s.get('location')} "
-              f"from_webstore={s.get('from_webstore')} keys={sorted(s)}")
-        sys.exit(0 if str(s.get("path", "")).endswith(f"{eid}/{ver}_0") else 1)
-sys.exit(1)
+    if os.path.exists(p):
+        for eid, s in json.load(open(p)).get("extensions", {}).get("settings", {}).items():
+            settings.setdefault(eid, (f, s))
+bad = 0
+for d in dirs:
+    eid, ver = d.split("/")[-2:]
+    f, s = settings.get(eid, (None, {}))
+    ok = str(s.get("path", "")).endswith(f"{eid}/{ver}")
+    print(f"{eid}: settings entry in {f}: path={s.get('path')} location={s.get('location')} "
+          f"from_webstore={s.get('from_webstore')}{'' if ok else '  <-- NOT REGISTERED'}")
+    bad += not ok
+sys.exit(1 if bad else 0)
 PY
 if [ $? != 0 ]; then
-  echo "FAIL: Chrome did not register the extension. Its log says:" >&2
+  echo "FAIL: Chrome did not register every extension. Its log says:" >&2
   grep -i 'extension\|load' /tmp/chrome.log | tail -15 | sed 's/^/      /' >&2
   exit 1
 fi

@@ -124,6 +124,7 @@ jobs:
           - 10-desktop-apps
           - 11-perplexity-desktop
           - 12-chatgpt-pre-rename
+          - 13-desktop-apps-more
           - 20-cli-agents
           - 21-cli-agents-homebrew
           - 25-python-agents
@@ -288,6 +289,9 @@ jobs:
           - 81-linux-bun
           - 82-linux-running
           - 83-linux-claude-running
+          - 84-linux-installers
+          - 85-linux-vscode-agents
+          - 86-linux-jetbrains-agents
     steps:
       - uses: actions/checkout@v4
       - name: Install osquery
@@ -414,6 +418,9 @@ jobs:
           - 81-linux-bun
           - 82-linux-running
           - 83-linux-claude-running
+          - 84-linux-installers
+          - 85-linux-vscode-agents
+          - 86-linux-jetbrains-agents
         # A label per image, because an artifact name may not contain `:` or `/` and
         # upload-artifact@v4 fails outright on one that does.
         include:

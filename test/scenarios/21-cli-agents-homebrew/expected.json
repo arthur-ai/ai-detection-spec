@@ -21,7 +21,14 @@
       "codex-cli",
       "copilot-cli",
       "claude-code",
-      "hermes"
+      "hermes",
+      "opencode",
+      "goose",
+      "cursor",
+      "kiro-cli"
+    ],
+    "forbid": [
+      "kiro"
     ]
   },
   "why": "These four homebrew tokens read DID NOT APPEAR: 20-cli-agents and 25-python-agents install the same agents from npm and uv, so the Homebrew identifiers were catalogued and never produced by any run. A second route needs a second machine, because both routes claim the same binary name. Claude Code is here for the same reason in mirror image: 20-cli-agents installs it from the native installer, which leaves a shim and no npm row. Hermes Agent joins them for the same reason and with a wrinkle of its own: the formula token is `hermes-agent` while the command it installs is `hermes`, so nothing but a real install settles which of the two a homebrew_packages row renders.",
@@ -29,6 +36,9 @@
     "aider",
     "gemini-cli",
     "@anthropic-ai/claude-code",
-    "hermes-agent"
+    "hermes-agent",
+    "block-goose-cli",
+    "cursor-cli",
+    "com.amazon.codewhisperer"
   ]
 }

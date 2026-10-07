@@ -1,0 +1,85 @@
+{
+  "scenario": "84-linux-installers",
+  "identifiers": [
+    {
+      "agent": "cursor",
+      "route": "binaries",
+      "value": "~/.local/bin/cursor-agent",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "cursor",
+      "route": "binaries",
+      "value": "~/.local/bin/cursor-agent",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "goose",
+      "route": "binaries",
+      "value": "~/.local/bin/goose",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "goose",
+      "route": "binaries",
+      "value": "~/.local/bin/goose",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "grok",
+      "route": "state_dirs",
+      "value": "~/.grok",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "grok",
+      "route": "state_dirs",
+      "value": "~/.grok",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "kiro-cli",
+      "route": "binaries",
+      "value": "~/.local/bin/kiro-cli",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "kiro-cli",
+      "route": "binaries",
+      "value": "~/.local/bin/kiro-cli",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "opencode",
+      "route": "state_dirs",
+      "value": "~/.opencode",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "opencode",
+      "route": "state_dirs",
+      "value": "~/.opencode",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64"
+    }
+  ]
+}
