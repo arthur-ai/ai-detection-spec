@@ -47,7 +47,7 @@ set -u
 . "$(cd "$(dirname "$0")/../../lib" && pwd)/guest.sh"
 
 # EVERY BROWSER AGENT THE CATALOG MATCHES BY ID, not only Claude's -- the name predates the
-# list, and it is kept because eleven files and this scenario's observed.json key on it.
+# list, and it is kept because the workflow, the docs and this scenario's observed.json key on it.
 #   fcoeoabgfenejglbffodgkkbkcdhcgfn  Claude
 #   eanggfilgoajaocelnaflolkadkeghjp  HARPA AI
 #   ofpnmcalabcbjgholdjcjblkibolbppb  Monica

@@ -1,7 +1,7 @@
 #!/bin/bash
-# FOUR VENDORS' AGENTS AS JETBRAINS PLUGINS, unpacked the way 80-linux-jetbrains unpacks
-# Continue and Cline. Kept apart from 80, whose downloads are already about 620MB, so a
-# Marketplace failure here names these four rather than all six.
+# AGENTS AS JETBRAINS PLUGINS, unpacked the way 80-linux-jetbrains unpacks Continue and
+# Cline. Kept apart from 80, whose downloads are already about 620MB, so a Marketplace
+# failure here names these rather than 80's as well.
 #
 #   17718  GitHub Copilot       carried on copilot-cli. A Marketplace install, unlike the
 #                               VS Code blind spot, where the editor bundles Copilot

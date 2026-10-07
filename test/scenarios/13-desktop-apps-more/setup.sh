@@ -1,8 +1,7 @@
 #!/bin/zsh
-# More desktop agents, split from 10-desktop-apps BY BYTES. These four casks add about 1.7GB
-# -- Dia's zip alone is 840MB, measured 2026-10-07 -- and 10 already carries nine. A
-# separate scenario is a separate CI job, so the downloads run in parallel and a failure
-# names this list rather than all thirteen.
+# More desktop agents, split from 10-desktop-apps BY BYTES: Dia's zip alone is 840MB,
+# measured 2026-10-07. A separate scenario is a separate CI job, so the downloads run in
+# parallel and a failure names this list rather than 10's as well.
 #
 # The floor rule in 10's header applies here too: every cask below must install on the
 # oldest macOS in the scenarios.yml matrix. Read off the Homebrew API on 2026-10-07:
