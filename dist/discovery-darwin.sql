@@ -162,6 +162,36 @@ SELECT 'port' AS kind, CAST(lp.port AS TEXT) AS id, '' AS ver, p.path AS loc,
 
 UNION ALL
 
+-- from running-darwin.sql
+SELECT 'proc' AS kind, pl.value AS id, '' AS ver, x.app AS loc, '' AS extra, '' AS perms
+  FROM (SELECT DISTINCT substr(path, 1, instr(path, '.app/') + 3) AS app
+          FROM processes WHERE path LIKE '%.app/Contents/MacOS/%') x
+       CROSS JOIN plist pl ON pl.path = x.app || '/Contents/Info.plist'
+  WHERE pl.key = 'CFBundleIdentifier'
+
+UNION ALL
+
+-- from running.sql
+SELECT 'proc' AS kind,
+       regex_match(exe || ' ' || cmdline,
+                   'node_modules/((?:@[A-Za-z0-9][A-Za-z0-9._-]*/)?[A-Za-z0-9][A-Za-z0-9._-]*)', 1) AS id,
+       '' AS ver, exe AS loc, '' AS extra, '' AS perms
+  FROM (SELECT cmdline,
+               CASE WHEN path != '' THEN path
+                    ELSE substr(cmdline, 1, instr(cmdline || ' ', ' ') - 1) END AS exe
+          FROM processes) p
+  WHERE (exe LIKE '%/node_modules/%'
+         OR ((exe LIKE '%/node' OR exe LIKE '%/nodejs' OR exe LIKE '%/bun' OR exe LIKE '%/deno'
+              OR exe IN ('node', 'nodejs', 'bun', 'deno'))
+             AND cmdline LIKE '%node_modules/%'))
+    AND regex_match(exe || ' ' || cmdline,
+                    'node_modules/((?:@[A-Za-z0-9][A-Za-z0-9._-]*/)?[A-Za-z0-9][A-Za-z0-9._-]*)', 1) IS NOT NULL
+  -- One row per package and executable, however many workers it runs. GROUP BY rather than
+  -- DISTINCT, because lint and tools/build.py find a branch's kind as `SELECT '<kind>'`.
+  GROUP BY id, loc
+
+UNION ALL
+
 -- from runtime.sql
 SELECT 'daemon' AS kind, label AS id, '' AS ver, path AS loc, '' AS extra, '' AS perms
   FROM launchd

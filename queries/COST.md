@@ -194,6 +194,10 @@ IDE, it took 0.39s for 0 rows, and the composed artifact took 1.41s for 801.
 2026-10-07, one `bun add -g @google/gemini-cli` produced 6 rows: bun hoists a global's
 dependencies beside it, and every one is a row.
 
+`running.sql` and `running-darwin.sql` arrived after this table too. On the same loaded Mac
+on 2026-10-07 they took 0.25s for 0 rows and 0.24s for 62, one row per running app
+bundle, and the composed artifact took 1.51s for 865.
+
 ## Deliberately not collected
 
 `python_packages`: 15.6s per scan, does not honour WHERE push-down, and contributed zero

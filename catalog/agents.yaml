@@ -9,10 +9,10 @@
 #
 # WHICH ROUTES ARE PLATFORM-SPECIFIC MATTERS WHEN YOU ADD AN AGENT:
 #
-#   darwin only   bundle_ids, homebrew, launchd_prefixes
+#   darwin only   bundle_ids, homebrew, launchd_prefixes, running_apps
 #   linux only    deb_packages, rpm_packages, desktop_ids, systemd_prefixes
 #   both          npm, pypi, extension_ids, native_messaging_hosts, vscode_extensions,
-#                 jetbrains_plugins, images, state_dirs, binaries, model_stores
+#                 jetbrains_plugins, images, state_dirs, binaries, model_stores, running_npm
 #
 # `platforms:` on each agent is REQUIRED and is checked against those: declaring
 # `deb_packages` without `linux` is a copy-paste error, and claiming a platform no route
@@ -71,8 +71,9 @@
 # in any run.
 #
 # What a port CAN tell you is that an agent is RUNNING rather than merely installed. That is
-# liveness, not identity, and if it is ever wanted it should be built as that and named as
-# that.
+# liveness, not identity, and it is now built as that and named as that: kind `proc`, from
+# queries/running.sql and queries/running-darwin.sql, through routes that read the
+# `bundle_ids` and `npm` values below. bin/classify marks a finding with one `running`.
 
 # AN OLD IDENTIFIER IS KEPT, AND KEEPING IT COSTS EVIDENCE. Machines on an earlier release
 # still report it, so removing one blinds the fleet to those machines -- but "an earlier

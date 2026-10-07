@@ -59,3 +59,7 @@ for i in $(seq 1 20); do
 done
 lsof -nP -iTCP:18789 -sTCP:LISTEN >/dev/null 2>&1 \
   || { echo "  no listener on 18789; the gateway said:"; tail -5 /tmp/gw.log | sed 's/^/    /'; }
+# What queries/running.sql reads: the gateway's workers run node on a script under
+# node_modules/openclaw. Printed so a missing `proc` row says which half was missing.
+echo "--- the gateway's processes:"
+pgrep -fl 'node_modules/openclaw/' | sed 's/^/    /' || echo "    none running"

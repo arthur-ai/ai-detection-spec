@@ -286,6 +286,7 @@ jobs:
           - 79-linux-image
           - 80-linux-jetbrains
           - 81-linux-bun
+          - 82-linux-running
     steps:
       - uses: actions/checkout@v4
       - name: Install osquery
@@ -410,6 +411,7 @@ jobs:
           - 79-linux-image
           - 80-linux-jetbrains
           - 81-linux-bun
+          - 82-linux-running
         # A label per image, because an artifact name may not contain `:` or `/` and
         # upload-artifact@v4 fails outright on one that does.
         include:

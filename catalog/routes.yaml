@@ -104,6 +104,17 @@ routes:
     match: prefix
     table: launchd
     min_osquery: 5.10.0
+  running_apps:
+    # LIVENESS, built as that and named as that, which is what the catalog said it would
+    # take when `ports` was retired. A `proc` row says the agent is RUNNING. The value is the
+    # bundle id read from the running bundle's own Info.plist, so this reads `bundle_ids`
+    # and a running app needs no second signature.
+    platform: darwin
+    kind: proc
+    match: exact
+    table: processes
+    min_osquery: 5.10.0
+    values_from: bundle_ids
 
   # --- portable ----------------------------------------------------------------------
   npm:
@@ -112,6 +123,15 @@ routes:
     match: exact
     table: npm_packages
     min_osquery: 5.10.0
+  running_npm:
+    # A process running out of a package, or a node, bun or deno process whose script sits
+    # in one. queries/running.sql extracts the package name and never ships the cmdline.
+    platform: posix
+    kind: proc
+    match: exact
+    table: processes
+    min_osquery: 5.10.0
+    values_from: npm
   pypi:
     platform: posix
     kind: file

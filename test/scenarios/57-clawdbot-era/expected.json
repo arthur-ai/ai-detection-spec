@@ -11,7 +11,8 @@
     "daemon": ">=0",
     "port": ">=0",
     "vscodeext": ">=0",
-    "jbplugin": ">=0"
+    "jbplugin": ">=0",
+    "proc": ">=0"
   },
   "classified": {
     "must_find": [

@@ -85,9 +85,9 @@ registry rather than a description of it:
 
 | | routes | osquery tables |
 |---|---|---|
-| **macOS only** | `bundle_ids`, `homebrew`, `launchd_prefixes` | `apps`, `homebrew_packages`, `launchd` — all in osquery's `specs/darwin` |
+| **macOS only** | `bundle_ids`, `homebrew`, `launchd_prefixes`, `running_apps` | `apps`, `homebrew_packages`, `launchd`, `plist` — all in osquery's `specs/darwin` |
 | **Linux only** | `deb_packages`, `desktop_ids`, `rpm_packages`, `systemd_prefixes` | `deb_packages`, `rpm_packages`, `systemd_units`, `file` |
-| **Both** | `binaries`, `extension_ids`, `images`, `jetbrains_plugins`, `model_stores`, `native_messaging_hosts`, `npm`, `pypi`, `state_dirs`, `vscode_extensions` | `npm_packages`, `chrome_extensions`, `vscode_extensions`, `jetbrains_plugins`, `docker_images`, `file` |
+| **Both** | `binaries`, `extension_ids`, `images`, `jetbrains_plugins`, `model_stores`, `native_messaging_hosts`, `npm`, `pypi`, `running_npm`, `state_dirs`, `vscode_extensions` | `npm_packages`, `chrome_extensions`, `vscode_extensions`, `jetbrains_plugins`, `docker_images`, `processes`, `file` |
 
 The composed artifact is per platform for that reason — `dist/discovery-darwin.sql` and
 `dist/discovery-linux.sql` name disjoint sets of tables, so **there is no single file that runs

@@ -37,6 +37,8 @@ they are stated once. No amount of test coverage moves them.
 | VS Code extensions on osquery below 5.11.0 | `vscode_extensions` arrived in 5.11.0, above this repo's 5.10.0 floor, so `queries/vscode.sql` declares its own minimum and returns nothing on an older endpoint. The `vscode_edition` column that tells VS Code from Cursor and Windsurf came in 5.15.0 |
 | JetBrains plugins on osquery below 5.18.0 | `jetbrains_plugins` arrived in 5.18.0, so `queries/jetbrains.sql` declares that floor and returns nothing on an older endpoint. The composed artifact is one statement, so on 5.11 to 5.17 it fails whole; `bin/discover --write` runs the branch on its own and reports it as `error` |
 | The identity of a JetBrains plugin | The table exposes no plugin.xml id, only a display name, a vendor and the path, so the identifier is the plugin's directory name. A plugin whose directory was renamed on disk is not recognised, and a plugin shipped as a bare jar carries its version in the name |
+| Whether an agent was running a minute ago | A `proc` row is a sample of the process table when the query ran, not a history. An agent started and stopped between two runs leaves nothing on this route |
+| A running node CLI that names no package path | A global launched through its bin link reads `node /usr/local/bin/<name>`, and a process that renames itself carries no path at all. `queries/running.sql` finds OpenClaw's gateway through its workers, which run a script under node_modules/openclaw; a CLI that starts none is found as installed and not as running |
 | Behaviour that only appears after launch or sign-in | Nothing here launches an app -- `open -a` needs an Aqua session and SSH has none -- so first-launch daemons, ports and state directories go unobserved, and account-gated products are never signed in to |
 
 ## What the scenarios do not prove
@@ -50,7 +52,7 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 12-chatgpt-pre-rename | The bundle id only. A direct download leaves no Homebrew record, so the `chatgpt` brew route is not exercised here; 10-desktop-apps covers it. |
 | 40-browser | The planted extension is unreferenced by construction, so the sideloaded token is exercised only by 45-claude-extension. |
 | 45-claude-extension | Chrome for Testing registers the extension, because branded Chrome 137 and later refuse --load-extension. Branded Chrome's own install, update and ExtensionInstallForcelist paths are untested, and whether the policy needs an MDM-delivered profile on macOS is UNVERIFIED. |
-| 55-openclaw-npm | The gateway runs with --allow-unconfigured --auth none, which is not how a real deployment runs it: enough to open the listener this scenario asserts, with no channel connected and no model reachable. |
+| 55-openclaw-npm | The gateway runs with --allow-unconfigured --auth none, which is not how a real deployment runs it: enough to open the listener and keep the process this scenario asserts running, with no channel connected and no model reachable. |
 | 56-openclaw-retired-names | The npm names only. The macOS side of this lineage is 57-clawdbot-era, which installs the Clawdbot-era app and proves its bundle id. |
 | 57-clawdbot-era | The bundle id only. com.clawdbot. as a launchd prefix is NOT asserted: the binary contains com.clawdbot.gateway, but a LaunchAgent is registered when the app RUNS and this scenario only installs. Unverified, so not in the catalog either. |
 | 57-clawdbot-era | Clawdis, the generation before this one, ships its own macOS app and is not covered. Its bundle id has not been read off the artifact, so nothing is claimed about it. |
@@ -78,5 +80,6 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 81-linux-bun | bun blocks the lifecycle scripts of untrusted packages, and gemini-cli has none. Whether a global that needs its postinstall is still reported after bun skipped it is not proved here. |
 | 81-linux-bun | A global directory moved by BUN_INSTALL_GLOBAL_DIR or bunfig's globalDir is not searched. |
 | 81-linux-bun | Packages run through bunx and never installed land in bun's cache, the same gap npx has, noted in queries/filesystem.sql. |
+| 82-linux-running | The gateway runs with a throwaway token and no channel or model. This proves what a running gateway looks like to osquery, not an agent at work. |
 
 `11-perplexity-desktop`, `50-autonomous`, `57-clawdbot-era` need macOS 15 or newer, so CI skips them on older runners rather than failing them. Each scenario's `requires.json` carries the reason.

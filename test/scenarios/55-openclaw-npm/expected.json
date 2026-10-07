@@ -12,7 +12,8 @@
     "daemon": ">=0",
     "port": ">=0",
     "vscodeext": ">=0",
-    "jbplugin": ">=0"
+    "jbplugin": ">=0",
+    "proc": ">=1"
   },
   "classified": {
     "must_find": [
@@ -23,10 +24,11 @@
   "why": "The npm install route, which the cask scenario cannot see. This is also where the npx gap recorded at the foot of filesystem.sql would be proven or disproven: the claim that an npx-launched agent still creates its state dotdir is UNVERIFIED, and this scenario is the place to settle it.",
   "must_contain": [
     "openclaw",
-    ".openclaw/"
+    ".openclaw/",
+    "\"id\": \"openclaw\", \"kind\": \"proc\""
   ],
   "unexplained": "Both this scenario and 20-cli-agents report the state dir under TWO users - /Users/admin/ and /Users/runner/ - though only admin ran anything, and 00-baseline shows neither. Most likely /Users/runner is aliased to admin's home in the Cirrus base image, which would mean one artifact is reported twice under two apparent users. If that is right it is a real dedup hazard for the collector, which keys findings per device and per user. NOT YET VERIFIED - do not build dedup logic on this until someone confirms it with KEEP_VM=1.",
   "known_gaps": [
-    "The gateway runs with --allow-unconfigured --auth none, which is not how a real deployment runs it: enough to open the listener this scenario asserts, with no channel connected and no model reachable."
+    "The gateway runs with --allow-unconfigured --auth none, which is not how a real deployment runs it: enough to open the listener and keep the process this scenario asserts running, with no channel connected and no model reachable."
   ]
 }

@@ -166,6 +166,27 @@ SELECT 'port' AS kind, CAST(lp.port AS TEXT) AS id, '' AS ver, p.path AS loc,
 
 UNION ALL
 
+-- from running.sql
+SELECT 'proc' AS kind,
+       regex_match(exe || ' ' || cmdline,
+                   'node_modules/((?:@[A-Za-z0-9][A-Za-z0-9._-]*/)?[A-Za-z0-9][A-Za-z0-9._-]*)', 1) AS id,
+       '' AS ver, exe AS loc, '' AS extra, '' AS perms
+  FROM (SELECT cmdline,
+               CASE WHEN path != '' THEN path
+                    ELSE substr(cmdline, 1, instr(cmdline || ' ', ' ') - 1) END AS exe
+          FROM processes) p
+  WHERE (exe LIKE '%/node_modules/%'
+         OR ((exe LIKE '%/node' OR exe LIKE '%/nodejs' OR exe LIKE '%/bun' OR exe LIKE '%/deno'
+              OR exe IN ('node', 'nodejs', 'bun', 'deno'))
+             AND cmdline LIKE '%node_modules/%'))
+    AND regex_match(exe || ' ' || cmdline,
+                    'node_modules/((?:@[A-Za-z0-9][A-Za-z0-9._-]*/)?[A-Za-z0-9][A-Za-z0-9._-]*)', 1) IS NOT NULL
+  -- One row per package and executable, however many workers it runs. GROUP BY rather than
+  -- DISTINCT, because lint and tools/build.py find a branch's kind as `SELECT '<kind>'`.
+  GROUP BY id, loc
+
+UNION ALL
+
 -- from runtime-linux.sql
 SELECT 'unit' AS kind, id AS id, '' AS ver, fragment_path AS loc,
        unit_file_state AS extra, '' AS perms
