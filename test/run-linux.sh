@@ -36,6 +36,10 @@ OSQUERY_VERSION="${OSQUERY_VERSION:-5.23.1}"
 # scenarios.yml runs. Docker Hub's own `rockylinux:9` stopped at 9.3; the Rocky
 # project's repository on quay.io tracks the current point release.
 LINUX_IMAGE="${LINUX_IMAGE:-public.ecr.aws/ubuntu/ubuntu:24.04}"
+# Extra `docker run` flags. LINUX_DOCKER_ARGS='--cap-add SYS_PTRACE' gives root in the
+# container the right root has on a host to read another user's executable path, which
+# 83-linux-claude-running needs and skips without.
+LINUX_DOCKER_ARGS="${LINUX_DOCKER_ARGS:-}"
 
 command -v docker >/dev/null || { echo "run-linux: docker is required" >&2; exit 1; }
 case "$(uname -m)" in
@@ -89,7 +93,8 @@ for s in "${scenarios[@]}"; do
   echo
   echo "=============== $s ($LINUX_IMAGE)"
 
-  docker run --rm -v "$ROOT:/repo" -w /repo "$LINUX_IMAGE" bash -c "
+  # shellcheck disable=SC2086 -- LINUX_DOCKER_ARGS is a list of flags, split on purpose
+  docker run --rm $LINUX_DOCKER_ARGS -v "$ROOT:/repo" -w /repo "$LINUX_IMAGE" bash -c "
 set -uo pipefail
 $prep
 

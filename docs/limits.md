@@ -81,5 +81,7 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 81-linux-bun | A global directory moved by BUN_INSTALL_GLOBAL_DIR or bunfig's globalDir is not searched. |
 | 81-linux-bun | Packages run through bunx and never installed land in bun's cache, the same gap npx has, noted in queries/filesystem.sql. |
 | 82-linux-running | The gateway runs with a throwaway token and no channel or model. This proves what a running gateway looks like to osquery, not an agent at work. |
+| 83-linux-claude-running | `claude mcp serve` runs unauthenticated with no client connected, so this proves what a running Claude Code process looks like to osquery, not an agent at work. |
+| 83-linux-claude-running | Skips in a default container, where osquery cannot read another user's executable path. It runs for real on CI's ubuntu runner and under test/run-gce.sh. |
 
 `11-perplexity-desktop`, `50-autonomous`, `57-clawdbot-era` need macOS 15 or newer, so CI skips them on older runners rather than failing them. Each scenario's `requires.json` carries the reason.

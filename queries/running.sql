@@ -1,5 +1,5 @@
 -- name: running
--- description: Running node packages by name, the npm half of "installed and running"
+-- description: Running node packages by name, and agents running from a home directory
 -- tables: processes
 -- min-osquery: 5.10.0
 -- cost: fast
@@ -53,3 +53,16 @@ SELECT 'proc' AS kind,
   -- One row per package and executable, however many workers it runs. GROUP BY rather than
   -- DISTINCT, because lint and tools/build.py find a branch's kind as `SELECT '<kind>'`.
   GROUP BY id, loc
+UNION ALL
+-- RUNNING FROM A HOME DIRECTORY, by executable path. Claude Code's native install runs from
+-- ~/.local/share/claude/versions/<version>, not from the ~/.local/bin/claude link the
+-- `binaries` route names, so the process_paths route carries its own value. Read off a
+-- running `claude mcp serve` on 2026-10-07.
+--
+-- `path` ONLY, with no argv[0] stand-in: where the path is unreadable, argv[0] is the
+-- launcher a user typed, which no process_paths value names. GROUP BY folds the sessions
+-- of one binary into one row.
+SELECT 'proc', path, '', path, '', ''
+  FROM processes
+  WHERE path LIKE '/Users/%/%' OR path LIKE '/home/%/%' OR path LIKE '/root/%'
+  GROUP BY path

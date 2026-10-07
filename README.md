@@ -9,7 +9,7 @@ Which coding agents, chat clients, AI browsers and browser extensions are instal
 
 [![CI](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/ci.yml/badge.svg)](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/ci.yml)
 [![Scenarios](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/scenarios.yml/badge.svg)](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/scenarios.yml)
-[![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-63%2F63-2E7D57)](docs/agents.md)
+[![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-64%2F64-2E7D57)](docs/agents.md)
 [![osquery](https://img.shields.io/badge/osquery-5.23.1-1D4E89)](https://osquery.io)
 [![macOS](https://img.shields.io/badge/macOS-shipping-2E7D57)](#requirements)
 [![Linux](https://img.shields.io/badge/Linux-shipping-2E7D57)](#requirements)
@@ -51,7 +51,7 @@ runtime dependencies beyond osquery.
 |---|---|---|
 | 🗂 | **A query** | Runs on each machine and lists what is installed — apps, packages, browser extensions, state directories. **No agent name appears anywhere in it.** It reports what it finds; which of those findings add up to an agent is decided later, by the classifier. One per platform, because macOS and Linux read different tables |
 | ▶️ | **A runner** | Runs that query on the endpoint and prints the result as one JSON array. A second one covers agents packaged as Docker images, separately and on a time limit, because a wedged Docker daemon never answers and would otherwise hang the scan |
-| 🔎 | **A classifier and its catalog** | Reads the collected JSON and tells you which agents are on the machine, matching the evidence against **22 agents and 63 identifiers**. It runs wherever you keep the output, never on the endpoint |
+| 🔎 | **A classifier and its catalog** | Reads the collected JSON and tells you which agents are on the machine, matching the evidence against **22 agents and 64 identifiers**. It runs wherever you keep the output, never on the endpoint |
 | 🧾 | **The same catalog, as SQL** | A query that returns the agent names directly, a set of Fleet policies, and `bin/discover --names`, which prints the names as one line for a Jamf Extension Attribute |
 
 **Two ways to match, one catalog.** Pick the one that fits how you collect:
@@ -87,7 +87,7 @@ registry rather than a description of it:
 |---|---|---|
 | **macOS only** | `bundle_ids`, `homebrew`, `launchd_prefixes`, `running_apps` | `apps`, `homebrew_packages`, `launchd`, `plist` — all in osquery's `specs/darwin` |
 | **Linux only** | `deb_packages`, `desktop_ids`, `rpm_packages`, `systemd_prefixes` | `deb_packages`, `rpm_packages`, `systemd_units`, `file` |
-| **Both** | `binaries`, `extension_ids`, `images`, `jetbrains_plugins`, `model_stores`, `native_messaging_hosts`, `npm`, `pypi`, `running_npm`, `state_dirs`, `vscode_extensions` | `npm_packages`, `chrome_extensions`, `vscode_extensions`, `jetbrains_plugins`, `docker_images`, `processes`, `file` |
+| **Both** | `binaries`, `extension_ids`, `images`, `jetbrains_plugins`, `model_stores`, `native_messaging_hosts`, `npm`, `process_paths`, `pypi`, `running_npm`, `state_dirs`, `vscode_extensions` | `npm_packages`, `chrome_extensions`, `vscode_extensions`, `jetbrains_plugins`, `docker_images`, `processes`, `file` |
 
 The composed artifact is per platform for that reason — `dist/discovery-darwin.sql` and
 `dist/discovery-linux.sql` name disjoint sets of tables, so **there is no single file that runs

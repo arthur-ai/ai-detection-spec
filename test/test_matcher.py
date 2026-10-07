@@ -569,6 +569,12 @@ check("a running npm package resolves through npm and is marked running",
       _running.get("codex-cli") is True, f"got {_running}")
 check("an installed agent with no proc row is NOT marked running",
       "gemini-cli" in _running and _running["gemini-cli"] is None, f"got {_running}")
+_rc = classify_json([{"kind": "proc", "id": "/home/dana/.local/share/claude/versions/2.1.292",
+                      "ver": "", "loc": "/home/dana/.local/share/claude/versions/2.1.292",
+                      "extra": "", "perms": ""}])
+check("a native Claude Code process resolves through process_paths and is marked running",
+      [(f["id"], f.get("running")) for f in _rc["findings"]] == [("claude-code", True)],
+      f"got {[(f['id'], f.get('running')) for f in _rc['findings']]}")
 check("an unclaimed process is unmatched, not dropped",
       "com.apple.finder" in unmatched_ids(_rp),
       "a kind absent from the registry is DROPPED, not unmatched -- the `ext` bug")

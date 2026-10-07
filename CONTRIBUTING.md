@@ -46,7 +46,7 @@ even under `--show-unmatched`, for months, while the row counts stayed right.
 | `nmh` | `native_messaging_hosts` | posix |
 | `npm` | `npm` | posix |
 | `port` | `ports` | posix |
-| `proc` | `running_apps` (darwin), `running_npm` | posix |
+| `proc` | `process_paths`, `running_apps` (darwin), `running_npm` | posix |
 | `rpm` | `rpm_packages` | linux |
 | `unit` | `systemd_prefixes` | linux |
 | `vscodeext` | `vscode_extensions` | posix |
