@@ -180,3 +180,80 @@ diagnose() {
     printf -- "--- %s: %s\n" "$c" "$(command -v "$c" || echo 'not on PATH')"
   done
 }
+
+# VS Code from Microsoft's own deb or rpm, by family: the same URL shape publishes both, and
+# the extension directory osquery reads is the same install either way. Exits 3 (SKIP) where
+# Microsoft publishes no package, or the download fails before anything is installed.
+need_vscode() {
+  local build ext pkg
+  case "$(pm)-$(uname -m)" in
+    apt-x86_64)  build=linux-deb-x64   ext=deb ;;
+    apt-aarch64) build=linux-deb-arm64 ext=deb ;;
+    dnf-x86_64)  build=linux-rpm-x64   ext=rpm ;;
+    dnf-aarch64) build=linux-rpm-arm64 ext=rpm ;;
+    *) echo "SKIP: no VS Code package for $(pm) on $(uname -m)"; exit 3 ;;
+  esac
+  # mktemp, keeping the suffix the package manager keys on -- see 75-linux-browser.
+  pkg=$(mktemp "/tmp/code.XXXXXX.$ext")
+  if [ "$(pm)" = apt ]; then
+    # libasound2t64 is Ubuntu 24.04's name for the ALSA library and Debian 12 still says
+    # libasound2. apt resolves the deb's dependencies itself when the install goes through
+    # apt-get, so this only matters on the dpkg -i fallback.
+    need_pkgs libasound2t64 || need_pkgs libasound2 || true
+  fi
+  curl --retry 3 -fsSLo "$pkg" "https://update.code.visualstudio.com/latest/$build/stable" \
+    || { echo "SKIP: VS Code download failed"; exit 3; }
+  if [ "$(pm)" = apt ]; then
+    try "installing the VS Code deb" sudo_maybe apt-get -qq install -y "$pkg" \
+      || try "dpkg -i for VS Code" sudo_maybe dpkg -i "$pkg" \
+      || echo "WARN: VS Code did not install"
+  else
+    try "installing the VS Code rpm" sudo_maybe dnf -q -y install "$pkg" \
+      || echo "WARN: VS Code did not install"
+  fi
+  rm -f "$pkg"
+  code --version --no-sandbox 2>&1 | head -1 || true
+}
+
+# install_vscode_ext <id>...: AS THE USER, because extensions live in ~/.vscode/extensions
+# and installing as root would leave the /home branch -- the one a fleet has -- unexercised.
+# --no-sandbox because there is no display and no user namespace in CI.
+#
+# THREE ATTEMPTS, because the Marketplace fails transiently: a 503 or a truncated VSIX failed
+# 78 on all four Linux targets at once, a different extension on each, and the rerun passed.
+# Running out of attempts still fails the assertions rather than SKIPping: from in here an
+# outage looks like an extension that is gone for good, and a skip would hide the second.
+install_vscode_ext() {
+  local ext wait
+  for ext in "$@"; do
+    for wait in 15 45 done; do
+      try_user "installing $ext" "code --no-sandbox --install-extension $ext --force" && break
+      [ "$wait" = done ] || { echo "      retrying $ext in ${wait}s"; sleep "$wait"; }
+    done
+  done
+}
+
+# install_jb_plugin <dest> <marketplace-id>...: the Marketplace's own zip, unpacked AS THE
+# USER into the directory an IDE unpacks it into -- the way 45-claude-extension unpacks the
+# Web Store's CRX. jetbrains_plugins is per uid. The zip root IS the plugin directory, and
+# that directory name is the identifier, so the vendor ships it rather than the test.
+#
+# A FAILED DOWNLOAD FAILS THE ASSERTIONS rather than exiting 3, for the reason given above
+# install_vscode_ext. curl's own retries cover the transient case.
+install_jb_plugin() {
+  local dest="$1" plugin upd; shift
+  as_user "mkdir -p '$dest'"
+  for plugin in "$@"; do
+    upd=$(curl --retry 3 -fsSL "https://plugins.jetbrains.com/api/plugins/$plugin/updates?size=1" \
+          | python3 -c 'import json,sys; print(json.load(sys.stdin)[0]["id"])') \
+      || { echo "WARN: the Marketplace returned no update for plugin $plugin"; continue; }
+    # The download URL answers 301 to /files/<plugin>/<update>/<name>.zip; -L follows it.
+    try_user "downloading plugin $plugin update $upd" \
+      "curl --retry 3 -fsSL -o /tmp/jb-$plugin.zip 'https://plugins.jetbrains.com/plugin/download?updateId=$upd'" \
+      || continue
+    # python's zipfile rather than unzip: one fewer package on three families.
+    try_user "unpacking plugin $plugin" \
+      "python3 -c \"import zipfile; zipfile.ZipFile('/tmp/jb-$plugin.zip').extractall('$dest')\"" || true
+    as_user "rm -f /tmp/jb-$plugin.zip"
+  done
+}
