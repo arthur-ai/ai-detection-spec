@@ -38,14 +38,14 @@ arch=$(uname -m)
 # waiting to be planted between the download and the privileged install.
 case "$(pm)" in
   apt) pkg=$(mktemp /tmp/chrome.XXXXXX.deb)
-       curl -fsSLo "$pkg" \
+       curl --retry 3 -fsSLo "$pkg" \
          https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
          || { rm -f "$pkg"; echo "SKIP: Chrome download failed"; exit 3; }
        try "installing the Chrome deb" sudo_maybe apt-get -qq install -y "$pkg" \
          || echo "WARN: Chrome did not install"
        rm -f "$pkg" ;;
   dnf) pkg=$(mktemp /tmp/chrome.XXXXXX.rpm)
-       curl -fsSLo "$pkg" \
+       curl --retry 3 -fsSLo "$pkg" \
          https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm \
          || { rm -f "$pkg"; echo "SKIP: Chrome download failed"; exit 3; }
        try "installing the Chrome rpm" sudo_maybe dnf -q -y install "$pkg" \

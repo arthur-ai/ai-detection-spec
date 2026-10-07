@@ -54,7 +54,7 @@ sleep 3
 echo "profile scaffolded: Local State and Default/Preferences both present"
 
 URL="https://clients2.google.com/service/update2/crx?response=redirect&prodversion=152.0&acceptformat=crx3&x=id%3D${EXT_ID}%26uc"
-curl -sL "$URL" -o /tmp/ext.crx || true
+curl --retry 3 -sL "$URL" -o /tmp/ext.crx || true
 # A network failure here is the lab, not the query. Exit 3 = SKIP, per run.sh.
 [ -s /tmp/ext.crx ] || { echo "Web Store unreachable; cannot fetch the signed artifact."; exit 3; }
 

@@ -31,7 +31,7 @@ if [ "$(pm)" = apt ]; then
   # apt-get, so this only matters on the dpkg -i fallback.
   need_pkgs libasound2t64 || need_pkgs libasound2 || true
 fi
-curl -fsSLo "$pkg" "https://update.code.visualstudio.com/latest/$build/stable" \
+curl --retry 3 -fsSLo "$pkg" "https://update.code.visualstudio.com/latest/$build/stable" \
   || { echo "SKIP: VS Code download failed"; exit 3; }
 if [ "$(pm)" = apt ]; then
   try "installing the VS Code deb" sudo_maybe apt-get -qq install -y "$pkg" \

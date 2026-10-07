@@ -67,14 +67,14 @@ log=/tmp/prep.log
 if command -v apt-get >/dev/null 2>&1; then
   export DEBIAN_FRONTEND=noninteractive
   { apt-get -qq update && apt-get -qq install -y curl ca-certificates python3 python3-yaml sudo procps
-    curl -fsSLo /tmp/o.deb https://pkg.osquery.io/deb/osquery_'"$OSQUERY_VERSION"'-1.linux_'"$DEB_ARCH"'.deb
+    curl --retry 3 -fsSLo /tmp/o.deb https://pkg.osquery.io/deb/osquery_'"$OSQUERY_VERSION"'-1.linux_'"$DEB_ARCH"'.deb
     dpkg -i /tmp/o.deb; } >"$log" 2>&1
 elif command -v dnf >/dev/null 2>&1; then
   # --allowerasing: Rocky ships curl-minimal, which conflicts with curl, and dnf then
   # fails the WHOLE transaction -- pyyaml included -- while osquery still installs, so the
   # run died at the first assertion with a message about PyYAML rather than about curl.
   { dnf -q -y install --allowerasing curl python3 python3-pyyaml tar findutils procps-ng
-    curl -fsSLo /tmp/o.rpm https://pkg.osquery.io/rpm/osquery-'"$OSQUERY_VERSION"'-1.linux.'"$RPM_ARCH"'.rpm
+    curl --retry 3 -fsSLo /tmp/o.rpm https://pkg.osquery.io/rpm/osquery-'"$OSQUERY_VERSION"'-1.linux.'"$RPM_ARCH"'.rpm
     dnf -q -y install /tmp/o.rpm; } >"$log" 2>&1
 else
   echo "FAIL: neither apt-get nor dnf in this image"; exit 1

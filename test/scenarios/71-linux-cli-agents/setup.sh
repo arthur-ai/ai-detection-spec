@@ -15,7 +15,7 @@ need_user
 # USER, not as root, so it lands under /home/dana and exercises the branch a real fleet
 # has rather than the /root one.
 try_user "the Claude Code native installer" \
-  'curl -fsSL https://claude.ai/install.sh | bash' || true
+  'curl --retry 3 -fsSL https://claude.ai/install.sh | bash' || true
 
 # Genuine npm globals. Installed system-wide, which on Linux is
 # /usr/local/lib/node_modules -- npm_packages reports it with no path assumption in the

@@ -20,11 +20,11 @@ case "$arch" in
   aarch64) plat=linux-arm64 ;;
   *) echo "SKIP: no Cursor .rpm for $arch"; exit 3 ;;
 esac
-url=$(curl -fsSL "https://cursor.com/api/download?platform=$plat&releaseTrack=stable" \
+url=$(curl --retry 3 -fsSL "https://cursor.com/api/download?platform=$plat&releaseTrack=stable" \
       | python3 -c 'import json,sys; print(json.load(sys.stdin)["rpmUrl"])') \
   || { echo "SKIP: could not resolve the Cursor rpm URL"; exit 3; }
 echo "--- installing $url"
-curl -fsSLo /tmp/cursor.rpm "$url" || { echo "SKIP: download failed"; exit 3; }
+curl --retry 3 -fsSLo /tmp/cursor.rpm "$url" || { echo "SKIP: download failed"; exit 3; }
 # --nodeps: the rpm declares desktop dependencies a container has no reason to carry, and
 # what is under test is the PACKAGE RECORD, not whether Cursor could launch.
 try "rpm -i --nodeps of the Cursor rpm" sudo_maybe rpm -i --nodeps /tmp/cursor.rpm \

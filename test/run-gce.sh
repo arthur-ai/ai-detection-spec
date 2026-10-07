@@ -179,11 +179,11 @@ if command -v apt-get >/dev/null 2>&1; then
   export DEBIAN_FRONTEND=noninteractive
   sudo -E apt-get -qq update >/dev/null 2>&1
   sudo -E apt-get -qq install -y curl ca-certificates python3 python3-yaml >/dev/null 2>&1
-  curl -fsSLo /tmp/o.deb "https://pkg.osquery.io/deb/osquery_${V}-1.linux_amd64.deb"
+  curl --retry 3 -fsSLo /tmp/o.deb "https://pkg.osquery.io/deb/osquery_${V}-1.linux_amd64.deb"
   sudo dpkg -i /tmp/o.deb >/dev/null 2>&1
 else
   sudo dnf -q -y install --allowerasing curl python3 python3-pyyaml tar findutils >/dev/null 2>&1
-  curl -fsSLo /tmp/o.rpm "https://pkg.osquery.io/rpm/osquery-${V}-1.linux.x86_64.rpm"
+  curl --retry 3 -fsSLo /tmp/o.rpm "https://pkg.osquery.io/rpm/osquery-${V}-1.linux.x86_64.rpm"
   sudo dnf -q -y install /tmp/o.rpm >/dev/null 2>&1
 fi
 command -v osqueryi >/dev/null 2>&1 || { echo "FAIL: osquery did not install"; exit 1; }

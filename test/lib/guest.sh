@@ -25,7 +25,7 @@ need_brew() {
   need_clt || { echo "FAIL: Command Line Tools are a Homebrew prerequisite" >&2; return 1; }
   echo "--- installing Homebrew"
   NONINTERACTIVE=1 /bin/bash -c \
-    "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || return 1
+    "$(curl --retry 3 -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || return 1
   eval "$(/opt/homebrew/bin/brew shellenv)"
 }
 

@@ -82,7 +82,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install osquery
         run: |
-          curl -fsSL -o /tmp/osquery.pkg https://pkg.osquery.io/darwin/osquery-5.23.1.pkg
+          curl --retry 3 -fsSL -o /tmp/osquery.pkg https://pkg.osquery.io/darwin/osquery-5.23.1.pkg
           sudo installer -pkg /tmp/osquery.pkg -target /
 
       # The runner ships Xcode, Homebrew, four browsers, Node and Python, so it is a
@@ -133,7 +133,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install osquery
         run: |
-          curl -fsSL -o /tmp/osquery.deb \
+          curl --retry 3 -fsSL -o /tmp/osquery.deb \
             https://pkg.osquery.io/deb/osquery_5.23.1-1.linux_amd64.deb
           sudo dpkg -i /tmp/osquery.deb
       - name: Record the baseline machine
