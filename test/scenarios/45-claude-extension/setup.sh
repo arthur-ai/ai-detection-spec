@@ -28,7 +28,7 @@
 # publisher's, and the id osquery reports is derived rather than asserted.
 #
 # THEN THE BROWSER REGISTERS IT, because a directory on disk that Preferences does not name
-# is one Chrome never loads, and browser.sql now says so with `unreferenced`. A relaunch with
+# is one Chrome never loads, and browser.sql now says so with `unreferenced`. Launching with
 # --load-extension writes the settings entry: from_webstore false, location 8, the path
 # relative to Extensions/. That is a sideload, and the row carries `sideloaded:<sha256>`.
 #

@@ -79,8 +79,8 @@
 --   unreferenced         on disk and absent from the profile's Preferences, so Chrome
 --                        will not load it: a leftover, or a directory planted by hand
 --   sideloaded:<sha256>  registered, and not from the Web Store. The hash is osquery's
---                        manifest_hash, carried only here because only here does it
---                        identify something the id cannot: a sideloaded build has no key
+--                        manifest_hash, carried only here because a sideloaded build need
+--                        not carry a key, and without one its id is empty
 --
 -- `!= 'true'` and not `= 'false'`: osquery passes the stored string through, so a store
 -- install reads 'true', an unpacked one 'false', and a missing setting ''. A store row
