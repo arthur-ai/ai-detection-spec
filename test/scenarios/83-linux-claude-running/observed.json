@@ -11,8 +11,34 @@
     },
     {
       "agent": "claude-code",
+      "route": "binaries",
+      "value": "~/.local/bin/claude",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "37583703186"
+    },
+    {
+      "agent": "claude-code",
       "route": "process_paths",
       "value": "~/.local/share/claude/versions/",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "claude-code",
+      "route": "process_paths",
+      "value": "~/.local/share/claude/versions/",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "37583703186"
+    },
+    {
+      "agent": "claude-code",
+      "route": "state_dirs",
+      "value": "~/.claude",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64"
@@ -23,7 +49,8 @@
       "value": "~/.claude",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "aarch64"
+      "arch": "x86_64",
+      "run": "37583703186"
     }
   ]
 }
