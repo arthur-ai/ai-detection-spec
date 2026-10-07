@@ -10,16 +10,16 @@ Every AI agent this repo finds, every identifier it is matched on,
 and the CI test behind each one.
 
 ![agents](https://img.shields.io/badge/agents-22-1D4E89)
-![identifiers](https://img.shields.io/badge/identifiers-61-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-61%2F61-2E7D57)
-![real install](https://img.shields.io/badge/by_real_install-61-2E7D57)
+![identifiers](https://img.shields.io/badge/identifiers-63-1D4E89)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-63%2F63-2E7D57)
+![real install](https://img.shields.io/badge/by_real_install-63-2E7D57)
 
 </div>
 
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 61 of 61. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all; the build rejects it.
+**Every identifier is proved by a real install in CI** — 63 of 63. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all; the build rejects it.
 
 ## 🧪 Why a real install is the bar
 
@@ -43,9 +43,9 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | **aider** | **`aider`**, **`aider-chat`**, **`paulgauthier/aider`**, **`~/.aider`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
 | **Google Antigravity** | **`com.google.antigravity`**, **`com.google.antigravity-ide`**, **`antigravity`**, **`antigravity-ide`** | 10-desktop-apps |
 | **Claude Code** | **`@anthropic-ai/claude-code`**, **`~/.claude`**, **`~/.local/bin/claude`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 90-demo-fleet |
-| **Cline** | **`cline`**, **`saoudrizwan.claude-dev`** | 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode |
+| **Cline** | **`cline`**, **`saoudrizwan.claude-dev`**, **`cline`** | 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode, 80-linux-jetbrains |
 | **Codex CLI** | **`codex`**, **`@openai/codex`**, **`~/.codex`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 90-demo-fleet |
-| **Continue** | **`continue.continue`** | 78-linux-vscode |
+| **Continue** | **`continue.continue`**, **`continue-intellij-extension`** | 78-linux-vscode, 80-linux-jetbrains |
 | **GitHub Copilot CLI** | **`copilot-cli`**, **`@github/copilot`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents |
 | **Cursor** | **`com.todesktop.230313mzl4w4u92`**, **`cursor`**, **`cursor`**, **`cursor`**, **`cursor.desktop`** | 10-desktop-apps, 73-linux-deb, 77-linux-rpm, 90-demo-fleet |
 | **Gemini CLI** | **`gemini-cli`**, **`@google/gemini-cli`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents |

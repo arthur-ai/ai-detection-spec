@@ -34,11 +34,13 @@ $ osqueryi "SELECT filename, path FROM file WHERE path LIKE '/usr/share/applicat
 # Either platform
 $ osqueryi "SELECT name, version FROM npm_packages WHERE name LIKE '%NAME%'"
 $ osqueryi "SELECT name, version, vscode_edition FROM users CROSS JOIN vscode_extensions USING (uid)"
+$ osqueryi "SELECT name, vendor, version, path FROM users CROSS JOIN jetbrains_plugins USING (uid)"
 ```
 
 Package name, install path, any launchd label or systemd unit, any state directory it creates
 on first run. For a VS Code extension the identifier is the `name` column alone — `publisher_id`
-is a GUID, not the publisher slug.
+is a GUID, not the publisher slug. For a JetBrains plugin it is the last component of `path`,
+the plugin's directory.
 
 **Have you added a scenario?**
 

@@ -12,7 +12,7 @@
 #   darwin only   bundle_ids, homebrew, launchd_prefixes
 #   linux only    deb_packages, rpm_packages, desktop_ids, systemd_prefixes
 #   both          npm, pypi, extension_ids, native_messaging_hosts, vscode_extensions,
-#                 images, state_dirs, binaries, model_stores
+#                 jetbrains_plugins, images, state_dirs, binaries, model_stores
 #
 # `platforms:` on each agent is REQUIRED and is checked against those: declaring
 # `deb_packages` without `linux` is a copy-paste error, and claiming a platform no route
@@ -504,6 +504,11 @@ agents:
     # (6f42e67d-d7ea-4a53-8704-2ae8bf2d86f3 here), and `publisher` is the display name
     # "Cline". routes.yaml records why that matters.
     vscode_extensions: [saoudrizwan.claude-dev]
+    # The JetBrains plugin, read off 80-linux-jetbrains on 2026-10-07: Marketplace plugin
+    # 28247 unpacked, osquery 5.23.1 rendering v2.0.6, vendor "Cline", at
+    # ~/.local/share/JetBrains/IdeaIC2025.2/cline. The value is the directory; the
+    # plugin.xml id, `bot.cline`, is not a column.
+    jetbrains_plugins: [cline]
 
   # THE ARGUMENT FOR THIS ENTRY IS THAT IT ACTS, and the artifact says so itself. Read off
   # the installed extension's own package.json, not off the vendor's page:
@@ -538,9 +543,7 @@ agents:
   # directory appears depends on the route, and this repo does not ship the version it has
   # not seen.
   #
-  # No JetBrains and no npm route for the same reason. Continue ships a JetBrains plugin and
-  # osquery grew a `jetbrains_plugins` table after 5.12.1, but neither the table nor the
-  # plugin id has been read off anything here.
+  # No npm route for the same reason: nothing here has installed one and read it back.
   - id: continue
     name: Continue
     classification: Coding agent
@@ -553,6 +556,11 @@ agents:
     # here -- and `publisher` is the display name "Continue". catalog/routes.yaml records why
     # that distinction cost a wrong identifier once already.
     vscode_extensions: [continue.continue]
+    # The JetBrains plugin, read off 80-linux-jetbrains on 2026-10-07: Marketplace plugin
+    # 22707 unpacked, osquery 5.23.1 rendering v1.0.67, vendor "continue-dev", at
+    # ~/.local/share/JetBrains/IdeaIC2025.2/continue-intellij-extension. The plugin.xml id,
+    # com.github.continuedev.continueintellijextension, is not a column.
+    jetbrains_plugins: [continue-intellij-extension]
 
   # Nous Research's terminal agent. Filed as a Personal agent rather than a Coding agent on
   # the strength of what it ships: ONE GATEWAY PROCESS fronting Telegram, Discord, Slack,

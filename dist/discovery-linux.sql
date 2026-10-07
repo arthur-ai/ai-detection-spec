@@ -77,6 +77,17 @@ SELECT 'file', path, '', path, '', '' FROM file
 
 UNION ALL
 
+-- from jetbrains.sql
+SELECT 'jbplugin' AS kind, regex_match(path, '([^/]+)/?$', 1) AS id, version AS ver,
+       path AS loc, vendor AS extra, '' AS perms
+  FROM (SELECT uid FROM users
+        UNION
+        SELECT uid FROM file
+         WHERE path LIKE '/home/%/' OR path = '/root/' OR path LIKE '/Users/%/') u
+       CROSS JOIN jetbrains_plugins USING (uid)
+
+UNION ALL
+
 -- from native-messaging-linux.sql
 SELECT 'nmh' AS kind, filename AS id, '' AS ver, path AS loc, '' AS extra, '' AS perms
   FROM file

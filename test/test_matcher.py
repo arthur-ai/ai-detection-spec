@@ -172,6 +172,16 @@ check("an id one character off the real one is NOT claimed",
       "fcoeoabgfenejglbffodgkkbkcdhcgfa" in unmatched,
       "exact match on the full 32 characters, never a prefix or a substring")
 
+# --- JetBrains plugins -----------------------------------------------------------
+# A new kind is dropped, not unmatched, until catalog/routes.yaml registers it, and lint
+# does not catch that direction. The declined row is the guard, as for `ext` above.
+check("Cline is found through its JetBrains plugin directory",
+      any(e["kind"] == "jbplugin" and e["id"] == "cline"
+          for e in found.get("cline", {}).get("evidence", [])))
+check("an ordinary JetBrains plugin is NOT claimed (AWS Toolkit)",
+      "aws-toolkit-jetbrains-standalone" in unmatched,
+      "if this is missing, jbplugin rows are being dropped rather than declined")
+
 # --- a machine with none -------------------------------------------------------
 r = run("no-agents.json")
 check("an ordinary developer machine yields zero findings", r["findings"] == [],

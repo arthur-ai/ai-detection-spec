@@ -55,6 +55,12 @@ need_node() {
 # row counts still looked right.
 SCENARIO_USER="${SCENARIO_USER:-dana}"
 need_user() {
+  # as_user below needs util-linux, which the bare fedora:41 image leaves out. The Fedora
+  # scenarios before 80 had it only because something they installed pulled it in; one that
+  # installs nothing exits 127 at the first as_user. A no-op where it is already present.
+  if [ "$(pm)" = dnf ]; then
+    need_pkgs util-linux || echo "WARN: util-linux did not install, so as_user cannot run" >&2
+  fi
   id "$SCENARIO_USER" >/dev/null 2>&1 && return 0
   sudo_maybe useradd -m -s /bin/bash "$SCENARIO_USER"
 }

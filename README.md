@@ -9,7 +9,7 @@ Which coding agents, chat clients, AI browsers and browser extensions are instal
 
 [![CI](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/ci.yml/badge.svg)](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/ci.yml)
 [![Scenarios](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/scenarios.yml/badge.svg)](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/scenarios.yml)
-[![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-61%2F61-2E7D57)](docs/agents.md)
+[![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-63%2F63-2E7D57)](docs/agents.md)
 [![osquery](https://img.shields.io/badge/osquery-5.23.1-1D4E89)](https://osquery.io)
 [![macOS](https://img.shields.io/badge/macOS-shipping-2E7D57)](#requirements)
 [![Linux](https://img.shields.io/badge/Linux-shipping-2E7D57)](#requirements)
@@ -51,7 +51,7 @@ runtime dependencies beyond osquery.
 |---|---|---|
 | 🗂 | **A query** | Runs on each machine and lists what is installed — apps, packages, browser extensions, state directories. **No agent name appears anywhere in it.** It reports what it finds; which of those findings add up to an agent is decided later, by the classifier. One per platform, because macOS and Linux read different tables |
 | ▶️ | **A runner** | Runs that query on the endpoint and prints the result as one JSON array. A second one covers agents packaged as Docker images, separately and on a time limit, because a wedged Docker daemon never answers and would otherwise hang the scan |
-| 🔎 | **A classifier and its catalog** | Reads the collected JSON and tells you which agents are on the machine, matching the evidence against **22 agents and 61 identifiers**. It runs wherever you keep the output, never on the endpoint |
+| 🔎 | **A classifier and its catalog** | Reads the collected JSON and tells you which agents are on the machine, matching the evidence against **22 agents and 63 identifiers**. It runs wherever you keep the output, never on the endpoint |
 | 🧾 | **The same catalog, as SQL** | A query that returns the agent names directly, a set of Fleet policies, and `bin/discover --names`, which prints the names as one line for a Jamf Extension Attribute |
 
 **Two ways to match, one catalog.** Pick the one that fits how you collect:
@@ -87,7 +87,7 @@ registry rather than a description of it:
 |---|---|---|
 | **macOS only** | `bundle_ids`, `homebrew`, `launchd_prefixes` | `apps`, `homebrew_packages`, `launchd` — all in osquery's `specs/darwin` |
 | **Linux only** | `deb_packages`, `desktop_ids`, `rpm_packages`, `systemd_prefixes` | `deb_packages`, `rpm_packages`, `systemd_units`, `file` |
-| **Both** | `binaries`, `extension_ids`, `images`, `model_stores`, `native_messaging_hosts`, `npm`, `pypi`, `state_dirs`, `vscode_extensions` | `npm_packages`, `chrome_extensions`, `vscode_extensions`, `docker_images`, `file` |
+| **Both** | `binaries`, `extension_ids`, `images`, `jetbrains_plugins`, `model_stores`, `native_messaging_hosts`, `npm`, `pypi`, `state_dirs`, `vscode_extensions` | `npm_packages`, `chrome_extensions`, `vscode_extensions`, `jetbrains_plugins`, `docker_images`, `file` |
 
 The composed artifact is per platform for that reason — `dist/discovery-darwin.sql` and
 `dist/discovery-linux.sql` name disjoint sets of tables, so **there is no single file that runs
@@ -108,7 +108,7 @@ one.
 |---|---|
 | macOS | Apple Silicon or Intel. **No lower bound established** — a floor would be a guess |
 | Linux | Any distro with dpkg or rpm. One artifact serves both: on Debian `rpm_packages` returns no rows and exits 0, and on Fedora `deb_packages` does the same — measured, not assumed |
-| osquery | **5.10.0** — every query declares its own in `min-osquery:`, and `queries/vscode.sql` declares **5.11.0**, which is when `vscode_extensions` arrived |
+| osquery | **5.10.0** for `bin/discover --write`, which runs each query separately and reports any that fail. **5.18.0** to run the whole inventory as one query, because the JetBrains query needs a table added in that release |
 | `bash` | 3.2, which is the macOS system `bash`, so `/bin/bash` is enough |
 | `python3` | **3.7** (`subprocess` `capture_output`) — for `bin/classify` and `tools/`. **Nothing on the endpoint needs it** |
 | PyYAML | Only for the tools that read the catalog: `bin/classify` and `tools/validate_catalog.py` |
