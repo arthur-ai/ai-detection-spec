@@ -18,16 +18,16 @@ try "npm install -g openclaw" sudo_maybe npm install -g --no-fund --no-audit ope
 # its own log so a gateway that refuses to start says why.
 as_user 'OPENCLAW_GATEWAY_TOKEN=throwaway setsid openclaw gateway run --allow-unconfigured \
   </dev/null >/tmp/gateway.log 2>&1 &' || true
-for _ in $(seq 1 30); do
-  pgrep -u "$SCENARIO_USER" -f 'node_modules/openclaw/' >/dev/null && break
+# WAIT FOR `ready`, NOT FOR THE FIRST WORKER. On CI's runners the setup stopped at the first
+# worker, before the gateway had finished starting, and the query step after it found no
+# worker at all. The log is printed either way, so a gateway that stops says why.
+for _ in $(seq 1 60); do
+  grep -q '\[gateway\] ready' /tmp/gateway.log 2>/dev/null && break
   sleep 2
 done
-if pgrep -u "$SCENARIO_USER" -f 'node_modules/openclaw/' >/dev/null; then
-  echo "--- the gateway's processes, as osquery reads them:"
-  sudo_maybe osqueryi --json \
-    "SELECT name, path, substr(cmdline, 1, 120) AS cmd FROM processes WHERE cmdline LIKE '%node_modules/openclaw/%'" \
-    | sed 's/^/      /'
-else
-  echo "WARN: no openclaw worker is running. The gateway said:"
-  sed 's/^/      /' /tmp/gateway.log | tail -15
-fi
+echo "--- the gateway's log, last lines:"
+tail -8 /tmp/gateway.log 2>/dev/null | sed 's/^/      /'
+echo "--- the gateway's processes, as osquery reads them:"
+sudo_maybe osqueryi --json \
+  "SELECT name, path, substr(cmdline, 1, 120) AS cmd FROM processes WHERE cmdline LIKE '%node_modules/openclaw/%'" \
+  | sed 's/^/      /'
