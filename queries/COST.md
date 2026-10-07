@@ -190,6 +190,10 @@ several browser profiles, 76 matching rows.
 `jetbrains.sql` arrived after this table: on 2026-10-07, on a loaded Mac with no JetBrains
 IDE, it took 0.39s for 0 rows, and the composed artifact took 1.41s for 801.
 
+`packages.sql` gained a bun branch after this table. In an Ubuntu 24.04 container on
+2026-10-07, one `bun add -g @google/gemini-cli` produced 6 rows: bun hoists a global's
+dependencies beside it, and every one is a row.
+
 ## Deliberately not collected
 
 `python_packages`: 15.6s per scan, does not honour WHERE push-down, and contributed zero
