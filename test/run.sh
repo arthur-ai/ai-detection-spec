@@ -50,7 +50,7 @@ run_scenario() {
 
   # osquery: the same official pkg an MDM would deploy — signed and notarized upstream, we
   # sign nothing.
-  vm_ssh "$vm" "curl -fsSL -o /tmp/osquery.pkg https://pkg.osquery.io/darwin/osquery-${OSQUERY_VERSION}.pkg \
+  vm_ssh "$vm" "curl --retry 3 -fsSL -o /tmp/osquery.pkg https://pkg.osquery.io/darwin/osquery-${OSQUERY_VERSION}.pkg \
                 && sudo -n installer -pkg /tmp/osquery.pkg -target / >/dev/null" \
     || { echo "FAIL: osquery ${OSQUERY_VERSION} did not install" >&2; return 1; }
 

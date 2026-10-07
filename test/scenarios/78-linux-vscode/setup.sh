@@ -31,7 +31,7 @@ if [ "$(pm)" = apt ]; then
   # apt-get, so this only matters on the dpkg -i fallback.
   need_pkgs libasound2t64 || need_pkgs libasound2 || true
 fi
-curl -fsSLo "$pkg" "https://update.code.visualstudio.com/latest/$build/stable" \
+curl --retry 3 -fsSLo "$pkg" "https://update.code.visualstudio.com/latest/$build/stable" \
   || { echo "SKIP: VS Code download failed"; exit 3; }
 if [ "$(pm)" = apt ]; then
   try "installing the VS Code deb" sudo_maybe apt-get -qq install -y "$pkg" \
@@ -52,8 +52,17 @@ code --version --no-sandbox 2>&1 | head -1 || true
 # nothing but "WARN: install failed" in the log, because the command's own error went to
 # /dev/null -- so the run proved only that something was wrong. It reproduced nowhere
 # locally, root or non-root, arm64 or amd64, which is exactly when the reason matters.
+#
+# THREE ATTEMPTS, because the Marketplace fails transiently: a 503 or a truncated VSIX
+# failed this scenario on all four Linux targets at once, a different extension on each,
+# and the rerun passed. Running out of attempts still fails the assertions, not SKIPs:
+# from here an outage looks like an extension that is gone for good, and a skip would
+# hide the second.
 for ext in saoudrizwan.claude-dev continue.continue; do
-  try_user "installing $ext" "code --no-sandbox --install-extension $ext --force" || true
+  for wait in 15 45 done; do
+    try_user "installing $ext" "code --no-sandbox --install-extension $ext --force" && break
+    [ "$wait" = done ] || { echo "      retrying $ext in ${wait}s"; sleep "$wait"; }
+  done
 done
 # as_user, NOT try_user: `try` is quiet on success by design, so wrapping an
 # INFORMATIONAL command in it printed a header with nothing under it.

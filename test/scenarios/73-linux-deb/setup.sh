@@ -28,11 +28,11 @@ esac
 # version goes stale silently and the scenario would then prove that an old build's
 # identifier still resolves. The IDENTIFIER is read off the install by osquery, which is
 # what makes this a fact rather than a download.
-url=$(curl -fsSL "https://cursor.com/api/download?platform=$plat&releaseTrack=stable" \
+url=$(curl --retry 3 -fsSL "https://cursor.com/api/download?platform=$plat&releaseTrack=stable" \
       | python3 -c 'import json,sys; print(json.load(sys.stdin)["debUrl"])') \
   || { echo "SKIP: could not resolve the Cursor download URL"; exit 3; }
 echo "--- installing $url"
-curl -fsSLo /tmp/cursor.deb "$url" || { echo "SKIP: download failed"; exit 3; }
+curl --retry 3 -fsSLo /tmp/cursor.deb "$url" || { echo "SKIP: download failed"; exit 3; }
 try "installing the Cursor .deb" sudo_maybe apt-get -qq install -y /tmp/cursor.deb \
   || try "dpkg -i for Cursor" sudo_maybe dpkg -i /tmp/cursor.deb \
   || echo "WARN: Cursor did not install"

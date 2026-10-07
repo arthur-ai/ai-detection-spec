@@ -20,7 +20,7 @@ need_pkgs python3 || true
 #
 # The installer also writes ~/.local/bin, which queries/filesystem-linux.sql globs, so uv
 # itself comes back as an unmatched `file` row -- correctly, being no kind of agent.
-try_user "the uv installer" 'curl -fsSL https://astral.sh/uv/install.sh | sh' || true
+try_user "the uv installer" 'curl --retry 3 -fsSL https://astral.sh/uv/install.sh | sh' || true
 for pkg in aider-chat hermes-agent litellm; do
   try_user "uv tool install $pkg" \
     "\$HOME/.local/bin/uv tool install --python 3.12 $pkg" || true
