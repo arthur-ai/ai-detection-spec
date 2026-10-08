@@ -21,7 +21,11 @@
       "codex-cli",
       "gemini-cli",
       "copilot-cli",
-      "cline"
+      "cline",
+      "opencode",
+      "continue",
+      "kilo-code",
+      "augment"
     ],
     "forbid": [
       "openclaw"
@@ -32,6 +36,10 @@
     "/.local/bin/claude",
     "@openai/codex",
     "@google/gemini-cli",
-    "@github/copilot"
+    "@github/copilot",
+    "opencode-ai",
+    "@continuedev/cli",
+    "@kilocode/cli",
+    "@augmentcode/auggie"
   ]
 }

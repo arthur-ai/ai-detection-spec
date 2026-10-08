@@ -2,6 +2,24 @@
   "scenario": "71-linux-cli-agents",
   "identifiers": [
     {
+      "agent": "augment",
+      "route": "npm",
+      "value": "@augmentcode/auggie",
+      "agent_version": "0.36.0",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "augment",
+      "route": "npm",
+      "value": "@augmentcode/auggie",
+      "agent_version": "0.36.0",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64"
+    },
+    {
       "agent": "claude-code",
       "route": "binaries",
       "value": "~/.local/bin/claude",
@@ -154,7 +172,7 @@
       "agent": "cline",
       "route": "npm",
       "value": "cline",
-      "agent_version": "3.0.68",
+      "agent_version": "3.0.69",
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "aarch64"
@@ -173,7 +191,7 @@
       "agent": "cline",
       "route": "npm",
       "value": "cline",
-      "agent_version": "3.0.61",
+      "agent_version": "3.0.69",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64"
@@ -221,7 +239,7 @@
       "agent": "codex-cli",
       "route": "npm",
       "value": "@openai/codex",
-      "agent_version": "0.160.0",
+      "agent_version": "0.161.0",
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "aarch64"
@@ -240,7 +258,7 @@
       "agent": "codex-cli",
       "route": "npm",
       "value": "@openai/codex",
-      "agent_version": "0.153.2",
+      "agent_version": "0.161.0",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64"
@@ -316,6 +334,24 @@
       "run": "37638808910"
     },
     {
+      "agent": "continue",
+      "route": "npm",
+      "value": "@continuedev/cli",
+      "agent_version": "1.5.47",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "continue",
+      "route": "npm",
+      "value": "@continuedev/cli",
+      "agent_version": "1.5.47",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64"
+    },
+    {
       "agent": "copilot-cli",
       "route": "npm",
       "value": "@github/copilot",
@@ -348,7 +384,7 @@
       "agent": "copilot-cli",
       "route": "npm",
       "value": "@github/copilot",
-      "agent_version": "1.0.91",
+      "agent_version": "1.0.93",
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "aarch64"
@@ -367,7 +403,7 @@
       "agent": "copilot-cli",
       "route": "npm",
       "value": "@github/copilot",
-      "agent_version": "1.0.83",
+      "agent_version": "1.0.93",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64"
@@ -415,7 +451,7 @@
       "agent": "gemini-cli",
       "route": "npm",
       "value": "@google/gemini-cli",
-      "agent_version": "0.62.0",
+      "agent_version": "0.63.0",
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "aarch64"
@@ -434,7 +470,7 @@
       "agent": "gemini-cli",
       "route": "npm",
       "value": "@google/gemini-cli",
-      "agent_version": "0.58.0",
+      "agent_version": "0.63.0",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64"
@@ -448,6 +484,42 @@
       "os": "ubuntu-24.04",
       "arch": "x86_64",
       "run": "37638808910"
+    },
+    {
+      "agent": "kilo-code",
+      "route": "npm",
+      "value": "@kilocode/cli",
+      "agent_version": "7.8.8",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "kilo-code",
+      "route": "npm",
+      "value": "@kilocode/cli",
+      "agent_version": "7.8.8",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "opencode",
+      "route": "npm",
+      "value": "opencode-ai",
+      "agent_version": "1.18.35",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "opencode",
+      "route": "npm",
+      "value": "opencode-ai",
+      "agent_version": "1.18.35",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64"
     }
   ]
 }

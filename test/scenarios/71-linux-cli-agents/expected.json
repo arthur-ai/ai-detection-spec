@@ -23,7 +23,11 @@
       "codex-cli",
       "gemini-cli",
       "copilot-cli",
-      "cline"
+      "cline",
+      "opencode",
+      "continue",
+      "kilo-code",
+      "augment"
     ],
     "forbid": [
       "openclaw",
@@ -36,7 +40,11 @@
     "@google/gemini-cli",
     "@github/copilot",
     "cline",
-    "/home/dana/"
+    "/home/dana/",
+    "opencode-ai",
+    "@continuedev/cli",
+    "@kilocode/cli",
+    "@augmentcode/auggie"
   ],
   "known_gaps": [
     "Claude Code's npm identifier is not exercised here -- the native installer is its primary route and the two would fight over the same binary name. 21-cli-agents-homebrew makes the same argument on macOS."

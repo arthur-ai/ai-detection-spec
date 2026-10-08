@@ -1,0 +1,41 @@
+{
+  "description": "More desktop agents: an AI browser, an agentic IDE in two editions, and goose's desktop app.",
+  "platform": "darwin",
+  "counts": {
+    "app": ">=3",
+    "brew": ">=3",
+    "npm": ">=0",
+    "file": ">=0",
+    "ext": ">=0",
+    "nmh": ">=0",
+    "daemon": ">=0",
+    "port": ">=0",
+    "vscodeext": ">=0",
+    "jbplugin": ">=0",
+    "proc": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "dia",
+      "trae",
+      "goose"
+    ],
+    "forbid": [
+      "perplexity-comet",
+      "orion",
+      "cursor",
+      "windsurf"
+    ]
+  },
+  "why": "Split from 10-desktop-apps by bytes, not by subject: Dia's zip alone is 840MB. Each bundle id is a raw probe for the reason 10 gives -- every one of these agents also matches on the brew route, so must_find alone would pass with every bundle id here broken. cn.trae.app is asserted beside com.trae.app because one entry covers both editions, and a signature that lost the second would still be found by the first. com.electron.goose is Electron's default shape, so it is asserted whole. The other AI browsers and VS Code forks are forbidden: a new Chromium fork and a new VS Code fork must not be read as the ones already catalogued.",
+  "must_contain": [
+    "company.thebrowser.dia",
+    "com.trae.app",
+    "cn.trae.app",
+    "com.electron.goose"
+  ],
+  "known_gaps": [
+    "Trae and Trae CN were read off their dmgs' Info.plist rather than a local install: the VM this was developed in had no IPv4 route to their CDNs. CI is the first real install of both.",
+    "Sign-in gated, like 10: nothing exercises behaviour that appears once a user signs in."
+  ]
+}

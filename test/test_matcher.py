@@ -1172,6 +1172,65 @@ check("three routes agreeing produce ONE agent, with all three as evidence",
       == {"image", "container", "ilabel"},
       f"got {r['findings']}")
 
+# --- the agents read off ai_tools' leads, and the lookalike each one arrived with -------
+# Every identifier here was produced by a real install on 2026-10-07, and so was every
+# lookalike: they sat in the same payloads, and they are what a substring match, a guessed
+# package name or a generic filename would claim.
+def _kind(kind, *ids, extra=""):
+    return [{"kind": kind, "id": i, "ver": "1.0", "loc": i, "extra": extra, "perms": ""}
+            for i in ids]
+
+def _claims(rows):
+    r = classify_json(rows)
+    return {e["id"]: f["id"] for f in r["findings"] for e in f["evidence"]}, unmatched_ids(r)
+
+_c, _u = _claims(_kind("vscodeext", "rooveterinaryinc.roo-cline", "saoudrizwan.claude-dev",
+                       "anthropic.claude-code", "openai.chatgpt", "openai.codex-audio",
+                       extra="vscode"))
+check("a Cline fork's id is NOT Cline's (rooveterinaryinc.roo-cline)",
+      _c.get("rooveterinaryinc.roo-cline") == "roo-code"
+      and _c.get("saoudrizwan.claude-dev") == "cline",
+      f"got {_c}")
+check("each vendor's editor extension lands on its own CLI's entry",
+      _c.get("anthropic.claude-code") == "claude-code"
+      and _c.get("openai.chatgpt") == "codex-cli", f"got {_c}")
+check("Codex's companion extension claims nothing (openai.codex-audio)",
+      "openai.codex-audio" in _u, "it installs beside openai.chatgpt and acts on nothing")
+
+_c, _u = _claims(_kind("file", "/home/dana/.local/bin/cursor-agent",
+                       "/home/dana/.local/bin/agent", "/home/dana/.local/bin/kiro-cli-chat",
+                       "/home/dana/.grok/", "/home/dana/.opencode/"))
+check("the curl installers' paths resolve to their agents",
+      _c == {"/home/dana/.local/bin/cursor-agent": "cursor",
+             "/home/dana/.local/bin/kiro-cli-chat": "kiro-cli",
+             "/home/dana/.grok/": "grok", "/home/dana/.opencode/": "opencode"},
+      f"got {_c}")
+check("Cursor's generic ~/.local/bin/agent link claims nothing",
+      "/home/dana/.local/bin/agent" in _u,
+      "Cursor CLI and Grok Build both write an `agent`; a name that generic identifies nobody")
+
+_c, _u = _claims(_kind("app", "com.amazon.codewhisperer", "dev.kiro.desktop",
+                       "com.electron.goose", "com.electron.other"))
+check("Kiro CLI and Kiro the IDE are told apart by their real bundle ids",
+      _c.get("com.amazon.codewhisperer") == "kiro-cli"
+      and _c.get("dev.kiro.desktop") == "kiro", f"got {_c}")
+check("Electron's default id shape claims only goose's whole id",
+      _c.get("com.electron.goose") == "goose" and "com.electron.other" in _u,
+      "com.electron.<name> is the packager's pattern; a prefix match would claim every app")
+
+_c, _u = _claims(_kind("npm", "@kilocode/cli", "kilocode", "opencode-ai"))
+check("npm's unscoped `kilocode` is NOT Kilo Code",
+      _c.get("@kilocode/cli") == "kilo-code" and "kilocode" in _u, f"got {_c}")
+
+_c, _u = _claims(_kind("jbplugin", "gemini", "plugin-amazonq", "github-copilot-intellij",
+                       "Sourcegraph", "sourcegraph", "aws-toolkit-jetbrains-standalone"))
+check("the JetBrains plugin directories resolve to their agents",
+      _c == {"gemini": "gemini-code-assist", "plugin-amazonq": "amazon-q",
+             "github-copilot-intellij": "copilot-cli", "Sourcegraph": "cody"}
+      and "aws-toolkit-jetbrains-standalone" in _u, f"got {_c}")
+check("...and matched with the vendor's case (`sourcegraph` is not Cody's directory)",
+      "sourcegraph" in _u, "exact means exact; a case-folded route would claim it")
+
 print()
 if failures:
     print(f"matcher: FAIL ({len(failures)})")

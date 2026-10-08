@@ -1,0 +1,45 @@
+{
+  "description": "Five agents installed by their vendors' own curl installers, the route no package manager records.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "deb+rpm": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=5",
+    "jbplugin": ">=0",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "port": ">=0",
+    "proc": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "opencode",
+      "grok",
+      "cursor",
+      "goose",
+      "kiro-cli"
+    ],
+    "forbid": [
+      "claude-code",
+      "codex-cli"
+    ]
+  },
+  "why": "Each installer's own script names where it writes, and each of those places is already enumerated: a file directly under ~/.local/bin, or a top-level ~/.<dir>/. So these agents were invisible for want of a catalog value, not a query. Nothing else on this host can name any of the five -- no npm, no package, no editor -- so removing a value turns its must_find red. claude-code and codex-cli are forbidden because their own routes are ~/.local/bin and top-level home directories too, and five new neighbours there must not be read as either.",
+  "must_contain": [
+    "/.opencode/",
+    "/.grok/",
+    "/.local/bin/cursor-agent",
+    "/.local/bin/goose",
+    "/.local/bin/kiro-cli"
+  ],
+  "known_gaps": [
+    "Only the installers' Linux branches run here. On macOS opencode, Cursor CLI, goose and Kiro CLI are proved through Homebrew in 21-cli-agents-homebrew; Grok Build's macOS install is unexercised, though ~/.grok is a posix route.",
+    "Nothing is run after installing, so state that appears on first use -- ~/.config/goose, ~/.local/share/opencode -- is unexamined. Neither is a top-level directory, so the enumeration would not reach it anyway."
+  ]
+}

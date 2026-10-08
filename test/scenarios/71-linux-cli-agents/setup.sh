@@ -21,7 +21,8 @@ try_user "the Claude Code native installer" \
 # /usr/local/lib/node_modules -- npm_packages reports it with no path assumption in the
 # query, and the structural predicate that bounds the recursion was measured on Linux
 # too: 329 rows unbounded, 1 with it.
-for pkg in @openai/codex @google/gemini-cli @github/copilot cline; do
+for pkg in @openai/codex @google/gemini-cli @github/copilot cline \
+           opencode-ai @continuedev/cli @kilocode/cli @augmentcode/auggie; do
   try "npm install -g $pkg" sudo_maybe npm install -g --no-fund --no-audit "$pkg" || true
 done
 

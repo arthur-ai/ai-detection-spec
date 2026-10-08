@@ -1,0 +1,58 @@
+{
+  "description": "Agents that ship as VS Code extensions, beside the two 78-linux-vscode proves.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "deb+rpm": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=0",
+    "jbplugin": ">=0",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "port": ">=0",
+    "proc": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=11"
+  },
+  "classified": {
+    "must_find": [
+      "claude-code",
+      "codex-cli",
+      "roo-code",
+      "kilo-code",
+      "augment",
+      "gemini-code-assist",
+      "amazon-q",
+      "cody",
+      "codegpt",
+      "blackbox"
+    ],
+    "forbid": [
+      "cline",
+      "continue",
+      "cursor",
+      "windsurf"
+    ]
+  },
+  "why": "Nothing else on this host can name these agents: no npm, no CLI, no editor but VS Code. So for each one the extension id is the only witness, and removing it turns must_find red -- claude-code and codex-cli included, since neither CLI is installed here. cline is FORBIDDEN because rooveterinaryinc.roo-cline is a Cline fork whose id contains `cline`; this is the converse of 78, which forbids claude-code while installing Cline. continue, cursor and windsurf are forbidden for 78's reason: an extension found in VS Code must not be read as another product being installed.",
+  "must_contain": [
+    "anthropic.claude-code",
+    "openai.chatgpt",
+    "rooveterinaryinc.roo-cline",
+    "kilocode.kilo-code",
+    "augment.vscode-augment",
+    "google.geminicodeassist",
+    "amazonwebservices.amazon-q-vscode",
+    "sourcegraph.cody-ai",
+    "danielsanmedium.dscodegpt",
+    "/blackboxapp.blackbox-",
+    "/blackboxapp.blackboxagent-"
+  ],
+  "known_gaps": [
+    "Installed into VS Code only. Cursor, Windsurf, VSCodium and Trae keep their own extension directories, which osquery reports under vscode_edition, and none is exercised.",
+    "Blackbox's extensions are unpublished from the Marketplace and arrive here as the VSIX the Marketplace still serves by URL. If that URL stops answering, the two ids can no longer be produced, which is the cue to supersede them rather than drop them."
+  ]
+}
