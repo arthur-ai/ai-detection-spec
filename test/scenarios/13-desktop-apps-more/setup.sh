@@ -13,7 +13,15 @@ need_brew
 # cached casks still named 1.47.2 on 2026-10-08, and that URL answered 404. Stale metadata is
 # what 12-chatgpt-pre-rename relies on to reach an old build; here it reaches nothing.
 brew update >/dev/null 2>&1 || echo "WARN: brew update failed; cask metadata may be stale"
-# WARN rather than exit, for the reason 10 gives: the assertion names which app is missing.
+# THREE ATTEMPTS, because a CDN can reset a transfer mid-download. Run 37829705185 lost
+# trae-cn to `Connection reset by peer` on macos-15, the same day the same URL installed on
+# both runners. Homebrew passes curl --retry 3, which retries timeouts and some HTTP
+# statuses, not a reset. Running out still WARNs rather than exits, for the reason 10
+# gives: the assertion names which app is missing.
 for c in thebrowsercompany-dia trae trae-cn block-goose; do
-  brew install --cask "$c" || echo "WARN: $c failed"
+  for wait in 15 45 done; do
+    brew install --cask "$c" && break
+    [ "$wait" = done ] && { echo "WARN: $c failed after three attempts"; break; }
+    echo "      retrying $c in ${wait}s"; sleep "$wait"
+  done
 done
