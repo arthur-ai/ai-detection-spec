@@ -36,16 +36,20 @@ One entry per tool, carrying **every** way it installs: cask or formula, npm, uv
 vendor's curl installer, deb or rpm, a VS Code, JetBrains or Chrome extension, a desktop app, a
 container image. A signature written for one route is blind to a fleet that used another.
 
-- **Check whether the agent already exists** (`grep -n "id: <x>" catalog/agents.yaml`). A missing
-  route on an existing entry is a common change, and a second entry for one tool is a duplicate.
+- **Check whether the agent already exists**, by product name rather than id:
+  `grep -n -i "<name>" catalog/agents.yaml`. A renamed product sits under its new id — Amazon Q
+  Developer's CLI is `kiro-cli`, while `amazon-q` is its editor extension. A missing route on an
+  existing entry is a common change, and a second entry for one tool is a duplicate.
 - **Map each route to `catalog/routes.yaml`** and read that route's comment: it says which column
-  the value is compared to and which trap already cost an identifier there (`vscode_extensions`
-  is `name`, never `publisher_id`; `jetbrains_plugins` is the directory, not the plugin.xml id).
+  the value is compared to and, where one has happened, the trap that cost an identifier
+  (`vscode_extensions` is `name`, never `publisher_id`; `jetbrains_plugins` is the directory,
+  not the plugin.xml id).
   The catalog header lists which routes are darwin-only, linux-only or both; `platforms:` must
   agree.
-- **Not identifiers**: a generic name (`~/.local/bin/agent`, which Cursor and Grok both write), a
-  listening port, a package a third party publishes for the vendor's tool (npm `hermes-agent`).
-  Leave them out and say why in the entry's comment, as `hermes` does.
+- **Not identifiers**: a generic name (Cursor writes `~/.local/bin/agent`, Grok
+  `~/.grok/bin/agent`), a listening port, a package a third party publishes for the vendor's
+  tool (npm `hermes-agent`). Leave them out and say why in the entry's comment, as `hermes`
+  does.
 - **No route reaches it** (a snap, an AppImage with no `.desktop` file): it goes in
   `docs/blind-spots.yaml`, not the catalog. A new route is a bigger change than this skill —
   `routes.yaml` plus a query — so read the `routes.yaml` header and `CLAUDE.md`'s *Traps* first.
@@ -57,16 +61,16 @@ OpenClaw's own Homebrew metadata and matched nothing; npm `aider` is a static-si
 
 - The scenario in step 4 is the install. Read the value off its payload, or off `osqueryi` on a
   machine that has it, using the table the route names.
-- **A command name is rarely the package name.** `hermes` is `hermes-agent` on every registry;
+- **A command name is often not the package name.** `hermes` is `hermes-agent` on every registry;
   `aider` installs as `aider-chat`.
 - **A `state_dirs` value usually needs the agent run**, not just installed. `hermes`'s comment
   records which install routes create its directory and which leave it for first run.
 - **Comment each value with where it was read**: scenario, date, version and path, as the
   entries after `opencode` do. That comment is the provenance a reviewer checks.
-- **A local macOS guest may not reach the download.** On 2026-10-07 Tart guests here reached
-  IPv6 hosts only, so Homebrew bottles, GitHub and AWS-hosted downloads hung. Read a bundle id
-  off the shipped dmg's `Info.plist` on the host, and leave the Homebrew token for CI to prove —
-  then say so in the commit (step 6).
+- **A local macOS guest may not reach the download.** On 2026-10-07 Tart guests on a
+  maintainer's Mac reached IPv6 hosts only, so Homebrew bottles, GitHub and AWS-hosted
+  downloads hung. Read a bundle id off the shipped dmg's `Info.plist` on the host, and leave
+  the Homebrew token for CI to prove — then say so in the commit (step 6).
 
 ## 4. Prove it in a scenario
 
@@ -75,8 +79,8 @@ and platform fit; start a new one when:
 
 - **two routes install the same binary name.** They cannot share a host: npm opencode is in 71,
   its curl installer in 84.
-- **the download is large.** 13 was split from 10 because Dia's zip alone is 840MB, and a
-  separate scenario is a separate CI job.
+- **the download is large.** 13 was split from 10 for Dia's download size, and a separate
+  scenario is a separate CI job.
 - **it is an older generation** of something another scenario installs current.
 
 What makes the scenario prove the identifier rather than the agent:
@@ -96,9 +100,10 @@ Mechanics:
 
 - `setup.sh` sources `test/lib/guest.sh` (macOS: `need_brew`, `need_node`) or
   `test/lib/guest-linux.sh` (`need_user`, `try_user`, `install_vscode_ext`,
-  `install_jb_plugin`). Give each download three attempts, 15s then 45s apart, as 13, 78 and
-  84 do: CDNs reset transfers mid-download, and curl's `--retry` does not cover that. Running
-  out should `WARN` and continue, so the assertion names which agent is missing.
+  `install_jb_plugin`). CDNs reset transfers mid-download and curl's `--retry` does not cover
+  that, so give each install three attempts, 15s then 45s apart. `install_vscode_ext` already
+  does; a download you write yourself should loop the same way, as 13 and 84 do. Running out
+  should `WARN` and continue, so the assertion names which agent is missing.
 - `exit 3` is SKIP, for an environment that cannot host the scenario. Be slow to conclude that:
   this repo said the Claude extension could not be installed without MDM, and was wrong.
 - **A new scenario goes in `.github/workflows/scenarios.yml`.** macOS goes in the `scenario`
@@ -108,8 +113,8 @@ Mechanics:
   has rpm. `tools/check_workflows.py` fails until it is listed.
 - Run it: `test/run-linux.sh <name>` (Docker; `LINUX_IMAGE=quay.io/rockylinux/rockylinux:9`
   for the rpm family) or `test/run.sh <name>` (Tart). Both write `observed.json` on a pass.
-  **Commit it** — `collect` only runs on `main`, so without it the PR reports the new values as
-  uncovered.
+  **Commit it** — `collect` only commits on `main`, so without it `docs/agents.md` reports the
+  new values as uncovered until the merge.
 
 ## 5. Regenerate and run the gates
 
@@ -122,8 +127,9 @@ $ tools/gates.sh
 - **README's agent and identifier counts are prose**: `check_doc_numbers.py` names the line,
   and you edit it by hand.
 - **Values only CI can produce show as pending**, not failed: lint runs the coverage gate with
-  `--pending-ok`. That is not a pass. The scenario fails on its own name if a value does not
-  appear, and the coverage job re-checks against that run.
+  `--pending-ok`. That is not a pass: once the scenario has run, the coverage job re-checks
+  the gate against its observations, and a value it did not produce fails there. The scenario
+  itself fails only if the value is the sole witness or `must_contain` names it.
 - `test/test_match_sql.py` needs `osqueryi` and SKIPs without it. CI runs it for real.
 
 ## 6. Commit
@@ -140,8 +146,11 @@ The body is what `.claude/skills/release` writes the notes from, so it says:
 
 - Don't put an agent identifier in `queries/`. The endpoint enumerates; `check_no_catalog.py`
   fails the build.
-- Don't type a `superseded:` record by hand, or reach for `retired:`, `untested:` or
-  `unverified:`. They are gone, and `validate_catalog.py` refuses them.
+- Don't write a `superseded:` record yourself. Paste the one `--supersede` prints;
+  `validate_catalog.py` refuses a record no archived observation backs.
+- Don't bring back `retired:`, `untested:` or an `unverified:` block. The validator refuses
+  the first two and any unknown field on an agent, but **a top-level `unverified:` block
+  passes it**, so the reviewer is the only check on that one.
 - Don't delete a removed entry's fixture rows. Invert the assertion to *must not match*.
 - Don't write a count into a comment, a scenario header or `expected.json`'s prose. Nothing keeps
   it current, which is why `f22087d` dropped them from the scenario headers.

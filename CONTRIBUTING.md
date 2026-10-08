@@ -79,12 +79,13 @@ it — a scenario must pin the kinds **its own platform's queries actually emit*
    ```
 3. Add a test scenario under `test/scenarios/`, with a `setup.sh` that installs it and an
    `expected.json` that says what should be found. Under `classified.forbid`, list any agent
-   the new rows could be mistaken for: Roo Code's extension id, `roo-cline`, contains Cline's
-   name. A new scenario also goes in the matrix in `.github/workflows/scenarios.yml`.
+   the new rows could be mistaken for: Roo Code's extension id,
+   `rooveterinaryinc.roo-cline`, contains Cline's name. A new scenario also goes in the matrix
+   in `.github/workflows/scenarios.yml`.
 4. Regenerate the files built from the catalog, and run the checks:
    ```console
    $ python3 tools/build.py                  # dist/
-   $ python3 tools/agent_status.py --write   # docs/agents.md, docs/limits.md
+   $ python3 tools/agent_status.py --write   # docs/agents.md, docs/limits.md, README badge
    $ tools/gates.sh
    ```
 5. Open a PR. CI checks the scenario is well-formed; the full run happens on a runner for its
