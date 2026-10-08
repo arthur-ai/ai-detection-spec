@@ -79,9 +79,20 @@ print("a pull request's merge commit, after main has moved")
 # pull_request.base.sha can still name where the branch was cut. Diffing from there counts
 # main's own new commits as the PR's -- run 37833949373 did, and ran the runtime suite for
 # a docs-only change. Rebuilt here: main moves under a branch, then GitHub's merge.
+#
+# THE FIXTURE MUST NOT REACH THE CALLER'S REPOSITORY. Run from a git hook, GIT_DIR and its
+# siblings point at the checkout under test, and `git -C <tmp>` still obeys them: measured,
+# this block then wrote six commits and a branch into that repository and passed. So every
+# variable git itself clears for a submodule is stripped, and the block runs once with a
+# hostile GIT_DIR aimed at a sentinel repository that must come out untouched.
+_LOCAL_VARS = subprocess.run(["git", "rev-parse", "--local-env-vars"], capture_output=True,
+                             text=True, check=True).stdout.split()
+
+
 def _git(d, *a):
+    env = {k: v for k, v in os.environ.items() if k not in _LOCAL_VARS}
     return subprocess.run(["git", "-C", d, *a], capture_output=True, text=True,
-                          check=True).stdout.strip()
+                          check=True, env=env).stdout.strip()
 
 
 def _commit(d, path, msg):
@@ -91,10 +102,15 @@ def _commit(d, path, msg):
     return _git(d, "rev-parse", "HEAD")
 
 
-with tempfile.TemporaryDirectory() as d:
+def _new_repo(d):
     _git(d, "init", "-q", "-b", "main")
     _git(d, "config", "user.email", "t@example.com")
     _git(d, "config", "user.name", "t")
+    _git(d, "config", "commit.gpgsign", "false")
+
+
+def _merge_scenario(d):
+    _new_repo(d)
     cut = _commit(d, "code.py", "base")
     _git(d, "checkout", "-qb", "pr")
     _commit(d, "notes.md", "docs only")
@@ -107,14 +123,35 @@ with tempfile.TemporaryDirectory() as d:
     _git(d, "checkout", "-q", "main")
     _git(d, "merge", "-q", "--no-ff", "pr", "-m", "merge again")
     merge2 = _git(d, "rev-parse", "HEAD")
-    here = os.getcwd()
+    # ci_scope runs git in the working directory with the inherited environment, so the
+    # same variables leave os.environ for these calls and come back afterwards.
+    here, saved = os.getcwd(), {k: os.environ.pop(k) for k in _LOCAL_VARS if k in os.environ}
     os.chdir(d)
     try:
-        stale = ci_scope.changed(cut, merge)
-        fixed = ci_scope.changed(f"{merge}^1", merge)
-        fixed_code = ci_scope.changed(f"{merge2}^1", merge2)
+        return (ci_scope.changed(cut, merge), ci_scope.changed(f"{merge}^1", merge),
+                ci_scope.changed(f"{merge2}^1", merge2))
     finally:
         os.chdir(here)
+        os.environ.update(saved)
+
+
+with tempfile.TemporaryDirectory() as sentinel, tempfile.TemporaryDirectory() as d:
+    _new_repo(sentinel)
+    _commit(sentinel, "keep", "sentinel")
+    _state = lambda: _git(sentinel, "for-each-ref", "--format=%(refname) %(objectname)")
+    _before = _state()
+    _prior = os.environ.get("GIT_DIR")
+    os.environ["GIT_DIR"] = str(pathlib.Path(sentinel) / ".git")
+    try:
+        stale, fixed, fixed_code = _merge_scenario(d)
+    finally:
+        if _prior is None:
+            del os.environ["GIT_DIR"]
+        else:
+            os.environ["GIT_DIR"] = _prior
+    _after = _state()
+check("an inherited GIT_DIR's repository comes out untouched", _after == _before,
+      f"before {_before!r}, after {_after!r}")
 check("the branch point counts main's own commits as the PR's (the bug)",
       "observed.json" in (stale or []), f"got {stale}")
 check("the merge's first parent sees only the PR's change", fixed == ["notes.md"],
