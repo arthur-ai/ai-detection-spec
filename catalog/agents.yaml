@@ -288,6 +288,13 @@ agents:
     # This used to say the shrink guard would fire once macos-14's Homebrew caught up. It
     # did not fire. The image update changed `os` from 14.8.7 to 14.8.9, which made it a
     # different key, so the old record stayed and kept counting as CI coverage.
+    #
+    # THIS IS THE HOST APP, NOT DOTS. A dot runs on an OpenAI cloud computer, and local
+    # computer access is opt-in through this same app, which must stay open
+    # (help.openai.com/en/articles/20001554-manage-dots-in-chatgpt-workspaces). A match says
+    # ChatGPT is installed, never that dots is enabled or in use. No dots-only signal has been
+    # read off an install: the cask's zap list names com.openai.sky.CUAService, but that is
+    # Homebrew metadata, and nothing ties it to dots rather than the app's own computer use.
 
   - id: codex-cli
     name: Codex CLI
