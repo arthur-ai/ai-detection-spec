@@ -88,6 +88,8 @@ it — a scenario must pin the kinds **its own platform's queries actually emit*
    $ python3 tools/agent_status.py --write   # docs/agents.md, docs/limits.md, README badge
    $ tools/gates.sh
    ```
+   The agent and identifier totals in README's text are not regenerated. If they changed,
+   edit them by hand; `tools/check_doc_numbers.py`, which `gates.sh` runs, names the line.
 5. Open a PR. CI checks the scenario is well-formed; the full run happens on a runner for its
    platform.
 

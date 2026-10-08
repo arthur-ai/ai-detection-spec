@@ -67,10 +67,10 @@ OpenClaw's own Homebrew metadata and matched nothing; npm `aider` is a static-si
   records which install routes create its directory and which leave it for first run.
 - **Comment each value with where it was read**: scenario, date, version and path, as the
   entries after `opencode` do. That comment is the provenance a reviewer checks.
-- **A local macOS guest may not reach the download.** On 2026-10-07 Tart guests on a
-  maintainer's Mac reached IPv6 hosts only, so Homebrew bottles, GitHub and AWS-hosted
-  downloads hung. Read a bundle id off the shipped dmg's `Info.plist` on the host, and leave
-  the Homebrew token for CI to prove — then say so in the commit (step 6).
+- **If the local macOS guest cannot reach a download**, read the bundle id off the shipped
+  dmg's `Info.plist` on the host, and leave what the local run could not prove for CI — then
+  say so in the commit (step 6). A hang rather than an error is the usual sign: on 2026-10-07
+  Tart guests on a maintainer's Mac reached IPv6 hosts only.
 
 ## 4. Prove it in a scenario
 
