@@ -32,7 +32,7 @@
       "agent_version": "1.0.99",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "37638808910"
+      "run": "37742708783"
     },
     {
       "agent": "claude-in-chrome",
@@ -41,7 +41,16 @@
       "agent_version": "1.0.99",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "37638808910"
+      "run": "37742708783"
+    },
+    {
+      "agent": "harpa",
+      "route": "extension_ids",
+      "value": "eanggfilgoajaocelnaflolkadkeghjp",
+      "agent_version": "14.4.0",
+      "os": "15.7.9",
+      "arch": "arm64",
+      "run": "37742708783"
     },
     {
       "agent": "harpa",
@@ -49,7 +58,17 @@
       "value": "eanggfilgoajaocelnaflolkadkeghjp",
       "agent_version": "14.4.0",
       "os": "26.6.2",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "37742708783"
+    },
+    {
+      "agent": "merlin",
+      "route": "extension_ids",
+      "value": "camppjleccjaphfdbohjdohecfnoikec",
+      "agent_version": "8.3.0",
+      "os": "15.7.9",
+      "arch": "arm64",
+      "run": "37742708783"
     },
     {
       "agent": "merlin",
@@ -57,7 +76,17 @@
       "value": "camppjleccjaphfdbohjdohecfnoikec",
       "agent_version": "8.3.0",
       "os": "26.6.2",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "37742708783"
+    },
+    {
+      "agent": "monica",
+      "route": "extension_ids",
+      "value": "ofpnmcalabcbjgholdjcjblkibolbppb",
+      "agent_version": "9.0.22",
+      "os": "15.7.9",
+      "arch": "arm64",
+      "run": "37742708783"
     },
     {
       "agent": "monica",
@@ -65,7 +94,17 @@
       "value": "ofpnmcalabcbjgholdjcjblkibolbppb",
       "agent_version": "9.0.22",
       "os": "26.6.2",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "37742708783"
+    },
+    {
+      "agent": "sider",
+      "route": "extension_ids",
+      "value": "difoiogjjojoaoomphldepapgpbgkhkb",
+      "agent_version": "5.34.1",
+      "os": "15.7.9",
+      "arch": "arm64",
+      "run": "37742708783"
     },
     {
       "agent": "sider",
@@ -73,7 +112,8 @@
       "value": "difoiogjjojoaoomphldepapgpbgkhkb",
       "agent_version": "5.34.1",
       "os": "26.6.2",
-      "arch": "arm64"
+      "arch": "arm64",
+      "run": "37742708783"
     }
   ]
 }
