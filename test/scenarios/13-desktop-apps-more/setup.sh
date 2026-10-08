@@ -9,6 +9,10 @@
 set -e
 source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest.sh"
 need_brew
+# FRESH METADATA, because Dia's vendor serves only the current zip. Both runner images'
+# cached casks still named 1.47.2 on 2026-10-08, and that URL answered 404. Stale metadata is
+# what 12-chatgpt-pre-rename relies on to reach an old build; here it reaches nothing.
+brew update >/dev/null 2>&1 || echo "WARN: brew update failed; cask metadata may be stale"
 # WARN rather than exit, for the reason 10 gives: the assertion names which app is missing.
 for c in thebrowsercompany-dia trae trae-cn block-goose; do
   brew install --cask "$c" || echo "WARN: $c failed"
