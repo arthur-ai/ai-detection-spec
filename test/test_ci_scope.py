@@ -11,9 +11,12 @@ is asserted only for inputs that are unambiguously prose.
 """
 import contextlib
 import io
+import os
 import pathlib
+import re
 import subprocess
 import sys
+import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
@@ -69,6 +72,67 @@ check("a base that does not exist reports no diff, rather than nothing changed",
       _missing is None)
 check("and it says on stderr why it could not tell", "cannot diff" in _err.getvalue(),
       repr(_err.getvalue()))
+
+print()
+print("a pull request's merge commit, after main has moved")
+# GitHub builds the merge onto main's CURRENT tip, so its first parent is that tip, while
+# pull_request.base.sha can still name where the branch was cut. Diffing from there counts
+# main's own new commits as the PR's -- run 37833949373 did, and ran the runtime suite for
+# a docs-only change. Rebuilt here: main moves under a branch, then GitHub's merge.
+def _git(d, *a):
+    return subprocess.run(["git", "-C", d, *a], capture_output=True, text=True,
+                          check=True).stdout.strip()
+
+
+def _commit(d, path, msg):
+    (pathlib.Path(d) / path).write_text(msg)
+    _git(d, "add", path)
+    _git(d, "commit", "-qm", msg)
+    return _git(d, "rev-parse", "HEAD")
+
+
+with tempfile.TemporaryDirectory() as d:
+    _git(d, "init", "-q", "-b", "main")
+    _git(d, "config", "user.email", "t@example.com")
+    _git(d, "config", "user.name", "t")
+    cut = _commit(d, "code.py", "base")
+    _git(d, "checkout", "-qb", "pr")
+    _commit(d, "notes.md", "docs only")
+    _git(d, "checkout", "-q", "main")
+    _commit(d, "observed.json", "main moves")
+    _git(d, "merge", "-q", "--no-ff", "pr", "-m", "merge")
+    merge = _git(d, "rev-parse", "HEAD")
+    _git(d, "checkout", "-q", "pr")
+    _commit(d, "code.py", "the PR touches code")
+    _git(d, "checkout", "-q", "main")
+    _git(d, "merge", "-q", "--no-ff", "pr", "-m", "merge again")
+    merge2 = _git(d, "rev-parse", "HEAD")
+    here = os.getcwd()
+    os.chdir(d)
+    try:
+        stale = ci_scope.changed(cut, merge)
+        fixed = ci_scope.changed(f"{merge}^1", merge)
+        fixed_code = ci_scope.changed(f"{merge2}^1", merge2)
+    finally:
+        os.chdir(here)
+check("the branch point counts main's own commits as the PR's (the bug)",
+      "observed.json" in (stale or []), f"got {stale}")
+check("the merge's first parent sees only the PR's change", fixed == ["notes.md"],
+      f"got {fixed}")
+check("so a docs-only PR stays docs-only", not runs(fixed))
+check("and a PR that touches code still runs", runs(fixed_code), f"got {fixed_code}")
+
+# The base is chosen in YAML, so the workflows are checked too: every one that calls
+# ci_scope.py on a pull request must pass the merge's first parent.
+for _wf in sorted((ROOT / ".github" / "workflows").glob("*.yml")):
+    _text = _wf.read_text()
+    if "ci_scope.py" not in _text:
+        continue
+    _base = re.search(r"BASE: \$\{\{(.*?)\}\}", _text, re.S)
+    _expr = " ".join(_base.group(1).split()) if _base else ""
+    check(f"{_wf.name} scopes a pull request against the merge's first parent",
+          "format('{0}^1', github.sha)" in _expr and "base.sha" not in _expr,
+          f"BASE is {_expr!r}")
 
 print()
 print("the command line, as the workflow actually calls it")
