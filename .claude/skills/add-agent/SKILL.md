@@ -100,12 +100,12 @@ Mechanics:
 
 - `setup.sh` sources `test/lib/guest.sh` (macOS: `need_brew`, `need_node`) or
   `test/lib/guest-linux.sh` (`need_user`, `try_user`, `install_vscode_ext`,
-  `install_jb_plugin`). CDNs reset transfers mid-download and curl's `--retry` does not cover
-  that, so give each install three attempts, 15s then 45s apart. `install_vscode_ext` already
-  does; a download you write yourself should loop the same way, as 13 and 84 do. Running out
-  should `WARN` and continue, so the assertion names which agent is missing.
-- `exit 3` is SKIP, for an environment that cannot host the scenario. Be slow to conclude that:
-  this repo said the Claude extension could not be installed without MDM, and was wrong.
+  `install_jb_plugin`); both carry `retry`. Wrap every download and install in it; the
+  helpers already do. Running out should `WARN` and continue, so the assertion names which agent is
+  missing, or `exit 1` when nothing after it can run.
+- `exit 3` is SKIP, for an environment that cannot host the scenario — a missing package
+  family or architecture, never a failed download. Be slow to conclude even that: this repo
+  said the Claude extension could not be installed without MDM, and was wrong.
 - **A new scenario goes in `.github/workflows/scenarios.yml`.** macOS goes in the `scenario`
   job, which runs it on both macOS labels. Linux goes in `scenario-linux` (Ubuntu) and
   `scenario-linux-container` (Debian, Rocky, Fedora); one that needs a package family exits 3

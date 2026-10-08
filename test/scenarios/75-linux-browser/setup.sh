@@ -36,18 +36,20 @@ arch=$(uname -m)
 # mktemp, with the suffix the package manager keys on: apt-get and dnf treat an argument
 # as a local package only when it ends in .deb or .rpm. A fixed /tmp name is a symlink
 # waiting to be planted between the download and the privileged install.
+#
+# A failed download is not a SKIP: see retry in lib/guest-linux.sh.
 case "$(pm)" in
   apt) pkg=$(mktemp /tmp/chrome.XXXXXX.deb)
-       curl --retry 3 -fsSLo "$pkg" \
+       retry "the Chrome download" curl --retry 3 -fsSLo "$pkg" \
          https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
-         || { rm -f "$pkg"; echo "SKIP: Chrome download failed"; exit 3; }
+         || { rm -f "$pkg"; echo "FAIL: Chrome did not download"; exit 1; }
        try "installing the Chrome deb" sudo_maybe apt-get -qq install -y "$pkg" \
          || echo "WARN: Chrome did not install"
        rm -f "$pkg" ;;
   dnf) pkg=$(mktemp /tmp/chrome.XXXXXX.rpm)
-       curl --retry 3 -fsSLo "$pkg" \
+       retry "the Chrome download" curl --retry 3 -fsSLo "$pkg" \
          https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm \
-         || { rm -f "$pkg"; echo "SKIP: Chrome download failed"; exit 3; }
+         || { rm -f "$pkg"; echo "FAIL: Chrome did not download"; exit 1; }
        try "installing the Chrome rpm" sudo_maybe dnf -q -y install "$pkg" \
          || echo "WARN: Chrome did not install"
        rm -f "$pkg" ;;

@@ -20,11 +20,17 @@ case "$arch" in
   aarch64) plat=linux-arm64 ;;
   *) echo "SKIP: no Cursor .rpm for $arch"; exit 3 ;;
 esac
-url=$(curl --retry 3 -fsSL "https://cursor.com/api/download?platform=$plat&releaseTrack=stable" \
-      | python3 -c 'import json,sys; print(json.load(sys.stdin)["rpmUrl"])') \
-  || { echo "SKIP: could not resolve the Cursor rpm URL"; exit 3; }
+# Neither failure below is a SKIP: a changed API or a moved package is what this scenario
+# must report. See retry in lib/guest-linux.sh.
+cursor_url() {
+  curl --retry 3 -fsSL "https://cursor.com/api/download?platform=$plat&releaseTrack=stable" \
+    | python3 -c 'import json,sys; print(json.load(sys.stdin)["rpmUrl"])'
+}
+url=$(retry "resolving the Cursor rpm URL" cursor_url) \
+  || { echo "FAIL: could not resolve the Cursor rpm URL"; exit 1; }
 echo "--- installing $url"
-curl --retry 3 -fsSLo /tmp/cursor.rpm "$url" || { echo "SKIP: download failed"; exit 3; }
+retry "the Cursor download" curl --retry 3 -fsSLo /tmp/cursor.rpm "$url" \
+  || { echo "FAIL: the Cursor .rpm did not download"; exit 1; }
 # --nodeps: the rpm declares desktop dependencies a container has no reason to carry, and
 # what is under test is the PACKAGE RECORD, not whether Cursor could launch.
 try "rpm -i --nodeps of the Cursor rpm" sudo_maybe rpm -i --nodeps /tmp/cursor.rpm \

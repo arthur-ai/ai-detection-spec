@@ -317,6 +317,19 @@ else
   echo "guest-linux.sh: one way to become the scenario user"
 fi
 
+# ONE retry, IN TWO FILES. lib/guest.sh is the only file run.sh copies into a macOS guest,
+# so the helper cannot be shared by sourcing, and two copies that drift is the shape of the
+# su bug above. Held byte-identical instead, from `retry() {` to its closing brace.
+_retry_body() { sed -n '/^retry() {$/,/^}$/p' "$1"; }
+_retry_mac=$(_retry_body "$HERE/lib/guest.sh")
+if [ -z "$_retry_mac" ] || [ "$_retry_mac" != "$(_retry_body "$HERE/lib/guest-linux.sh")" ]; then
+  echo "FAIL: retry() in lib/guest.sh and lib/guest-linux.sh differ, or one is missing."
+  echo "      They are one helper in two files; change both."
+  fail=1
+else
+  echo "guest.sh, guest-linux.sh: one retry"
+fi
+
 # bin/container-scan is SOURCED by test/docker_states.sh and by bin/discover, so that it
 # lends out the guard and the bound rather than having them copied. Two things can break
 # that silently: deleting the `(return 0 2>/dev/null) && return 0` line, after which
