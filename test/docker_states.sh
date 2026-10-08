@@ -510,15 +510,16 @@ print(1 if isinstance(r, list) and r else 0)" 2>/dev/null)" \
 cs_err="$(mktemp "${TMPDIR:-/tmp}/cs-err.XXXXXX")"
 stdout_now="$("$ROOT/bin/container-scan" --socket "$SOCK" 2>"$cs_err")"; cs_rc=$?
 cs_diff="$(CS_A="$stdout_now" CS_B="$(cat "$CACHE")" python3 -c "
-import json, os
+import collections, json, os
 def load(name):
     try:
         return json.loads(os.environ[name]), None
     except Exception as e:
         return None, 'is not JSON (%s): %r' % (e, os.environ[name][:120])
 def split(doc):
-    return ([r.get('extra') for r in doc if r.get('kind') == 'scan'],
-            sorted(json.dumps(r, sort_keys=True) for r in doc if r.get('kind') != 'scan'))
+    rows = [json.dumps(r, sort_keys=True) for r in doc]
+    return ([j for j, r in zip(rows, doc) if r.get('kind') == 'scan'],
+            sorted(j for j, r in zip(rows, doc) if r.get('kind') != 'scan'))
 (a, ea), (b, eb) = load('CS_A'), load('CS_B')
 if ea or eb:
     print('stdout %s; the file %s' % (ea or 'parsed', eb or 'parsed'))
@@ -527,9 +528,13 @@ if ea or eb:
 if ra == rb:
     print('same')
     raise SystemExit
-print('stdout: %d rows, scan marker %s; the file: %d rows, scan marker %s'
-      % (len(ra), ma, len(rb), mb))
-only_a, only_b = sorted(set(ra) - set(rb)), sorted(set(rb) - set(ra))
+# The whole marker, not its extra: ver is when the scan ran and loc the socket it used.
+print('stdout: %d rows; the file: %d rows' % (len(ra), len(rb)))
+for side, marks in (('stdout', ma), ('the file', mb)):
+    for m in marks or ['none']: print('%s scan marker: %s' % (side, m))
+# A multiset, so one surplus copy of a row is shown rather than lost in a set.
+only_a = sorted((collections.Counter(ra) - collections.Counter(rb)).elements())
+only_b = sorted((collections.Counter(rb) - collections.Counter(ra)).elements())
 for r in only_a[:5]: print('only on stdout:   ' + r)
 for r in only_b[:5]: print('only in the file: ' + r)
 if len(only_a) > 5 or len(only_b) > 5: print('(the first five of each)')" 2>&1)"
