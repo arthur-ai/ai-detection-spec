@@ -16,6 +16,15 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# THE COLD-RUN GATES, defined once for the four steps that time a query. Each warns above
+# the self-imposed 10s budget (a convention, not a Jamf limit) and FAILS only above
+# QUERY_FAIL_S, which is for a query that blocks rather than a slow runner. The limit was
+# 2x the budget until the Linux composed query, unchanged, measured 3s to 25s cold across
+# 19 runs (2026-10-07 to 10-08) and failed twice in an hour at 25s and 21s.
+env:
+  QUERY_BUDGET_S: 10
+  QUERY_FAIL_S: 60
+
 jobs:
   # WHAT THIS DIFF CAN MOVE, decided once and read by the expensive jobs below.
   #
@@ -123,16 +132,16 @@ jobs:
           # Self-imposed 10s budget. Overrun it and the machine reports
           # nothing, which is indistinguishable from a machine with nothing on it.
           #
-          # Same shape as the Linux job below: warn over the budget, fail over 2x. This
-          # one has never flapped -- it measures about 1.2s here -- but two gates on the
-          # same budget enforcing it differently would leave the next reader working out
-          # which was intended.
-          if [ "$elapsed" -gt 20 ]; then
-            echo "::error::query took ${elapsed}s. Over 2x the budget is a query that"
+          # Same shape as the Linux job below: warn over the budget, fail over QUERY_FAIL_S.
+          # This one has never flapped -- it measures about 1.2s here -- but two gates on
+          # the same budget enforcing it differently would leave the next reader working
+          # out which was intended.
+          if [ "$elapsed" -gt "$QUERY_FAIL_S" ]; then
+            echo "::error::query took ${elapsed}s. Over ${QUERY_FAIL_S}s is a query that"
             echo "::error::blocks, not runner variance."
             exit 1
-          elif [ "$elapsed" -gt 10 ]; then
-            echo "::warning::query took ${elapsed}s, over the self-imposed 10s budget."
+          elif [ "$elapsed" -gt "$QUERY_BUDGET_S" ]; then
+            echo "::warning::query took ${elapsed}s, over the self-imposed ${QUERY_BUDGET_S}s budget."
           fi
 
       # The rendered match query wraps the same enumeration in a join, and a reader may run
@@ -146,11 +155,11 @@ jobs:
           elapsed=$(( $(date +%s) - start ))
           agents=$(python3 -c "import json;print(len(json.load(open('/tmp/agents.json'))))")
           echo "$agents agents in ${elapsed}s"
-          if [ "$elapsed" -gt 20 ]; then
-            echo "::error::the match query took ${elapsed}s, over 2x the budget."
+          if [ "$elapsed" -gt "$QUERY_FAIL_S" ]; then
+            echo "::error::the match query took ${elapsed}s, over ${QUERY_FAIL_S}s."
             exit 1
-          elif [ "$elapsed" -gt 10 ]; then
-            echo "::warning::the match query took ${elapsed}s, over the self-imposed 10s budget."
+          elif [ "$elapsed" -gt "$QUERY_BUDGET_S" ]; then
+            echo "::warning::the match query took ${elapsed}s, over the self-imposed ${QUERY_BUDGET_S}s budget."
           fi
 
       # The runner that owns the --deep flag, on a machine with no Docker -- which is the
@@ -454,25 +463,23 @@ jobs:
           # THIS IS A COLD RUN UNDER SUDO, and that is the number a synchronous reporting
           # path actually pays. It is NOT the number tools/measure.py reports: that takes
           # the floor of three runs, and performance.yml warms exactly what this query
-          # reads before calling it. Measured on this runner across three commits: 8s, 9s
-          # and 12s cold, against 1.12s warm. queries/COST.md carries both and says why.
+          # reads before calling it. Cold, it varies from 3s to 25s on unchanged code,
+          # against 1.12s warm. queries/COST.md carries both and says why.
           #
-          # WARN BETWEEN THE BUDGET AND 2x, FAIL ABOVE IT. The 10s budget is self-imposed
+          # WARN ABOVE THE BUDGET, FAIL ABOVE QUERY_FAIL_S. The 10s budget is self-imposed
           # and it is a declaration a reader can trust; the GATE exists to catch a query
-          # that BLOCKS, which is an order-of-magnitude event. Enforcing both at one
-          # number is what made this job red at 12s and green at 9s on the same code --
-          # and queries/COST.md already argues that case for measure.py, citing apps.sql
-          # measuring 0.81s and 1.14s on consecutive runs of the same commit. A gate that
-          # fails at random teaches people to re-run it, and then a real stall gets
-          # re-run too.
-          if [ "$elapsed" -gt 20 ]; then
-            echo "::error::query took ${elapsed}s. Over 2x the 10s budget is a query that"
+          # that BLOCKS, which is an order-of-magnitude event. Enforced at the budget, this
+          # job went red at 12s and green at 9s on the same code, and at 2x it failed at
+          # 25s and 21s -- see the env block at the top. A gate that fails at random
+          # teaches people to re-run it, and then a real stall gets re-run too.
+          if [ "$elapsed" -gt "$QUERY_FAIL_S" ]; then
+            echo "::error::query took ${elapsed}s. Over ${QUERY_FAIL_S}s is a query that"
             echo "::error::blocks, not runner variance."
             exit 1
-          elif [ "$elapsed" -gt 10 ]; then
-            echo "::warning::query took ${elapsed}s, over the self-imposed 10s budget but"
-            echo "::warning::inside the 2x the gate allows for runner variance. This is the"
-            echo "::warning::cold cost on a loaded machine -- see queries/COST.md."
+          elif [ "$elapsed" -gt "$QUERY_BUDGET_S" ]; then
+            echo "::warning::query took ${elapsed}s, over the self-imposed ${QUERY_BUDGET_S}s budget but"
+            echo "::warning::inside the ${QUERY_FAIL_S}s the gate allows for runner variance. This is"
+            echo "::warning::the cold cost on a loaded machine -- see queries/COST.md."
           fi
           # THE LINUX ARTIFACT MUST NOT BE EMPTY. Any Linux box has packages, so zero rows
           # means the artifact did not run rather than that the machine is clean -- which
@@ -487,11 +494,11 @@ jobs:
           elapsed=$(( $(date +%s) - start ))
           agents=$(python3 -c "import json;print(len(json.load(open('/tmp/agents.json'))))")
           echo "$agents agents in ${elapsed}s"
-          if [ "$elapsed" -gt 20 ]; then
-            echo "::error::the match query took ${elapsed}s, over 2x the budget."
+          if [ "$elapsed" -gt "$QUERY_FAIL_S" ]; then
+            echo "::error::the match query took ${elapsed}s, over ${QUERY_FAIL_S}s."
             exit 1
-          elif [ "$elapsed" -gt 10 ]; then
-            echo "::warning::the match query took ${elapsed}s, over the self-imposed 10s budget."
+          elif [ "$elapsed" -gt "$QUERY_BUDGET_S" ]; then
+            echo "::warning::the match query took ${elapsed}s, over the self-imposed ${QUERY_BUDGET_S}s budget."
           fi
 
       - name: The darwin artifact must fail loudly here

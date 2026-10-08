@@ -85,9 +85,11 @@ Two consequences, and neither is a defect in the query:
   not to put this on a synchronous reporting path and to schedule `bin/discover --write` and
   `cat` the file. A cold cost near the budget is the measurement behind that sentence rather
   than a new problem.
-- **The CI gate warns at the budget and fails at 2x**, the convention above: a hard gate made
-  this job red at 12s and green at 9s on identical code. The warning fires on every run, so
-  the overrun stays visible instead of being absorbed into a green tick.
+- **The CI gate warns at the budget and fails at 60s** (`QUERY_FAIL_S` in `ci.yml`). A hard
+  gate at the budget went red at 12s and green at 9s on identical code, and the 2x that
+  suits `measure.py`'s warm floors failed a single cold run at 25s and then 21s: unchanged,
+  this query measured 3s to 25s cold across 19 runs. The warning fires above the budget on
+  every run, so the overrun stays visible instead of being absorbed into a green tick.
 - **The `unit` branch is the first thing to reconsider if this needs to come down.** It is 477
   of the ~1750 rows -- 28% of the payload -- and `systemd_prefixes` carries no catalog values,
   so none of those rows can match anything today. Dropping or filtering it would cut payload
