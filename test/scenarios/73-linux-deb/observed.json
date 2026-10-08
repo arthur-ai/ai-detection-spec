@@ -18,7 +18,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "37583703186"
+      "run": "37638808910"
     },
     {
       "agent": "cursor",
@@ -37,7 +37,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "37583703186"
+      "run": "37638808910"
     },
     {
       "agent": "cursor",
@@ -54,7 +54,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "37583703186"
+      "run": "37638808910"
     },
     {
       "agent": "cursor",
@@ -71,7 +71,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "37583703186"
+      "run": "37638808910"
     }
   ]
 }
