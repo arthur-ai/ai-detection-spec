@@ -1009,9 +1009,10 @@ def _pending(data, argv):
     SO THE QUESTION IS SPLIT IN TWO, along the line of what can actually be known where:
 
       statically, at lint time   does SOME CI scenario commit to this identifier's agent?
-                                 A scenario's expected.json is a promise enforced by
-                                 assert.sh -- if the identifier does not appear, THE
-                                 SCENARIO fails, loudly, on its own name.
+                                 That promises the AGENT, not the identifier: must_find
+                                 passes when any route finds the agent, as assert.sh's
+                                 must_contain note says. The scenario fails on its own
+                                 name only when the identifier is the sole witness there.
       after the matrix runs      did the identifier actually appear? Only observations can
                                  answer that, and only after the scenarios that produce
                                  them have run.
@@ -1052,9 +1053,9 @@ def _pending_note(msgs, reported_any):
     print(f"  {len(msgs)} identifier(s) await their first scenario run:")
     for m in msgs:
         print(f"    {m}")
-    print("  Not a pass. The scenario named beside each one asserts it and FAILS if it "
-          "does not appear,")
-    print("  and the coverage job re-runs this gate against that run's own observations.")
+    print("  Not a pass. The coverage job re-runs this gate against the named scenario's own")
+    print("  observations, and an identifier it did not produce fails there. The scenario")
+    print("  itself asserts the agent, so it fails only if no other route found it.")
     if not reported_any:
         print("  Nothing reported in this evaluation, which is expected for a static run.")
 

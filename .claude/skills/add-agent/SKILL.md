@@ -148,9 +148,8 @@ The body is what `.claude/skills/release` writes the notes from, so it says:
   fails the build.
 - Don't write a `superseded:` record yourself. Paste the one `--supersede` prints;
   `validate_catalog.py` refuses a record no archived observation backs.
-- Don't bring back `retired:`, `untested:` or an `unverified:` block. The validator refuses
-  the first two and any unknown field on an agent, but **a top-level `unverified:` block
-  passes it**, so the reviewer is the only check on that one.
+- Don't bring back `retired:`, `untested:` or `unverified:`. They are gone, and
+  `validate_catalog.py` refuses all three, along with any other key no tool reads.
 - Don't delete a removed entry's fixture rows. Invert the assertion to *must not match*.
 - Don't write a count into a comment, a scenario header or `expected.json`'s prose. Nothing keeps
   it current, which is why `f22087d` dropped them from the scenario headers.

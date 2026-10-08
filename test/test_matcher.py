@@ -717,6 +717,15 @@ check("a superseded record matching an archived observation is accepted", _match
 check("a superseded record citing the WRONG run is refused", not _wrong_run,
       "the observation exists but did not come from the run the record names")
 
+# The register superseded: replaced must not come back unread. Both directions: the live
+# catalog carries only keys a tool reads, and `unverified:` at the top level is refused.
+check("the live catalog's top-level keys are all ones a tool reads",
+      _vc.unknown_top_level(_yaml3.safe_load((ROOT / "catalog" / "agents.yaml").read_text()))
+      == [], "add the key to TOP_LEVEL only if a tool reads it")
+check("a top-level unverified: block is refused",
+      _vc.unknown_top_level({"agents": [], "unverified": [{"value": "com.example.guess"}]})
+      == ["unverified"], "it passed the validator before, and nothing reads it")
+
 # --- the classifier LABELS a superseded match, and never withholds it --------------
 #
 # The catalog carries no superseded records, so every branch of the label is unexercised

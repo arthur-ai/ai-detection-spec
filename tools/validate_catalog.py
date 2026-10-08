@@ -127,6 +127,17 @@ def validate_registry(reg):
     return errors
 
 
+# THE TOP LEVEL IS CLOSED, as an agent's fields are. `untested:` was refused by name and
+# `unverified:`, the register it replaced, was not: a block of guesses written under it
+# passed, and nothing reads it. These are the keys some tool reads; anything else is a
+# record no code can disagree with. `untested` keeps its own, more specific refusal.
+TOP_LEVEL = {"version", "agents", "removed", "classifications", "not_agents"}
+
+
+def unknown_top_level(doc):
+    return sorted(set(doc) - TOP_LEVEL - {"untested"})
+
+
 def main():
     doc = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
     reg = load_routes()
@@ -370,6 +381,12 @@ def main():
         errors.append("catalog carries `untested:`, which no longer exists. An identifier "
                       "no CI test covers is not excused by a reason any more: cover it, "
                       "supersede it if a run once proved it, or remove it.")
+
+    unknown_top = unknown_top_level(doc)
+    if unknown_top:
+        errors.append(f"catalog has top-level key(s) {unknown_top} that nothing "
+                      f"reads, so nothing can check them. Put the fact where a tool reads "
+                      f"it -- an unproved identifier goes nowhere -- or leave it out.")
 
     if errors:
         print("catalog: FAIL")
