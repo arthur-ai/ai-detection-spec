@@ -171,6 +171,27 @@ try_user() {
   try "$label" as_user "$@"
 }
 
+# retry <label> <cmd> [args...]: THREE ATTEMPTS, 15s then 45s apart, judged by the exit.
+# CDNs reset and truncate transfers mid-download -- `curl: (18)`, `Connection reset by
+# peer` -- and curl's own --retry covers neither. Messages go to stderr, so a caller can
+# capture the command's stdout. lib/guest.sh carries a byte-identical copy for the zsh
+# scenarios, and test/lint.sh holds the two together.
+#
+# RUNNING OUT IS A FAILURE, NOT A SKIP. 79 set the rule: skip only on a cause identified as
+# nobody's here to fix, because a moved or renamed download is exactly what a scenario
+# exists to report. So a caller WARNs and carries on, letting the assertion name what is
+# missing, or exits 1 when nothing after it can run. Never exit 3.
+retry() {
+  local label="$1" wait; shift
+  for wait in 15 45 done; do
+    "$@" && return 0
+    [ "$wait" = done ] && break
+    echo "      retrying $label in ${wait}s" >&2; sleep "$wait"
+  done
+  echo "WARN: $label failed after three attempts" >&2
+  return 1
+}
+
 # What a scenario should print when it could not do its job, so the log says which of the
 # environment or the software was at fault.
 diagnose() {
@@ -183,7 +204,7 @@ diagnose() {
 
 # VS Code from Microsoft's own deb or rpm, by family: the same URL shape publishes both, and
 # the extension directory osquery reads is the same install either way. Exits 3 (SKIP) where
-# Microsoft publishes no package, or the download fails before anything is installed.
+# Microsoft publishes no package; a download that fails three times exits 1, per retry.
 need_vscode() {
   local build ext pkg
   case "$(pm)-$(uname -m)" in
@@ -201,8 +222,9 @@ need_vscode() {
     # apt-get, so this only matters on the dpkg -i fallback.
     need_pkgs libasound2t64 || need_pkgs libasound2 || true
   fi
-  curl --retry 3 -fsSLo "$pkg" "https://update.code.visualstudio.com/latest/$build/stable" \
-    || { echo "SKIP: VS Code download failed"; exit 3; }
+  retry "the VS Code download" \
+    curl --retry 3 -fsSLo "$pkg" "https://update.code.visualstudio.com/latest/$build/stable" \
+    || { echo "FAIL: VS Code did not download, so no extension can be installed"; exit 1; }
   if [ "$(pm)" = apt ]; then
     try "installing the VS Code deb" sudo_maybe apt-get -qq install -y "$pkg" \
       || try "dpkg -i for VS Code" sudo_maybe dpkg -i "$pkg" \
@@ -219,17 +241,15 @@ need_vscode() {
 # and installing as root would leave the /home branch -- the one a fleet has -- unexercised.
 # --no-sandbox because there is no display and no user namespace in CI.
 #
-# THREE ATTEMPTS, because the Marketplace fails transiently: a 503 or a truncated VSIX failed
+# Through retry, because the Marketplace fails transiently: a 503 or a truncated VSIX failed
 # 78 on all four Linux targets at once, a different extension on each, and the rerun passed.
 # Running out of attempts still fails the assertions rather than SKIPping: from in here an
 # outage looks like an extension that is gone for good, and a skip would hide the second.
 install_vscode_ext() {
-  local ext wait
+  local ext
   for ext in "$@"; do
-    for wait in 15 45 done; do
-      try_user "installing $ext" "code --no-sandbox --install-extension $ext --force" && break
-      [ "$wait" = done ] || { echo "      retrying $ext in ${wait}s"; sleep "$wait"; }
-    done
+    retry "installing $ext" \
+      try_user "installing $ext" "code --no-sandbox --install-extension $ext --force" || true
   done
 }
 
@@ -239,16 +259,18 @@ install_vscode_ext() {
 # that directory name is the identifier, so the vendor ships it rather than the test.
 #
 # A FAILED DOWNLOAD FAILS THE ASSERTIONS rather than exiting 3, for the reason given above
-# install_vscode_ext. curl's own retries cover the transient case.
+# install_vscode_ext. Both requests go through retry.
+jb_latest_update() {
+  curl --retry 3 -fsSL "https://plugins.jetbrains.com/api/plugins/$1/updates?size=1" \
+    | python3 -c 'import json,sys; print(json.load(sys.stdin)[0]["id"])'
+}
 install_jb_plugin() {
   local dest="$1" plugin upd; shift
   as_user "mkdir -p '$dest'"
   for plugin in "$@"; do
-    upd=$(curl --retry 3 -fsSL "https://plugins.jetbrains.com/api/plugins/$plugin/updates?size=1" \
-          | python3 -c 'import json,sys; print(json.load(sys.stdin)[0]["id"])') \
-      || { echo "WARN: the Marketplace returned no update for plugin $plugin"; continue; }
+    upd=$(retry "looking up plugin $plugin" jb_latest_update "$plugin") || continue
     # The download URL answers 301 to /files/<plugin>/<update>/<name>.zip; -L follows it.
-    try_user "downloading plugin $plugin update $upd" \
+    retry "downloading plugin $plugin" try_user "downloading plugin $plugin update $upd" \
       "curl --retry 3 -fsSL -o /tmp/jb-$plugin.zip 'https://plugins.jetbrains.com/plugin/download?updateId=$upd'" \
       || continue
     # python's zipfile rather than unzip: one fewer package on three families.

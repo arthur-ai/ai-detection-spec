@@ -5,6 +5,21 @@
 # no-op, which is most of why running scenarios on the runner is cheaper than in a VM.
 # On a bare Tart image (the local development path) they install what is missing.
 
+# retry <label> <cmd> [args...]: three attempts, 15s then 45s apart. A byte-identical copy
+# of lib/guest-linux.sh's, which says why and what running out must not become; test/lint.sh
+# holds the two together. Copied rather than shared because run.sh puts only this file in
+# the guest, and the same lines are valid zsh and bash.
+retry() {
+  local label="$1" wait; shift
+  for wait in 15 45 done; do
+    "$@" && return 0
+    [ "$wait" = done ] && break
+    echo "      retrying $label in ${wait}s" >&2; sleep "$wait"
+  done
+  echo "WARN: $label failed after three attempts" >&2
+  return 1
+}
+
 need_clt() {
   xcode-select -p >/dev/null 2>&1 && return 0
   echo "--- installing Command Line Tools"

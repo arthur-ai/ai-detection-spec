@@ -22,19 +22,13 @@ need_user
 # opencode and Kiro CLI unzip their archive; goose's tarball needs bzip2.
 need_pkgs unzip bzip2 tar || true
 
-# THREE ATTEMPTS, judged by the file the installer should leave rather than its exit code.
+# Through retry, and an attempt counts only if it left the file the installer should.
 # Run locally, Cursor's package and VS Code both arrived truncated -- `curl: (18)` -- and no
 # installer here retries a partial transfer. Checking the file matters for Kiro CLI too: its
 # installer prompts on /dev/tty when a previous attempt left the binary behind. Running out
 # still fails the assertion, which names the agent.
-vendor() {
-  local label="$1" leaves="$2" cmd="$3" wait
-  for wait in 15 45 done; do
-    try_user "$label" "$cmd" && as_user "test -e $leaves" && return 0
-    [ "$wait" = done ] || { echo "      retrying $label in ${wait}s"; sleep "$wait"; }
-  done
-  return 1
-}
+vendor_once() { try_user "$1" "$3" && as_user "test -e $2"; }
+vendor() { retry "$1" vendor_once "$@"; }
 vendor "the opencode installer" '~/.opencode/bin/opencode' \
   'curl --retry 3 -fsSL https://opencode.ai/install | bash' || true
 vendor "the Grok Build installer" '~/.grok/bin/grok' \
