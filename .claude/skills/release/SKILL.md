@@ -144,12 +144,17 @@ then tag on the strength of the run at the commit beneath it:
 
 ```console
 $ git diff --name-only <verified-sha> HEAD | grep -v 'observed.json\|docs/agents.md\|README.md'
-$ git diff -U0 <verified-sha> HEAD -- README.md | grep '^[-+][^-+]' | grep -v 'badge/identifiers_covered'
+$ git diff -U0 <verified-sha> HEAD -- README.md | grep -E '^[+-]' \
+    | grep -vE '^(--- a/README\.md|\+\+\+ b/README\.md)$' | grep -v 'badge/identifiers_covered'
 ```
 
 `collect` rewrites README's coverage badge, so README is in its commit — but README is also
 hand-edited, which is what the second line is for: the badge must be all that moved there. This
 check left README out until 2026-10-08 and printed it on every pure `collect` commit.
+
+**Drop the diff's two header lines by name, not by their leading `--`/`++`.** The first fix
+filtered `^[-+][^-+]`, which also dropped every changed Markdown bullet — `-- item`, `+- item` —
+so a badge plus a bullet edit printed nothing. Measured on a throwaway repo before changing it.
 
 Both empty means the code, queries and catalog are byte-identical to what the suite ran on. Anything
 printed means this is not just a `collect` commit.
