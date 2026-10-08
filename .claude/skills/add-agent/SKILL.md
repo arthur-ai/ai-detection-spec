@@ -128,8 +128,9 @@ $ tools/gates.sh
   and you edit it by hand.
 - **Values only CI can produce show as pending**, not failed: lint runs the coverage gate with
   `--pending-ok`. That is not a pass: once the scenario has run, the coverage job re-checks
-  the gate against its observations, and a value it did not produce fails there. The scenario
-  itself fails only if the value is the sole witness or `must_contain` names it.
+  the gate against the run's observations, merged across scenarios and platforms, and a
+  value none of them produced fails there. The scenario itself fails only if the value is the
+  sole witness or `must_contain` names it.
 - `test/test_match_sql.py` needs `osqueryi` and SKIPs without it. CI runs it for real.
 
 ## 6. Commit
@@ -148,9 +149,8 @@ The body is what `.claude/skills/release` writes the notes from, so it says:
   fails the build.
 - Don't write a `superseded:` record yourself. Paste the one `--supersede` prints;
   `validate_catalog.py` refuses a record no archived observation backs.
-- Don't bring back `retired:`, `untested:` or an `unverified:` block. The validator refuses
-  the first two and any unknown field on an agent, but **a top-level `unverified:` block
-  passes it**, so the reviewer is the only check on that one.
+- Don't bring back `retired:`, `untested:` or `unverified:`. They are gone, and
+  `validate_catalog.py` refuses all three, along with any other key no tool reads.
 - Don't delete a removed entry's fixture rows. Invert the assertion to *must not match*.
 - Don't write a count into a comment, a scenario header or `expected.json`'s prose. Nothing keeps
   it current, which is why `f22087d` dropped them from the scenario headers.
