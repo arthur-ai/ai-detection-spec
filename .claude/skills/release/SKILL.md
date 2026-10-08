@@ -144,17 +144,20 @@ then tag on the strength of the run at the commit beneath it:
 
 ```console
 $ git diff --name-only <verified-sha> HEAD | grep -v 'observed.json\|docs/agents.md\|README.md'
-$ git diff -U0 <verified-sha> HEAD -- README.md | grep -E '^[+-]' \
-    | grep -vE '^(--- a/README\.md|\+\+\+ b/README\.md)$' | grep -v 'badge/identifiers_covered'
+$ badge() { git show "$1:README.md" | sed -E \
+    's/identifiers_covered_by_a_CI_test-[0-9]+%2F[0-9]+-[0-9A-Fa-f]{6}/identifiers_covered_by_a_CI_test-N%2FN-C/'; }
+$ diff <(badge <verified-sha>) <(badge HEAD)
 ```
 
 `collect` rewrites README's coverage badge, so README is in its commit — but README is also
 hand-edited, which is what the second line is for: the badge must be all that moved there. This
 check left README out until 2026-10-08 and printed it on every pure `collect` commit.
 
-**Drop the diff's two header lines by name, not by their leading `--`/`++`.** The first fix
-filtered `^[-+][^-+]`, which also dropped every changed Markdown bullet — `-- item`, `+- item` —
-so a badge plus a bullet edit printed nothing. Measured on a throwaway repo before changing it.
+**Blank exactly the fields `collect` writes, then diff.** The sed pattern is `BADGE` in
+`tools/agent_status.py` — two counts and a colour — so any other edit survives it, including one
+on the badge's own line. Filtering `git diff` output instead failed twice, each found on a
+throwaway repo: dropping lines that begin `--`/`++` also dropped changed Markdown bullets, and
+dropping lines that mention the badge also dropped any other edit on that line.
 
 Both empty means the code, queries and catalog are byte-identical to what the suite ran on. Anything
 printed means this is not just a `collect` commit.
