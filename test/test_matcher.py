@@ -374,6 +374,21 @@ for cmd in ("/Users/alice/.local/bin/hermes", "/home/alice/.local/bin/hermes-acp
           _ids(_rows(cmd)) == {"hermes"},
           "anchoring home-prefix would lose two of the three commands")
 
+# PI'S LOOKALIKES, which a Python host carries for free: ~/.pipx starts with Pi's ~/.pi.
+check("~/.pi is Pi and ~/.pipx is not",
+      _ids(_rows("/home/dana/.pi/")) == {"pi"}
+      and _ids(_rows("/home/dana/.pipx/", "/Users/dana/.pip/")) == set())
+# Pi's own libraries and the unscoped placeholder share its name and are not the agent.
+# OpenClaw depends on @earendil-works/pi-tui, so that one is on every OpenClaw host.
+_pi = classify_json([{"kind": "npm", "id": n, "ver": "1.0", "loc": "/x", "extra": "",
+                      "perms": ""}
+                     for n in ("@earendil-works/pi-coding-agent", "@earendil-works/pi-tui",
+                               "@earendil-works/pi-ai", "pi-coding-agent", "pi-acp")])
+check("only the coding-agent package is evidence for Pi",
+      {e["id"] for f in _pi["findings"] for e in f["evidence"]}
+      == {"@earendil-works/pi-coding-agent"},
+      f"got {[(f['id'], [e['id'] for e in f['evidence']]) for f in _pi['findings']]}")
+
 # Every home root, on the routes that use them, including root's -- which is not under
 # /home and cannot be reached by a `[^/]+` component.
 check("Linux and root home roots resolve on the path routes",

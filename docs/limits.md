@@ -91,5 +91,6 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 85-linux-vscode-agents | Blackbox's extensions are unpublished from the Marketplace and arrive here as the VSIX the Marketplace still serves by URL. If that URL stops answering, the two ids can no longer be produced, which is the cue to supersede them rather than drop them. |
 | 86-linux-jetbrains-agents | Unpacked from the Marketplace zip, not installed by an IDE, as in 80: the IDE's own install and update paths are untested. |
 | 86-linux-jetbrains-agents | Amazon Q's plugin needs AWS Core (aws.toolkit.core) to load in an IDE. It is not installed, because only the directory is under test. |
+| 87-linux-pi | The pi.dev/install.sh route is not exercised. Its install layout has not been read, so it has no value in the catalog yet. |
 
 `11-perplexity-desktop`, `50-autonomous`, `57-clawdbot-era` need macOS 15 or newer, so CI skips them on older runners rather than failing them. Each scenario's `requires.json` carries the reason.

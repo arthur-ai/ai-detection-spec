@@ -1,0 +1,36 @@
+{
+  "description": "Pi from npm under its current scope, never run.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "deb+rpm": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=0",
+    "jbplugin": ">=0",
+    "nmh": ">=0",
+    "npm": ">=1",
+    "port": ">=0",
+    "proc": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "pi"
+    ],
+    "forbid": [
+      "openclaw",
+      "claude-code"
+    ]
+  },
+  "why": "The npm value is the only witness: nothing runs pi, so ~/.pi does not exist and removing @earendil-works/pi-coding-agent from the catalog turns must_find red. openclaw is forbidden because it is built on Pi's libraries, and installing Pi must not read as it.",
+  "must_contain": [
+    "@earendil-works/pi-coding-agent"
+  ],
+  "known_gaps": [
+    "The pi.dev/install.sh route is not exercised. Its install layout has not been read, so it has no value in the catalog yet."
+  ]
+}

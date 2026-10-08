@@ -1,0 +1,35 @@
+{
+  "description": "Pi under its old npm scope, run once so it writes ~/.pi.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "deb+rpm": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=1",
+    "jbplugin": ">=0",
+    "nmh": ">=0",
+    "npm": ">=1",
+    "port": ">=0",
+    "proc": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "pi"
+    ],
+    "forbid": [
+      "openclaw",
+      "claude-code"
+    ]
+  },
+  "why": "Two witnesses, so must_contain names each: the deprecated @mariozechner scope, which machines installed before the move still report, and ~/.pi, which only a run creates. A separate host from 87 because both scopes install the same pi binary.",
+  "must_contain": [
+    "@mariozechner/pi-coding-agent",
+    "/home/dana/.pi"
+  ],
+  "known_gaps": []
+}
