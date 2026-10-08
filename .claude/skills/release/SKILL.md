@@ -105,10 +105,12 @@ $ gh run list --workflow=ci.yml --branch=main --limit=1     # macOS AND Linux
 $ test/run-linux.sh                                          # locally, needs Docker
 ```
 
-`run-linux.sh` skips scenarios for reasons about the container or host arch, not the software —
-`76` needs a real system bus, `79` a reachable Docker daemon, and `73`/`75`/`78` an x86_64 host.
-Each prints its reason and exits 3. **Read them**: a suite reporting SKIP for the half you care
-about has verified nothing about it.
+`run-linux.sh` skips scenarios for reasons about the container, the image or the host arch, not
+the software — `76` needs a real system bus, `79` a reachable Docker daemon, `75` an x86_64 host
+(Google ships no arm64 Linux Chrome), `83` the ptrace right (`LINUX_DOCKER_ARGS='--cap-add
+SYS_PTRACE'`), and `73`/`74` an apt image while `77` needs a dnf one. Each prints its reason and
+exits 3. **Read them**: a suite reporting SKIP for the half you care about has verified nothing
+about it.
 
 ### Confirm the suite ran for the exact commit you are tagging
 
@@ -141,17 +143,23 @@ deadlocks. What resolves it is that `collect` commits **generated files only** �
 then tag on the strength of the run at the commit beneath it:
 
 ```console
-$ git diff --name-only <verified-sha> HEAD | grep -v 'observed.json\|docs/agents.md'
+$ git diff --name-only <verified-sha> HEAD | grep -v 'observed.json\|docs/agents.md\|README.md'
+$ git diff -U0 <verified-sha> HEAD -- README.md | grep '^[-+][^-+]' | grep -v 'badge/identifiers_covered'
 ```
 
-Empty means the code, queries and catalog are byte-identical to what the suite ran on. Anything
+`collect` rewrites README's coverage badge, so README is in its commit — but README is also
+hand-edited, which is what the second line is for: the badge must be all that moved there. This
+check left README out until 2026-10-08 and printed it on every pure `collect` commit.
+
+Both empty means the code, queries and catalog are byte-identical to what the suite ran on. Anything
 printed means this is not just a `collect` commit.
 
 ### Confirm the observations landed
 
 `collect` runs **only on `main`** — a PR asserts and uploads without committing, so coverage
-cannot be moved by a PR. It commits each scenario's `observed.json` **and the regenerated
-`docs/agents.md`**, which is where every coverage figure in the notes comes from. Immediately
+cannot be moved by a PR. It commits each scenario's `observed.json`, README's coverage badge
+**and the regenerated `docs/agents.md`**, which is where every coverage figure in the notes
+comes from. Immediately
 after merging, that page is a merge behind: `79-linux-image` installed `paulgauthier/aider` for
 real and the page still read *"47 of them by a real install"* until collect ran and moved it to 48.
 
