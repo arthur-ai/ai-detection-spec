@@ -43,10 +43,14 @@ jobs:
           fetch-depth: 0
       - id: scope
         env:
-          # `before` is the previous tip on a push and all-zeros on a force-push or a
-          # branch's first push; ci_scope.py reads that as "cannot tell" and runs.
+          # On a pull request github.sha is a merge commit onto main's CURRENT tip, which is
+          # its first parent. pull_request.base.sha can be older: run 37833949373 still had
+          # it at 407181a after a collect commit moved main, and scoped a two-file docs PR
+          # by 28 observed.json files it never touched. `before` is the previous tip on a
+          # push and all-zeros on a force-push or a branch's first push; ci_scope.py reads
+          # that as "cannot tell" and runs.
           BASE: ${{ github.event_name == 'pull_request'
-                    && github.event.pull_request.base.sha || github.event.before }}
+                    && format('{0}^1', github.sha) || github.event.before }}
           EVENT: ${{ github.event_name }}
           HEAD_SHA: ${{ github.sha }}
         run: |
