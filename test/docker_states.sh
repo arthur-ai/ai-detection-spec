@@ -501,14 +501,45 @@ print(1 if isinstance(r, list) and r else 0)" 2>/dev/null)" \
 # The whole payload, not a prefix, and with the same flags on both sides. An earlier
 # version compared 40 characters across two different flag sets and would have passed on
 # almost any divergence.
-stdout_now="$("$ROOT/bin/container-scan" --socket "$SOCK" 2>/dev/null)"
-check "stdout and the file agree, image rows and all" \
-      "$(CS_A="$stdout_now" CS_B="$(cat "$CACHE")" python3 -c "
+#
+# A FAILURE SAYS WHAT DIFFERED. This check failed on run 37836487241 with nothing but its
+# label: the comparison printed 0 and the second scan's stderr went to /dev/null, so
+# nobody could tell a timed-out scan from a changed row. Each side's scan marker, the rows
+# only one side has, and the second scan's exit code and stderr are printed now. It passes
+# only on the word `same`, so a comparison that crashes and prints nothing still fails.
+cs_err="$(mktemp "${TMPDIR:-/tmp}/cs-err.XXXXXX")"
+stdout_now="$("$ROOT/bin/container-scan" --socket "$SOCK" 2>"$cs_err")"; cs_rc=$?
+cs_diff="$(CS_A="$stdout_now" CS_B="$(cat "$CACHE")" python3 -c "
 import json, os
-def rows(v):
-    return sorted(json.dumps(r, sort_keys=True) for r in json.loads(v) if r['kind'] != 'scan')
-print(1 if rows(os.environ['CS_A']) == rows(os.environ['CS_B']) else 0)" 2>/dev/null)" \
-      "the file must be what a human sees when running the scan by hand"
+def load(name):
+    try:
+        return json.loads(os.environ[name]), None
+    except Exception as e:
+        return None, 'is not JSON (%s): %r' % (e, os.environ[name][:120])
+def split(doc):
+    return ([r.get('extra') for r in doc if r.get('kind') == 'scan'],
+            sorted(json.dumps(r, sort_keys=True) for r in doc if r.get('kind') != 'scan'))
+(a, ea), (b, eb) = load('CS_A'), load('CS_B')
+if ea or eb:
+    print('stdout %s; the file %s' % (ea or 'parsed', eb or 'parsed'))
+    raise SystemExit
+(ma, ra), (mb, rb) = split(a), split(b)
+if ra == rb:
+    print('same')
+    raise SystemExit
+print('stdout: %d rows, scan marker %s; the file: %d rows, scan marker %s'
+      % (len(ra), ma, len(rb), mb))
+only_a, only_b = sorted(set(ra) - set(rb)), sorted(set(rb) - set(ra))
+for r in only_a[:5]: print('only on stdout:   ' + r)
+for r in only_b[:5]: print('only in the file: ' + r)
+if len(only_a) > 5 or len(only_b) > 5: print('(the first five of each)')" 2>&1)"
+check "stdout and the file agree, image rows and all" \
+      "$([ "$cs_diff" = same ] && echo 1 || echo 0)" \
+      "the file must be what a human sees when running the scan by hand
+$(cs_errtext="$(tail -c 300 "$cs_err")"
+  printf '%s\nthe stdout scan exited %s; its stderr: %s' "${cs_diff:-the comparison printed nothing}" \
+    "$cs_rc" "${cs_errtext:-none}" | sed 's/^/          /')"
+rm -f "$cs_err"
 check "every payload dates itself" \
       "$(python3 -c "
 import json
