@@ -130,12 +130,26 @@ def validate_registry(reg):
 # THE TOP LEVEL IS CLOSED, as an agent's fields are. `untested:` was refused by name and
 # `unverified:`, the register it replaced, was not: a block of guesses written under it
 # passed, and nothing reads it. These are the keys some tool reads; anything else is a
-# record no code can disagree with. `untested` keeps its own, more specific refusal.
+# record no code can disagree with.
 TOP_LEVEL = {"version", "agents", "removed", "classifications", "not_agents"}
 
 
-def unknown_top_level(doc):
-    return sorted(set(doc) - TOP_LEVEL - {"untested"})
+def top_level_errors(doc):
+    errors = []
+    # `untested:` IS NO LONGER A KEY, and a catalog still carrying one is refused rather
+    # than ignored -- by PRESENCE, because an empty `untested:` is the key all the same.
+    # Silently dropping it would leave a contributor believing an excuse had been recorded
+    # when nothing reads it, which is how a register becomes decorative.
+    if "untested" in doc:
+        errors.append("catalog carries `untested:`, which no longer exists. An identifier "
+                      "no CI test covers is not excused by a reason any more: cover it, "
+                      "supersede it if a run once proved it, or remove it.")
+    unknown = sorted(set(doc) - TOP_LEVEL - {"untested"})
+    if unknown:
+        errors.append(f"catalog has top-level key(s) {unknown} that nothing "
+                      f"reads, so nothing can check them. Put the fact where a tool reads "
+                      f"it -- an unproved identifier goes nowhere -- or leave it out.")
+    return errors
 
 
 def main():
@@ -374,19 +388,7 @@ def main():
             errors.append(f"{r['id']} is listed under `removed:` and is also a live agent. "
                           f"One of the two is wrong.")
 
-    # `untested:` IS NO LONGER A KEY, and a catalog still carrying one is refused rather
-    # than ignored. Silently dropping it would leave a contributor believing an excuse had
-    # been recorded when nothing reads it -- which is how a register becomes decorative.
-    if doc.get("untested"):
-        errors.append("catalog carries `untested:`, which no longer exists. An identifier "
-                      "no CI test covers is not excused by a reason any more: cover it, "
-                      "supersede it if a run once proved it, or remove it.")
-
-    unknown_top = unknown_top_level(doc)
-    if unknown_top:
-        errors.append(f"catalog has top-level key(s) {unknown_top} that nothing "
-                      f"reads, so nothing can check them. Put the fact where a tool reads "
-                      f"it -- an unproved identifier goes nowhere -- or leave it out.")
+    errors.extend(top_level_errors(doc))
 
     if errors:
         print("catalog: FAIL")

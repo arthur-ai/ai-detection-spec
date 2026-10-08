@@ -128,8 +128,9 @@ $ tools/gates.sh
   and you edit it by hand.
 - **Values only CI can produce show as pending**, not failed: lint runs the coverage gate with
   `--pending-ok`. That is not a pass: once the scenario has run, the coverage job re-checks
-  the gate against its observations, and a value it did not produce fails there. The scenario
-  itself fails only if the value is the sole witness or `must_contain` names it.
+  the gate against the run's observations, merged across scenarios and platforms, and a
+  value none of them produced fails there. The scenario itself fails only if the value is the
+  sole witness or `must_contain` names it.
 - `test/test_match_sql.py` needs `osqueryi` and SKIPs without it. CI runs it for real.
 
 ## 6. Commit
