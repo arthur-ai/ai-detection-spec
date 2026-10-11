@@ -14,11 +14,11 @@
       "agent": "openclaw",
       "route": "npm",
       "value": "openclaw",
-      "agent_version": "2026.9.9",
+      "agent_version": "2026.10.1",
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "38050259314"
+      "run": "38138263059"
     },
     {
       "agent": "openclaw",
@@ -33,11 +33,11 @@
       "agent": "openclaw",
       "route": "npm",
       "value": "openclaw",
-      "agent_version": "2026.9.9",
+      "agent_version": "2026.10.1",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "38050259314"
+      "run": "38138263059"
     },
     {
       "agent": "openclaw",
@@ -52,11 +52,11 @@
       "agent": "openclaw",
       "route": "npm",
       "value": "openclaw",
-      "agent_version": "2026.9.9",
+      "agent_version": "2026.10.1",
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "38050259314"
+      "run": "38138263059"
     },
     {
       "agent": "openclaw",
@@ -71,11 +71,11 @@
       "agent": "openclaw",
       "route": "npm",
       "value": "openclaw",
-      "agent_version": "2026.9.9",
+      "agent_version": "2026.10.1",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "38050259314"
+      "run": "38138263059"
     },
     {
       "agent": "openclaw",
@@ -92,7 +92,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "38050259314"
+      "run": "38138263059"
     },
     {
       "agent": "openclaw",
@@ -109,7 +109,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "38050259314"
+      "run": "38138263059"
     },
     {
       "agent": "openclaw",
@@ -126,7 +126,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "38050259314"
+      "run": "38138263059"
     },
     {
       "agent": "openclaw",
@@ -143,7 +143,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "38050259314"
+      "run": "38138263059"
     }
   ]
 }
