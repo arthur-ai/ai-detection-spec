@@ -1295,6 +1295,8 @@ check("validate_catalog refuses a value listed under a `values_from` route",
       str(_bre("probe", {"running_apps": ["com.x"]}, _reg)))
 check("...and passes the same value under the route it borrows from",
       _bre("probe", {"bundle_ids": ["com.x"]}, _reg) == [])
+check("...and refuses the key empty too: present, it says the route is declared here",
+      any("bundle_ids" in e for e in _bre("probe", {"running_apps": []}, _reg)))
 
 print()
 if failures:

@@ -154,13 +154,16 @@ def top_level_errors(doc):
 
 def borrowed_route_errors(aid, agent, reg):
     """A `values_from` route indexes ANOTHER route's values and never reads its own key, so
-    a value an agent lists under it matches nothing, in silence. Say where it belongs."""
+    a value an agent lists under it matches nothing, in silence. Say where it belongs.
+
+    By PRESENCE, as top_level_errors() refuses `untested:`: an empty list is the key all the
+    same, and accepting it tells the next contributor the route is declared here."""
     errors = []
     for route in sorted(set(agent) & set(reg.get("routes") or {})):
         src = reg["routes"][route].get("values_from")
         if src:
-            errors.append(f"{aid}: `{route}` takes its values from `{src}`, so nothing reads "
-                          f"a value listed under it. List it under `{src}`.")
+            errors.append(f"{aid}: `{route}` takes its values from `{src}` and reads none of "
+                          f"its own, so nothing reads it here. List the values under `{src}`.")
     return errors
 
 
