@@ -1257,6 +1257,8 @@ check("split_perms keeps permissions and the <all_urls> flag",
       _cl.split_perms("tabs,storage,<all_urls>") == (("tabs", "storage", "<all_urls>"), ""))
 check("...and splits off `unreferenced`",
       _cl.split_perms("tabs,unreferenced") == (("tabs",), "unreferenced"))
+check("...but only `unreferenced` whole: a permission that merely begins with it stays one",
+      _cl.split_perms("tabs,unreferenced-extra") == (("tabs", "unreferenced-extra"), ""))
 check("...and `sideloaded:` with its hash",
       _cl.split_perms("tabs,<all_urls>,sideloaded:ab12") == (("tabs", "<all_urls>"), "sideloaded:ab12"))
 check("...including when there is no permission before it",
