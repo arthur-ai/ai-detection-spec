@@ -1244,6 +1244,44 @@ check("the JetBrains plugin directories resolve to their agents",
 check("...and matched with the vendor's case (`sourcegraph` is not Cody's directory)",
       "sourcegraph" in _u, "exact means exact; a case-folded route would claim it")
 
+# --- provenance in `perms` is not a permission ---------------------------------------
+# A consumer that splits `perms` on commas lists `sideloaded:<sha256>` as a permission.
+# split_perms() is the one place the tokens are named, so it is held to the SQL that emits
+# them: a token added to browser.sql and not here would read as a permission downstream.
+_cspec = _ilu.spec_from_loader("classify",
+    _ilm.SourceFileLoader("classify", str(ROOT / "bin" / "classify")))
+_cl = _ilu.module_from_spec(_cspec)
+_cspec.loader.exec_module(_cl)
+
+check("split_perms keeps permissions and the <all_urls> flag",
+      _cl.split_perms("tabs,storage,<all_urls>") == (("tabs", "storage", "<all_urls>"), ""))
+check("...and splits off `unreferenced`",
+      _cl.split_perms("tabs,unreferenced") == (("tabs",), "unreferenced"))
+check("...but only `unreferenced` whole: a permission that merely begins with it stays one",
+      _cl.split_perms("tabs,unreferenced-extra") == (("tabs", "unreferenced-extra"), ""))
+check("...and `sideloaded:` with its hash",
+      _cl.split_perms("tabs,<all_urls>,sideloaded:ab12") == (("tabs", "<all_urls>"), "sideloaded:ab12"))
+check("...including when there is no permission before it",
+      _cl.split_perms(",unreferenced") == ((), "unreferenced"))
+check("...and an empty or missing `perms` is no permissions and no provenance",
+      _cl.split_perms("") == ((), "") and _cl.split_perms(None) == ((), ""))
+
+import re as _re
+_emitted = set(_re.findall(r"THEN ',([^'<][^']*)'", (ROOT / "queries" / "browser.sql").read_text()))
+check("PERMS_PROVENANCE names exactly the tokens queries/browser.sql appends",
+      _emitted == set(_cl.PERMS_PROVENANCE),
+      f"browser.sql emits {sorted(_emitted)}, classify names {sorted(_cl.PERMS_PROVENANCE)}")
+
+_ext = {"kind": "ext", "id": "fcoeoabgfenejglbffodgkkbkcdhcgfn", "ver": "1.0.94",
+        "loc": "/Users/x/Library/Application Support/Google/Chrome/Default",
+        "extra": "chrome", "perms": "tabs,unreferenced"}
+with _tf2.NamedTemporaryFile("w", suffix=".json", delete=False) as _fh5:
+    json.dump([_ext], _fh5)
+_ptxt = subprocess.run([sys.executable, str(ROOT / "bin" / "classify"), _fh5.name],
+                       capture_output=True, text=True, check=True).stdout
+check("the text report marks an unreferenced extension on its row",
+      "fcoeoabgfenejglbffodgkkbkcdhcgfn  1.0.94   <- unreferenced" in _ptxt, _ptxt)
+
 print()
 if failures:
     print(f"matcher: FAIL ({len(failures)})")
