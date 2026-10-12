@@ -1281,6 +1281,20 @@ _ptxt = subprocess.run([sys.executable, str(ROOT / "bin" / "classify"), _fh5.nam
                        capture_output=True, text=True, check=True).stdout
 check("the text report marks an unreferenced extension on its row",
       "fcoeoabgfenejglbffodgkkbkcdhcgfn  1.0.94   <- unreferenced" in _ptxt, _ptxt)
+# osquery's own spelling: chrome_extensions.permissions is joined with ", ", and
+# browser.sql's tokens follow with "," -- read off a real Chrome profile, osquery 5.23.1.
+check("split_perms strips the space osquery puts after each comma",
+      _cl.split_perms("background, contextMenus, storage,<all_urls>,sideloaded:ab12")
+      == (("background", "contextMenus", "storage", "<all_urls>"), "sideloaded:ab12"))
+
+# --- a value under a route that borrows another's is never read ----------------------
+_reg = _vc.load_routes()
+_bre = _vc.borrowed_route_errors
+check("validate_catalog refuses a value listed under a `values_from` route",
+      any("bundle_ids" in e for e in _bre("probe", {"running_apps": ["com.x"]}, _reg)),
+      str(_bre("probe", {"running_apps": ["com.x"]}, _reg)))
+check("...and passes the same value under the route it borrows from",
+      _bre("probe", {"bundle_ids": ["com.x"]}, _reg) == [])
 
 print()
 if failures:
