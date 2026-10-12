@@ -28,7 +28,7 @@
       "value": "ai.openclaw.",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "38209996934"
+      "run": "38263586464"
     },
     {
       "agent": "openclaw",
@@ -36,7 +36,7 @@
       "value": "ai.openclaw.",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "38209996934"
+      "run": "38263586464"
     }
   ]
 }
