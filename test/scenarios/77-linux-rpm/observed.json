@@ -16,7 +16,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "38263586464"
+      "run": "38406581668"
     },
     {
       "agent": "cursor",
@@ -33,7 +33,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "38263586464"
+      "run": "38406581668"
     },
     {
       "agent": "cursor",
@@ -52,7 +52,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "38263586464"
+      "run": "38406581668"
     },
     {
       "agent": "cursor",
@@ -71,7 +71,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "38263586464"
+      "run": "38406581668"
     }
   ]
 }

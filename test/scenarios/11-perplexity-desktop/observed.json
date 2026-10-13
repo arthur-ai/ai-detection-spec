@@ -16,7 +16,7 @@
       "agent_version": "26.39.0",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "38263586464"
+      "run": "38406581668"
     },
     {
       "agent": "perplexity-desktop",
@@ -25,7 +25,7 @@
       "agent_version": "26.39.0",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "38263586464"
+      "run": "38406581668"
     },
     {
       "agent": "perplexity-desktop",
@@ -42,7 +42,7 @@
       "agent_version": "26.35.0",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "38263586464"
+      "run": "38406581668"
     },
     {
       "agent": "perplexity-desktop",
@@ -51,7 +51,7 @@
       "agent_version": "26.35.0",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "38263586464"
+      "run": "38406581668"
     }
   ]
 }
