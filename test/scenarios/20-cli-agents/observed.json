@@ -8,7 +8,7 @@
       "agent_version": "0.36.0",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "38555468380"
+      "run": "38723623283"
     },
     {
       "agent": "augment",
@@ -17,7 +17,7 @@
       "agent_version": "0.36.0",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "38555468380"
+      "run": "38723623283"
     },
     {
       "agent": "claude-code",
@@ -46,7 +46,7 @@
       "value": "~/.local/bin/claude",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "38555468380"
+      "run": "38723623283"
     },
     {
       "agent": "claude-code",
@@ -54,7 +54,7 @@
       "value": "~/.local/bin/claude",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "38555468380"
+      "run": "38723623283"
     },
     {
       "agent": "claude-code",
@@ -83,7 +83,7 @@
       "value": "~/.claude",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "38555468380"
+      "run": "38723623283"
     },
     {
       "agent": "claude-code",
@@ -91,7 +91,7 @@
       "value": "~/.claude",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "38555468380"
+      "run": "38723623283"
     },
     {
       "agent": "cline",
@@ -124,7 +124,7 @@
       "agent_version": "3.0.71",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "38555468380"
+      "run": "38723623283"
     },
     {
       "agent": "cline",
@@ -133,7 +133,7 @@
       "agent_version": "3.0.71",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "38555468380"
+      "run": "38723623283"
     },
     {
       "agent": "codex-cli",
@@ -166,7 +166,7 @@
       "agent_version": "0.162.1",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "38555468380"
+      "run": "38723623283"
     },
     {
       "agent": "codex-cli",
@@ -175,7 +175,7 @@
       "agent_version": "0.162.1",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "38555468380"
+      "run": "38723623283"
     },
     {
       "agent": "codex-cli",
@@ -204,7 +204,7 @@
       "value": "~/.codex",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "38555468380"
+      "run": "38723623283"
     },
     {
       "agent": "codex-cli",
@@ -212,7 +212,7 @@
       "value": "~/.codex",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "38555468380"
+      "run": "38723623283"
     },
     {
       "agent": "continue",
@@ -221,7 +221,7 @@
       "agent_version": "1.5.47",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "38555468380"
+      "run": "38723623283"
     },
     {
       "agent": "continue",
@@ -230,7 +230,7 @@
       "agent_version": "1.5.47",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "38555468380"
+      "run": "38723623283"
     },
     {
       "agent": "copilot-cli",
@@ -260,19 +260,19 @@
       "agent": "copilot-cli",
       "route": "npm",
       "value": "@github/copilot",
-      "agent_version": "1.0.97",
+      "agent_version": "1.0.98",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "38555468380"
+      "run": "38723623283"
     },
     {
       "agent": "copilot-cli",
       "route": "npm",
       "value": "@github/copilot",
-      "agent_version": "1.0.97",
+      "agent_version": "1.0.98",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "38555468380"
+      "run": "38723623283"
     },
     {
       "agent": "gemini-cli",
@@ -305,7 +305,7 @@
       "agent_version": "0.64.0",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "38555468380"
+      "run": "38723623283"
     },
     {
       "agent": "gemini-cli",
@@ -314,25 +314,25 @@
       "agent_version": "0.64.0",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "38555468380"
+      "run": "38723623283"
     },
     {
       "agent": "kilo-code",
       "route": "npm",
       "value": "@kilocode/cli",
-      "agent_version": "7.8.8",
+      "agent_version": "7.8.12",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "38555468380"
+      "run": "38723623283"
     },
     {
       "agent": "kilo-code",
       "route": "npm",
       "value": "@kilocode/cli",
-      "agent_version": "7.8.8",
+      "agent_version": "7.8.12",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "38555468380"
+      "run": "38723623283"
     },
     {
       "agent": "opencode",
@@ -341,7 +341,7 @@
       "agent_version": "1.19.0",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "38555468380"
+      "run": "38723623283"
     },
     {
       "agent": "opencode",
@@ -350,7 +350,7 @@
       "agent_version": "1.19.0",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "38555468380"
+      "run": "38723623283"
     }
   ]
 }
