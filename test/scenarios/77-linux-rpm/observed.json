@@ -16,7 +16,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "38723623283"
+      "run": "38889491250"
     },
     {
       "agent": "cursor",
@@ -33,7 +33,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "38723623283"
+      "run": "38889491250"
     },
     {
       "agent": "cursor",
@@ -48,11 +48,11 @@
       "agent": "cursor",
       "route": "rpm_packages",
       "value": "cursor",
-      "agent_version": "3.24.18",
+      "agent_version": "3.25.6",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "38723623283"
+      "run": "38889491250"
     },
     {
       "agent": "cursor",
@@ -67,11 +67,11 @@
       "agent": "cursor",
       "route": "rpm_packages",
       "value": "cursor",
-      "agent_version": "3.24.18",
+      "agent_version": "3.25.6",
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "38723623283"
+      "run": "38889491250"
     }
   ]
 }

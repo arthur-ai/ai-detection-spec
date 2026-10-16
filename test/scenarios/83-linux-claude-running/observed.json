@@ -16,7 +16,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "38723623283"
+      "run": "38889491250"
     },
     {
       "agent": "claude-code",
@@ -33,7 +33,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "38723623283"
+      "run": "38889491250"
     },
     {
       "agent": "claude-code",
@@ -50,7 +50,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "38723623283"
+      "run": "38889491250"
     }
   ]
 }
