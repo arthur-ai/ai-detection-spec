@@ -6,6 +6,14 @@
       "route": "binaries",
       "value": "~/.local/bin/cursor-agent",
       "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "cursor",
+      "route": "binaries",
+      "value": "~/.local/bin/cursor-agent",
+      "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
       "run": "38723623283"
@@ -58,6 +66,14 @@
       "route": "binaries",
       "value": "~/.local/bin/goose",
       "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "goose",
+      "route": "binaries",
+      "value": "~/.local/bin/goose",
+      "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
       "run": "38723623283"
@@ -110,6 +126,14 @@
       "route": "state_dirs",
       "value": "~/.grok",
       "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "grok",
+      "route": "state_dirs",
+      "value": "~/.grok",
+      "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
       "run": "38723623283"
@@ -162,6 +186,14 @@
       "route": "binaries",
       "value": "~/.local/bin/kiro-cli",
       "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "kiro-cli",
+      "route": "binaries",
+      "value": "~/.local/bin/kiro-cli",
+      "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
       "run": "38723623283"
@@ -208,6 +240,14 @@
       "os": "ubuntu-24.04",
       "arch": "x86_64",
       "run": "38723623283"
+    },
+    {
+      "agent": "opencode",
+      "route": "state_dirs",
+      "value": "~/.opencode",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
     },
     {
       "agent": "opencode",

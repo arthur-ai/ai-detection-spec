@@ -7,6 +7,15 @@
       "value": "plugin-amazonq",
       "agent_version": "4.9.262",
       "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "amazon-q",
+      "route": "jetbrains_plugins",
+      "value": "plugin-amazonq",
+      "agent_version": "4.9.262",
+      "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
       "run": "38723623283"
@@ -65,6 +74,15 @@
       "value": "Sourcegraph",
       "agent_version": "7.155.0",
       "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "cody",
+      "route": "jetbrains_plugins",
+      "value": "Sourcegraph",
+      "agent_version": "7.155.0",
+      "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
       "run": "38723623283"
@@ -116,6 +134,15 @@
       "os": "ubuntu-24.04",
       "arch": "x86_64",
       "run": "38723623283"
+    },
+    {
+      "agent": "copilot-cli",
+      "route": "jetbrains_plugins",
+      "value": "github-copilot-intellij",
+      "agent_version": "1.19.1-252",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
     },
     {
       "agent": "copilot-cli",
@@ -174,6 +201,15 @@
       "os": "ubuntu-24.04",
       "arch": "x86_64",
       "run": "38723623283"
+    },
+    {
+      "agent": "gemini-code-assist",
+      "route": "jetbrains_plugins",
+      "value": "gemini",
+      "agent_version": "1.60.1-253",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
     },
     {
       "agent": "gemini-code-assist",
