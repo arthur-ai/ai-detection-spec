@@ -75,9 +75,9 @@ it belongs on.
 ## Scope, so you know what you are getting
 
 **macOS and Linux ship. Windows does not.** CI installs the real software on macOS runners, on
-`ubuntu-24.04`, and in Debian 12, Rocky 9 and Fedora 41 containers, so both platforms are held
-to the same standard: a signature is verified when a scenario installs the actual software and
-asserts the classifier finds it.
+`ubuntu-24.04` and `ubuntu-24.04-arm`, and in Debian 12, Rocky 9, Fedora 41 and Amazon Linux
+2023 containers, so both platforms are held to the same standard: a signature is verified when
+a scenario installs the actual software and asserts the classifier finds it.
 
 **What is platform-specific.** Declared in [`catalog/routes.yaml`](catalog/routes.yaml), which
 the matcher, the validator, the coverage report and lint all read — so this table is the
