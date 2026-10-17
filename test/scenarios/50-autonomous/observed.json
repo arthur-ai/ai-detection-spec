@@ -16,16 +16,16 @@
       "agent_version": "2026.9.2",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "38889491250"
+      "run": "39024011862"
     },
     {
       "agent": "openclaw",
       "route": "bundle_ids",
       "value": "ai.openclaw.mac",
-      "agent_version": "2026.9.2",
+      "agent_version": "2026.10.2",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "38555468380"
+      "run": "39024011862"
     },
     {
       "agent": "openclaw",
@@ -42,16 +42,16 @@
       "agent_version": "2026.9.2",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "38889491250"
+      "run": "39024011862"
     },
     {
       "agent": "openclaw",
       "route": "homebrew",
       "value": "openclaw",
-      "agent_version": "2026.9.2",
+      "agent_version": "2026.10.2",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "38555468380"
+      "run": "39024011862"
     }
   ]
 }
