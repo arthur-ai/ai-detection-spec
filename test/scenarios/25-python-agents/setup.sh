@@ -23,7 +23,12 @@ uv tool install --python 3.12 aider-chat || { echo "FAIL: aider-chat install fai
 # agent calls through is not an agent, and it was removed from the catalog for that. It
 # stays here as a live negative control -- a real uv tool install that must produce a row
 # and no finding. Remove it and nothing proves the classifier still declines it.
-uv tool install litellm                  || { echo "FAIL: litellm install failed" >&2; exit 1; }
+#
+# --python 3.12 here too, since the macos-26 runner image of 2026-10-13: uv finds 3.15 on
+# it, litellm depends on fastuuid, which ships no 3.15 wheel, and PyO3 refuses to build it
+# from source ("newer than PyO3's maximum supported version"). Both runs on that image
+# failed the scenario here, on main and on a pull request, while the older image passed.
+uv tool install --python 3.12 litellm    || { echo "FAIL: litellm install failed" >&2; exit 1; }
 # Hermes Agent, the third route this agent ships through and the one that lands in the
 # Python ecosystem. 21-cli-agents-homebrew installs it from the formula on a DIFFERENT
 # machine, deliberately: both routes put a `hermes` on PATH, and two routes claiming one
