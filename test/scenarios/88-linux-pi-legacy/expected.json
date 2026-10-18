@@ -29,7 +29,7 @@
   "why": "Two witnesses, so must_contain names each: the deprecated @mariozechner scope, which machines installed before the move still report, and ~/.pi, which only a run creates. A separate host from 87 because both scopes install the same pi binary.",
   "must_contain": [
     "@mariozechner/pi-coding-agent",
-    "/home/dana/.pi"
+    "/home/dana/.pi/"
   ],
   "known_gaps": []
 }

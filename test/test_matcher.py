@@ -379,7 +379,7 @@ check("~/.pi is Pi and ~/.pipx is not",
       _ids(_rows("/home/dana/.pi/")) == {"pi"}
       and _ids(_rows("/home/dana/.pipx/", "/Users/dana/.pip/")) == set())
 # Pi's own libraries and the unscoped placeholder share its name and are not the agent.
-# OpenClaw depends on @earendil-works/pi-tui, so that one is on every OpenClaw host.
+# Current OpenClaw depends on @earendil-works/pi-tui, and a bun global hoists it into a row.
 _pi = classify_json([{"kind": "npm", "id": n, "ver": "1.0", "loc": "/x", "extra": "",
                       "perms": ""}
                      for n in ("@earendil-works/pi-coding-agent", "@earendil-works/pi-tui",

@@ -707,9 +707,15 @@ agents:
   # Both write ~/.pi/agent on their first run, not on install or --version. 87-linux-pi and
   # 88-linux-pi-legacy install one scope each, because both ship the same `pi` binary.
   #
-  # NOT HERE: unscoped npm `pi-coding-agent` is a 0.0.1 placeholder, and OpenClaw depends on
-  # @earendil-works/pi-tui, a library. The pi.dev/install.sh route is unread: pi.dev was
-  # unreachable from where this was written, and the installer is not in the source repo.
+  # NOT HERE: unscoped npm `pi-coding-agent` is a 0.0.1 placeholder, and @earendil-works/pi-tui
+  # is a library. The pi.dev/install.sh route is unread: pi.dev was unreachable from where this
+  # was written, and the installer is not in the source repo.
+  #
+  # IT OVER-MATCHES ON ONE ROUTE. OpenClaw 2026.1.29 to 2026.5.27 depended on pi-coding-agent
+  # itself, under each scope in turn; only pi-tui since. npm -g nests that dependency and the
+  # structural predicate drops it, but bun hoists it beside the global, so `bun add -g` of one
+  # of those releases reads as OpenClaw and Pi. Measured with bun 1.4.3 on 2026-10-18, and
+  # carried as a known gap of 87-linux-pi.
   - id: pi
     name: Pi
     classification: Coding agent
