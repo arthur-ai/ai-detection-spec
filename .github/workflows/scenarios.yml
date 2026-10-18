@@ -179,6 +179,11 @@ jobs:
         # written; this one did not, which is the whole of the bug described down there.
         id: provision
         if: steps.runnable.outputs.runnable == 'true'
+        # BOUNDED, because an unbounded step inherits the job's 360 minutes, and
+        # 50-autonomous on macos-26 spent them here after its install had finished. The
+        # slowest provision recorded is 214s (10-desktop-apps), so 20 minutes fails a hang
+        # long before a slow download would trip it.
+        timeout-minutes: 20
         run: test/scenarios/${{ matrix.scenario }}/setup.sh
       - name: Query and assert
         if: steps.runnable.outputs.runnable == 'true'

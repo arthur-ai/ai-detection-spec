@@ -12,5 +12,15 @@ set -e
 source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest.sh"
 need_brew
 brew install --cask openclaw
-open -a OpenClaw 2>/dev/null || true
+# IN THE BACKGROUND, WITH ITS STREAMS CLOSED. On macos-26 since runner image 20261012.601
+# (OpenClaw 2026.10.2), `open` launches the app and then never returns on most runs: at
+# cancellation the runner's cleanup found OpenClaw, `open` and this zsh all still running.
+# In the foreground that held the step to the job's 360-minute limit. The app is what the
+# query needs, and it is up either way.
+open -a OpenClaw </dev/null >/dev/null 2>&1 &!
+launcher=$!
 sleep 30
+if kill -0 "$launcher" 2>/dev/null; then
+  echo "WARN: open -a OpenClaw has not returned after 30s. Its processes:"
+  ps -axo pid,ppid,etime,command | grep '[O]penClaw' | sed 's/^/    /'
+fi
