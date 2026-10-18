@@ -5,6 +5,15 @@
       "agent": "openclaw",
       "route": "npm",
       "value": "openclaw",
+      "agent_version": "2026.10.3",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "openclaw",
+      "route": "npm",
+      "value": "openclaw",
       "agent_version": "2026.9.8",
       "platform": "linux",
       "os": "debian-12",
@@ -76,6 +85,14 @@
       "os": "ubuntu-24.04",
       "arch": "x86_64",
       "run": "39119339849"
+    },
+    {
+      "agent": "openclaw",
+      "route": "state_dirs",
+      "value": "~/.openclaw",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
     },
     {
       "agent": "openclaw",

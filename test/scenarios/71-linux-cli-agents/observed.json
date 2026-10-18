@@ -7,6 +7,15 @@
       "value": "@augmentcode/auggie",
       "agent_version": "0.36.0",
       "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "augment",
+      "route": "npm",
+      "value": "@augmentcode/auggie",
+      "agent_version": "0.36.0",
+      "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
       "run": "39119339849"
@@ -64,6 +73,14 @@
       "route": "binaries",
       "value": "~/.local/bin/claude",
       "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "claude-code",
+      "route": "binaries",
+      "value": "~/.local/bin/claude",
+      "platform": "linux",
       "os": "debian-12",
       "arch": "aarch64"
     },
@@ -124,6 +141,14 @@
       "route": "state_dirs",
       "value": "~/.claude",
       "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "claude-code",
+      "route": "state_dirs",
+      "value": "~/.claude",
+      "platform": "linux",
       "os": "debian-12",
       "arch": "aarch64"
     },
@@ -178,6 +203,15 @@
       "os": "ubuntu-24.04",
       "arch": "x86_64",
       "run": "39119339849"
+    },
+    {
+      "agent": "cline",
+      "route": "npm",
+      "value": "cline",
+      "agent_version": "3.0.71",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
     },
     {
       "agent": "cline",
@@ -245,6 +279,15 @@
       "os": "ubuntu-24.04",
       "arch": "x86_64",
       "run": "39119339849"
+    },
+    {
+      "agent": "codex-cli",
+      "route": "npm",
+      "value": "@openai/codex",
+      "agent_version": "0.162.1",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
     },
     {
       "agent": "codex-cli",
@@ -318,6 +361,14 @@
       "route": "state_dirs",
       "value": "~/.codex",
       "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "codex-cli",
+      "route": "state_dirs",
+      "value": "~/.codex",
+      "platform": "linux",
       "os": "debian-12",
       "arch": "aarch64"
     },
@@ -379,6 +430,15 @@
       "value": "@continuedev/cli",
       "agent_version": "1.5.47",
       "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "continue",
+      "route": "npm",
+      "value": "@continuedev/cli",
+      "agent_version": "1.5.47",
+      "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
       "run": "39119339849"
@@ -430,6 +490,15 @@
       "os": "ubuntu-24.04",
       "arch": "x86_64",
       "run": "39119339849"
+    },
+    {
+      "agent": "copilot-cli",
+      "route": "npm",
+      "value": "@github/copilot",
+      "agent_version": "1.0.98",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
     },
     {
       "agent": "copilot-cli",
@@ -502,6 +571,15 @@
       "agent": "gemini-cli",
       "route": "npm",
       "value": "@google/gemini-cli",
+      "agent_version": "0.1.9",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "gemini-cli",
+      "route": "npm",
+      "value": "@google/gemini-cli",
       "agent_version": "0.62.0",
       "platform": "linux",
       "os": "debian-12",
@@ -569,6 +647,15 @@
       "agent": "kilo-code",
       "route": "npm",
       "value": "@kilocode/cli",
+      "agent_version": "7.8.8",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "kilo-code",
+      "route": "npm",
+      "value": "@kilocode/cli",
       "agent_version": "7.8.12",
       "platform": "linux",
       "os": "debian-12",
@@ -628,6 +715,15 @@
       "route": "npm",
       "value": "opencode-ai",
       "agent_version": "1.19.3",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "opencode",
+      "route": "npm",
+      "value": "opencode-ai",
+      "agent_version": "1.19.0",
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",

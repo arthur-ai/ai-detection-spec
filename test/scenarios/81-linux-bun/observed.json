@@ -5,6 +5,15 @@
       "agent": "gemini-cli",
       "route": "npm",
       "value": "@google/gemini-cli",
+      "agent_version": "0.64.0",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "gemini-cli",
+      "route": "npm",
+      "value": "@google/gemini-cli",
       "agent_version": "0.63.0",
       "platform": "linux",
       "os": "debian-12",

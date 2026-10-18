@@ -236,9 +236,10 @@ unchanged. Three things differ and are worth knowing before you deploy:
 A VM is a headless, often multi-user server, which is a different machine from a laptop.
 Four things about it are worth knowing, each checked rather than assumed.
 
-**Which images.** CI runs every Linux scenario on Debian 12, Rocky Linux 9 and Fedora 41
-containers and on an Ubuntu 24.04 runner, so the one `dist/discovery-linux.sql` is proved
-on the three families a GCE fleet boots and on the deb and rpm sides of each. A container
+**Which images.** CI runs every Linux scenario on Debian 12, Rocky Linux 9, Fedora 41 and
+Amazon Linux 2023 containers and on Ubuntu 24.04 runners, x86_64 and arm64, so the one
+`dist/discovery-linux.sql` is proved on the three families a GCE fleet boots, on the image an
+EC2 fleet boots by default, and on the deb and rpm sides of each. A container
 cannot host systemd or OS Login, so `test/run-gce.sh` runs the same scenarios on one real
 VM per family and brings the observations back into the tree.
 
