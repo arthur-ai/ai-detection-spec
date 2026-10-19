@@ -32,7 +32,7 @@
       "agent_version": "0.86.2",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39206755451"
+      "run": "39213266672"
     },
     {
       "agent": "aider",
@@ -41,7 +41,7 @@
       "agent_version": "0.86.2",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39206755451"
+      "run": "39213266672"
     },
     {
       "agent": "claude-code",
@@ -74,7 +74,7 @@
       "agent_version": "2.1.303",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39206755451"
+      "run": "39213266672"
     },
     {
       "agent": "claude-code",
@@ -83,7 +83,7 @@
       "agent_version": "2.1.303",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39206755451"
+      "run": "39213266672"
     },
     {
       "agent": "codex-cli",
@@ -116,16 +116,16 @@
       "agent_version": "0.153.4",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39206755451"
+      "run": "39213266672"
     },
     {
       "agent": "codex-cli",
       "route": "homebrew",
       "value": "codex",
-      "agent_version": "0.153.4",
+      "agent_version": "0.162.1",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39206755451"
+      "run": "39213266672"
     },
     {
       "agent": "copilot-cli",
@@ -158,16 +158,16 @@
       "agent_version": "1.0.83",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39206755451"
+      "run": "39213266672"
     },
     {
       "agent": "copilot-cli",
       "route": "homebrew",
       "value": "copilot-cli",
-      "agent_version": "1.0.83",
+      "agent_version": "1.0.96",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39206755451"
+      "run": "39213266672"
     },
     {
       "agent": "cursor",
@@ -176,16 +176,16 @@
       "agent_version": "2026.09.02-c22c1a3",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39206755451"
+      "run": "39213266672"
     },
     {
       "agent": "cursor",
       "route": "homebrew",
       "value": "cursor-cli",
-      "agent_version": "2026.09.02-c22c1a3",
+      "agent_version": "2026.10.01-e373342",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39206755451"
+      "run": "39213266672"
     },
     {
       "agent": "gemini-cli",
@@ -218,7 +218,7 @@
       "agent_version": "0.46.0",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39206755451"
+      "run": "39213266672"
     },
     {
       "agent": "gemini-cli",
@@ -227,7 +227,7 @@
       "agent_version": "0.46.0",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39206755451"
+      "run": "39213266672"
     },
     {
       "agent": "goose",
@@ -236,16 +236,16 @@
       "agent_version": "1.49.0",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39206755451"
+      "run": "39213266672"
     },
     {
       "agent": "goose",
       "route": "homebrew",
       "value": "block-goose-cli",
-      "agent_version": "1.49.0",
+      "agent_version": "1.54.0",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39206755451"
+      "run": "39213266672"
     },
     {
       "agent": "hermes",
@@ -278,16 +278,16 @@
       "agent_version": "2026.8.31_1",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39206755451"
+      "run": "39213266672"
     },
     {
       "agent": "hermes",
       "route": "homebrew",
       "value": "hermes-agent",
-      "agent_version": "2026.8.31_1",
+      "agent_version": "0.21.6",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39206755451"
+      "run": "39213266672"
     },
     {
       "agent": "kiro-cli",
@@ -296,16 +296,16 @@
       "agent_version": "2.21.1",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39206755451"
+      "run": "39213266672"
     },
     {
       "agent": "kiro-cli",
       "route": "bundle_ids",
       "value": "com.amazon.codewhisperer",
-      "agent_version": "2.21.1",
+      "agent_version": "2.30.0",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39206755451"
+      "run": "39213266672"
     },
     {
       "agent": "kiro-cli",
@@ -314,16 +314,16 @@
       "agent_version": "2.21.1",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39206755451"
+      "run": "39213266672"
     },
     {
       "agent": "kiro-cli",
       "route": "homebrew",
       "value": "kiro-cli",
-      "agent_version": "2.21.1",
+      "agent_version": "2.30.0",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39206755451"
+      "run": "39213266672"
     },
     {
       "agent": "opencode",
@@ -332,16 +332,16 @@
       "agent_version": "1.18.20",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39206755451"
+      "run": "39213266672"
     },
     {
       "agent": "opencode",
       "route": "homebrew",
       "value": "opencode",
-      "agent_version": "1.18.20",
+      "agent_version": "2.0.25",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39206755451"
+      "run": "39213266672"
     }
   ]
 }
