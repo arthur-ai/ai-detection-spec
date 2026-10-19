@@ -713,9 +713,14 @@ agents:
   # Both write ~/.pi/agent on their first run, not on install or --version. 87-linux-pi and
   # 88-linux-pi-legacy install one scope each, because both ship the same `pi` binary.
   #
+  # pi.dev/install.sh, the route pi.dev lists first, installs no npm global: it runs npm ci
+  # into ~/.pi/agent/install/releases/<version>/, which npm_packages never reads, and its
+  # script migrates an npm-installed Pi by removing it. So ~/.pi is that route's only value,
+  # present from install and carrying no version. Read off 84-linux-installers on 2026-10-19,
+  # when the installer's latest was 1.3.0; 20-cli-agents runs its macOS branch.
+  #
   # NOT HERE: unscoped npm `pi-coding-agent` is a 0.0.1 placeholder, and @earendil-works/pi-tui
-  # is a library. The pi.dev/install.sh route is unread: pi.dev was unreachable from where this
-  # was written, and the installer is not in the source repo.
+  # is a library.
   #
   # IT OVER-MATCHES ON ONE ROUTE. OpenClaw 2026.1.29 to 2026.5.27 depended on pi-coding-agent
   # itself, under each scope in turn; only pi-tui since. npm -g nests that dependency and the

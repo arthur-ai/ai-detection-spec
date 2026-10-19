@@ -1,5 +1,5 @@
 {
-  "description": "CLI coding agents - a native installer and four npm globals.",
+  "description": "CLI coding agents - native installers and npm globals.",
   "platform": "darwin",
   "demo_beat": "step 1 - Claude Code and Codex CLI rows",
   "counts": {
@@ -25,13 +25,14 @@
       "opencode",
       "continue",
       "kilo-code",
-      "augment"
+      "augment",
+      "pi"
     ],
     "forbid": [
       "openclaw"
     ]
   },
-  "why": "file >= 2 because Claude Code shows up twice under enumeration: the ~/.local/bin/ shim and the ~/.claude/ state dotdir. Both come from product-free globs now, which is the point -- the old query named the file 'claude' outright. npm >= 4 covers the four npm globals; it is a floor rather than an equality because npm installs each package's dependencies globally too and the row count is not ours to predict.",
+  "why": "file >= 2 because Claude Code shows up twice under enumeration: the ~/.local/bin/ shim and the ~/.claude/ state dotdir. Both come from product-free globs now, which is the point -- the old query named the file 'claude' outright. npm >= 4 covers the four npm globals; it is a floor rather than an equality because npm installs each package's dependencies globally too and the row count is not ours to predict. Pi comes from its own installer, which writes ~/.pi and no npm global; forbid_rows holds both its npm names absent, so ~/.pi is its only witness here.",
   "must_contain": [
     "/.local/bin/claude",
     "@openai/codex",
@@ -40,6 +41,17 @@
     "opencode-ai",
     "@continuedev/cli",
     "@kilocode/cli",
-    "@augmentcode/auggie"
+    "@augmentcode/auggie",
+    "/.pi/"
+  ],
+  "forbid_rows": [
+    {
+      "kind": "npm",
+      "id": "@earendil-works/pi-coding-agent"
+    },
+    {
+      "kind": "npm",
+      "id": "@mariozechner/pi-coding-agent"
+    }
   ]
 }

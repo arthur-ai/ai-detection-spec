@@ -89,13 +89,12 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 82-linux-running | The gateway runs with a throwaway token and no channel or model. This proves what a running gateway looks like to osquery, not an agent at work. |
 | 83-linux-claude-running | `claude mcp serve` runs unauthenticated with no client connected, so this proves what a running Claude Code process looks like to osquery, not an agent at work. |
 | 83-linux-claude-running | Skips in a default container, where osquery cannot read another user's executable path. It runs for real on CI's ubuntu runner and under test/run-gce.sh. |
-| 84-linux-installers | Only the installers' Linux branches run here. On macOS opencode, Cursor CLI, goose and Kiro CLI are proved through Homebrew in 21-cli-agents-homebrew and Muse Code by the same installer in 14-meta-muse; Grok Build's macOS install is unexercised, though ~/.grok is a posix route. |
+| 84-linux-installers | Only the installers' Linux branches run here. On macOS opencode, Cursor CLI, goose and Kiro CLI are proved through Homebrew in 21-cli-agents-homebrew, Muse Code by the same installer in 14-meta-muse, and Pi's installer runs in 20-cli-agents; Grok Build's macOS install is unexercised, though ~/.grok is a posix route. |
 | 84-linux-installers | Nothing is run after installing, so state that appears on first use -- ~/.config/goose, ~/.local/share/opencode, ~/.muse -- is unexamined. Only the last is a top-level directory the enumeration would reach, and it is not a catalog value. |
 | 85-linux-vscode-agents | Installed into VS Code only. Cursor, Windsurf, VSCodium and Trae keep their own extension directories, which osquery reports under vscode_edition, and none is exercised. |
 | 85-linux-vscode-agents | Blackbox's extensions are unpublished from the Marketplace and arrive here as the VSIX the Marketplace still serves by URL. If that URL stops answering, the two ids can no longer be produced, which is the cue to supersede them rather than drop them. |
 | 86-linux-jetbrains-agents | Unpacked from the Marketplace zip, not installed by an IDE, as in 80: the IDE's own install and update paths are untested. |
 | 86-linux-jetbrains-agents | Amazon Q's plugin needs AWS Core (aws.toolkit.core) to load in an IDE. It is not installed, because only the directory is under test. |
-| 87-linux-pi | The pi.dev/install.sh route is not exercised. Its install layout has not been read, so it has no value in the catalog yet. |
 | 87-linux-pi | Over-matches under bun: OpenClaw 2026.1.29 to 2026.5.27 depended on pi-coding-agent, and `bun add -g` hoists it beside the global, so such a host reports Pi as well. npm -g nests it and is unaffected. Measured with bun 1.4.3. |
 
 `14-meta-muse` need macOS 14 or newer, so CI skips them on older runners rather than failing them. Each scenario's `requires.json` carries the reason.
