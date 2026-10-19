@@ -279,6 +279,12 @@ agents:
     # THE FLEET CONSEQUENCE IS THE POINT. A Mac that has not updated ChatGPT still reports
     # com.openai.chat, and until now the brew route was the only thing that would have found
     # it -- so a direct download, which is how most people install this app, was invisible.
+    #
+    # THIS IS THE HOST APP, NOT DOTS. A match says ChatGPT is installed, never that dots is
+    # enabled or in use. OpenAI's help centre, read second-hand (the page itself returned
+    # 403), has a dot run on a cloud computer, with local access opt-in through this app.
+    # The cask's zap list names com.openai.sky.CUAService, but nothing ties that to dots
+    # rather than the app's own computer use. The limit itself is in docs/blind-spots.yaml.
     bundle_ids: [com.openai.codex, com.openai.chat]
     homebrew: [chatgpt]
     # com.openai.chat IS PROVED, NOT SUPERSEDED. 12-chatgpt-pre-rename installs build
@@ -288,13 +294,6 @@ agents:
     # This used to say the shrink guard would fire once macos-14's Homebrew caught up. It
     # did not fire. The image update changed `os` from 14.8.7 to 14.8.9, which made it a
     # different key, so the old record stayed and kept counting as CI coverage.
-    #
-    # THIS IS THE HOST APP, NOT DOTS. A dot runs on an OpenAI cloud computer, and local
-    # computer access is opt-in through this same app, which must stay open
-    # (help.openai.com/en/articles/20001554-manage-dots-in-chatgpt-workspaces). A match says
-    # ChatGPT is installed, never that dots is enabled or in use. No dots-only signal has been
-    # read off an install: the cask's zap list names com.openai.sky.CUAService, but that is
-    # Homebrew metadata, and nothing ties it to dots rather than the app's own computer use.
 
   - id: codex-cli
     name: Codex CLI
