@@ -337,7 +337,11 @@ bug hid behind.
 months because its fixture had no agent on either tag. If removing the code does not turn the
 test red, the test proves nothing.
 
-**Scenarios run per pull request, on both platforms.** `test/run.sh` boots a macOS guest under
+**Scenarios run per pull request, the ones its diff can move, and all of them nightly, on both
+platforms.** `tools/ci_scope.py` picks them, and a path it cannot scope runs every one. Every
+workflow job declares `timeout-minutes`, at most 60, and `tools/check_workflows.py` fails one
+that does not: the default is 360, and a hung `open -a` billed that in full four times in
+October 2026. `test/run.sh` boots a macOS guest under
 Tart; `test/run-linux.sh` runs the Linux scenarios in containers and needs no hypervisor, with
 `LINUX_IMAGE` choosing the distro. CI runs them on Debian 12, Rocky 9, Fedora 41 and Amazon
 Linux 2023 containers and on Ubuntu runners, x86_64 and arm64; `test/run-gce.sh` runs them on

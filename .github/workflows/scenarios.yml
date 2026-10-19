@@ -8,7 +8,7 @@ name: Scenarios
 # catalog is consistent; only a real install proves an identifier is what the software
 # ships. Landing a signature on the strength of a green lint is how `bot.molt.mac` got in.
 #
-# The cost is real and is bounded four ways rather than by not running:
+# The cost is real and is bounded rather than avoided:
 #
 #   * `concurrency` below cancels a PR's superseded runs, so pushing five times to a
 #     branch costs one suite and not five.
@@ -16,20 +16,22 @@ name: Scenarios
 #     instead of hiding the other twenty.
 #   * the `collect` job stays main-only, so a PR run asserts and uploads without
 #     committing observations. A PR must not be able to move recorded coverage.
-#   * the `scope` job below skips the matrix when every changed path is a `.md` file.
+#   * the `scope` job below runs only the scenarios a diff can move -- none for a `.md`
+#     file -- and excludes the rest from each matrix. tools/ci_scope.py holds the rules.
+#   * every job declares `timeout-minutes`, and tools/check_workflows.py fails one that
+#     does not. The default is 360, and 50-autonomous on macos-26 billed all of it four
+#     times between 2026-10-15 and 10-18, hung in Provision.
 #
-# THAT LAST BOUND DOES NOT WEAKEN THE ONE ABOVE IT, and the distinction is the whole
-# argument. What was wrong before was skipping the suite on a CHANGE THAT COULD MOVE A
-# SIGNATURE -- a catalog edit, a query, a scenario -- because a green lint says nothing
-# about whether an identifier is what the software ships. A `.md` file is not that change:
-# no job in this workflow opens one. Every gate that DOES read prose lives in ci.yml's
-# lint job, which is deliberately left ungated and still runs on every pull request.
+# A CHANGE THAT CAN MOVE A SIGNATURE STILL RUNS HERE, never skipped on a green lint: a
+# catalog edit runs the scenarios that name, observed or probe the agents it changed. The
+# one miss scoping leaves is a new signature over-matching rows in a scenario with no
+# link to its agent, and the schedule runs every scenario nightly, so that surfaces within
+# a day.
 #
-# The measurement behind it, taken 2026-09-22 over the preceding four days: 93% of this
-# repository's billable minutes were this workflow, and eleven of the last thirty pull
-# requests changed only Markdown. Each of those eleven paid for 26 macOS jobs to prove
-# that an edit to a sentence had not changed what osquery finds on a Mac. The figures are
-# a dated observation rather than a standing claim -- re-measure before quoting them.
+# Measured 2026-09-22 over the preceding four days: 93% of this repository's billable
+# minutes were this workflow. Measured 2026-10-19: the last 40 merges to main, replayed
+# through the scope job, would have run 58% of their macOS jobs. Dated observations, not
+# standing claims -- re-measure before quoting them.
 on:
   pull_request:
   push:
@@ -41,8 +43,14 @@ on:
 # Cancel superseded PR runs, NEVER a main or scheduled one. A cancelled main run loses the
 # observations `collect` would have committed, and a lost observation reads downstream as
 # an identifier that stopped appearing.
+#
+# SO A RUN THAT IS NOT A PULL REQUEST'S GETS A GROUP OF ITS OWN. A group holds one pending
+# run, and a newer arrival cancels it whatever cancel-in-progress says. That cost nothing
+# while every main run was the whole suite; now a push runs only what its own diff can
+# move, so a cancelled pending push loses its scenarios for good, and the nightly run that
+# backs the scoping could be cancelled by any push queued behind it.
 concurrency:
-  group: scenarios-${{ github.ref }}
+  group: scenarios-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
@@ -58,16 +66,36 @@ jobs:
   #
   # The rule itself is in tools/ci_scope.py, in ONE place, because three workflows ask
   # this question and three copies of the answer would be three lists that have to agree.
+  #
+  # THIS ONE ASKS WHICH SCENARIOS, not whether, and answers per matrix job: `skip_<job>`
+  # when none of its scenarios run, `exclude_<job>` naming the ones that do not. AN
+  # EXCLUDED SCENARIO VANISHES FROM THE CHECKS LIST, which is the failure the paragraph
+  # above refuses for a whole workflow -- so this job's summary names every path, the rule
+  # that scoped it and what it selected, and that is where to look for a scenario that did
+  # not run. An UNSET output runs everything -- `skip_` is not 'true', `exclude_` falls
+  # back to [] -- so the nightly needs no Python here, and a pull request or push refuses
+  # to finish this job without them.
   scope:
     name: What this diff can move
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       runtime: ${{ steps.scope.outputs.runtime }}
+      skip_scenario: ${{ steps.scope.outputs.skip_scenario }}
+      exclude_scenario: ${{ steps.scope.outputs.exclude_scenario }}
+      skip_scenario_linux: ${{ steps.scope.outputs.skip_scenario_linux }}
+      exclude_scenario_linux: ${{ steps.scope.outputs.exclude_scenario_linux }}
+      skip_scenario_linux_container: ${{ steps.scope.outputs.skip_scenario_linux_container }}
+      exclude_scenario_linux_container: ${{ steps.scope.outputs.exclude_scenario_linux_container }}
     steps:
       - uses: actions/checkout@v4
         with:
           # The diff needs the base commit, not just the tip. The whole repo is 5MB.
           fetch-depth: 0
+      # The catalog and this workflow are compared parsed, not as text.
+      - name: Install pyyaml
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
+        run: pip3 install --quiet --break-system-packages pyyaml || pip3 install --quiet pyyaml
       - id: scope
         env:
           # On a pull request github.sha is a merge commit onto main's CURRENT tip, which is
@@ -82,31 +110,37 @@ jobs:
           HEAD_SHA: ${{ github.sha }}
         run: |
           # A schedule or a manual dispatch has no diff to read, and a dispatch is
-          # somebody asking for this on purpose. Both run everything.
+          # somebody asking for this on purpose. Both run every scenario, and with nothing
+          # but this line: the nightly run is what catches what scoping cannot, so it must
+          # not depend on the scoping working.
           case "$EVENT" in
             pull_request|push) ;;
             *) echo "runtime=true" >> "$GITHUB_OUTPUT"
-               echo "$EVENT has no diff to read; running every gate"
+               echo "$EVENT has no diff to read; running every scenario"
                exit 0 ;;
           esac
-          python3 tools/ci_scope.py "$BASE" "$HEAD_SHA" >> "$GITHUB_OUTPUT"
+          python3 tools/ci_scope.py --scenarios "$BASE" "$HEAD_SHA" \
+            --summary "$GITHUB_STEP_SUMMARY" >> "$GITHUB_OUTPUT"
           # AN EMPTY OUTPUT IS THE ONE FAILURE THIS GATE COULD HIDE. A false `if` and an
           # unset output are the same string to GitHub, so a scope job that succeeded
           # while writing nothing would skip the whole suite and report green -- an empty
           # result indistinguishable from a clean one, in the place that decides whether
           # anything gets checked at all. A crash is already red; this covers the rest.
-          grep -qE '^runtime=(true|false)$' "$GITHUB_OUTPUT" || {
+          grep -qE '^runtime=(true|false)$' "$GITHUB_OUTPUT" \
+            && grep -q '^exclude_' "$GITHUB_OUTPUT" || {
             echo "::error::ci_scope.py wrote no verdict. Refusing to skip the suite on"
             echo "::error::a gate that did not answer."
             exit 1
           }
-          grep '^runtime=' "$GITHUB_OUTPUT"
+          grep -E '^(runtime|skip_)' "$GITHUB_OUTPUT"
 
   scenario:
     needs: scope
-    if: needs.scope.outputs.runtime == 'true'
+    if: needs.scope.outputs.runtime == 'true' && needs.scope.outputs.skip_scenario != 'true'
     name: ${{ matrix.scenario }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    # Above Provision's own bound, so a hang there fails in that step, with its name.
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -139,6 +173,9 @@ jobs:
           - 56-openclaw-retired-names
           - 57-clawdbot-era
           - 60-persistence
+        # The scenarios this diff cannot move. The lists above stay the whole suite, which
+        # is what tools/check_workflows.py checks and what the schedule runs.
+        exclude: ${{ fromJSON(needs.scope.outputs.exclude_scenario || '[]') }}
     steps:
       - uses: actions/checkout@v4
       - name: Install osquery
@@ -179,11 +216,9 @@ jobs:
         # written; this one did not, which is the whole of the bug described down there.
         id: provision
         if: steps.runnable.outputs.runnable == 'true'
-        # BOUNDED, because an unbounded step inherits the job's 360 minutes, and
-        # 50-autonomous on macos-26 spent them here after its install had finished. The
-        # slowest provision recorded is 214s (10-desktop-apps), so 20 minutes fails a hang
-        # long before a slow download would trip it.
-        timeout-minutes: 20
+        # BOUNDED ABOVE THE SLOWEST PROVISION THAT SUCCEEDED: 43.8 minutes, 10-desktop-apps
+        # on 2026-09-29, a slow-download day. A tighter bound fails a slow mirror as a hang.
+        timeout-minutes: 50
         run: test/scenarios/${{ matrix.scenario }}/setup.sh
       - name: Query and assert
         if: steps.runnable.outputs.runnable == 'true'
@@ -277,9 +312,12 @@ jobs:
   # systemd as PID 1, which is what 76-linux-systemd needs and what a container cannot give.
   scenario-linux:
     needs: scope
-    if: needs.scope.outputs.runtime == 'true'
+    if: needs.scope.outputs.runtime == 'true' && needs.scope.outputs.skip_scenario_linux != 'true'
     name: ${{ matrix.scenario }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    # The slowest Linux scenario job from 2026-09-28 to 10-19 took 12.8 minutes, most of
+    # it one download; this job and the container one share the bound.
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -305,6 +343,7 @@ jobs:
           - 86-linux-jetbrains-agents
           - 87-linux-pi
           - 88-linux-pi-legacy
+        exclude: ${{ fromJSON(needs.scope.outputs.exclude_scenario_linux || '[]') }}
     steps:
       - uses: actions/checkout@v4
       - name: Install osquery
@@ -407,9 +446,11 @@ jobs:
   scenario-linux-container:
     needs: scope
     if: needs.scope.outputs.runtime == 'true'
+      && needs.scope.outputs.skip_scenario_linux_container != 'true'
     name: ${{ matrix.scenario }} on ${{ matrix.label }}
     runs-on: ubuntu-24.04
     container: ${{ matrix.image }}
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -439,6 +480,10 @@ jobs:
           - 86-linux-jetbrains-agents
           - 87-linux-pi
           - 88-linux-pi-legacy
+        # By scenario only, so every image keeps a row and each `include` below still
+        # finds one to label. An include matching no row is ADDED as a row of its own,
+        # here one with no scenario.
+        exclude: ${{ fromJSON(needs.scope.outputs.exclude_scenario_linux_container || '[]') }}
         # A label per image, because an artifact name may not contain `:` or `/` and
         # upload-artifact@v4 fails outright on one that does.
         include:
@@ -548,6 +593,7 @@ jobs:
     # check that cannot fail is worse than no check.
     if: always() && needs.scope.outputs.runtime == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write
     steps:
