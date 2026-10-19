@@ -11,15 +11,15 @@ and the CI test behind each one.
 
 ![agents](https://img.shields.io/badge/agents-40-1D4E89)
 ![identifiers](https://img.shields.io/badge/identifiers-108-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-105%2F108-A26A16)
-![real install](https://img.shields.io/badge/by_real_install-105-2E7D57)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-108%2F108-2E7D57)
+![real install](https://img.shields.io/badge/by_real_install-108-2E7D57)
 
 </div>
 
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 105 of 108. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all; the build rejects it.
+**Every identifier is proved by a real install in CI** — 108 of 108. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all; the build rejects it.
 
 ## 🧪 Why a real install is the bar
 
@@ -31,8 +31,6 @@ review.
 Proof is counted **per identifier**, not per agent. Installing an agent vouches
 only for the identifiers that run actually matched, so a sibling identifier on the
 same agent is not covered by association.
-
-> **This number is a floor.** `87-linux-pi`, `88-linux-pi-legacy` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
 
 # Agents (40)
 
@@ -64,7 +62,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | **Kiro CLI** | **`com.amazon.codewhisperer`**, **`kiro-cli`**, **`~/.local/bin/kiro-cli`** | 21-cli-agents-homebrew, 84-linux-installers |
 | **opencode** | **`opencode`**, **`opencode-ai`**, **`~/.opencode`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 84-linux-installers |
 | **OpenHands** | **`ghcr.io/openhands/openhands`**, **`ghcr.io/all-hands-ai/openhands`**, **`https://github.com/OpenHands/OpenHands`** | 79-linux-image |
-| **Pi** | @earendil-works/pi-coding-agent, @mariozechner/pi-coding-agent, ~/.pi | 87-linux-pi, 88-linux-pi-legacy |
+| **Pi** | **`@earendil-works/pi-coding-agent`**, **`@mariozechner/pi-coding-agent`**, **`~/.pi`** | 87-linux-pi, 88-linux-pi-legacy |
 | **Roo Code** | **`rooveterinaryinc.roo-cline`** | 85-linux-vscode-agents |
 | **SWE-agent** | **`sweagent/swe-agent`** | 79-linux-image |
 | **Trae** | **`com.trae.app`**, **`cn.trae.app`**, **`trae`**, **`trae-cn`** | 13-desktop-apps-more |
@@ -104,16 +102,6 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | **Perplexity** | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
 
 > **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = superseded: a run proved it and the current release no longer emits it. ∅ = no CI runner for its platform. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it.
-
-## ⚠️ Identifiers that did not pass
-
-Every one is work, and the middle column says what kind. **did not appear** means a scenario installed the agent and this identifier never showed up — the suite reached it and it did not reproduce, usually because the scenario installs by a different route, or because the artifact only exists once the agent has run.
-
-| agent | route | identifier | state | reached by |
-|---|---|---|---|---|
-| Pi | npm | `@earendil-works/pi-coding-agent` | no test | -- |
-| Pi | npm | `@mariozechner/pi-coding-agent` | no test | -- |
-| Pi | state dir | `~/.pi` | no test | -- |
 
 **What it cannot see is a separate page.** [`docs/limits.md`](limits.md) carries what osquery cannot see on any machine and what each scenario leaves unproved after its install succeeds -- rendered from the same inputs, gated the same way.
 

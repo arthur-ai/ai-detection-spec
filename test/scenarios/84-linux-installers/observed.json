@@ -14,9 +14,18 @@
       "route": "binaries",
       "value": "~/.local/bin/cursor-agent",
       "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "39206755451"
+    },
+    {
+      "agent": "cursor",
+      "route": "binaries",
+      "value": "~/.local/bin/cursor-agent",
+      "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     },
     {
       "agent": "cursor",
@@ -25,7 +34,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     },
     {
       "agent": "cursor",
@@ -42,7 +51,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     },
     {
       "agent": "cursor",
@@ -50,7 +59,8 @@
       "value": "~/.local/bin/cursor-agent",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "aarch64"
+      "arch": "aarch64",
+      "run": "39206755451"
     },
     {
       "agent": "cursor",
@@ -59,7 +69,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     },
     {
       "agent": "goose",
@@ -74,9 +84,18 @@
       "route": "binaries",
       "value": "~/.local/bin/goose",
       "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "39206755451"
+    },
+    {
+      "agent": "goose",
+      "route": "binaries",
+      "value": "~/.local/bin/goose",
+      "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     },
     {
       "agent": "goose",
@@ -85,7 +104,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     },
     {
       "agent": "goose",
@@ -102,7 +121,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     },
     {
       "agent": "goose",
@@ -110,7 +129,8 @@
       "value": "~/.local/bin/goose",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "aarch64"
+      "arch": "aarch64",
+      "run": "39206755451"
     },
     {
       "agent": "goose",
@@ -119,7 +139,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     },
     {
       "agent": "grok",
@@ -134,9 +154,18 @@
       "route": "state_dirs",
       "value": "~/.grok",
       "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "39206755451"
+    },
+    {
+      "agent": "grok",
+      "route": "state_dirs",
+      "value": "~/.grok",
+      "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     },
     {
       "agent": "grok",
@@ -145,7 +174,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     },
     {
       "agent": "grok",
@@ -162,7 +191,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     },
     {
       "agent": "grok",
@@ -170,7 +199,8 @@
       "value": "~/.grok",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "aarch64"
+      "arch": "aarch64",
+      "run": "39206755451"
     },
     {
       "agent": "grok",
@@ -179,7 +209,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     },
     {
       "agent": "kiro-cli",
@@ -194,9 +224,18 @@
       "route": "binaries",
       "value": "~/.local/bin/kiro-cli",
       "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "39206755451"
+    },
+    {
+      "agent": "kiro-cli",
+      "route": "binaries",
+      "value": "~/.local/bin/kiro-cli",
+      "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     },
     {
       "agent": "kiro-cli",
@@ -205,7 +244,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     },
     {
       "agent": "kiro-cli",
@@ -222,7 +261,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     },
     {
       "agent": "kiro-cli",
@@ -230,7 +269,8 @@
       "value": "~/.local/bin/kiro-cli",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "aarch64"
+      "arch": "aarch64",
+      "run": "39206755451"
     },
     {
       "agent": "kiro-cli",
@@ -239,7 +279,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     },
     {
       "agent": "opencode",
@@ -254,9 +294,18 @@
       "route": "state_dirs",
       "value": "~/.opencode",
       "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "39206755451"
+    },
+    {
+      "agent": "opencode",
+      "route": "state_dirs",
+      "value": "~/.opencode",
+      "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     },
     {
       "agent": "opencode",
@@ -265,7 +314,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     },
     {
       "agent": "opencode",
@@ -282,7 +331,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     },
     {
       "agent": "opencode",
@@ -290,7 +339,8 @@
       "value": "~/.opencode",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "aarch64"
+      "arch": "aarch64",
+      "run": "39206755451"
     },
     {
       "agent": "opencode",
@@ -299,7 +349,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     }
   ]
 }

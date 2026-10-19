@@ -7,7 +7,8 @@
       "value": "~/.local/bin/claude",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "aarch64"
+      "arch": "aarch64",
+      "run": "39206755451"
     },
     {
       "agent": "claude-code",
@@ -16,7 +17,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     },
     {
       "agent": "claude-code",
@@ -24,7 +25,8 @@
       "value": "~/.local/share/claude/versions/",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "aarch64"
+      "arch": "aarch64",
+      "run": "39206755451"
     },
     {
       "agent": "claude-code",
@@ -33,7 +35,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     },
     {
       "agent": "claude-code",
@@ -41,7 +43,8 @@
       "value": "~/.claude",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "aarch64"
+      "arch": "aarch64",
+      "run": "39206755451"
     },
     {
       "agent": "claude-code",
@@ -50,7 +53,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     }
   ]
 }

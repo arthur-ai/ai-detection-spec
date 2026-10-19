@@ -6,9 +6,18 @@
       "route": "native_messaging_hosts",
       "value": "com.anthropic.claude_browser_extension.json",
       "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "39206755451"
+    },
+    {
+      "agent": "claude-desktop",
+      "route": "native_messaging_hosts",
+      "value": "com.anthropic.claude_browser_extension.json",
+      "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     },
     {
       "agent": "claude-desktop",
@@ -17,7 +26,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     },
     {
       "agent": "claude-desktop",
@@ -26,7 +35,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     },
     {
       "agent": "claude-desktop",
@@ -35,7 +44,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     }
   ]
 }

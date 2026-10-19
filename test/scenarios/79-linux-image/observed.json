@@ -7,8 +7,26 @@
       "value": "paulgauthier/aider",
       "platform": "linux",
       "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "39206755451"
+    },
+    {
+      "agent": "aider",
+      "route": "images",
+      "value": "paulgauthier/aider",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
+    },
+    {
+      "agent": "goose",
+      "route": "image_labels",
+      "value": "https://github.com/block/goose",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "39206755451"
     },
     {
       "agent": "goose",
@@ -17,7 +35,16 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
+    },
+    {
+      "agent": "goose",
+      "route": "images",
+      "value": "ghcr.io/block/goose",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "39206755451"
     },
     {
       "agent": "goose",
@@ -26,7 +53,16 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
+    },
+    {
+      "agent": "openhands",
+      "route": "image_labels",
+      "value": "https://github.com/OpenHands/OpenHands",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "39206755451"
     },
     {
       "agent": "openhands",
@@ -35,7 +71,16 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
+    },
+    {
+      "agent": "openhands",
+      "route": "images",
+      "value": "ghcr.io/all-hands-ai/openhands",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "39206755451"
     },
     {
       "agent": "openhands",
@@ -44,7 +89,16 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
+    },
+    {
+      "agent": "openhands",
+      "route": "images",
+      "value": "ghcr.io/openhands/openhands",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "39206755451"
     },
     {
       "agent": "openhands",
@@ -53,7 +107,16 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
+    },
+    {
+      "agent": "swe-agent",
+      "route": "images",
+      "value": "sweagent/swe-agent",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "39206755451"
     },
     {
       "agent": "swe-agent",
@@ -62,7 +125,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "39119339849"
+      "run": "39206755451"
     }
   ]
 }
