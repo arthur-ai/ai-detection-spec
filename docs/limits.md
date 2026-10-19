@@ -40,6 +40,7 @@ they are stated once. No amount of test coverage moves them.
 | Whether an agent was running a minute ago | A `proc` row is a sample of the process table when the query ran, not a history. An agent started and stopped between two runs leaves nothing on this route |
 | A running node CLI that names no package path | A global launched through its bin link reads `node /usr/local/bin/<name>`, and a process that renames itself carries no path at all. `queries/running.sql` finds OpenClaw's gateway through its workers, which run a script under node_modules/openclaw; a CLI that starts none is found as installed and not as running |
 | Behaviour that only appears after launch or sign-in | Nothing here launches an app -- `open -a` needs an Aqua session and SSH has none -- so first-launch daemons, ports and state directories go unobserved, and account-gated products are never signed in to |
+| Whether ChatGPT's dots is enabled or in use | A dot runs on an OpenAI cloud computer; local computer access is opt-in and runs through the ChatGPT desktop app, which `chatgpt-desktop` already reports (help.openai.com/en/articles/20001554-manage-dots-in-chatgpt-workspaces). No dots-only signal has been read off a real install, so a match means the app, never dots |
 
 ## What the scenarios do not prove
 
