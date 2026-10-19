@@ -18,7 +18,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "amazon-q",
@@ -28,7 +28,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "amazon-q",
@@ -38,7 +38,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "amazon-q",
@@ -57,7 +57,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "amazon-q",
@@ -67,7 +67,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "amazon-q",
@@ -77,7 +77,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "cody",
@@ -96,7 +96,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "cody",
@@ -106,7 +106,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "cody",
@@ -116,7 +116,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "cody",
@@ -135,7 +135,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "cody",
@@ -145,7 +145,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "cody",
@@ -155,7 +155,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "copilot-cli",
@@ -170,31 +170,31 @@
       "agent": "copilot-cli",
       "route": "jetbrains_plugins",
       "value": "github-copilot-intellij",
-      "agent_version": "1.19.1-252",
+      "agent_version": "1.19.2-261-linux-arm64",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "copilot-cli",
       "route": "jetbrains_plugins",
       "value": "github-copilot-intellij",
-      "agent_version": "1.19.1-252",
+      "agent_version": "1.19.2-261-linux-arm64",
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "copilot-cli",
       "route": "jetbrains_plugins",
       "value": "github-copilot-intellij",
-      "agent_version": "1.19.1-252",
+      "agent_version": "1.19.2-261-linux-arm64",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "copilot-cli",
@@ -209,31 +209,31 @@
       "agent": "copilot-cli",
       "route": "jetbrains_plugins",
       "value": "github-copilot-intellij",
-      "agent_version": "1.19.1-252",
+      "agent_version": "1.19.2-261-linux-arm64",
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "copilot-cli",
       "route": "jetbrains_plugins",
       "value": "github-copilot-intellij",
-      "agent_version": "1.19.1-252",
+      "agent_version": "1.19.2-261-linux-arm64",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "copilot-cli",
       "route": "jetbrains_plugins",
       "value": "github-copilot-intellij",
-      "agent_version": "1.19.1-252",
+      "agent_version": "1.19.2-261-linux-arm64",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "gemini-code-assist",
@@ -252,7 +252,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "gemini-code-assist",
@@ -262,7 +262,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "gemini-code-assist",
@@ -272,7 +272,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "gemini-code-assist",
@@ -291,7 +291,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "gemini-code-assist",
@@ -301,7 +301,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "gemini-code-assist",
@@ -311,7 +311,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     }
   ]
 }

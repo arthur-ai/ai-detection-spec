@@ -8,7 +8,7 @@
       "agent_version": "0.36.0",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "augment",
@@ -17,7 +17,7 @@
       "agent_version": "0.36.0",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "claude-code",
@@ -46,7 +46,7 @@
       "value": "~/.local/bin/claude",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "claude-code",
@@ -54,7 +54,7 @@
       "value": "~/.local/bin/claude",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "claude-code",
@@ -83,7 +83,7 @@
       "value": "~/.claude",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "claude-code",
@@ -91,7 +91,7 @@
       "value": "~/.claude",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "cline",
@@ -124,7 +124,7 @@
       "agent_version": "3.0.73",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "cline",
@@ -133,7 +133,7 @@
       "agent_version": "3.0.73",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "codex-cli",
@@ -166,7 +166,7 @@
       "agent_version": "0.163.0",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "codex-cli",
@@ -175,7 +175,7 @@
       "agent_version": "0.163.0",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "codex-cli",
@@ -204,7 +204,7 @@
       "value": "~/.codex",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "codex-cli",
@@ -212,7 +212,7 @@
       "value": "~/.codex",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "continue",
@@ -221,7 +221,7 @@
       "agent_version": "1.5.47",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "continue",
@@ -230,7 +230,7 @@
       "agent_version": "1.5.47",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "copilot-cli",
@@ -263,7 +263,7 @@
       "agent_version": "1.0.98",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "copilot-cli",
@@ -272,7 +272,7 @@
       "agent_version": "1.0.98",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "gemini-cli",
@@ -305,7 +305,7 @@
       "agent_version": "0.64.0",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "gemini-cli",
@@ -314,7 +314,7 @@
       "agent_version": "0.64.0",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "kilo-code",
@@ -323,7 +323,7 @@
       "agent_version": "7.8.12",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "kilo-code",
@@ -332,7 +332,7 @@
       "agent_version": "7.8.12",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "opencode",
@@ -341,7 +341,7 @@
       "agent_version": "1.19.3",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "opencode",
@@ -350,7 +350,7 @@
       "agent_version": "1.19.3",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39213266672"
+      "run": "39250625549"
     }
   ]
 }

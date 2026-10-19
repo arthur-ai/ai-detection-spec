@@ -18,7 +18,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "openclaw",
@@ -37,7 +37,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "openclaw",
@@ -56,7 +56,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "openclaw",
@@ -75,7 +75,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "openclaw",
@@ -85,7 +85,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "openclaw",
@@ -95,7 +95,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "openclaw",
@@ -112,7 +112,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "openclaw",
@@ -129,7 +129,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "openclaw",
@@ -146,7 +146,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "openclaw",
@@ -163,7 +163,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "openclaw",
@@ -172,7 +172,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "39213266672"
+      "run": "39250625549"
     },
     {
       "agent": "openclaw",
@@ -181,7 +181,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "39213266672"
+      "run": "39250625549"
     }
   ]
 }
