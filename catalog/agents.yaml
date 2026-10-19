@@ -717,7 +717,7 @@ agents:
   # into ~/.pi/agent/install/releases/<version>/, which npm_packages never reads, and its
   # script migrates an npm-installed Pi by removing it. So ~/.pi is that route's only value,
   # present from install and carrying no version. Read off 84-linux-installers on 2026-10-19,
-  # when the installer's latest was 1.3.0.
+  # when the installer's latest was 1.3.0; 20-cli-agents runs its macOS branch.
   #
   # NOT HERE: unscoped npm `pi-coding-agent` is a 0.0.1 placeholder, and @earendil-works/pi-tui
   # is a library.

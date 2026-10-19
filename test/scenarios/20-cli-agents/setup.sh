@@ -7,8 +7,8 @@ source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest.sh"
 # ~/.local/bin/claude as a symlink into ~/.local/share/claude/versions/<ver>,
 # which is also where the version string comes from - we never exec the binary.
 curl --retry 3 -fsSL https://claude.ai/install.sh | bash || echo "WARN: claude code install failed"
-# Codex CLI is a genuine npm global.
-need_node
+# Codex CLI is a genuine npm global. 22 for Pi's installer, below.
+need_node 22
 npm install -g @openai/codex || echo "WARN: codex install failed"
 
 # Four more agents that ship on npm. Installed here rather than left as catalog
@@ -35,6 +35,13 @@ for pkg in @google/gemini-cli @github/copilot cline \
            opencode-ai @continuedev/cli @kilocode/cli @augmentcode/auggie; do
   npm install -g "$pkg" || echo "WARN: $pkg install failed"
 done
+
+# Pi's own installer, the route pi.dev lists first. It runs npm ci into ~/.pi/agent/install,
+# which npm_packages never reads, so ~/.pi is the only thing here that can name Pi. It needs
+# Node 22.19 or newer, and asks on /dev/tty only when it can open one: an Actions step and
+# run.sh's ssh have none, so it takes its defaults.
+pi_once() { curl --retry 3 -fsSL https://pi.dev/install.sh | sh && test -e "$HOME/.pi/agent/bin/pi"; }
+retry "the Pi installer" pi_once || true
 
 # INVOKED, NOT JUST INSTALLED. A state directory does not exist until the agent runs once,
 # which is why ~/.codex read DID NOT APPEAR while a scenario was installing Codex CLI on every run.

@@ -30,12 +30,9 @@
       "claude-code",
       "codex-cli",
       "openclaw"
-    ],
-    "forbid_evidence": [
-      "pi-coding-agent"
     ]
   },
-  "why": "Each installer's own script names where it writes, and each of those places is already enumerated: a file directly under ~/.local/bin, or a top-level ~/.<dir>/. So these agents were invisible for want of a catalog value, not a query. Nothing else on this host can name any of them -- no npm global, no package, no editor -- so removing a value turns its must_find red. Pi's installer runs npm ci into ~/.pi/agent/install, which npm_packages does not read; forbid_evidence holds its npm name unclaimed, so an installer that starts writing an npm global fails here rather than adding a second witness unseen. claude-code and codex-cli are forbidden because their own routes are ~/.local/bin and top-level home directories too, and new neighbours there must not be read as either. openclaw is forbidden because it is built on Pi's libraries.",
+  "why": "Each installer's own script names where it writes, and each of those places is already enumerated: a file directly under ~/.local/bin, or a top-level ~/.<dir>/. So these agents were invisible for want of a catalog value, not a query. Nothing else on this host can name any of them -- no npm global, no package, no editor -- so removing a value turns its must_find red. Pi's installer runs npm ci into ~/.pi/agent/install, which npm_packages does not read; forbid_rows holds both its npm names absent, so an installer that starts writing an npm global fails here rather than adding a second witness unseen. claude-code and codex-cli are forbidden because their own routes are ~/.local/bin and top-level home directories too, and new neighbours there must not be read as either. openclaw is forbidden because it is built on Pi's libraries.",
   "must_contain": [
     "/.opencode/",
     "/.grok/",
@@ -44,8 +41,18 @@
     "/.local/bin/kiro-cli",
     "/.pi/"
   ],
+  "forbid_rows": [
+    {
+      "kind": "npm",
+      "id": "@earendil-works/pi-coding-agent"
+    },
+    {
+      "kind": "npm",
+      "id": "@mariozechner/pi-coding-agent"
+    }
+  ],
   "known_gaps": [
-    "Only the installers' Linux branches run here. On macOS opencode, Cursor CLI, goose and Kiro CLI are proved through Homebrew in 21-cli-agents-homebrew; the macOS installs of Grok Build and Pi are unexercised, though ~/.grok and ~/.pi are posix routes.",
+    "Only the installers' Linux branches run here. On macOS opencode, Cursor CLI, goose and Kiro CLI are proved through Homebrew in 21-cli-agents-homebrew; Pi's installer runs on macOS in 20-cli-agents; Grok Build's macOS install is unexercised, though ~/.grok is a posix route.",
     "Nothing is run after installing, so state that appears on first use -- ~/.config/goose, ~/.local/share/opencode -- is unexamined. Neither is a top-level directory, so the enumeration would not reach it anyway."
   ]
 }
