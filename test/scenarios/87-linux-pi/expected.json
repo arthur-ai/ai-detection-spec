@@ -1,0 +1,40 @@
+{
+  "description": "Pi from npm under its current scope, never run.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "deb+rpm": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=0",
+    "jbplugin": ">=0",
+    "nmh": ">=0",
+    "npm": ">=1",
+    "port": ">=0",
+    "proc": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "pi"
+    ],
+    "forbid": [
+      "openclaw",
+      "claude-code"
+    ],
+    "forbid_evidence": [
+      "/.pi"
+    ]
+  },
+  "why": "The npm value is the only witness: nothing runs pi, so ~/.pi does not exist and removing @earendil-works/pi-coding-agent from the catalog turns must_find red. forbid_evidence holds ~/.pi absent, so a release that starts writing it on --version fails here rather than adding a second witness unseen. openclaw is forbidden because it is built on Pi's libraries, and installing Pi must not read as it.",
+  "must_contain": [
+    "@earendil-works/pi-coding-agent"
+  ],
+  "known_gaps": [
+    "The pi.dev/install.sh route is not exercised. Its install layout has not been read, so it has no value in the catalog yet.",
+    "Over-matches under bun: OpenClaw 2026.1.29 to 2026.5.27 depended on pi-coding-agent, and `bun add -g` hoists it beside the global, so such a host reports Pi as well. npm -g nests it and is unaffected. Measured with bun 1.4.3."
+  ]
+}

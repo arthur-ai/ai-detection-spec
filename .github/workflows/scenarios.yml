@@ -303,6 +303,8 @@ jobs:
           - 84-linux-installers
           - 85-linux-vscode-agents
           - 86-linux-jetbrains-agents
+          - 87-linux-pi
+          - 88-linux-pi-legacy
     steps:
       - uses: actions/checkout@v4
       - name: Install osquery
@@ -435,6 +437,8 @@ jobs:
           - 84-linux-installers
           - 85-linux-vscode-agents
           - 86-linux-jetbrains-agents
+          - 87-linux-pi
+          - 88-linux-pi-legacy
         # A label per image, because an artifact name may not contain `:` or `/` and
         # upload-artifact@v4 fails outright on one that does.
         include:
