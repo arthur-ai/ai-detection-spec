@@ -25,13 +25,14 @@
       "opencode",
       "goose",
       "cursor",
-      "kiro-cli"
+      "kiro-cli",
+      "muse-code"
     ],
     "forbid": [
       "kiro"
     ]
   },
-  "why": "These four homebrew tokens read DID NOT APPEAR: 20-cli-agents and 25-python-agents install the same agents from npm and uv, so the Homebrew identifiers were catalogued and never produced by any run. A second route needs a second machine, because both routes claim the same binary name. Claude Code is here for the same reason in mirror image: 20-cli-agents installs it from the native installer, which leaves a shim and no npm row. Hermes Agent joins them for the same reason and with a wrinkle of its own: the formula token is `hermes-agent` while the command it installs is `hermes`, so nothing but a real install settles which of the two a homebrew_packages row renders.",
+  "why": "These four homebrew tokens read DID NOT APPEAR: 20-cli-agents and 25-python-agents install the same agents from npm and uv, so the Homebrew identifiers were catalogued and never produced by any run. A second route needs a second machine, because both routes claim the same binary name. Claude Code is here for the same reason in mirror image: 20-cli-agents installs it from the native installer, which leaves a shim and no npm row. Hermes Agent joins them for the same reason and with a wrinkle of its own: the formula token is `hermes-agent` while the command it installs is `hermes`, so nothing but a real install settles which of the two a homebrew_packages row renders. Muse Code's cask is here because 14-meta-muse installs it from Meta's own installer, and both put a `muse` on PATH; nothing else on this machine names it, so the token is the only witness.",
   "must_contain": [
     "aider",
     "gemini-cli",
@@ -39,6 +40,7 @@
     "hermes-agent",
     "block-goose-cli",
     "cursor-cli",
-    "com.amazon.codewhisperer"
+    "com.amazon.codewhisperer",
+    "muse-code"
   ]
 }

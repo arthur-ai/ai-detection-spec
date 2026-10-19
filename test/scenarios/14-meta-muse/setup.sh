@@ -1,0 +1,44 @@
+#!/bin/zsh
+# META'S TWO MUSE PRODUCTS, each installed the one way it can be unattended.
+#
+# Muse for Mac. The `muse` cask was disabled on 2026-10-01: muse.ai/api/hatch/app-download/mac
+# answers 403 {"error":"not_eligible"} to anyone not signed in to a Meta account, from a US
+# address too, and Meta's download page builds its link from a GraphQL call rather than
+# serving it in the HTML. The app updates itself through Sparkle, and a Sparkle feed has to
+# answer anonymously for the app to update, so the DMG is read off that feed at run time.
+# The feed URL is SUFeedURL in the 8.0 build's Info.plist; the enclosure it carries is
+# signed and expires within a day, which is why no download URL is written here.
+#
+# Muse Code. Meta's own installer writes a launcher to ~/.local/bin/muse and the binary
+# beside it, no sign-in needed -- sign-in is first run. 84-linux-installers runs the same
+# installer on Linux; this is its only macOS run.
+#
+# WARN rather than exit: the assertion names which product is missing.
+set -e
+source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest.sh"
+
+APPCAST='https://www.facebook.com/endo/release/appcast.xml?channel=production'
+DMG=/tmp/muse.dmg
+MNT=/tmp/muse-dmg
+# The first enclosure is the current build; `&amp;` is the XML's, not the URL's.
+URL=$(curl --retry 3 -fsSL "$APPCAST" | grep -o 'url="[^"]*"' | head -1 \
+      | sed 's/^url="//; s/"$//; s/&amp;/\&/g')
+if [ -z "$URL" ]; then
+  echo "WARN: the Muse appcast carried no enclosure, so Muse for Mac was not installed"
+elif ! retry "the Muse DMG" curl -fsSL -o "$DMG" "$URL"; then
+  echo "WARN: the Muse DMG download failed"
+else
+  mkdir -p "$MNT"
+  hdiutil attach -nobrowse -readonly -mountpoint "$MNT" "$DMG" >/dev/null
+  # Into /Applications so the `apps` table sees it the way it sees every other install.
+  rm -rf /Applications/Muse.app
+  ditto "$MNT/Muse.app" /Applications/Muse.app
+  hdiutil detach "$MNT" >/dev/null
+  for key in CFBundleIdentifier CFBundleShortVersionString; do
+    plutil -extract "$key" raw /Applications/Muse.app/Contents/Info.plist | sed "s/^/  $key /"
+  done
+fi
+
+retry "the Muse Code installer" sh -c 'curl --retry 3 -fsSL https://dev.meta.ai/install.sh | bash' \
+  || echo "WARN: the Muse Code installer failed"
+ls -la ~/.local/bin 2>/dev/null | grep muse | sed 's/^/  /'

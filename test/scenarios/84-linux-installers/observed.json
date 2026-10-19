@@ -59,8 +59,7 @@
       "value": "~/.local/bin/cursor-agent",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "aarch64",
-      "run": "39250625549"
+      "arch": "aarch64"
     },
     {
       "agent": "cursor",
@@ -129,8 +128,7 @@
       "value": "~/.local/bin/goose",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "aarch64",
-      "run": "39250625549"
+      "arch": "aarch64"
     },
     {
       "agent": "goose",
@@ -199,8 +197,7 @@
       "value": "~/.grok",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "aarch64",
-      "run": "39250625549"
+      "arch": "aarch64"
     },
     {
       "agent": "grok",
@@ -269,8 +266,7 @@
       "value": "~/.local/bin/kiro-cli",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "aarch64",
-      "run": "39250625549"
+      "arch": "aarch64"
     },
     {
       "agent": "kiro-cli",
@@ -280,6 +276,14 @@
       "os": "ubuntu-24.04",
       "arch": "x86_64",
       "run": "39250625549"
+    },
+    {
+      "agent": "muse-code",
+      "route": "binaries",
+      "value": "~/.local/bin/muse",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64"
     },
     {
       "agent": "opencode",
@@ -339,8 +343,7 @@
       "value": "~/.opencode",
       "platform": "linux",
       "os": "ubuntu-24.04",
-      "arch": "aarch64",
-      "run": "39250625549"
+      "arch": "aarch64"
     },
     {
       "agent": "opencode",

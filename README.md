@@ -9,7 +9,7 @@ Which coding agents, chat clients, AI browsers and browser extensions are instal
 
 [![CI](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/ci.yml/badge.svg)](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/ci.yml)
 [![Scenarios](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/scenarios.yml/badge.svg)](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/scenarios.yml)
-[![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-108%2F108-2E7D57)](docs/agents.md)
+[![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-110%2F111-A26A16)](docs/agents.md)
 [![osquery](https://img.shields.io/badge/osquery-5.23.1-1D4E89)](https://osquery.io)
 [![macOS](https://img.shields.io/badge/macOS-shipping-2E7D57)](#requirements)
 [![Linux](https://img.shields.io/badge/Linux-shipping-2E7D57)](#requirements)
@@ -51,7 +51,7 @@ runtime dependencies beyond osquery.
 |---|---|---|
 | 🗂 | **A query** | Runs on each machine and lists what is installed — apps, packages, browser extensions, state directories. **No agent name appears anywhere in it.** It reports what it finds; which of those findings add up to an agent is decided later, by the classifier. One per platform, because macOS and Linux read different tables |
 | ▶️ | **A runner** | Runs that query on the endpoint and prints the result as one JSON array. A second one covers agents packaged as Docker images, separately and on a time limit, because a wedged Docker daemon never answers and would otherwise hang the scan |
-| 🔎 | **A classifier and its catalog** | Reads the collected JSON and tells you which agents are on the machine, matching the evidence against **40 agents and 108 identifiers**. It runs wherever you keep the output, never on the endpoint |
+| 🔎 | **A classifier and its catalog** | Reads the collected JSON and tells you which agents are on the machine, matching the evidence against **42 agents and 111 identifiers**. It runs wherever you keep the output, never on the endpoint |
 | 🧾 | **The same catalog, as SQL** | A query that returns the agent names directly, a set of Fleet policies, and `bin/discover --names`, which prints the names as one line for a Jamf Extension Attribute |
 
 **Two ways to match, one catalog.** Pick the one that fits how you collect:

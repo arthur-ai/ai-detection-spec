@@ -1,0 +1,36 @@
+{
+  "description": "Meta's two Muse products on macOS: the desktop agent from its own Sparkle feed, and Muse Code from Meta's curl installer.",
+  "platform": "darwin",
+  "counts": {
+    "app": ">=1",
+    "brew": ">=0",
+    "npm": ">=0",
+    "file": ">=1",
+    "ext": ">=0",
+    "nmh": ">=0",
+    "daemon": ">=0",
+    "port": ">=0",
+    "vscodeext": ">=0",
+    "jbplugin": ">=0",
+    "proc": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "muse-desktop",
+      "muse-code"
+    ],
+    "forbid": [
+      "claude-code",
+      "codex-cli"
+    ]
+  },
+  "why": "Each product has exactly one witness on this host -- the bundle id for Muse for Mac, the ~/.local/bin/muse launcher for Muse Code -- so removing either value turns its must_find red. Neither is installed through Homebrew here: `muse` is disabled because the vendor's download wants a signed-in account, and the `muse-code` cask puts a second `muse` on PATH, so it goes on another machine, 21-cli-agents-homebrew. com.meta.endo is a raw probe as well because the cask's zap stanza names the same id, and the probe is what says it was read off the shipped app rather than copied. claude-code and codex-cli are forbidden because their routes are ~/.local/bin and top-level home directories too, and a new neighbour there must not be read as either.",
+  "must_contain": [
+    "com.meta.endo",
+    "/.local/bin/muse"
+  ],
+  "known_gaps": [
+    "Sign-in gated once installed, like 10: Muse for Mac is never launched, so its first-run permission prompts and whatever it writes under ~/Library go unobserved, and Muse Code is never run, so ~/.muse -- which the binary names for projects and worktrees -- is not produced here.",
+    "The DMG is whatever the production Sparkle channel serves on the day. A build that changes its bundle id shows up as a missing com.meta.endo, which is the point; a build that only bumps the version is recorded as that version."
+  ]
+}

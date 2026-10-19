@@ -788,6 +788,51 @@ agents:
     bundle_ids: [com.trae.app, cn.trae.app]
     homebrew: [trae, trae-cn]
 
+  # META MUSE: TWO PRODUCTS, TWO ENTRIES, on kiro / kiro-cli's reasoning. A personal agent
+  # for the desktop and a terminal coding agent share a brand and nothing a route can see --
+  # not an id prefix, not an install path. 14-meta-muse installs both.
+  #
+  # Muse for Mac acts in native apps -- files, forms, Messages, Calendar, Notes -- with per-app
+  # opt-in, which is this catalog's test. Read off Muse.app/Contents/Info.plist in the
+  # Muse-8.0.dmg Meta's own page served on 2026-10-19: CFBundleIdentifier com.meta.endo,
+  # CFBundleShortVersionString 8.0, LSMinimumSystemVersion 14.0, Developer ID "Meta
+  # Platforms, Inc." (V9WTTPBFK9). The disabled `muse` cask names the same id in its zap
+  # stanza, and that is NOT the source: a zap stanza is where bot.molt.mac came from.
+  #
+  # NO homebrew ROUTE. The cask was disabled on 2026-10-01 because muse.ai's download wants
+  # a signed-in Meta account -- 403 {"error":"not_eligible"} from a US address with no
+  # session -- so no run can produce the token. The app's Sparkle feed is anonymous, and that
+  # is how the scenario installs it.
+  - id: muse-desktop
+    name: Muse for Mac
+    classification: Personal agent
+    platforms: [darwin]
+    bundle_ids: [com.meta.endo]
+
+  # Muse Code, the terminal agent. dev.meta.ai/install.sh writes a launcher to
+  # ~/.local/bin/muse, and the launcher fetches the binary beside it as
+  # ~/.local/bin/muse-bin-<version> -- 1.4.10-R6427.1 on 2026-10-19, with no sign-in to
+  # install. The value is front-anchored, so the versioned binary lands here too: one
+  # install, as hermes's sibling commands are. The same prefix would claim any other
+  # ~/.local/bin/muse*; none is known, and test_matcher asserts the anchor is the front.
+  #
+  # NOT VALUES: ~/.config/muse and ~/.local/share/muse, read off the binary's own help text,
+  # are a level too deep for the enumeration; ~/.muse holds projects and worktrees once the
+  # agent has run, which no scenario does. The release manifest also serves a muse.pkg
+  # (receipt ai.meta.dev.installer) whose whole payload is /usr/local/bin/muse, which no
+  # route reads -- docs/blind-spots.yaml carries that.
+  - id: muse-code
+    name: Muse Code
+    classification: Coding agent
+    platforms: [darwin, linux]
+    binaries: ["~/.local/bin/muse"]
+    # ALSO A CASK, binary-only: `muse-code` links muse-<arch>-macos as `muse`, fetched from
+    # the same lookaside.facebook.com artifact the installer uses. Read off a guest install
+    # on 2026-10-19: homebrew_packages rendered name=muse-code, type=cask, 1.4.10-R6427.1.
+    # A second `muse` on PATH, so 21-cli-agents-homebrew installs it, on a machine without
+    # the installer's copy.
+    homebrew: [muse-code]
+
   # A Cline fork, and its id is the substring trap for cline's: `roo-cline`. Read off
   # 85-linux-vscode-agents on 2026-10-07, v3.54.0, which also forbids cline. The Marketplace
   # shows no release since 2026-05-15; installed machines keep it either way.

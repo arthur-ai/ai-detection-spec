@@ -1259,6 +1259,25 @@ check("the JetBrains plugin directories resolve to their agents",
 check("...and matched with the vendor's case (`sourcegraph` is not Cody's directory)",
       "sourcegraph" in _u, "exact means exact; a case-folded route would claim it")
 
+# META'S TWO MUSE PRODUCTS, read off real installs on 2026-10-19 and told apart by route: a
+# bundle id for the desktop agent, a ~/.local/bin launcher for the coding agent. The launcher
+# fetches the binary beside it under a versioned name, so both paths are one install.
+_c, _u = _claims(_kind("file", "/Users/dana/.local/bin/muse",
+                       "/home/dana/.local/bin/muse-bin-1.4.10-R6427.1",
+                       "/home/dana/.local/bin/amuse", "/home/dana/.muse/"))
+check("Muse Code's launcher and the versioned binary beside it are one install",
+      _c.get("/Users/dana/.local/bin/muse") == "muse-code"
+      and _c.get("/home/dana/.local/bin/muse-bin-1.4.10-R6427.1") == "muse-code", f"got {_c}")
+check("the anchor is the front: `amuse` claims nothing, and ~/.muse is not a value",
+      "/home/dana/.local/bin/amuse" in _u and "/home/dana/.muse/" in _u,
+      "~/.muse appears on first run, which no scenario does, so it stays evidence")
+_c, _u = _claims(_kind("app", "com.meta.endo", "org.sparkle-project.Sparkle.Updater"))
+check("Muse for Mac is its bundle id and not the coding agent",
+      _c == {"com.meta.endo": "muse-desktop"}, f"got {_c}")
+check("the updater bundled inside it claims nothing",
+      "org.sparkle-project.Sparkle.Updater" in _u,
+      "Sparkle ships inside Muse.app; a nested bundle is not a second agent")
+
 # --- provenance in `perms` is not a permission ---------------------------------------
 # A consumer that splits `perms` on commas lists `sideloaded:<sha256>` as a permission.
 # split_perms() is the one place the tokens are named, so it is held to the SQL that emits

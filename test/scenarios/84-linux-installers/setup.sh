@@ -9,6 +9,8 @@
 #   Cursor CLI  ~/.local/bin/cursor-agent   a link into ~/.local/share/cursor-agent/versions/
 #   goose       ~/.local/bin/goose
 #   Kiro CLI    ~/.local/bin/kiro-cli       beside kiro-cli-chat and kiro-cli-term
+#   Muse Code   ~/.local/bin/muse           a launcher; the binary lands beside it as
+#                                           muse-bin-<version>. Read 2026-10-19
 #
 # Cursor and Grok also write ~/.local/bin/agent and ~/.grok/bin/agent. A name that generic
 # identifies nothing, so neither is catalogued.
@@ -40,6 +42,10 @@ vendor "the goose installer" '~/.local/bin/goose' \
   'curl --retry 3 -fsSL https://github.com/block/goose/releases/download/stable/download_cli.sh | CONFIGURE=false bash' || true
 vendor "the Kiro CLI installer" '~/.local/bin/kiro-cli' \
   'curl --retry 3 -fsSL https://cli.kiro.dev/install | bash' || true
+# Meta's installer writes the launcher before it downloads the binary, so the file the
+# attempt is judged by exists even when the download behind it is refused.
+vendor "the Muse Code installer" '~/.local/bin/muse' \
+  'curl --retry 3 -fsSL https://dev.meta.ai/install.sh | bash' || true
 
 echo "--- what landed in the user's home:"
 as_user 'ls -1d ~/.*/ ~/.local/bin/* 2>&1' | sed 's/^/      /'
