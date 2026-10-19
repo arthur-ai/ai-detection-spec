@@ -107,8 +107,9 @@ need_user() {
 #
 # THE COMMAND ARRIVES ON STDIN, as `bash -s`, so an arbitrary command needs no quoting at
 # this level -- the alternative was nesting three layers of quotes inside `env -i ... bash
-# -lc '...'` and getting it wrong for whichever scenario used an apostrophe first. Nothing
-# these scenarios run reads stdin itself.
+# -lc '...'` and getting it wrong for whichever scenario used an apostrophe first. A command
+# that reads stdin would swallow the rest of the script, so it takes `</dev/null`, as pi does
+# in 88.
 as_user() {
   local home
   home="$(getent passwd "$SCENARIO_USER" | cut -d: -f6)"

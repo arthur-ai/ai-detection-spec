@@ -179,6 +179,11 @@ jobs:
         # written; this one did not, which is the whole of the bug described down there.
         id: provision
         if: steps.runnable.outputs.runnable == 'true'
+        # BOUNDED, because an unbounded step inherits the job's 360 minutes, and
+        # 50-autonomous on macos-26 spent them here after its install had finished. The
+        # slowest provision recorded is 214s (10-desktop-apps), so 20 minutes fails a hang
+        # long before a slow download would trip it.
+        timeout-minutes: 20
         run: test/scenarios/${{ matrix.scenario }}/setup.sh
       - name: Query and assert
         if: steps.runnable.outputs.runnable == 'true'
@@ -278,7 +283,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04]
+        # arm64 as well, because a large share of EC2 fleets run on Graviton. A scenario
+        # whose software ships no arm64 build says so by exiting 3, as it would on a Mac.
+        os: [ubuntu-24.04, ubuntu-24.04-arm]
         scenario:
           - 70-linux-baseline
           - 71-linux-cli-agents
@@ -296,15 +303,18 @@ jobs:
           - 84-linux-installers
           - 85-linux-vscode-agents
           - 86-linux-jetbrains-agents
+          - 87-linux-pi
+          - 88-linux-pi-legacy
     steps:
       - uses: actions/checkout@v4
       - name: Install osquery
         run: |
           # The deb, not the pkg. Both the deb and the rpm install osqueryi to
           # /usr/bin/osqueryi -- verified on Ubuntu 24.04 and Fedora 41 -- which is the
-          # path bin/container-scan's osqueryi_path() now looks for.
+          # path bin/container-scan's osqueryi_path() now looks for. The runner's own
+          # architecture names the package, amd64 or arm64.
           curl --retry 3 -fsSL -o /tmp/osquery.deb \
-            https://pkg.osquery.io/deb/osquery_5.23.1-1.linux_amd64.deb
+            "https://pkg.osquery.io/deb/osquery_5.23.1-1.linux_$(dpkg --print-architecture).deb"
           sudo dpkg -i /tmp/osquery.deb
           osqueryi --version
       - name: Install pyyaml
@@ -381,7 +391,9 @@ jobs:
   # or RHEL-family runner. A separate job because `container:` applies to a whole job, and
   # a matrix of images because the Linux artifact had been proved on one distro while a
   # Compute Engine fleet boots three: Debian 12 by default, Ubuntu LTS by choice, Rocky or
-  # RHEL 9 where a policy says so. fedora:41 stays as the rpm control it has been.
+  # RHEL 9 where a policy says so. An EC2 fleet boots Amazon Linux 2023 by default, which
+  # is Fedora-derived but carries its own package set. fedora:41 stays as the rpm control
+  # it has been.
   #
   # WHAT IT REALLY GUARDS is that ONE dist/discovery-linux.sql serves every family: the
   # artifact names deb_packages and rpm_packages, and the absent one has to return no
@@ -406,7 +418,7 @@ jobs:
         # and the record carries the exact one through --os. quay.io for Rocky because
         # Docker Hub's `rockylinux` library image stopped at 9.3; the Rocky project's
         # own repository tracks the current point release.
-        image: ["debian:12", "quay.io/rockylinux/rockylinux:9", "fedora:41"]
+        image: ["debian:12", "quay.io/rockylinux/rockylinux:9", "fedora:41", "amazonlinux:2023"]
         scenario:
           - 70-linux-baseline
           - 71-linux-cli-agents
@@ -425,6 +437,8 @@ jobs:
           - 84-linux-installers
           - 85-linux-vscode-agents
           - 86-linux-jetbrains-agents
+          - 87-linux-pi
+          - 88-linux-pi-legacy
         # A label per image, because an artifact name may not contain `:` or `/` and
         # upload-artifact@v4 fails outright on one that does.
         include:
@@ -434,6 +448,8 @@ jobs:
             label: rocky-9
           - image: "fedora:41"
             label: fedora-41
+          - image: "amazonlinux:2023"
+            label: amazonlinux-2023
     steps:
       - name: Install prerequisites
         run: |
@@ -441,13 +457,14 @@ jobs:
           # family is read off the image rather than off the matrix, so the step cannot
           # disagree with the container it runs in. --allowerasing because Rocky ships
           # curl-minimal, which conflicts with curl and otherwise fails the whole
-          # transaction -- pyyaml included -- while leaving every other step green.
+          # transaction -- pyyaml included -- while leaving every other step green. gzip by
+          # name because amazonlinux:2023 ships tar without it.
           if command -v apt-get >/dev/null 2>&1; then
             export DEBIAN_FRONTEND=noninteractive
             apt-get -qq update
             apt-get -qq install -y git curl ca-certificates tar python3 python3-yaml sudo procps
           else
-            dnf -q -y install --allowerasing git curl tar python3 python3-pyyaml findutils procps-ng
+            dnf -q -y install --allowerasing git curl tar gzip python3 python3-pyyaml findutils procps-ng
           fi
       - uses: actions/checkout@v4
       - name: Install osquery

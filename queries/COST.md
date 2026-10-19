@@ -79,7 +79,7 @@ synchronous reporting path by. **The cold number is what an endpoint's first sch
 pays**, and on a machine with 1212 deb packages and 438 systemd units that is 8-12s against a
 self-imposed 10s budget.
 
-Two consequences, and neither is a defect in the query:
+Consequences, and none is a defect in the query:
 
 - **It reinforces the deployment advice this repo already gives.** `docs/deployment.md` says
   not to put this on a synchronous reporting path and to schedule `bin/discover --write` and

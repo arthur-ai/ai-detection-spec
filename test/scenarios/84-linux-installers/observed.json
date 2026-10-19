@@ -6,9 +6,17 @@
       "route": "binaries",
       "value": "~/.local/bin/cursor-agent",
       "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "cursor",
+      "route": "binaries",
+      "value": "~/.local/bin/cursor-agent",
+      "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "37849951356"
+      "run": "39119339849"
     },
     {
       "agent": "cursor",
@@ -17,7 +25,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "37849951356"
+      "run": "39119339849"
     },
     {
       "agent": "cursor",
@@ -34,7 +42,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "37849951356"
+      "run": "39119339849"
     },
     {
       "agent": "cursor",
@@ -51,7 +59,15 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "37849951356"
+      "run": "39119339849"
+    },
+    {
+      "agent": "goose",
+      "route": "binaries",
+      "value": "~/.local/bin/goose",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
     },
     {
       "agent": "goose",
@@ -60,7 +76,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "37849951356"
+      "run": "39119339849"
     },
     {
       "agent": "goose",
@@ -69,7 +85,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "37849951356"
+      "run": "39119339849"
     },
     {
       "agent": "goose",
@@ -86,7 +102,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "37849951356"
+      "run": "39119339849"
     },
     {
       "agent": "goose",
@@ -103,7 +119,15 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "37849951356"
+      "run": "39119339849"
+    },
+    {
+      "agent": "grok",
+      "route": "state_dirs",
+      "value": "~/.grok",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
     },
     {
       "agent": "grok",
@@ -112,7 +136,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "37849951356"
+      "run": "39119339849"
     },
     {
       "agent": "grok",
@@ -121,7 +145,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "37849951356"
+      "run": "39119339849"
     },
     {
       "agent": "grok",
@@ -138,7 +162,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "37849951356"
+      "run": "39119339849"
     },
     {
       "agent": "grok",
@@ -155,7 +179,15 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "37849951356"
+      "run": "39119339849"
+    },
+    {
+      "agent": "kiro-cli",
+      "route": "binaries",
+      "value": "~/.local/bin/kiro-cli",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
     },
     {
       "agent": "kiro-cli",
@@ -164,7 +196,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "37849951356"
+      "run": "39119339849"
     },
     {
       "agent": "kiro-cli",
@@ -173,7 +205,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "37849951356"
+      "run": "39119339849"
     },
     {
       "agent": "kiro-cli",
@@ -190,7 +222,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "37849951356"
+      "run": "39119339849"
     },
     {
       "agent": "kiro-cli",
@@ -207,7 +239,15 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "37849951356"
+      "run": "39119339849"
+    },
+    {
+      "agent": "opencode",
+      "route": "state_dirs",
+      "value": "~/.opencode",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
     },
     {
       "agent": "opencode",
@@ -216,7 +256,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "37849951356"
+      "run": "39119339849"
     },
     {
       "agent": "opencode",
@@ -225,7 +265,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "37849951356"
+      "run": "39119339849"
     },
     {
       "agent": "opencode",
@@ -242,7 +282,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "37849951356"
+      "run": "39119339849"
     },
     {
       "agent": "opencode",
@@ -259,7 +299,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "37849951356"
+      "run": "39119339849"
     }
   ]
 }

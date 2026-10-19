@@ -374,6 +374,21 @@ for cmd in ("/Users/alice/.local/bin/hermes", "/home/alice/.local/bin/hermes-acp
           _ids(_rows(cmd)) == {"hermes"},
           "anchoring home-prefix would lose two of the three commands")
 
+# PI'S LOOKALIKES, which a Python host carries for free: ~/.pipx starts with Pi's ~/.pi.
+check("~/.pi is Pi and ~/.pipx is not",
+      _ids(_rows("/home/dana/.pi/")) == {"pi"}
+      and _ids(_rows("/home/dana/.pipx/", "/Users/dana/.pip/")) == set())
+# Pi's own libraries and the unscoped placeholder share its name and are not the agent.
+# Current OpenClaw depends on @earendil-works/pi-tui, and a bun global hoists it into a row.
+_pi = classify_json([{"kind": "npm", "id": n, "ver": "1.0", "loc": "/x", "extra": "",
+                      "perms": ""}
+                     for n in ("@earendil-works/pi-coding-agent", "@earendil-works/pi-tui",
+                               "@earendil-works/pi-ai", "pi-coding-agent", "pi-acp")])
+check("only the coding-agent package is evidence for Pi",
+      {e["id"] for f in _pi["findings"] for e in f["evidence"]}
+      == {"@earendil-works/pi-coding-agent"},
+      f"got {[(f['id'], [e['id'] for e in f['evidence']]) for f in _pi['findings']]}")
+
 # Every home root, on the routes that use them, including root's -- which is not under
 # /home and cannot be reached by a `[^/]+` component.
 check("Linux and root home roots resolve on the path routes",
@@ -1243,6 +1258,60 @@ check("the JetBrains plugin directories resolve to their agents",
       and "aws-toolkit-jetbrains-standalone" in _u, f"got {_c}")
 check("...and matched with the vendor's case (`sourcegraph` is not Cody's directory)",
       "sourcegraph" in _u, "exact means exact; a case-folded route would claim it")
+
+# --- provenance in `perms` is not a permission ---------------------------------------
+# A consumer that splits `perms` on commas lists `sideloaded:<sha256>` as a permission.
+# split_perms() is the one place the tokens are named, so it is held to the SQL that emits
+# them: a token added to browser.sql and not here would read as a permission downstream.
+_cspec = _ilu.spec_from_loader("classify",
+    _ilm.SourceFileLoader("classify", str(ROOT / "bin" / "classify")))
+_cl = _ilu.module_from_spec(_cspec)
+_cspec.loader.exec_module(_cl)
+
+check("split_perms keeps permissions and the <all_urls> flag",
+      _cl.split_perms("tabs,storage,<all_urls>") == (("tabs", "storage", "<all_urls>"), ""))
+check("...and splits off `unreferenced`",
+      _cl.split_perms("tabs,unreferenced") == (("tabs",), "unreferenced"))
+check("...but only `unreferenced` whole: a permission that merely begins with it stays one",
+      _cl.split_perms("tabs,unreferenced-extra") == (("tabs", "unreferenced-extra"), ""))
+check("...and `sideloaded:` with its hash",
+      _cl.split_perms("tabs,<all_urls>,sideloaded:ab12") == (("tabs", "<all_urls>"), "sideloaded:ab12"))
+check("...including when there is no permission before it",
+      _cl.split_perms(",unreferenced") == ((), "unreferenced"))
+check("...and an empty or missing `perms` is no permissions and no provenance",
+      _cl.split_perms("") == ((), "") and _cl.split_perms(None) == ((), ""))
+
+import re as _re
+_emitted = set(_re.findall(r"THEN ',([^'<][^']*)'", (ROOT / "queries" / "browser.sql").read_text()))
+check("PERMS_PROVENANCE names exactly the tokens queries/browser.sql appends",
+      _emitted == set(_cl.PERMS_PROVENANCE),
+      f"browser.sql emits {sorted(_emitted)}, classify names {sorted(_cl.PERMS_PROVENANCE)}")
+
+_ext = {"kind": "ext", "id": "fcoeoabgfenejglbffodgkkbkcdhcgfn", "ver": "1.0.94",
+        "loc": "/Users/x/Library/Application Support/Google/Chrome/Default",
+        "extra": "chrome", "perms": "tabs,unreferenced"}
+with _tf2.NamedTemporaryFile("w", suffix=".json", delete=False) as _fh5:
+    json.dump([_ext], _fh5)
+_ptxt = subprocess.run([sys.executable, str(ROOT / "bin" / "classify"), _fh5.name],
+                       capture_output=True, text=True, check=True).stdout
+check("the text report marks an unreferenced extension on its row",
+      "fcoeoabgfenejglbffodgkkbkcdhcgfn  1.0.94   <- unreferenced" in _ptxt, _ptxt)
+# osquery's own spelling: chrome_extensions.permissions is joined with ", ", and
+# browser.sql's tokens follow with "," -- read off a real Chrome profile, osquery 5.23.1.
+check("split_perms strips the space osquery puts after each comma",
+      _cl.split_perms("background, contextMenus, storage,<all_urls>,sideloaded:ab12")
+      == (("background", "contextMenus", "storage", "<all_urls>"), "sideloaded:ab12"))
+
+# --- a value under a route that borrows another's is never read ----------------------
+_reg = _vc.load_routes()
+_bre = _vc.borrowed_route_errors
+check("validate_catalog refuses a value listed under a `values_from` route",
+      any("bundle_ids" in e for e in _bre("probe", {"running_apps": ["com.x"]}, _reg)),
+      str(_bre("probe", {"running_apps": ["com.x"]}, _reg)))
+check("...and passes the same value under the route it borrows from",
+      _bre("probe", {"bundle_ids": ["com.x"]}, _reg) == [])
+check("...and refuses the key empty too: present, it says the route is declared here",
+      any("bundle_ids" in e for e in _bre("probe", {"running_apps": []}, _reg)))
 
 print()
 if failures:
