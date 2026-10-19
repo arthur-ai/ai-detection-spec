@@ -350,6 +350,22 @@
       "os": "ubuntu-24.04",
       "arch": "x86_64",
       "run": "39250625549"
+    },
+    {
+      "agent": "pi",
+      "route": "state_dirs",
+      "value": "~/.pi",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "pi",
+      "route": "state_dirs",
+      "value": "~/.pi",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64"
     }
   ]
 }

@@ -26,7 +26,7 @@
       "claude-code"
     ]
   },
-  "why": "Two witnesses, so must_contain names each: the deprecated @mariozechner scope, which machines installed before the move still report, and ~/.pi, which only a run creates. A separate host from 87 because both scopes install the same pi binary.",
+  "why": "Two witnesses, so must_contain names each: the deprecated @mariozechner scope, which machines installed before the move still report, and ~/.pi, which an npm install creates only on first run. A separate host from 87 because both scopes install the same pi binary.",
   "must_contain": [
     "@mariozechner/pi-coding-agent",
     "/home/dana/.pi/"
