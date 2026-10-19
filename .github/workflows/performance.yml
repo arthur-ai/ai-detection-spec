@@ -34,6 +34,7 @@ jobs:
   scope:
     name: What this diff can move
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       runtime: ${{ steps.scope.outputs.runtime }}
     steps:
@@ -82,6 +83,7 @@ jobs:
     # Pinned: image reissues change the baseline, and that drift should be caught
     # rather than silently absorbed.
     runs-on: macos-15
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - name: Install osquery
@@ -133,6 +135,7 @@ jobs:
     if: needs.scope.outputs.runtime == 'true'
     name: Cost bands on Linux
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - name: Install osquery

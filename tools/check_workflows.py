@@ -27,6 +27,18 @@ except ImportError:
     print("skip: pyyaml not installed, cannot validate workflows")
     sys.exit(0)
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from ci_scope import matrix_lists, output_key  # noqa: E402
+
+# EVERY JOB DECLARES A BOUND, AND NO BOUND IS NEAR THE DEFAULT. GitHub's is 360 minutes,
+# and an unbounded job that hangs does not fail -- it bills until the limit. 50-autonomous
+# on macos-26 did that four times between 2026-10-15 and 10-18, at the macOS rate. The
+# slowest job that ever succeeded here took 44 minutes (2026-09-29), so 60 is a ceiling a
+# real run has room under and a hang cannot hide in. A job that calls a reusable workflow
+# (`uses:`) may not declare one, so it must call one in this tree, whose own jobs are held
+# to this; a remote one would inherit the default out of reach of this check.
+MAX_TIMEOUT = 60
+
 failed = False
 root = pathlib.Path(__file__).resolve().parent.parent / ".github" / "workflows"
 for path in sorted(root.glob("*.y*ml")):
@@ -44,6 +56,22 @@ for path in sorted(root.glob("*.y*ml")):
     if not doc.get("jobs"):
         print(f"FAIL: {path.name} declares no jobs, so it silently does nothing")
         failed = True
+    for _name, _spec in (doc.get("jobs") or {}).items():
+        if not isinstance(_spec, dict):
+            continue
+        if "uses" in _spec:
+            if not str(_spec["uses"]).startswith("./"):
+                print(f"FAIL: {path.name} job {_name!r} calls {_spec['uses']!r}, a workflow "
+                      f"outside this tree, whose jobs no timeout check here reaches.")
+                failed = True
+            continue
+        _limit = _spec.get("timeout-minutes")
+        # type(), not isinstance: YAML's `true` is a bool, and a bool is an int equal to 1.
+        if type(_limit) is not int or not 0 < _limit <= MAX_TIMEOUT:
+            print(f"FAIL: {path.name} job {_name!r} has timeout-minutes {_limit!r}. Every "
+                  f"job needs one of at most {MAX_TIMEOUT}; without it a hang bills for "
+                  f"six hours instead of failing.")
+            failed = True
 
     # Every repo-relative script a `run:` block invokes must exist. Deliberately narrow:
     # only paths under directories this repo owns, and skipped where the step is plainly
@@ -112,11 +140,10 @@ _doc = yaml.safe_load((root / "scenarios.yml").read_text())
 # second job existed -- and Linux needs two, because `container:` applies per job -- every
 # scenario under them would have been invisible to the on-disk check below. That is the
 # direction this comment already calls "the worse one": it looks tested.
-_jobs = {}
-for _job, _spec in _doc["jobs"].items():
-    _names = (((_spec.get("strategy") or {}).get("matrix") or {}).get("scenario"))
-    if _names:
-        _jobs[_job] = set(_names)
+#
+# READ BY ci_scope.matrix_lists, the function the scope job uses to decide which jobs get
+# outputs, so the two cannot disagree about which jobs have a scenario matrix.
+_jobs = {_job: set(_names) for _job, _names in matrix_lists(_doc).items()}
 _matrix = set().union(*_jobs.values()) if _jobs else set()
 
 # WHICH PLATFORM EACH JOB CAN ACTUALLY RUN, read off the job rather than assumed. A
@@ -191,6 +218,34 @@ for _job, _names in sorted(_jobs.items()):
     if _honours and not _deep:
         print(f"FAIL: scenarios.yml job {_job!r} runs the deep artifact and no scenario it "
               f"lists declares \"deep\": true -- a branch nothing reaches.")
+        failed = True
+
+# EVERY SCENARIO MATRIX READS ITS OWN EXCLUSION, which tools/ci_scope.py writes per job.
+# A job that does not runs its whole list on every pull request -- not broken, not red,
+# only billed -- and one whose `skip_` the scope job does not export never skips. The
+# condition is compared WHOLE: `always() || <the clause>` contains the clause and defeats
+# it, running a matrix whose every row was excluded.
+_scope_out = (_doc["jobs"].get("scope") or {}).get("outputs") or {}
+for _job in sorted(_jobs):
+    _spec = _doc["jobs"][_job]
+    _skip, _exclude = output_key("skip", _job), output_key("exclude", _job)
+    for _key in (_skip, _exclude):
+        if _scope_out.get(_key) != f"${{{{ steps.scope.outputs.{_key} }}}}":
+            print(f"FAIL: scenarios.yml's scope job does not export {_key!r}, which job "
+                  f"{_job!r} reads.")
+            failed = True
+    _excl = ((_spec.get("strategy") or {}).get("matrix") or {}).get("exclude")
+    _want = f"${{{{ fromJSON(needs.scope.outputs.{_exclude} || '[]') }}}}"
+    if _excl != _want:
+        print(f"FAIL: scenarios.yml job {_job!r} has matrix exclude {_excl!r}, not "
+              f"{_want!r}. It would run every scenario it lists on every pull request.")
+        failed = True
+    _if = " ".join(str(_spec.get("if")).split())
+    _want_if = (f"needs.scope.outputs.runtime == 'true' && "
+                f"needs.scope.outputs.{_skip} != 'true'")
+    if _if != _want_if:
+        print(f"FAIL: scenarios.yml job {_job!r} has `if: {_if}`, not `{_want_if}`. "
+              f"With every scenario excluded, its matrix is empty.")
         failed = True
 
 # EVERY INPUT THE GENERATED DOC IS BUILT FROM MUST BE IN docs.yml's PATH TRIGGER.

@@ -127,6 +127,12 @@ $ gh run list --workflow=scenarios.yml --branch=main --limit=6 \
 Nothing printed means the suite has not run for that commit — wait, do not read the previous one.
 A **queued** run has no jobs yet, which is not the same as nothing failing.
 
+**A `push` run is not always the suite.** It runs the scenarios its merge could move
+(`tools/ci_scope.py`), and every scenario only when the scoper falls back -- a path it does not
+recognise, a diff it cannot read. Its scope job's summary says which: every job reading
+`runs N of N` is the suite. A `schedule` or `workflow_dispatch` run has no diff and always runs
+every scenario. If neither covers the commit, start one: `gh workflow run scenarios.yml --ref main`.
+
 **The `collect` commit can never have a run of its own, and you will hit this nearly every
 release.** A push made with the default `GITHUB_TOKEN` triggers no further runs, and `collect`
 pushes with it — so the runs appearing against those SHAs are the next *scheduled* one, which

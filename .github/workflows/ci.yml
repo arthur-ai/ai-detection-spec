@@ -41,6 +41,7 @@ jobs:
   scope:
     name: What this diff can move
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       runtime: ${{ steps.scope.outputs.runtime }}
     steps:
@@ -89,6 +90,7 @@ jobs:
     # only so it can syntax-check the macOS scenario scripts.
     name: Lint (static, both platforms)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       # The scenario scripts are zsh (macOS's default shell). The Ubuntu runner has
@@ -110,6 +112,7 @@ jobs:
     # Pinned deliberately: GitHub reissues these images, and a new image adding
     # software is drift the baseline should catch rather than silently absorb.
     runs-on: macos-15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Install osquery
@@ -440,6 +443,7 @@ jobs:
     if: needs.scope.outputs.runtime == 'true'
     name: Runtime on Linux
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - name: Install osquery
