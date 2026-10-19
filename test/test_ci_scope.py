@@ -342,8 +342,16 @@ for _n in sorted(_LISTED - _fe):
              if r["agent"] not in _named]
 check("an agent a scenario only OBSERVED runs that scenario",
       bool(_obs) and _obs[0][0] in _edit(_obs[0][1]), f"{_obs[:1]}")
-check("a pi-only edit runs no macOS scenario (none names or observed pi)",
-      not (_edit("pi") & DARWIN), str(sorted(_edit("pi") & DARWIN)))
+# Chosen from the tree, not by name: pi was the fixture until 20-cli-agents installed it.
+_darwin_seen = set()
+for _n in DARWIN:
+    _c, _o = _expected(_n).get("classified") or {}, _observed(_n)
+    _darwin_seen |= set(_c.get("must_find", [])) | set(_c.get("forbid", []))
+    _darwin_seen |= {r["agent"] for r in _o.get("identifiers", []) + _o.get("archived", [])}
+_unseen = sorted(a["id"] for a in _catdoc["agents"] if a["id"] not in _darwin_seen)
+check("an edit to an agent no macOS scenario names or observed runs none of them",
+      bool(_unseen) and not (_edit(_unseen[0]) & DARWIN),
+      f"{_unseen[:1]}: {sorted(_edit(_unseen[0]) & DARWIN)}" if _unseen else "no such agent")
 
 
 def _order(agents):
