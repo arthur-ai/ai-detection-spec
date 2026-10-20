@@ -346,6 +346,8 @@ jobs:
           - 86-linux-jetbrains-agents
           - 87-linux-pi
           - 88-linux-pi-legacy
+          - 89-linux-claude-deb
+          - 91-linux-claude-rpm
         exclude: ${{ fromJSON(needs.scope.outputs.exclude_scenario_linux || '[]') }}
     steps:
       - uses: actions/checkout@v4
@@ -483,6 +485,8 @@ jobs:
           - 86-linux-jetbrains-agents
           - 87-linux-pi
           - 88-linux-pi-legacy
+          - 89-linux-claude-deb
+          - 91-linux-claude-rpm
         # By scenario only, so every image keeps a row and each `include` below still
         # finds one to label. An include matching no row is ADDED as a row of its own,
         # here one with no scenario.

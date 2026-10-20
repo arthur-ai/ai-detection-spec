@@ -1,0 +1,23 @@
+{
+  "scenario": "89-linux-claude-deb",
+  "identifiers": [
+    {
+      "agent": "claude-code",
+      "route": "deb_packages",
+      "value": "claude-code",
+      "agent_version": "2.1.304-1",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "claude-code",
+      "route": "deb_packages",
+      "value": "claude-code",
+      "agent_version": "2.1.304-1",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64"
+    }
+  ]
+}
