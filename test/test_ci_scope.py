@@ -425,9 +425,7 @@ check("a scenario's own file runs that scenario alone",
 check("a scenario no job lists runs nothing", scenarios(["test/scenarios/90-demo-fleet/setup.sh"])
       == set())
 check("docs only runs nothing", scenarios(["README.md", "docs/agents.md"]) == set())
-check("another workflow runs nothing", scenarios([".github/workflows/performance.yml"]) == set())
-check("but ci.yml runs every scenario: its lint job backs the cheap rules",
-      scenarios([".github/workflows/ci.yml"]) == _LISTED)
+check("another workflow runs nothing", scenarios([".github/workflows/docs.yml"]) == set())
 check("dist/fleet-policies.yml runs nothing: no scenario reads it",
       scenarios(["dist/fleet-policies.yml"]) == set())
 check("an INERT check runs nothing", scenarios(["test/lint.sh", "tools/validate_catalog.py"])
@@ -446,6 +444,27 @@ check("any other edit to scenarios.yml runs every scenario",
       == _LISTED)
 check("scenarios.yml with no base runs every scenario",
       scenarios([_W], base={_W: None}) == _LISTED)
+# When a run starts and what it is called are not what a job does.
+check("a cron edit to scenarios.yml runs nothing",
+      scenarios([_W], base={_W: _replaced(_wft, 'cron: "0 6 * * 1"', 'cron: "0 7 * * 1"')})
+      == set())
+check("a concurrency edit to scenarios.yml runs nothing",
+      scenarios([_W], base={_W: _replaced(
+          _wft, "cancel-in-progress: ${{ github.event_name == 'pull_request' }}",
+          "cancel-in-progress: false")}) == set())
+
+# ci.yml reaches a scenario through its lint job alone, which runs the gates the catalog
+# and rendered-SQL rules lean on. Its other jobs are one runner each and define only
+# themselves.
+_cit = (ROOT / ci_scope.CI_WORKFLOW).read_text()
+_C = ci_scope.CI_WORKFLOW
+check("an edit to ci.yml's lint job runs every scenario",
+      scenarios([_C], base={_C: _replaced(_cit, "run: test/lint.sh", "run: test/lint.sh -v")})
+      == _LISTED)
+check("an edit to ci.yml outside its lint job runs nothing",
+      scenarios([_C], base={_C: _replaced(_cit, "QUERY_FAIL_S: 60", "QUERY_FAIL_S: 61")})
+      == set())
+check("ci.yml with no base runs every scenario", scenarios([_C], base={_C: None}) == _LISTED)
 
 
 # --- INERT is checked, not trusted -------------------------------------------------------

@@ -7,8 +7,8 @@
 
 Prints GITHUB_OUTPUT lines on stdout and the reason for each on stderr.
 
-THE FIRST FORM ASKS WHETHER: `runtime=true` or `runtime=false`, for ci.yml and
-performance.yml, whose runtime jobs are one runner each.
+THE FIRST FORM ASKS WHETHER: `runtime=true` or `runtime=false`, for ci.yml, whose runtime
+jobs are one runner each.
 
 IT IS A DENY-LIST, AND THAT DIRECTION IS THE WHOLE SAFETY PROPERTY. An allow-list --
 "run when queries/ or catalog/ changed" -- is a list that has to agree with the tree, and
@@ -50,10 +50,13 @@ selected by every rule that would have consulted them. The rules, and what each 
   dist/discovery-*.sql,  the platform that runs them. A query's platform is its own
   queries/*.sql          `-- platform:` line; `posix` and an unreadable one run both.
   deep artifact, pack    the `deep: true` scenarios, the only ones that run bin/discover.
-  scenarios.yml          every scenario, unless only its scenario lists changed: then the
-                         scenarios added to them. Compared parsed, so a comment runs none.
-  ci.yml                 every scenario. Its lint job holds the gates the catalog and
-                         rendered-SQL rules lean on, so weakening it must not be cheap.
+  scenarios.yml          every scenario when a job changed; the scenarios added when only
+                         its lists did; nothing when only `on:`, `name:` or `concurrency:`
+                         did, which decide when a run starts and never what a job does.
+                         Compared parsed, so a comment runs none.
+  ci.yml                 every scenario when its lint job changed, which holds the gates the
+                         catalog and rendered-SQL rules lean on; nothing otherwise, since
+                         its other jobs define only themselves.
   other workflows        nothing. A workflow defines only its own jobs.
   NOT_ASSERTED           nothing: docs/blind-spots.yaml renders docs/limits.md, and
                          dist/fleet-policies.yml is checked under lint. No scenario reads
@@ -83,6 +86,7 @@ DOC_SUFFIXES = (".md",)
 DOC_PATHS = ("LICENSE",)
 
 SCENARIOS_WORKFLOW = ".github/workflows/scenarios.yml"
+CI_WORKFLOW = ".github/workflows/ci.yml"
 CATALOG = "catalog/agents.yaml"
 
 # Read by no job in scenarios.yml, directly or through anything those jobs run. A NEW
@@ -258,8 +262,8 @@ class Scope:
                     "sourced only by the setup scripts of these scenarios")
         if path == SCENARIOS_WORKFLOW:
             return self._workflow()
-        if path == ".github/workflows/ci.yml":
-            return EVERY, "ci.yml runs the lint gates the catalog and rendered-SQL rules lean on"
+        if path == CI_WORKFLOW:
+            return self._ci()
         if path.startswith(".github/workflows/"):
             return frozenset(), "another workflow; it defines only its own jobs"
         if path == CATALOG:
@@ -281,24 +285,47 @@ class Scope:
             return EVERY, f"a query whose platform is {plat or 'unreadable'}"
         return EVERY, "not a path this file can scope"
 
-    def _workflow(self):
-        base, head = self.read("base", SCENARIOS_WORKFLOW), self.read("head", SCENARIOS_WORKFLOW)
+    def _parsed(self, path):
+        """Both sides of a YAML file, parsed, or None where either side is missing."""
+        base, head = self.read("base", path), self.read("head", path)
         if base is None or head is None:
-            return EVERY, "scenarios.yml has no base to compare against"
-        b, h = self.yaml.safe_load(base), self.yaml.safe_load(head)
+            return None
+        return self.yaml.safe_load(base) or {}, self.yaml.safe_load(head) or {}
 
-        def rest(doc):
-            doc = copy.deepcopy(doc)
+    def _workflow(self):
+        sides = self._parsed(SCENARIOS_WORKFLOW)
+        if sides is None:
+            return EVERY, "scenarios.yml has no base to compare against"
+        b, h = sides
+
+        def jobs(doc):
+            # WHAT A JOB DOES, and nothing about when a run starts or what it is called:
+            # `on` (PyYAML reads the key as the boolean True), `name` and `concurrency`
+            # are dropped. A cron edit (PR #104, 2026-10-20) ran all 156 jobs twice.
+            doc = {k: copy.deepcopy(v) for k, v in doc.items()
+                   if k not in ("on", True, "name", "concurrency")}
             for spec in (doc.get("jobs") or {}).values():
                 ((spec.get("strategy") or {}).get("matrix") or {}).pop("scenario", None)
             return doc
-        if rest(b) != rest(h):
+        if jobs(b) != jobs(h):
             return EVERY, "scenarios.yml changed beyond its scenario lists"
         was = matrix_lists(b)
         added = {n for job, names in matrix_lists(h).items()
                  for n in names if n not in was.get(job, [])}
         return frozenset(added), ("scenarios added to a matrix" if added
                                   else "scenarios.yml parses unchanged")
+
+    def _ci(self):
+        # ONLY THE LINT JOB REACHES A SCENARIO, and only by proxy: it runs the gates the
+        # catalog and rendered-SQL rules lean on, so weakening it must not be cheap. Its
+        # other jobs define only themselves, like any other workflow's.
+        sides = self._parsed(CI_WORKFLOW)
+        if sides is None:
+            return EVERY, "ci.yml has no base to compare against"
+        b, h = sides
+        if (b.get("jobs") or {}).get("lint") != (h.get("jobs") or {}).get("lint"):
+            return EVERY, "ci.yml's lint job changed, and it backs the catalog and rendered-SQL rules"
+        return frozenset(), "ci.yml changed outside its lint job, which defines only its own jobs"
 
     def _catalog(self):
         base, head = self.read("base", CATALOG), self.read("head", CATALOG)
