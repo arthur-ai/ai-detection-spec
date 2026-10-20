@@ -4,6 +4,7 @@
     python3 tools/ci_scope.py <base-ref-or-sha> <head-sha>
     python3 tools/ci_scope.py --paths README.md CLAUDE.md   # for tests
     python3 tools/ci_scope.py --scenarios <base> <head> [--summary <file>]
+    python3 tools/ci_scope.py --scenarios --only 73-linux-deb 00-baseline   # a dispatch with names
 
 Prints GITHUB_OUTPUT lines on stdout and the reason for each on stderr.
 
@@ -32,13 +33,16 @@ diff nobody could compute must never read as a diff with nothing expensive in it
 
 THE SECOND FORM ASKS WHICH, for scenarios.yml, whose matrix is the bill: every scenario on
 every macOS label and Linux image it lists. Each changed path is mapped to the scenarios that
-can read it, the union runs, and every other scenario is excluded from its job's matrix.
+can read it, the union runs, and every other scenario is excluded from its job's matrix. A
+job that runs its platform's whole scenario tree through a harness instead of a matrix
+declares that with `env: SCENARIO_PLATFORM:` and is handed the names to run instead.
 The same direction holds: a path no rule below recognises runs EVERY scenario, so does any
 diff that cannot be computed or parsed, and a scenario whose own files cannot be read is
 selected by every rule that would have consulted them. The rules, and what each leans on:
 
   test/scenarios/<s>/    that scenario.
   SETUP_LIBS             the scenarios whose setup.sh sources it.
+  HARNESS                the scenarios of the jobs that run it: a platform's whole tree.
   catalog/agents.yaml    the scenarios that name a changed agent (must_find, forbid), that
                          observed one (observed.json), or that carry forbid_evidence, which
                          names no agent. Two agents whose order flipped are both changed:
@@ -96,6 +100,7 @@ INERT = frozenset({
     "test/check_names_line.py", "test/docker_states.sh", "test/lib/fake_amplitude.py",
     "test/lib/fake_docker.py", "test/lib/vm.sh", "test/lint.sh", "test/run-gce.sh",
     "test/run.sh", "test/test_ci_scope.py", "test/test_matcher.py",
+    # test/run-linux.sh is NOT here: scenarios.yml's container job runs it. See HARNESS.
     "test/test_telemetry.py", "tools/bundle.py", "tools/check_doc_numbers.py",
     "tools/check_no_catalog.py", "tools/check_output.py", "tools/check_pack.py",
     "tools/check_workflows.py", "tools/gates.sh", "tools/validate_catalog.py",
@@ -108,6 +113,15 @@ NOT_ASSERTED = {
 # Sourced by scenario setup scripts and by nothing else a job runs, which
 # test/test_ci_scope.py also proves. A change runs the scenarios that source it.
 SETUP_LIBS = ("test/lib/guest.sh", "test/lib/guest-linux.sh")
+
+# A job may run its platform's scenarios through one of these instead of a matrix: one
+# fresh container per scenario on one runner, so the org's concurrent-job cap stops
+# deciding how long the suite takes. The job says so with `env: SCENARIO_PLATFORM:`, and
+# that declaration is read here, by tools/check_workflows.py and by tools/agent_status.py,
+# so the three cannot disagree about what CI runs. A change to the harness runs every
+# scenario of its platform, since every one of them passes through it.
+HARNESS_ENV = "SCENARIO_PLATFORM"
+HARNESS = {"linux": "test/run-linux.sh"}
 
 # Rendered from the catalog by tools/render_match.py. `None` is every platform.
 RENDERED = {"dist/signatures.sql": None,
@@ -201,11 +215,50 @@ def matrix_lists(doc):
     return out
 
 
+def harness_jobs(doc):
+    """{job: platform} for every job in a parsed scenarios.yml that declares
+    `env: SCENARIO_PLATFORM:`, meaning it runs that platform's whole scenario tree
+    through HARNESS[platform] rather than a matrix list."""
+    out = {}
+    for job, spec in (doc.get("jobs") or {}).items():
+        env = (spec or {}).get("env") if isinstance(spec, dict) else None
+        if isinstance(env, dict) and env.get(HARNESS_ENV):
+            out[job] = str(env[HARNESS_ENV])
+    return out
+
+
+def tree_scenarios(platform, root=ROOT):
+    """Every scenario directory whose expected.json declares `platform`. One whose
+    expected.json cannot be read is included: could-not-look must not read as
+    nothing-to-run. `test/run-linux.sh --list` enumerates the same way, and
+    test/test_ci_scope.py holds the two together."""
+    out = []
+    for exp in sorted((root / "test" / "scenarios").glob("*/expected.json")):
+        try:
+            if json.loads(exp.read_text()).get("platform") != platform:
+                continue
+        except ValueError:
+            pass
+        out.append(exp.parent.name)
+    return out
+
+
+def job_scenarios(doc, root=ROOT):
+    """{job: [scenario, ...]} for every job that runs scenarios: the matrix jobs' lists and
+    the harness jobs' platform trees. tools/check_workflows.py and tools/agent_status.py
+    ask this function too, so "what CI runs" has one answer."""
+    out = matrix_lists(doc)
+    for job, plat in harness_jobs(doc).items():
+        out[job] = tree_scenarios(plat, root)
+    return out
+
+
 class Scope:
     def __init__(self, paths, read, yaml):
         self.paths, self.read, self.yaml = paths, read, yaml
         doc = yaml.safe_load(read("head", SCENARIOS_WORKFLOW) or "")
-        self.jobs = matrix_lists(doc or {})
+        self.jobs = job_scenarios(doc or {})
+        self.harness = harness_jobs(doc or {})
         self.listed = set().union(*self.jobs.values()) if self.jobs else set()
         self._info = None
 
@@ -260,6 +313,10 @@ class Scope:
             lib = path.rsplit("/", 1)[-1]
             return (frozenset(n for n in self.listed if self.sources(n, lib)),
                     "sourced only by the setup scripts of these scenarios")
+        if path in HARNESS.values():
+            return (frozenset(n for job, plat in self.harness.items()
+                              if HARNESS.get(plat) == path for n in self.jobs[job]),
+                    "the harness its jobs run every scenario through")
         if path == SCENARIOS_WORKFLOW:
             return self._workflow()
         if path == CI_WORKFLOW:
@@ -367,13 +424,21 @@ class Scope:
         return total, lines
 
 
-def scenarios_outputs(paths, read):
+def scenarios_outputs(paths, read, only=None):
     """(GITHUB_OUTPUT lines, report lines). Raises ImportError without PyYAML, which the
-    workflow turns into a red scope job rather than a guess."""
+    workflow turns into a red scope job rather than a guess. `only` is a dispatch that
+    named its scenarios: exactly those run, and a name no job lists is an error rather
+    than a run of nothing."""
     import yaml
     scope = Scope(paths or [], read, yaml)
-    every_because = None
-    if paths is None:
+    every_because = named = None
+    if only is not None:
+        unknown = sorted(set(only) - scope.listed)
+        if unknown:
+            raise SystemExit(f"ci_scope: no job in scenarios.yml lists {', '.join(unknown)}")
+        total, lines = frozenset(only), []
+        named = f"dispatched with names: {', '.join(sorted(set(only)))}"
+    elif paths is None:
         total, lines, every_because = EVERY, [], "no diff could be computed"
     elif not paths:
         total, lines, every_because = EVERY, [], "the diff is empty, which is not the same as nothing"
@@ -382,6 +447,8 @@ def scenarios_outputs(paths, read):
     run = scope.listed if total is EVERY else total & scope.listed
     out = [f"runtime={'true' if run else 'false'}"]
     report = []
+    if named:
+        report.append(named)
     if every_because:
         report.append(f"every scenario runs: {every_because}")
     for path, sel, why in lines:
@@ -389,9 +456,14 @@ def scenarios_outputs(paths, read):
         report.append(f"{path}: {why} -> {what}")
     for job, names in sorted(scope.jobs.items()):
         keep = [n for n in names if n in run]
-        drop = [{"scenario": n} for n in names if n not in run]
         out.append(f"{output_key('skip', job)}={'false' if keep else 'true'}")
-        out.append(f"{output_key('exclude', job)}={json.dumps(drop, separators=(',', ':'))}")
+        if job in scope.harness:
+            # The harness is handed the names to run. Left unset, as on the weekly run, it
+            # runs every scenario of its platform on disk.
+            out.append(f"{output_key('run', job)}={' '.join(keep)}")
+        else:
+            drop = [{"scenario": n} for n in names if n not in run]
+            out.append(f"{output_key('exclude', job)}={json.dumps(drop, separators=(',', ':'))}")
         report.append(f"{job}: runs {len(keep)} of {len(names)}"
                       + (f": {', '.join(keep)}" if keep and len(keep) < len(names) else ""))
     return out, report
@@ -406,7 +478,11 @@ def main():
     ap.add_argument("--scenarios", action="store_true",
                     help="say which scenarios scenarios.yml runs, per job")
     ap.add_argument("--summary", help="with --scenarios: append the reasons here as Markdown")
+    ap.add_argument("--only", nargs="+", metavar="SCENARIO",
+                    help="with --scenarios: run exactly these, as a dispatch that named them")
     args = ap.parse_args()
+    if args.only is not None and not args.scenarios:
+        ap.error("--only needs --scenarios")
     paths = args.paths if args.paths is not None else changed(args.base, args.head)
     if not args.scenarios:
         runtime, why = decide(paths)
@@ -414,10 +490,11 @@ def main():
         print(why, file=sys.stderr)
         return
     # --paths has no base to diff a catalog or a workflow against, so those rules run
-    # everything there, and its head is the working tree.
-    read = (git_reader(None, None) if args.paths is not None
+    # everything there, and its head is the working tree. So does --only, which reads no
+    # diff at all.
+    read = (git_reader(None, None) if args.paths is not None or args.only is not None
             else git_reader(args.base, args.head))
-    out, report = scenarios_outputs(paths, read)
+    out, report = scenarios_outputs(paths, read, only=args.only)
     print("\n".join(out))
     print("\n".join(report), file=sys.stderr)
     if args.summary:

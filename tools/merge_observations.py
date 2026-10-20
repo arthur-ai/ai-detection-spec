@@ -41,18 +41,21 @@ def _sort_key(rec):
 
 
 def uploaded(artifacts):
-    """(scenario, document) for every artifact this run uploaded.
+    """(scenario, document) for every observation this run uploaded.
 
     One reader, because the two callers must agree on what counts as an artifact: the merge
     and the reported list are read by different steps and a disagreement between them would
     show up as an identifier counted missing when its scenario simply did not run.
+
+    TWO SHAPES UNDER ONE TREE. A matrix cell uploads `observed-<scenario>--<os>/observed.json`;
+    a harness job uploads one `observed-<label>/` holding an `observed-<scenario>--<label>/
+    observed.json` for every scenario that passed, one directory deeper. Every observed.json
+    under the tree counts, and the scenario is read from the document, which record()
+    always writes; the directory name is only the fallback.
     """
-    for d in sorted(pathlib.Path(artifacts).glob("observed-*--*")):
-        f = d / "observed.json"
-        if not f.is_file():
-            continue
+    for f in sorted(pathlib.Path(artifacts).rglob("observed.json")):
         doc = json.loads(f.read_text())
-        yield doc.get("scenario") or d.name.split("--")[0].removeprefix("observed-"), doc
+        yield doc.get("scenario") or f.parent.name.split("--")[0].removeprefix("observed-"), doc
 
 
 def merge(artifacts, scenarios):

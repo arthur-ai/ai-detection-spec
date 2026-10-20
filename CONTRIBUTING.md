@@ -372,18 +372,18 @@ $ test/run-gce.sh --family debian-12    # on a real Compute Engine VM; needs gcl
 **The harnesses differ because the platforms do.** `test/run.sh` uses
 [Tart](https://tart.run), which needs an Apple Silicon Mac and a base image of roughly 25GB.
 `test/run-linux.sh` needs only Docker, because a Linux scenario needs no hypervisor — which
-is also why the Linux CI jobs run directly on the runner with no VM layer, and in Debian,
-Rocky and Fedora containers beside it. `test/run-gce.sh` exists for what neither can stage:
+is also why the Ubuntu CI job runs directly on the runner with no VM layer, and why CI's
+container job runs that same script once per image, each scenario in a fresh Debian, Rocky,
+Fedora or Amazon Linux container. `test/run-gce.sh` exists for what neither can stage:
 systemd as PID 1 on every family, OS Login accounts, and a shared-core machine shape.
 
-A Linux scenario that no row of a job can host is not listed under that job, and the reason is
+The Ubuntu job lists what its runners can host, so `77-linux-rpm` and `91-linux-claude-rpm`,
+which need dnf, are not there. The container job lists nothing and runs every Linux scenario on
+disk, so a scenario a container cannot host **skips** there by exiting 3, and the reason is
 always a fact about the runner rather than about the software: `76-linux-systemd` needs a real
-system bus and `79-linux-image` a Docker daemon, so both run on the Ubuntu runners and under
-`test/run-gce.sh` and are not listed under the containers; `77-linux-rpm` and
-`91-linux-claude-rpm` need dnf and are not listed under the Ubuntu runners. Where a job hosts a
-scenario on some rows and not others it still **skips** by exiting 3: the deb and rpm scenarios
-on the other family's images, and `75-linux-browser` on the arm64 runner, because Google ships
-no Linux arm64 Chrome.
+system bus and `79-linux-image` a Docker daemon, and both run for real on the Ubuntu runners
+and under `test/run-gce.sh`; the deb and rpm scenarios skip on the other family's images; and
+`75-linux-browser` skips on the arm64 runner, because Google ships no Linux arm64 Chrome.
 
 **Scenarios run on every pull request, the ones its diff can move**, on macOS and Linux both,
 and all of them every week. You do not need to run them locally to contribute: push the branch
@@ -391,7 +391,8 @@ and let CI do it. Superseded runs on the same branch are cancelled, so pushing r
 one suite rather than one per push.
 
 `tools/ci_scope.py` maps each changed path to the scenarios that read it and excludes the rest
-from the matrix. A scenario's own files run that scenario; a catalog edit runs the scenarios that
+from each matrix, or hands the container job the names to run. A scenario's own files run that
+scenario; a catalog edit runs the scenarios that
 name, observed or probe evidence for the agents it changed; a query or composed artifact runs its
 platform; prose runs none. It decides in the expensive direction: a path it does not recognise, a
 diff it cannot compute, and a diff that comes back empty all run every scenario. An excluded
@@ -405,7 +406,9 @@ The cost bands and the runtime checks skip only when every changed path is a `.m
 generated doc, the workflow parser -- still run on the commit that changes it.
 
 If you need the full suite on a branch anyway, run the workflow from the Actions tab: a
-`workflow_dispatch` has no diff to read and runs everything.
+`workflow_dispatch` has no diff to read and runs everything. Give it scenario names in the
+`scenarios` input and it runs only those, on every job that lists them, which is how to rerun
+one scenario after a transient rather than an image's whole list.
 
 Assertions are on **counts and specific identifiers**, never "did it parse". Every defect found
 in this project so far produced plausible-looking output with the wrong number of rows, and not

@@ -410,24 +410,26 @@ def ci_scenarios():
     return set().union(*_ci_jobs().values()) if _ci_jobs() else set()
 
 
-def _ci_jobs():
-    """{job name: set of scenarios}, across EVERY job that has a scenario matrix.
+def _ci_scope():
+    """tools/ci_scope.py, which owns the one answer to "what does CI run": the matrix
+    jobs' lists and the harness jobs' platform trees. Imported here rather than re-read
+    from the workflow, because this read one named job before Linux and would have made
+    every scenario under a second job invisible to the coverage report -- counted as "no
+    CI test covers it" while CI ran it on a schedule."""
+    if str(ROOT / "tools") not in sys.path:
+        sys.path.insert(0, str(ROOT / "tools"))
+    import ci_scope
+    return ci_scope
 
-    This read one named job before Linux, which would have made every scenario under a
-    second job invisible to the coverage report -- counted as "no CI test covers it" while
-    CI ran it on a schedule. tools/check_workflows.py asserts the same set from the other
-    side.
-    """
+
+def _ci_jobs():
+    """{job name: set of scenarios}, across EVERY job that runs scenarios.
+    tools/check_workflows.py asserts the same set from the other side."""
     wf = ROOT / ".github" / "workflows" / "scenarios.yml"
     if not wf.exists():
         return {}
     doc = yaml.safe_load(wf.read_text())
-    out = {}
-    for job, spec in (doc.get("jobs") or {}).items():
-        names = ((spec.get("strategy") or {}).get("matrix") or {}).get("scenario")
-        if names:
-            out[job] = set(names)
-    return out
+    return {job: set(names) for job, names in _ci_scope().job_scenarios(doc).items()}
 
 
 def ci_platforms():
@@ -444,7 +446,12 @@ def ci_platforms():
         return set()
     doc = yaml.safe_load(wf.read_text())
     plats = set()
-    for spec in (doc.get("jobs") or {}).values():
+    # A harness job declares its platform outright; a matrix job's is read off its runner.
+    harness = _ci_scope().harness_jobs(doc)
+    for job, spec in (doc.get("jobs") or {}).items():
+        if job in harness:
+            plats.add(harness[job])
+            continue
         if not ((spec.get("strategy") or {}).get("matrix") or {}).get("scenario"):
             continue
         if spec.get("container"):
