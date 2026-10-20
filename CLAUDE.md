@@ -337,7 +337,7 @@ bug hid behind.
 months because its fixture had no agent on either tag. If removing the code does not turn the
 test red, the test proves nothing.
 
-**Scenarios run per pull request, the ones its diff can move, and all of them nightly, on both
+**Scenarios run per pull request, the ones its diff can move, and all of them weekly, on both
 platforms.** `tools/ci_scope.py` picks them, and a path it cannot scope runs every one. Every
 workflow job declares `timeout-minutes`, at most 60, and `tools/check_workflows.py` fails one
 that does not: the default is 360, and a hung `open -a` billed that in full four times in

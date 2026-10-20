@@ -382,7 +382,7 @@ host because Google ships no Linux arm64 Chrome, `76-linux-systemd` needs a real
 which a container has no PID 1 to provide, and `79-linux-image` needs a Docker daemon.
 
 **Scenarios run on every pull request, the ones its diff can move**, on macOS and Linux both,
-and all of them every night. You do not need to run them locally to contribute: push the branch
+and all of them every week. You do not need to run them locally to contribute: push the branch
 and let CI do it. Superseded runs on the same branch are cancelled, so pushing repeatedly costs
 one suite rather than one per push.
 
@@ -393,7 +393,7 @@ platform; prose runs none. It decides in the expensive direction: a path it does
 diff it cannot compute, and a diff that comes back empty all run every scenario. An excluded
 scenario does not appear in the checks list, so the scope job's summary names each path, the rule
 that scoped it and what ran. The one thing scoping can miss -- a new signature over-matching rows
-in a scenario with no link to its agent -- is what the nightly run is for.
+in a scenario with no link to its agent -- is what the weekly run is for.
 
 The cost bands and the runtime checks skip only when every changed path is a `.md` file or
 `LICENSE`.

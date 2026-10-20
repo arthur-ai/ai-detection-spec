@@ -25,8 +25,8 @@ name: Scenarios
 # A CHANGE THAT CAN MOVE A SIGNATURE STILL RUNS HERE, never skipped on a green lint: a
 # catalog edit runs the scenarios that name, observed or probe the agents it changed. The
 # one miss scoping leaves is a new signature over-matching rows in a scenario with no
-# link to its agent, and the schedule runs every scenario nightly, so that surfaces within
-# a day.
+# link to its agent, and the schedule runs every scenario weekly, so that surfaces within
+# a week.
 #
 # Measured 2026-09-22 over the preceding four days: 93% of this repository's billable
 # minutes were this workflow. Measured 2026-10-19: the last 40 merges to main, replayed
@@ -36,8 +36,10 @@ on:
   pull_request:
   push:
     branches: [main]
+  # Mondays, 06:00 UTC. Nightly bounded the scoping miss at a day; cut to weekly on
+  # 2026-10-20 for cost. A dispatch runs the full suite any time it is needed sooner.
   schedule:
-    - cron: "0 6 * * *"
+    - cron: "0 6 * * 1"
   workflow_dispatch:
 
 # Cancel superseded PR runs, NEVER a main or scheduled one. A cancelled main run loses the
@@ -47,7 +49,7 @@ on:
 # SO A RUN THAT IS NOT A PULL REQUEST'S GETS A GROUP OF ITS OWN. A group holds one pending
 # run, and a newer arrival cancels it whatever cancel-in-progress says. That cost nothing
 # while every main run was the whole suite; now a push runs only what its own diff can
-# move, so a cancelled pending push loses its scenarios for good, and the nightly run that
+# move, so a cancelled pending push loses its scenarios for good, and the weekly run that
 # backs the scoping could be cancelled by any push queued behind it.
 concurrency:
   group: scenarios-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
@@ -73,7 +75,7 @@ jobs:
   # above refuses for a whole workflow -- so this job's summary names every path, the rule
   # that scoped it and what it selected, and that is where to look for a scenario that did
   # not run. An UNSET output runs everything -- `skip_` is not 'true', `exclude_` falls
-  # back to [] -- so the nightly needs no Python here, and a pull request or push refuses
+  # back to [] -- so the weekly run needs no Python here, and a pull request or push refuses
   # to finish this job without them.
   scope:
     name: What this diff can move
@@ -111,7 +113,7 @@ jobs:
         run: |
           # A schedule or a manual dispatch has no diff to read, and a dispatch is
           # somebody asking for this on purpose. Both run every scenario, and with nothing
-          # but this line: the nightly run is what catches what scoping cannot, so it must
+          # but this line: the weekly run is what catches what scoping cannot, so it must
           # not depend on the scoping working.
           case "$EVENT" in
             pull_request|push) ;;
