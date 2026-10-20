@@ -1,0 +1,36 @@
+{
+  "description": "Claude Code from Anthropic's dnf repository, found through its rpm package name.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=0",
+    "jbplugin": ">=0",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "port": ">=0",
+    "proc": ">=0",
+    "rpm": ">=1",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "claude-code"
+    ],
+    "forbid": [
+      "openclaw",
+      "cursor"
+    ]
+  },
+  "why": "The rpm_packages route's scenario for Claude Code, the rpm family's half of 89-linux-claude-deb. The package installs /usr/bin/claude and nothing under a home directory, so rpm's database row is the only evidence, and must_contain pins that row rather than letting must_find pass on another route. It also keeps proving what 77-linux-rpm proves: one composed artifact reads deb_packages and rpm_packages on either family without the absent table failing the statement.",
+  "must_contain": [
+    "\"id\": \"claude-code\", \"kind\": \"rpm\""
+  ],
+  "known_gaps": [
+    "Runs in Rocky 9, Fedora 41 and Amazon Linux 2023 containers on an ubuntu runner, because GitHub offers no RPM-distro runner. A container has no systemd, so `unit` is 0 here and the systemd marker reports absent, correctly.",
+    "Anthropic's apk repository cannot be exercised, and no route could read it: osquery has no apk_packages table at any version, and osquery's own builds are glibc-linked and do not load on musl, so an Alpine host cannot run the collector at all. Measured 2026-10-20 on alpine:3.22; docs/blind-spots.yaml carries it."
+  ]
+}
