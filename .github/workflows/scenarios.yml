@@ -41,6 +41,14 @@ on:
   schedule:
     - cron: "0 6 * * 1"
   workflow_dispatch:
+    inputs:
+      scenarios:
+        description: >-
+          Scenario names, space-separated. Empty runs every scenario; names run only
+          those, on every job that lists them -- the way to rerun one scenario rather
+          than an image's whole list.
+        required: false
+        default: ""
 
 # Cancel superseded PR runs, NEVER a main or scheduled one. A cancelled main run loses the
 # observations `collect` would have committed, and a lost observation reads downstream as
@@ -101,7 +109,8 @@ jobs:
           fetch-depth: 0
       # The catalog and this workflow are compared parsed, not as text.
       - name: Install pyyaml
-        if: github.event_name == 'pull_request' || github.event_name == 'push'
+        # Not on the schedule, which must not depend on Python here (see the step below).
+        if: github.event_name != 'schedule'
         run: pip3 install --quiet --break-system-packages pyyaml || pip3 install --quiet pyyaml
       - id: scope
         env:
@@ -115,19 +124,30 @@ jobs:
                     && format('{0}^1', github.sha) || github.event.before }}
           EVENT: ${{ github.event_name }}
           HEAD_SHA: ${{ github.sha }}
+          # Empty on every event but a dispatch that named scenarios.
+          ONLY: ${{ inputs.scenarios }}
         run: |
           # A schedule or a manual dispatch has no diff to read, and a dispatch is
           # somebody asking for this on purpose. Both run every scenario, and with nothing
-          # but this line: the weekly run is what catches what scoping cannot, so it must
-          # not depend on the scoping working.
-          case "$EVENT" in
-            pull_request|push) ;;
-            *) echo "runtime=true" >> "$GITHUB_OUTPUT"
-               echo "$EVENT has no diff to read; running every scenario"
-               exit 0 ;;
-          esac
-          python3 tools/ci_scope.py --scenarios "$BASE" "$HEAD_SHA" \
-            --summary "$GITHUB_STEP_SUMMARY" >> "$GITHUB_OUTPUT"
+          # but one line: the weekly run is what catches what scoping cannot, so it must
+          # not depend on the scoping working. A dispatch that NAMES scenarios runs those
+          # alone, on every job that lists them: the way to rerun one scenario after a
+          # transient rather than an image's whole list. A name no job lists fails this
+          # job rather than running nothing.
+          if [ "$EVENT" = workflow_dispatch ] && [ -n "$ONLY" ]; then
+            # shellcheck disable=SC2086 -- ONLY is a space-separated list, split on purpose
+            python3 tools/ci_scope.py --scenarios --summary "$GITHUB_STEP_SUMMARY" \
+              --only $ONLY >> "$GITHUB_OUTPUT"
+          else
+            case "$EVENT" in
+              pull_request|push)
+                python3 tools/ci_scope.py --scenarios "$BASE" "$HEAD_SHA" \
+                  --summary "$GITHUB_STEP_SUMMARY" >> "$GITHUB_OUTPUT" ;;
+              *) echo "runtime=true" >> "$GITHUB_OUTPUT"
+                 echo "$EVENT has no diff to read; running every scenario"
+                 exit 0 ;;
+            esac
+          fi
           # AN EMPTY OUTPUT IS THE ONE FAILURE THIS GATE COULD HIDE. A false `if` and an
           # unset output are the same string to GitHub, so a scope job that succeeded
           # while writing nothing would skip the whole suite and report green -- an empty

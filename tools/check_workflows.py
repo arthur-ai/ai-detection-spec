@@ -165,6 +165,20 @@ for _name in sorted(set(EXCLUDED) & _matrix):
     print(f"FAIL: {_name} is EXCLUDED by name and a job runs it anyway: {EXCLUDED[_name]}")
     failed = True
 
+# A DISPATCH THAT NAMES SCENARIOS MUST REACH THE SCOPE TOOL. The input is declared under
+# `on:` and consumed by the scope step's --only; declared without being consumed, a
+# dispatch with names would silently run everything, which is the shape of failure this
+# file exists for.
+_trig = _doc.get("on") or _doc.get(True) or {}
+_inputs = ((_trig.get("workflow_dispatch") or {}).get("inputs") or {})
+_scope_run = " ".join(str(_s.get("run", "") or "")
+                      for _s in (_doc["jobs"].get("scope") or {}).get("steps", []))
+if ("scenarios" in _inputs) != ("--only" in _scope_run):
+    print("FAIL: scenarios.yml declares a `scenarios` dispatch input without passing it to "
+          "ci_scope.py --only, or the other way round. Names given on a dispatch would run "
+          "everything, or nothing could be named.")
+    failed = True
+
 # WHICH PLATFORM EACH JOB CAN ACTUALLY RUN, read off the job rather than assumed. A
 # scenario listed under a job whose runner cannot host it is the failure a flat set check
 # cannot see: the name is present, the suite looks complete, and every run of it skips.

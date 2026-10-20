@@ -4,6 +4,7 @@
     python3 tools/ci_scope.py <base-ref-or-sha> <head-sha>
     python3 tools/ci_scope.py --paths README.md CLAUDE.md   # for tests
     python3 tools/ci_scope.py --scenarios <base> <head> [--summary <file>]
+    python3 tools/ci_scope.py --scenarios --only 73-linux-deb 00-baseline   # a dispatch with names
 
 Prints GITHUB_OUTPUT lines on stdout and the reason for each on stderr.
 
@@ -423,13 +424,21 @@ class Scope:
         return total, lines
 
 
-def scenarios_outputs(paths, read):
+def scenarios_outputs(paths, read, only=None):
     """(GITHUB_OUTPUT lines, report lines). Raises ImportError without PyYAML, which the
-    workflow turns into a red scope job rather than a guess."""
+    workflow turns into a red scope job rather than a guess. `only` is a dispatch that
+    named its scenarios: exactly those run, and a name no job lists is an error rather
+    than a run of nothing."""
     import yaml
     scope = Scope(paths or [], read, yaml)
-    every_because = None
-    if paths is None:
+    every_because = named = None
+    if only is not None:
+        unknown = sorted(set(only) - scope.listed)
+        if unknown:
+            raise SystemExit(f"ci_scope: no job in scenarios.yml lists {', '.join(unknown)}")
+        total, lines = frozenset(only), []
+        named = f"dispatched with names: {', '.join(sorted(set(only)))}"
+    elif paths is None:
         total, lines, every_because = EVERY, [], "no diff could be computed"
     elif not paths:
         total, lines, every_because = EVERY, [], "the diff is empty, which is not the same as nothing"
@@ -438,6 +447,8 @@ def scenarios_outputs(paths, read):
     run = scope.listed if total is EVERY else total & scope.listed
     out = [f"runtime={'true' if run else 'false'}"]
     report = []
+    if named:
+        report.append(named)
     if every_because:
         report.append(f"every scenario runs: {every_because}")
     for path, sel, why in lines:
@@ -467,7 +478,11 @@ def main():
     ap.add_argument("--scenarios", action="store_true",
                     help="say which scenarios scenarios.yml runs, per job")
     ap.add_argument("--summary", help="with --scenarios: append the reasons here as Markdown")
+    ap.add_argument("--only", nargs="+", metavar="SCENARIO",
+                    help="with --scenarios: run exactly these, as a dispatch that named them")
     args = ap.parse_args()
+    if args.only is not None and not args.scenarios:
+        ap.error("--only needs --scenarios")
     paths = args.paths if args.paths is not None else changed(args.base, args.head)
     if not args.scenarios:
         runtime, why = decide(paths)
@@ -475,10 +490,11 @@ def main():
         print(why, file=sys.stderr)
         return
     # --paths has no base to diff a catalog or a workflow against, so those rules run
-    # everything there, and its head is the working tree.
-    read = (git_reader(None, None) if args.paths is not None
+    # everything there, and its head is the working tree. So does --only, which reads no
+    # diff at all.
+    read = (git_reader(None, None) if args.paths is not None or args.only is not None
             else git_reader(args.base, args.head))
-    out, report = scenarios_outputs(paths, read)
+    out, report = scenarios_outputs(paths, read, only=args.only)
     print("\n".join(out))
     print("\n".join(report), file=sys.stderr)
     if args.summary:

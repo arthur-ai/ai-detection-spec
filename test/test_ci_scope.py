@@ -445,6 +445,36 @@ for _job, _plat in sorted(_HARNESS.items()):
           ci_scope.output_key("exclude", _job) not in _hd)
 
 print()
+print("a dispatch that names scenarios runs exactly those")
+_no, _nr = ci_scope.scenarios_outputs(None, _reader(), only=["73-linux-deb", "00-baseline"])
+_nd = dict(line.split("=", 1) for line in _no)
+
+
+def _named_ran(outputs):
+    ran = set()
+    for job, names in _JOBS.items():
+        if job in _HARNESS:
+            ran |= set(outputs[ci_scope.output_key("run", job)].split())
+        else:
+            drop = {d["scenario"] for d in json.loads(outputs[ci_scope.output_key("exclude", job)])}
+            ran |= set(names) - drop
+    return ran
+
+
+check("the named scenarios run and nothing else",
+      _named_ran(_nd) == {"73-linux-deb", "00-baseline"}, str(sorted(_named_ran(_nd))))
+check("a job listing neither is skipped",
+      all(_nd[ci_scope.output_key("skip", j)] == "true" for j, n in _JOBS.items()
+          if not ({"73-linux-deb", "00-baseline"} & set(n))))
+check("the report says the names were given", any("dispatched with names" in l for l in _nr))
+try:
+    ci_scope.scenarios_outputs(None, _reader(), only=["99-no-such-scenario"])
+    check("a name no job lists is an error, not a run of nothing", False)
+except SystemExit as _exc:
+    check("a name no job lists is an error, not a run of nothing",
+          "99-no-such-scenario" in str(_exc), str(_exc))
+
+print()
 print("which scenarios -- the cheap direction, where it is unambiguous")
 check("a scenario's own file runs that scenario alone",
       scenarios(["test/scenarios/00-baseline/setup.sh"]) == {"00-baseline"})

@@ -407,7 +407,9 @@ The cost bands and the runtime checks skip only when every changed path is a `.m
 generated doc, the workflow parser -- still run on the commit that changes it.
 
 If you need the full suite on a branch anyway, run the workflow from the Actions tab: a
-`workflow_dispatch` has no diff to read and runs everything.
+`workflow_dispatch` has no diff to read and runs everything. Give it scenario names in the
+`scenarios` input and it runs only those, on every job that lists them, which is how to rerun
+one scenario after a transient rather than an image's whole list.
 
 Assertions are on **counts and specific identifiers**, never "did it parse". Every defect found
 in this project so far produced plausible-looking output with the wrong number of rows, and not

@@ -194,7 +194,10 @@ python3 tools/agent_status.py --record /tmp/out.json test/scenarios/$s \
   case "$rc" in
     0) echo "--- $s PASS"; pass=$((pass+1)); stage "$s"; note "$s" PASS ;;
     3) echo "--- $s SKIP"; skip=$((skip+1)); note "$s" SKIP ;;
-    *) echo "--- $s FAIL (exit $rc)"; fail=$((fail+1)); note "$s" "FAIL (exit $rc)" ;;
+    *) echo "--- $s FAIL (exit $rc)"; fail=$((fail+1)); note "$s" "FAIL (exit $rc)"
+       # An annotation names the scenario on the job page and in the checks tab, so a
+       # red job says which of its scenarios failed without the log being opened.
+       in_actions && echo "::error title=$s on $LINUX_IMAGE::$s failed (exit $rc); its log is the group named $s" ;;
   esac
 done
 
