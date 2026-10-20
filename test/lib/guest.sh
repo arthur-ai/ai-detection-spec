@@ -34,7 +34,9 @@ install_dmg() {
     hdiutil detach "$mnt" >/dev/null 2>&1
     return 1
   fi
-  hdiutil detach "$mnt" >/dev/null
+  # The copy is done by now, so a detach that fails is reported and does not fail the
+  # install: the assertion reads /Applications, and an image left mounted is a lab fact.
+  hdiutil detach "$mnt" >/dev/null || echo "WARN: $dmg is still mounted at $mnt" >&2
   for key in CFBundleIdentifier CFBundleShortVersionString; do
     plutil -extract "$key" raw "/Applications/$app/Contents/Info.plist" | sed "s/^/  $key /"
   done

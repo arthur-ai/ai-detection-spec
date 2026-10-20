@@ -33,7 +33,15 @@ else
   install_dmg "$DMG" Muse.app || echo "WARN: the Muse DMG did not mount or carried no Muse.app"
 fi
 
-retry "the Muse Code installer" sh -c 'curl --retry 3 -fsSL https://dev.meta.ai/install.sh | bash' \
-  || echo "WARN: the Muse Code installer failed"
-# Both files, or the binary download was refused and only the launcher is here.
+# Fetched to a file and then run, not piped: a pipe's status is bash's, and bash exits 0
+# on the empty input a failed curl leaves, so the attempt would have read as a success
+# and never been retried. Judged by the versioned binary, as 84-linux-installers judges
+# it: the installer writes the launcher first, so a refused download leaves ~/.local/bin/
+# muse behind and the launcher alone must not count.
+muse_once() {
+  curl --retry 3 -fsSL -o /tmp/muse-install.sh https://dev.meta.ai/install.sh \
+    && bash /tmp/muse-install.sh \
+    && ls ~/.local/bin/muse-bin-* >/dev/null 2>&1
+}
+retry "the Muse Code installer" muse_once || echo "WARN: the Muse Code installer failed"
 ls -la ~/.local/bin 2>/dev/null | grep muse | sed 's/^/  /'
