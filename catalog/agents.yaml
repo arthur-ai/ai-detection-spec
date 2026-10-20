@@ -799,15 +799,16 @@ agents:
   #
   # Muse for Mac acts in native apps -- files, forms, Messages, Calendar, Notes -- with per-app
   # opt-in, which is this catalog's test. Read off Muse.app/Contents/Info.plist in the
-  # Muse-8.0.dmg Meta's own page served on 2026-10-19: CFBundleIdentifier com.meta.endo,
-  # CFBundleShortVersionString 8.0, LSMinimumSystemVersion 14.0, Developer ID "Meta
-  # Platforms, Inc." (V9WTTPBFK9). The disabled `muse` cask names the same id in its zap
-  # stanza, and that is NOT the source: a zap stanza is where bot.molt.mac came from.
+  # Muse-8.0.dmg the app's own Sparkle feed served on 2026-10-19 -- the same file Meta's
+  # download page links, which only a browser can get a link from: CFBundleIdentifier
+  # com.meta.endo, CFBundleShortVersionString 8.0, LSMinimumSystemVersion 14.0, Developer ID
+  # "Meta Platforms, Inc." (V9WTTPBFK9). The disabled `muse` cask names the same id in its
+  # zap stanza, and that is NOT the source: a zap stanza is where bot.molt.mac came from.
   #
   # NO homebrew ROUTE. The cask was disabled on 2026-10-01 because muse.ai's download wants
   # a signed-in Meta account -- 403 {"error":"not_eligible"} from a US address with no
-  # session -- so no run can produce the token. The app's Sparkle feed is anonymous, and that
-  # is how the scenario installs it.
+  # session -- so no run can produce the token. The feed is anonymous, SUFeedURL in that
+  # plist names it, and 14-meta-muse installs from it.
   - id: muse-desktop
     name: Muse for Mac
     classification: Personal agent
@@ -818,8 +819,10 @@ agents:
   # ~/.local/bin/muse, and the launcher fetches the binary beside it as
   # ~/.local/bin/muse-bin-<version> -- 1.4.10-R6427.1 on 2026-10-19, with no sign-in to
   # install. The value is front-anchored, so the versioned binary lands here too: one
-  # install, as hermes's sibling commands are. The same prefix would claim any other
-  # ~/.local/bin/muse*; none is known, and test_matcher asserts the anchor is the front.
+  # install, as hermes's sibling commands are. THE SAME PREFIX CLAIMS ANY OTHER
+  # ~/.local/bin/muse* -- a MuseScore alias, a pipx tool named museum -- and that is the
+  # route's shape, not a fix this entry can carry. test_matcher records the over-match
+  # beside the front anchor it does assert, so a change to either is seen.
   #
   # NOT VALUES: ~/.config/muse and ~/.local/share/muse, read off the binary's own help text,
   # are a level too deep for the enumeration; ~/.muse holds projects and worktrees once the

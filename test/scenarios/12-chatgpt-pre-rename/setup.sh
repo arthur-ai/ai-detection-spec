@@ -28,19 +28,11 @@ BUILD=1781312926
 SHA=37e043abd3ffa592c4c2ba9ce8494bc3fa3b157ae4e6f7872a792ffd089edf07
 URL="https://persistent.oaistatic.com/sidekick/public/ChatGPT_Desktop_public_${VER}_${BUILD}.dmg"
 DMG="/tmp/chatgpt-${VER}.dmg"
-MNT=/tmp/chatgpt-dmg
 
 if ! curl -fsSL --retry 2 -o "$DMG" "$URL"; then
   echo "WARN: ChatGPT ${VER} download failed"
 elif [ "$(shasum -a 256 "$DMG" | cut -d' ' -f1)" != "$SHA" ]; then
   echo "WARN: ChatGPT ${VER} sha256 is not the cask's, so it was not installed"
 else
-  mkdir -p "$MNT"
-  hdiutil attach -nobrowse -readonly -mountpoint "$MNT" "$DMG" >/dev/null
-  # Into /Applications so the `apps` table sees it the way it sees every other install.
-  rm -rf "/Applications/ChatGPT.app"
-  ditto "$MNT/ChatGPT.app" "/Applications/ChatGPT.app"
-  hdiutil detach "$MNT" >/dev/null
-  plutil -extract CFBundleIdentifier raw "/Applications/ChatGPT.app/Contents/Info.plist" \
-    | sed 's/^/  CFBundleIdentifier /'
+  install_dmg "$DMG" ChatGPT.app || echo "WARN: ChatGPT ${VER} did not mount or copy"
 fi

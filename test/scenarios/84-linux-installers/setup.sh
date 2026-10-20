@@ -49,9 +49,10 @@ vendor "the Kiro CLI installer" '~/.local/bin/kiro-cli' \
   'curl --retry 3 -fsSL https://cli.kiro.dev/install | bash' || true
 vendor "the Pi installer" '~/.pi/agent/bin/pi' \
   'curl --retry 3 -fsSL https://pi.dev/install.sh | sh' || true
-# Meta's installer writes the launcher before it downloads the binary, so the file the
-# attempt is judged by exists even when the download behind it is refused.
-vendor "the Muse Code installer" '~/.local/bin/muse' \
+# Judged by the versioned binary, not the ~/.local/bin/muse launcher the catalog names:
+# Meta's installer writes the launcher first and the launcher downloads the binary, so a
+# refused download leaves the launcher behind and would otherwise count as an install.
+vendor "the Muse Code installer" '~/.local/bin/muse-bin-*' \
   'curl --retry 3 -fsSL https://dev.meta.ai/install.sh | bash' || true
 
 echo "--- what landed in the user's home:"

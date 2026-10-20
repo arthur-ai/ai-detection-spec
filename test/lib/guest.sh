@@ -20,6 +20,26 @@ retry() {
   return 1
 }
 
+# install_dmg <dmg> <App.app>: mount read-only, copy the bundle into /Applications so the
+# `apps` table sees it the way it sees every other install, unmount, and print the id and
+# version the plist carries. Non-zero at the first step that fails, with the image detached,
+# so a caller can WARN and go on: under `set -e` a bare hdiutil failure cost every install
+# after it, and the assertion then named two missing agents for one bad download.
+install_dmg() {
+  local dmg="$1" app="$2" mnt key
+  mnt="$(mktemp -d /tmp/dmg.XXXXXX)"
+  hdiutil attach -nobrowse -readonly -mountpoint "$mnt" "$dmg" >/dev/null || return 1
+  rm -rf "/Applications/$app"
+  if ! ditto "$mnt/$app" "/Applications/$app"; then
+    hdiutil detach "$mnt" >/dev/null 2>&1
+    return 1
+  fi
+  hdiutil detach "$mnt" >/dev/null
+  for key in CFBundleIdentifier CFBundleShortVersionString; do
+    plutil -extract "$key" raw "/Applications/$app/Contents/Info.plist" | sed "s/^/  $key /"
+  done
+}
+
 need_clt() {
   xcode-select -p >/dev/null 2>&1 && return 0
   echo "--- installing Command Line Tools"

@@ -41,6 +41,7 @@
     "/.local/bin/goose",
     "/.local/bin/kiro-cli",
     "/.local/bin/muse",
+    "/.local/bin/muse-bin-",
     "/.pi/"
   ],
   "forbid_rows": [

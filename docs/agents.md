@@ -11,15 +11,15 @@ and the CI test behind each one.
 
 ![agents](https://img.shields.io/badge/agents-42-1D4E89)
 ![identifiers](https://img.shields.io/badge/identifiers-111-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-110%2F111-A26A16)
-![real install](https://img.shields.io/badge/by_real_install-110-2E7D57)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-111%2F111-2E7D57)
+![real install](https://img.shields.io/badge/by_real_install-111-2E7D57)
 
 </div>
 
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 110 of 111. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all; the build rejects it.
+**Every identifier is proved by a real install in CI** — 111 of 111. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all; the build rejects it.
 
 ## 🧪 Why a real install is the bar
 
@@ -60,7 +60,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | **Kilo Code** | **`@kilocode/cli`**, **`kilocode.kilo-code`** | 20-cli-agents, 71-linux-cli-agents, 85-linux-vscode-agents |
 | **Kiro** | **`dev.kiro.desktop`**, **`kiro`** | 10-desktop-apps |
 | **Kiro CLI** | **`com.amazon.codewhisperer`**, **`kiro-cli`**, **`~/.local/bin/kiro-cli`** | 21-cli-agents-homebrew, 84-linux-installers |
-| **Muse Code** | muse-code ⚠, **`~/.local/bin/muse`** | 14-meta-muse, 21-cli-agents-homebrew, 84-linux-installers |
+| **Muse Code** | **`muse-code`**, **`~/.local/bin/muse`** | 14-meta-muse, 21-cli-agents-homebrew, 84-linux-installers |
 | **opencode** | **`opencode`**, **`opencode-ai`**, **`~/.opencode`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 84-linux-installers |
 | **OpenHands** | **`ghcr.io/openhands/openhands`**, **`ghcr.io/all-hands-ai/openhands`**, **`https://github.com/OpenHands/OpenHands`** | 79-linux-image |
 | **Pi** | **`@earendil-works/pi-coding-agent`**, **`@mariozechner/pi-coding-agent`**, **`~/.pi`** | 20-cli-agents, 84-linux-installers, 87-linux-pi, 88-linux-pi-legacy |
@@ -104,14 +104,6 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | **Perplexity** | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
 
 > **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = superseded: a run proved it and the current release no longer emits it. ∅ = no CI runner for its platform. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it.
-
-## ⚠️ Identifiers that did not pass
-
-Every one is work, and the middle column says what kind. **did not appear** means a scenario installed the agent and this identifier never showed up — the suite reached it and it did not reproduce, usually because the scenario installs by a different route, or because the artifact only exists once the agent has run.
-
-| agent | route | identifier | state | reached by |
-|---|---|---|---|---|
-| Muse Code | homebrew | `muse-code` | did not appear | 14-meta-muse, 21-cli-agents-homebrew, 84-linux-installers |
 
 **What it cannot see is a separate page.** [`docs/limits.md`](limits.md) carries what osquery cannot see on any machine and what each scenario leaves unproved after its install succeeds -- rendered from the same inputs, gated the same way.
 

@@ -27,9 +27,11 @@
   "why": "Each product has exactly one witness on this host -- the bundle id for Muse for Mac, the ~/.local/bin/muse launcher for Muse Code -- so removing either value turns its must_find red. Neither is installed through Homebrew here: `muse` is disabled because the vendor's download wants a signed-in account, and the `muse-code` cask puts a second `muse` on PATH, so it goes on another machine, 21-cli-agents-homebrew. com.meta.endo is a raw probe as well because the cask's zap stanza names the same id, and the probe is what says it was read off the shipped app rather than copied. claude-code and codex-cli are forbidden because their routes are ~/.local/bin and top-level home directories too, and a new neighbour there must not be read as either.",
   "must_contain": [
     "com.meta.endo",
-    "/.local/bin/muse"
+    "/.local/bin/muse",
+    "/.local/bin/muse-bin-"
   ],
   "known_gaps": [
+    "`~/.local/bin/muse` is front-anchored, like every `binaries` value, so any `~/.local/bin/muse*` reads as Muse Code: a MuseScore alias, a pipx tool named museum. Nothing of that shape was on this host, so the over-match is documented in the catalog and test_matcher rather than exercised here.",
     "Sign-in gated once installed, like 10: Muse for Mac is never launched, so its first-run permission prompts and whatever it writes under ~/Library go unobserved, and Muse Code is never run, so ~/.muse -- which the binary names for projects and worktrees -- is not produced here.",
     "The DMG is whatever the production Sparkle channel serves on the day. A build that changes its bundle id shows up as a missing com.meta.endo, which is the point; a build that only bumps the version is recorded as that version."
   ]

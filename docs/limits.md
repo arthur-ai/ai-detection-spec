@@ -54,6 +54,7 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 12-chatgpt-pre-rename | The bundle id only. A direct download leaves no Homebrew record, so the `chatgpt` brew route is not exercised here; 10-desktop-apps covers it. |
 | 13-desktop-apps-more | Trae and Trae CN were read off their dmgs' Info.plist rather than a local install: the VM this was developed in had no IPv4 route to their CDNs. CI is the first real install of both. |
 | 13-desktop-apps-more | Sign-in gated, like 10: nothing exercises behaviour that appears once a user signs in. |
+| 14-meta-muse | `~/.local/bin/muse` is front-anchored, like every `binaries` value, so any `~/.local/bin/muse*` reads as Muse Code: a MuseScore alias, a pipx tool named museum. Nothing of that shape was on this host, so the over-match is documented in the catalog and test_matcher rather than exercised here. |
 | 14-meta-muse | Sign-in gated once installed, like 10: Muse for Mac is never launched, so its first-run permission prompts and whatever it writes under ~/Library go unobserved, and Muse Code is never run, so ~/.muse -- which the binary names for projects and worktrees -- is not produced here. |
 | 14-meta-muse | The DMG is whatever the production Sparkle channel serves on the day. A build that changes its bundle id shows up as a missing com.meta.endo, which is the point; a build that only bumps the version is recorded as that version. |
 | 40-browser | The planted extension is unreferenced by construction, so the sideloaded token is exercised only by 45-claude-extension. |
@@ -97,6 +98,6 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 86-linux-jetbrains-agents | Amazon Q's plugin needs AWS Core (aws.toolkit.core) to load in an IDE. It is not installed, because only the directory is under test. |
 | 87-linux-pi | Over-matches under bun: OpenClaw 2026.1.29 to 2026.5.27 depended on pi-coding-agent, and `bun add -g` hoists it beside the global, so such a host reports Pi as well. npm -g nests it and is unaffected. Measured with bun 1.4.3. |
 
-`14-meta-muse` need macOS 14 or newer, so CI skips them on older runners rather than failing them. Each scenario's `requires.json` carries the reason.
+`14-meta-muse` needs macOS 14 or newer, so CI skips it on older runners rather than failing it. Its `requires.json` carries the reason.
 
 `11-perplexity-desktop`, `50-autonomous`, `57-clawdbot-era` need macOS 15 or newer, so CI skips them on older runners rather than failing them. Each scenario's `requires.json` carries the reason.
