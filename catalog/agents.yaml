@@ -251,9 +251,9 @@ agents:
     deb_packages: [claude-code]
     # The dnf repository, https://downloads.claude.ai/claude-code/rpm/stable, same key, same
     # package name, x86_64 and aarch64. Read off 91-linux-claude-rpm's install rather than off
-    # the repository index. The apk repository exists too and is not a route this catalog
-    # has: Alpine's apk_packages table is not read by any query, so an Alpine install is a
-    # blind spot rather than a missing identifier.
+    # the repository index. The apk repository exists too and cannot be a route: osquery has
+    # no apk_packages table at any version, and its builds do not load on musl at all, so an
+    # Alpine host is a blind spot (docs/blind-spots.yaml), not a missing identifier.
     rpm_packages: [claude-code]
 
   - id: openclaw

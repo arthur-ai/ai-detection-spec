@@ -31,6 +31,6 @@
   ],
   "known_gaps": [
     "Runs in Rocky 9, Fedora 41 and Amazon Linux 2023 containers on an ubuntu runner, because GitHub offers no RPM-distro runner. A container has no systemd, so `unit` is 0 here and the systemd marker reports absent, correctly.",
-    "The apk repository is not exercised, and could not be: no route reads Alpine's apk_packages table, so an Alpine install of Claude Code is a blind spot of the catalog rather than a missing identifier."
+    "Anthropic's apk repository cannot be exercised, and no route could read it: osquery has no apk_packages table at any version, and osquery's own builds are glibc-linked and do not load on musl, so an Alpine host cannot run the collector at all. Measured 2026-10-20 on alpine:3.22; docs/blind-spots.yaml carries it."
   ]
 }
