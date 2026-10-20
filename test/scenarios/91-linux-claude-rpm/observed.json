@@ -18,7 +18,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "39393123532"
+      "run": "39394053879"
     },
     {
       "agent": "claude-code",
@@ -37,7 +37,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "39393123532"
+      "run": "39394053879"
     },
     {
       "agent": "claude-code",
@@ -47,7 +47,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "39393123532"
+      "run": "39394053879"
     }
   ]
 }
