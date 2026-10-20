@@ -335,6 +335,7 @@ def main():
     sig_re = re.compile(r"\('((?:[^']|'')*)','(?:[^']|'')*','(?:[^']|'')*','((?:[^']|'')*)',")
     fixture_rows = {p.name: json.loads(p.read_text()) for p in sorted(FIXTURES.glob("*.json"))}
     fixture_rows["controls"] = rows
+    policies = []
     for d in docs:
         q = d["spec"]["query"].strip()
         head, sep, rest = q.partition(", sig(")
@@ -345,17 +346,33 @@ def main():
         agents = {a for a, _ in pairs}
         kinds = {k for _, k in pairs}
         check(f"policy {d['spec']['name']!r} names one agent", len(agents) == 1, str(agents))
-        agent = agents.pop() if agents else None
-        for name, prow in fixture_rows.items():
-            want_pass = not any(
-                str(r.get("kind")) in kinds
-                for aid, hits in classify.classify(prow, catalog, routes)[0].items()
-                if aid == agent for _, r in hits)
-            sql = ("WITH d(doc) AS (VALUES ('" + json.dumps(prow).replace("'", "''")
-                   + "')), " + EV_FROM_DOC + " , sig(" + rest)
-            got_pass = bool(run_sql(osqi, sql))
-            check(f"policy {d['spec']['name']!r} over {name}: "
-                  f"{'passes' if want_pass else 'fails'}", got_pass == want_pass)
+        policies.append((d["spec"]["name"], agents.pop() if agents else None, kinds, rest))
+    check("policy names are unique, so a verdict below names one policy",
+          len({p[0] for p in policies}) == len(policies))
+    # ONE STATEMENT PER PAYLOAD, every policy a labelled arm of it. This ran one osqueryi
+    # per (policy, payload): 69 policies over four payloads was 276 process spawns and 70s
+    # of the CI step at 13% CPU. Each policy's `sig` and `hit` now run as a scalar subquery
+    # over the shared `ev`, which SQLite resolves from the enclosing WITH, and the subquery
+    # is NULL exactly when the policy's `SELECT 1 WHERE NOT EXISTS` returns no row. The
+    # top-level shape is still held by the string check above, and both forms substitute
+    # the payload's `ev` for the shipped one, as this test always has. A hard SQL error in
+    # one arm fails the whole payload with osqueryi's message rather than a policy name;
+    # render_match.py compiles every regex before writing it, so that is a build error
+    # here, not a diagnosis this test is expected to make.
+    for name, prow in fixture_rows.items():
+        found = {aid: {str(r.get("kind")) for _, r in hits}
+                 for aid, hits in classify.classify(prow, catalog, routes)[0].items()}
+        arms = " UNION ALL ".join(
+            f"SELECT '{pname.replace(chr(39), chr(39) * 2)}' AS policy, "
+            f"((WITH sig({rest.rstrip().rstrip(';')}) IS NOT NULL) AS pass"
+            for pname, _, _, rest in policies)
+        sql = ("WITH d(doc) AS (VALUES ('" + json.dumps(prow).replace("'", "''")
+               + "')), " + EV_FROM_DOC + " " + arms + ";")
+        got = {r["policy"]: str(r["pass"]) == "1" for r in run_sql(osqi, sql)}
+        for pname, agent, kinds, _ in policies:
+            want_pass = not (found.get(agent, set()) & kinds)
+            check(f"policy {pname!r} over {name}: {'passes' if want_pass else 'fails'}",
+                  got.get(pname) == want_pass, f"got {got.get(pname)!r}")
 
     # --- the standalone artifact for this platform runs ---------------------------
     plat = platform_here()
