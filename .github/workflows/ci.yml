@@ -1,7 +1,10 @@
 name: CI
 
-# Fast checks only. These run on every pull request and finish in about a minute.
-# The scenario matrix is expensive (macOS runner minutes) and runs separately.
+# The static gates, one runtime job per platform, and the cost bands, on every pull
+# request and push to main. The scenario matrix -- real installs on a matrix of runners --
+# is scenarios.yml. The cost bands were a third workflow, performance.yml, with a scope job
+# of its own and a macOS and a Linux VM on the same labels the runtime jobs boot; folded
+# in here 2026-10-20 so a push queues two workflows rather than three.
 on:
   pull_request:
   push:
@@ -24,6 +27,8 @@ concurrency:
 env:
   QUERY_BUDGET_S: 10
   QUERY_FAIL_S: 60
+  # One version for both platforms' package names below.
+  OSQUERY_VERSION: 5.23.1
 
 jobs:
   # WHAT THIS DIFF CAN MOVE, decided once and read by the expensive jobs below.
@@ -116,12 +121,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install osquery
+        # --retry-all-errors as well as --retry: on its own curl retries only timeouts
+        # and 5xx, and `curl: (7) Couldn't connect` failed a run on 2026-10-20 after one
+        # attempt. A download that fails three more times still fails the job.
         run: |
-          curl --retry 3 -fsSL -o /tmp/osquery.pkg \
+          curl --retry 3 --retry-all-errors --retry-delay 5 -fsSL -o /tmp/osquery.pkg \
             "https://pkg.osquery.io/darwin/osquery-${OSQUERY_VERSION}.pkg"
           sudo installer -pkg /tmp/osquery.pkg -target /
-        env:
-          OSQUERY_VERSION: 5.23.1
       - name: Run the query and time it
         run: |
           # Absolute path on purpose: sudo's secure_path excludes /usr/local/bin,
@@ -164,6 +170,34 @@ jobs:
           elif [ "$elapsed" -gt "$QUERY_BUDGET_S" ]; then
             echo "::warning::the match query took ${elapsed}s, over the self-imposed ${QUERY_BUDGET_S}s budget."
           fi
+
+      # THE COST BANDS. Every query declares a band and tools/measure.py holds it to the
+      # band, floor of three runs -- after the two cold timings above, so those stay the
+      # first osqueryi calls after install. The runner ships Xcode, Homebrew, four
+      # browsers, Node and Python, so it is a loaded machine rather than an empty one. An
+      # empty baseline is not a valid baseline: it is the state that hid the docker stall.
+      - name: Record the baseline machine
+        run: |
+          echo "runner: $(sw_vers -productVersion) $(uname -m)"
+          echo "apps:   $(ls -d /Applications/*.app 2>/dev/null | wc -l | tr -d ' ')"
+          echo "brew:   $(brew list --formula 2>/dev/null | wc -l | tr -d ' ') formulae"
+      # ONE PASS, TWO GATES: the band check here and the parseable-JSON check below read
+      # one results list. This ran `--check` and then `--json`, two full measurements.
+      - name: Enforce cost bands
+        run: sudo -n python3 tools/measure.py --check --json > /tmp/perf.json
+      # A daemon that is installed but not answering is the worst case for any query that
+      # touches one, and it is invisible on a machine where the daemon is simply absent.
+      # The hosted runner has no Docker, so this asserts the absent case only; the stopped
+      # and mid-startup cases are test/docker_states.sh's, at the foot of this job.
+      - name: Confirm no query blocks on an absent dependency
+        run: |
+          test ! -S /var/run/docker.sock || echo "note: a docker socket exists on this runner"
+          python3 tools/check_output.py /tmp/perf.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance
+          path: /tmp/perf.json
 
       # The runner that owns the --deep flag, on a machine with no Docker -- which is the
       # state most of a fleet is in, and the one where "did not scan" must not be confused
@@ -450,8 +484,8 @@ jobs:
         run: |
           # Both the deb and the rpm install to /usr/bin/osqueryi, which is the path
           # bin/container-scan's osqueryi_path() looks for after the two macOS ones.
-          curl --retry 3 -fsSL -o /tmp/osquery.deb \
-            https://pkg.osquery.io/deb/osquery_5.23.1-1.linux_amd64.deb
+          curl --retry 3 --retry-all-errors --retry-delay 5 -fsSL -o /tmp/osquery.deb \
+            "https://pkg.osquery.io/deb/osquery_${OSQUERY_VERSION}-1.linux_amd64.deb"
           sudo dpkg -i /tmp/osquery.deb
           osqueryi --version
       - name: Install pyyaml
@@ -466,9 +500,9 @@ jobs:
           echo "$rows rows in ${elapsed}s"
           # THIS IS A COLD RUN UNDER SUDO, and that is the number a synchronous reporting
           # path actually pays. It is NOT the number tools/measure.py reports: that takes
-          # the floor of three runs, and performance.yml warms exactly what this query
-          # reads before calling it. Cold, it varies from 3s to 25s on unchanged code,
-          # against 1.12s warm. queries/COST.md carries both and says why.
+          # the floor of three runs, after the baseline step below has warmed exactly what
+          # this query reads. Cold, it varies from 3s to 25s on unchanged code, against
+          # 1.12s warm. queries/COST.md carries both and says why.
           #
           # WARN ABOVE THE BUDGET, FAIL ABOVE QUERY_FAIL_S. The 10s budget is self-imposed
           # and it is a declaration a reader can trust; the GATE exists to catch a query
@@ -522,6 +556,30 @@ jobs:
             exit 1
           fi
           echo "exit $rc, and stdout was: $(tr -d '\n' < /tmp/wrong.json)"
+
+      # THE LINUX BANDS, MEASURED, in the same shape as the macOS job. One number here was
+      # genuinely unknown until this ran: queries/runtime-linux.sql enumerates EVERY
+      # systemd unit with no vendor exclusion, because Linux has no `com.apple.%`
+      # equivalent. queries/COST.md carries what it measured.
+      #
+      # A LOADED MACHINE IS THE ONLY VALID BASELINE, and the three listings below warm
+      # exactly what the composed query reads -- which is why measure.py's floor is a warm
+      # number and the timed step above is the cold one.
+      - name: Record the baseline machine
+        run: |
+          . /etc/os-release && echo "$PRETTY_NAME  $(uname -m)"
+          echo "deb packages: $(dpkg-query -f '.\n' -W | wc -l)"
+          echo "systemd units: $(systemctl list-unit-files --no-legend 2>/dev/null | wc -l)"
+          echo "desktop entries: $(ls /usr/share/applications/*.desktop 2>/dev/null | wc -l)"
+      - name: Enforce the declared bands
+        run: python3 tools/measure.py --check --json > /tmp/perf-linux.json
+      - name: Confirm every query returned JSON
+        run: python3 tools/check_output.py /tmp/perf-linux.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-linux
+          path: /tmp/perf-linux.json
 
       - name: bin/discover, with and without --deep
         run: |

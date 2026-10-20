@@ -376,10 +376,14 @@ is also why the Linux CI jobs run directly on the runner with no VM layer, and i
 Rocky and Fedora containers beside it. `test/run-gce.sh` exists for what neither can stage:
 systemd as PID 1 on every family, OS Login accounts, and a shared-core machine shape.
 
-Three Linux scenarios **skip** in a container and run for real elsewhere, and every reason is
-a fact about the container rather than about the software: `75-linux-browser` needs an x86_64
-host because Google ships no Linux arm64 Chrome, `76-linux-systemd` needs a real system bus,
-which a container has no PID 1 to provide, and `79-linux-image` needs a Docker daemon.
+A Linux scenario that no row of a job can host is not listed under that job, and the reason is
+always a fact about the runner rather than about the software: `76-linux-systemd` needs a real
+system bus and `79-linux-image` a Docker daemon, so both run on the Ubuntu runners and under
+`test/run-gce.sh` and are not listed under the containers; `77-linux-rpm` and
+`91-linux-claude-rpm` need dnf and are not listed under the Ubuntu runners. Where a job hosts a
+scenario on some rows and not others it still **skips** by exiting 3: the deb and rpm scenarios
+on the other family's images, and `75-linux-browser` on the arm64 runner, because Google ships
+no Linux arm64 Chrome.
 
 **Scenarios run on every pull request, the ones its diff can move**, on macOS and Linux both,
 and all of them every week. You do not need to run them locally to contribute: push the branch
