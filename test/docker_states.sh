@@ -91,7 +91,7 @@ trap '{ kill "$SUITE_WATCHDOG" 2>/dev/null; } 2>/dev/null; pkill -f "$SOCK" 2>/d
 # only reason the line is there.
 #
 # Sourcing brings ROOT, DEEP, TIMEOUT, SCAN_TIMEOUT, SOCKET, MARKER, CACHE, DOCKER_CODE,
-# DOCKER_SECS, BOUNDED_OUT, BOUNDED_SIGNAL, RUNTIME_NAME and RUNTIME_AT into this shell,
+# DOCKER_SECS, BOUNDED_OUT, BOUNDED_ERR, BOUNDED_SIGNAL, RUNTIME_NAME and RUNTIME_AT into this shell,
 # along with `set -uo pipefail`, and the helpers json_str, json_row, osq_run, json_concat,
 # merge_*, _runtime_seen and other_runtime. The ping
 # budget is INHERITED rather than restated, so that a change to the shipped default shows up
