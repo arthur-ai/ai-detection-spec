@@ -235,7 +235,7 @@ def record(artifact, scenario_dir, os_version="", arch="", platform="", run_id="
                         rec["arch"] = arch
                     # LAST, and outside the merge key on purpose. Two runs on the same
                     # (platform, os, arch) are the same observation re-proved, not two
-                    # observations -- so the run id must not split them, or every nightly
+                    # observations -- so the run id must not split them, or every
                     # run would append a duplicate record instead of refreshing one.
                     if run_id:
                         rec["run"] = str(run_id)
@@ -657,7 +657,7 @@ README = ROOT / "README.md"
 # there, but only observed-* is uploaded as an artifact -- so the collect job never saw them
 # and the committed file stayed frozen at whatever the commit that introduced it contained.
 # The rendered table named one scenario at one date forever, which read as "everything else
-# is unverified" when the whole suite runs on every push and nightly.
+# is unverified" when the whole suite runs on a schedule.
 #
 # The question it meant to answer is answered better elsewhere: the workflow's own run
 # history says when a scenario last ran, and observed.json says what it proved.

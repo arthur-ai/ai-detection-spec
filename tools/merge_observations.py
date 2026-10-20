@@ -27,7 +27,7 @@ import pathlib
 
 # The merge key. `run` is deliberately NOT in it: two runs on the same (platform, os, arch)
 # are one observation re-proved, not two, so including the run id would append a duplicate
-# record every night instead of refreshing one.
+# record every run instead of refreshing one.
 KEY = ("agent", "route", "value", "platform", "os", "arch")
 
 

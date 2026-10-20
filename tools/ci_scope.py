@@ -63,8 +63,8 @@ selected by every rule that would have consulted them. The rules, and what each 
 WHAT THIS FORM CANNOT SEE, and the one thing it gives up: a changed signature that matches
 rows -- in the classifier or in the rendered SQL its parity check compares against -- in a
 scenario with no link to its agent. Nothing on a pull request asserts on that scenario, so
-nothing there could fail. scenarios.yml runs every scenario nightly without calling this
-file at all, which bounds that miss at a day.
+nothing there could fail. scenarios.yml runs every scenario weekly without calling this
+file at all, which bounds that miss at a week.
 """
 import argparse
 import copy

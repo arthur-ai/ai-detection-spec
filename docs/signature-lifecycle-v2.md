@@ -34,7 +34,7 @@ the past. There is no third way in.**
 
 | state | what it means | how it is tested |
 |---|---|---|
-| **current** | the release CI installs today produces this identifier | a scenario, nightly and on every pull request that can move it |
+| **current** | the release CI installs today produces this identifier | a scenario, weekly and on every pull request that can move it |
 | **superseded** | a scenario proved it, and the release CI installs today no longer produces it | the matcher test, on every pull request: the value still resolves to its agent |
 
 A superseded signature leaves continuous testing and **stays in the matcher**. Nothing else is
@@ -53,7 +53,7 @@ stateDiagram-v2
     [*] --> C: added to catalog/agents.yaml
     C --> CUR: a scenario installs the real software, the classifier finds it
     C --> REF: nothing has ever produced it
-    CUR --> CUR: re-proved nightly, and by every pull request that can move it
+    CUR --> CUR: re-proved weekly, and by every pull request that can move it
     CUR --> SUP: the shrink guard fires, the release stopped producing it
     SUP --> SUP: the matcher test proves it still resolves
     SUP --> CUR: it becomes installable again
@@ -98,7 +98,7 @@ Two words for two things.
 A signature is verified when a CI scenario installs the real software and asserts the
 classifier finds it. Coverage is counted **per identifier** — an agent can pass while carrying
 an identifier nothing exercised — and only from scenarios in the `scenarios.yml` matrix, which
-runs nightly and on every pull request that can move them. `tools/agent_status.py --check` fails the build below complete, so
+runs weekly and on every pull request that can move them. `tools/agent_status.py --check` fails the build below complete, so
 there is no partial state to manage.
 
 `tools/validate_catalog.py` refuses an agent no scenario installs, **unconditionally**. There
@@ -211,7 +211,7 @@ read it as *version X or below*, and the counterexample is in this catalog:
 
 ## What tells you
 
-Three things fire, at different moments. All three run wherever a scenario runs: nightly, and
+Three things fire, at different moments. All three run wherever a scenario runs: weekly, and
 on every pull request that can move it.
 
 | trigger | when it fires | where |
@@ -417,7 +417,7 @@ observation whether or not an `evidence` enum says so.
 **A signature is superseded when the evidence stops being reproducible — the shrink guard
 fires — and never because a passing test became inconvenient.**
 
-`clawdbot` and `moltbot` are proved by a real install every night. Choosing to
+`clawdbot` and `moltbot` are proved by a real install every week. Choosing to
 supersede them would trade the strongest evidence in the tree for a dated record, on the same
 assumption — *nothing installs them any more* — that was written down here once and turned out
 to be false. Superseded must mean **cannot be proved**, not **is not being proved**.
@@ -512,7 +512,7 @@ returns a candidate index can only be wrong about which real row was chosen. **A
 first-class answer**, because a model forced to choose from a list with no successor in it will
 choose confidently and wrongly.
 
-The result is a **pull request, never a commit** — the daily job runs on main with write
+The result is a **pull request, never a commit** — the scheduled job runs on main with write
 access, which is exactly why. It carries the catalog edit, the captured fixture row, the
 widened assertion, the archived observation, and a body naming the rejected candidates. It
 cannot smuggle in a guess: the gates above already refuse a signature nothing produced, and the

@@ -18,7 +18,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "39250625549"
+      "run": "39387524313"
     },
     {
       "agent": "cursor",
@@ -28,7 +28,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "39250625549"
+      "run": "39387524313"
     },
     {
       "agent": "cursor",
@@ -38,7 +38,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "39250625549"
+      "run": "39387524313"
     },
     {
       "agent": "cursor",
@@ -55,7 +55,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "39250625549"
+      "run": "39387524313"
     },
     {
       "agent": "cursor",
@@ -64,7 +64,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "39250625549"
+      "run": "39387524313"
     },
     {
       "agent": "cursor",
@@ -73,7 +73,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "39250625549"
+      "run": "39387524313"
     }
   ]
 }
