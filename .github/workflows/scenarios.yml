@@ -55,6 +55,10 @@ concurrency:
   group: scenarios-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+env:
+  # One version for all three package names below.
+  OSQUERY_VERSION: 5.23.1
+
 jobs:
   # WHAT THIS DIFF CAN MOVE, decided once and read by the expensive jobs below.
   #
@@ -182,8 +186,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install osquery
+        # --retry-all-errors as well as --retry: on its own curl retries only timeouts
+        # and 5xx, and `curl: (7) Couldn't connect` failed a run on 2026-10-20 after one
+        # attempt. The same flags on the two Linux installs below.
         run: |
-          curl --retry 3 -fsSL -o /tmp/osquery.pkg https://pkg.osquery.io/darwin/osquery-5.23.1.pkg
+          curl --retry 3 --retry-all-errors --retry-delay 5 -fsSL -o /tmp/osquery.pkg \
+            "https://pkg.osquery.io/darwin/osquery-${OSQUERY_VERSION}.pkg"
           sudo installer -pkg /tmp/osquery.pkg -target /
       # bin/classify reads the catalog, and assert.sh now runs it: since D20 the query
       # enumerates and "did we find OpenClaw" is answered by the classifier, not by a
@@ -347,7 +355,10 @@ jobs:
           - 87-linux-pi
           - 88-linux-pi-legacy
           - 89-linux-claude-deb
-          - 91-linux-claude-rpm
+          # 77-linux-rpm and 91-linux-claude-rpm need dnf, which no ubuntu label has, so
+          # they are under the container job only. A scenario listed where it can never
+          # run spends a runner on exiting 3; tools/check_workflows.py still fails one
+          # listed nowhere.
         exclude: ${{ fromJSON(needs.scope.outputs.exclude_scenario_linux || '[]') }}
     steps:
       - uses: actions/checkout@v4
@@ -357,8 +368,8 @@ jobs:
           # /usr/bin/osqueryi -- verified on Ubuntu 24.04 and Fedora 41 -- which is the
           # path bin/container-scan's osqueryi_path() now looks for. The runner's own
           # architecture names the package, amd64 or arm64.
-          curl --retry 3 -fsSL -o /tmp/osquery.deb \
-            "https://pkg.osquery.io/deb/osquery_5.23.1-1.linux_$(dpkg --print-architecture).deb"
+          curl --retry 3 --retry-all-errors --retry-delay 5 -fsSL -o /tmp/osquery.deb \
+            "https://pkg.osquery.io/deb/osquery_${OSQUERY_VERSION}-1.linux_$(dpkg --print-architecture).deb"
           sudo dpkg -i /tmp/osquery.deb
           osqueryi --version
       - name: Install pyyaml
@@ -445,9 +456,12 @@ jobs:
   # snap_packages returns [] and exits 1 -- so these are the runs that keep the
   # difference honest.
   #
-  # WHAT A CONTAINER CANNOT HOST, the scenario says itself: 76 has no system bus and 79
-  # has no daemon, and both exit 3 here. They run on the ubuntu job above, and on a real
-  # VM through test/run-gce.sh, which is also where OS Login and a shared-core shape are.
+  # WHAT A CONTAINER CANNOT HOST IS NOT LISTED HERE. 76-linux-systemd needs a system bus
+  # and 79-linux-image a Docker daemon; both are under the ubuntu job above, where they
+  # run for real, and on a real VM through test/run-gce.sh, which is also where OS Login
+  # and a shared-core shape are. They were listed here too, exiting 3 on every image on
+  # every run -- eight runners per suite spent on saying so. tools/check_workflows.py
+  # still fails a scenario listed in no job, so dropping one from here cannot lose it.
   scenario-linux-container:
     needs: scope
     if: needs.scope.outputs.runtime == 'true'
@@ -472,10 +486,8 @@ jobs:
           - 73-linux-deb
           - 74-linux-dpkg-removed
           - 75-linux-browser
-          - 76-linux-systemd
           - 77-linux-rpm
           - 78-linux-vscode
-          - 79-linux-image
           - 80-linux-jetbrains
           - 81-linux-bun
           - 82-linux-running
@@ -525,12 +537,12 @@ jobs:
           # Ubuntu 24.04 and Fedora 41 -- which is where bin/container-scan's
           # osqueryi_path() looks.
           if command -v dpkg >/dev/null 2>&1; then
-            curl --retry 3 -fsSL -o /tmp/osquery.deb \
-              https://pkg.osquery.io/deb/osquery_5.23.1-1.linux_amd64.deb
+            curl --retry 3 --retry-all-errors --retry-delay 5 -fsSL -o /tmp/osquery.deb \
+              "https://pkg.osquery.io/deb/osquery_${OSQUERY_VERSION}-1.linux_amd64.deb"
             dpkg -i /tmp/osquery.deb
           else
-            curl --retry 3 -fsSL -o /tmp/osquery.rpm \
-              https://pkg.osquery.io/rpm/osquery-5.23.1-1.linux.x86_64.rpm
+            curl --retry 3 --retry-all-errors --retry-delay 5 -fsSL -o /tmp/osquery.rpm \
+              "https://pkg.osquery.io/rpm/osquery-${OSQUERY_VERSION}-1.linux.x86_64.rpm"
             # dnf, not `rpm -i --nodeps`: a missing library would otherwise surface as
             # a runtime failure two steps later rather than as a named dependency here.
             dnf -q -y install /tmp/osquery.rpm
@@ -554,14 +566,10 @@ jobs:
         run: |
           # No sudo in the container -- it runs as root, which is also why
           # test/lib/guest-linux.sh's sudo_maybe exists rather than assuming one shape.
-          # The deep branch is the same choice the ubuntu job makes, read from the same
-          # field; 79 exits 3 before reaching it here, and tools/check_workflows.py asks
-          # that a job listing a deep scenario honours it.
-          if python3 -c "import json,sys; sys.exit(0 if json.load(open('test/scenarios/${{ matrix.scenario }}/expected.json')).get('deep') else 1)"; then
-            bin/discover --deep > /tmp/out.json
-          else
-            /usr/bin/osqueryi --json < dist/discovery-linux.sql > /tmp/out.json
-          fi
+          # The composed artifact only: the one `deep: true` scenario needs a daemon and
+          # is not listed here, and tools/check_workflows.py fails a job that runs the
+          # deep artifact with no scenario to reach it.
+          /usr/bin/osqueryi --json < dist/discovery-linux.sql > /tmp/out.json
           test/assert.sh /tmp/out.json test/scenarios/${{ matrix.scenario }}/expected.json
       - name: Record which identifiers this run matched
         if: steps.provision.outputs.runnable == 'true'

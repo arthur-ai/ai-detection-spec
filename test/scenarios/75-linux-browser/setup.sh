@@ -17,15 +17,16 @@
 # flag and the profile path. It does not assert an id it cannot produce.
 set -e
 source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest-linux.sh"
-need_curl
-need_user
 
 arch=$(uname -m)
 # Google ships no Linux arm64 Chrome at all. Chromium would need a snap on Ubuntu, and a
 # snap relocates the profile to ~/snap/chromium/common/chromium -- which osquery DOES
 # scan, but that is a different path than the one a fleet's Chrome uses. Skipping is
-# honest here: the CI runner is x86_64 and runs this for real.
+# honest here: the CI runner is x86_64 and runs this for real. Decided before anything is
+# installed: the arm64 runner spent 79s on packages before saying so (2026-10-20).
 [ "$arch" = x86_64 ] || { echo "SKIP: Google ships no Linux $arch Chrome build"; exit 3; }
+need_curl
+need_user
 
 # THE PACKAGE FOLLOWS THE FAMILY. Google publishes the deb and the rpm from the same URL
 # shape, and what is under test -- the profile osquery reads and the native-messaging
