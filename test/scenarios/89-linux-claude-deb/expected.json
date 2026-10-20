@@ -1,0 +1,36 @@
+{
+  "description": "Claude Code from Anthropic's apt repository, found through its deb package name.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=0",
+    "jbplugin": ">=0",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "port": ">=0",
+    "proc": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "claude-code"
+    ],
+    "forbid": [
+      "openclaw",
+      "cursor"
+    ]
+  },
+  "why": "The deb_packages route's scenario for Claude Code. The .deb installs /usr/bin/claude and nothing under a home directory, so binaries, state_dirs and process_paths all miss it and dpkg's row is the only evidence. must_find alone passes on those routes in other scenarios, so must_contain pins the package row itself. Read off a real apt install on Ubuntu 22.04 on 2026-10-19 (claude-code 2.1.292-1), which a fleet deployed through apt had been reporting every hour while the classifier called each machine clean.",
+  "must_contain": [
+    "\"id\": \"claude-code\", \"kind\": \"deb\""
+  ],
+  "known_gaps": [
+    "/usr/bin/claude is not a route. binaries is home-rooted, and the package row carries the version, which the binary's path does not, so dpkg's row is the better evidence anyway.",
+    "The dnf and apk repositories carry the same package name and are not exercised. rpm_packages for Claude Code is deliberately absent until a scenario installs it."
+  ]
+}

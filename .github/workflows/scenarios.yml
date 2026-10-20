@@ -343,6 +343,7 @@ jobs:
           - 86-linux-jetbrains-agents
           - 87-linux-pi
           - 88-linux-pi-legacy
+          - 89-linux-claude-deb
         exclude: ${{ fromJSON(needs.scope.outputs.exclude_scenario_linux || '[]') }}
     steps:
       - uses: actions/checkout@v4

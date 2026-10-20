@@ -241,6 +241,16 @@ agents:
     # 78-linux-vscode forbids claude-code while installing saoudrizwan.claude-dev, which is
     # the control that this value is matched exactly and Cline's is not mistaken for it.
     vscode_extensions: [anthropic.claude-code]
+    # Anthropic's apt repository, read off a real install on 2026-10-19 (Ubuntu 22.04, a GCE
+    # VM): dpkg's row is `claude-code 2.1.292-1 amd64 install ok installed`, from
+    # https://downloads.claude.ai/claude-code/apt/stable, suite `stable`, amd64 and arm64,
+    # signed with the release key 31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE. The package puts
+    # an ELF at /usr/bin/claude and nothing under any home, so every route above misses it:
+    # a fleet installed through apt reported this row while the classifier called each
+    # machine clean. 89-linux-claude-deb installs it. The dnf and apk repositories carry the
+    # same package name and are DELIBERATELY ABSENT until a scenario installs one: a name
+    # read off a repository index is not a fact.
+    deb_packages: [claude-code]
 
   - id: openclaw
     name: OpenClaw
