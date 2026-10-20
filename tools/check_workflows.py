@@ -28,7 +28,7 @@ except ImportError:
     sys.exit(0)
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from ci_scope import matrix_lists, output_key  # noqa: E402
+from ci_scope import HARNESS, HARNESS_ENV, harness_jobs, job_scenarios, output_key  # noqa: E402
 
 # EVERY JOB DECLARES A BOUND, AND NO BOUND IS NEAR THE DEFAULT. GitHub's is 360 minutes,
 # and an unbounded job that hangs does not fail -- it bills until the limit. 50-autonomous
@@ -115,7 +115,11 @@ EXCLUDED = {
 # from the second or third was invisible to it, which is the same shape as the bug it was
 # written for. Anchored on the invocation rather than the bare flag, because the commit
 # message at the foot of the collect job also contains the words "--record".
-_sc = (root / "scenarios.yml").read_text()
+_repo = root.parent.parent
+# The harness scripts record too, from inside the container, so their text is held to the
+# same three flags as the workflow's own steps.
+_sc = "\n".join([(root / "scenarios.yml").read_text()]
+                + [(_repo / h).read_text() for h in HARNESS.values() if (_repo / h).exists()])
 _steps = [m.end() for m in re.finditer(r"agent_status\.py --record \S+\.json", _sc)]
 if not _steps:
     print("FAIL: scenarios.yml records no observations at all. Coverage would freeze at "
@@ -141,10 +145,25 @@ _doc = yaml.safe_load((root / "scenarios.yml").read_text())
 # scenario under them would have been invisible to the on-disk check below. That is the
 # direction this comment already calls "the worse one": it looks tested.
 #
-# READ BY ci_scope.matrix_lists, the function the scope job uses to decide which jobs get
-# outputs, so the two cannot disagree about which jobs have a scenario matrix.
-_jobs = {_job: set(_names) for _job, _names in matrix_lists(_doc).items()}
+# READ BY ci_scope.job_scenarios, the function the scope job uses to decide which jobs get
+# outputs, so the two cannot disagree about which jobs run scenarios. A HARNESS JOB LISTS
+# NONE: it declares `env: SCENARIO_PLATFORM:` and runs that platform's whole tree through
+# the harness, so its set here is read off the tree, and every check below that holds a
+# matrix job to its list holds a harness job to the tree.
+_jobs = {_job: set(_names) for _job, _names in job_scenarios(_doc).items()}
+_harness = harness_jobs(_doc)
 _matrix = set().union(*_jobs.values()) if _jobs else set()
+for _job, _plat in sorted(_harness.items()):
+    _script = HARNESS.get(_plat)
+    _runs = " ".join(str(_s.get("run", "") or "") for _s in _doc["jobs"][_job].get("steps", []))
+    if not _script or _script not in _runs:
+        print(f"FAIL: scenarios.yml job {_job!r} declares {HARNESS_ENV}={_plat!r} but no step "
+              f"runs {_script or 'a harness for that platform'}. The scope job would hand it "
+              f"names it never runs.")
+        failed = True
+for _name in sorted(set(EXCLUDED) & _matrix):
+    print(f"FAIL: {_name} is EXCLUDED by name and a job runs it anyway: {EXCLUDED[_name]}")
+    failed = True
 
 # WHICH PLATFORM EACH JOB CAN ACTUALLY RUN, read off the job rather than assumed. A
 # scenario listed under a job whose runner cannot host it is the failure a flat set check
@@ -204,6 +223,9 @@ for _job, _names in sorted(_jobs.items()):
 # read, which is what happened to the retired `model` branch and to the dropped `ext` kind.
 for _job, _names in sorted(_jobs.items()):
     _runs = " ".join(_s.get("run", "") or "" for _s in _doc["jobs"][_job].get("steps", []))
+    # A harness job honours whatever its harness does, so the branch is read off that file.
+    if _job in _harness and (_repo / HARNESS.get(_harness[_job], "")).is_file():
+        _runs += " " + (_repo / HARNESS[_harness[_job]]).read_text()
     _honours = "--deep" in _runs
     _deep = set()
     for _name in sorted(_names & _on_disk):
@@ -220,26 +242,36 @@ for _job, _names in sorted(_jobs.items()):
               f"lists declares \"deep\": true -- a branch nothing reaches.")
         failed = True
 
-# EVERY SCENARIO MATRIX READS ITS OWN EXCLUSION, which tools/ci_scope.py writes per job.
-# A job that does not runs its whole list on every pull request -- not broken, not red,
-# only billed -- and one whose `skip_` the scope job does not export never skips. The
-# condition is compared WHOLE: `always() || <the clause>` contains the clause and defeats
-# it, running a matrix whose every row was excluded.
+# EVERY SCENARIO MATRIX READS ITS OWN EXCLUSION, which tools/ci_scope.py writes per job,
+# AND EVERY HARNESS JOB READS ITS OWN LIST OF NAMES. A job that does not runs its whole
+# list on every pull request -- not broken, not red, only billed -- and one whose `skip_`
+# the scope job does not export never skips. The condition is compared WHOLE:
+# `always() || <the clause>` contains the clause and defeats it, running a matrix whose
+# every row was excluded.
 _scope_out = (_doc["jobs"].get("scope") or {}).get("outputs") or {}
 for _job in sorted(_jobs):
     _spec = _doc["jobs"][_job]
-    _skip, _exclude = output_key("skip", _job), output_key("exclude", _job)
-    for _key in (_skip, _exclude):
+    _skip = output_key("skip", _job)
+    _select = output_key("run" if _job in _harness else "exclude", _job)
+    for _key in (_skip, _select):
         if _scope_out.get(_key) != f"${{{{ steps.scope.outputs.{_key} }}}}":
             print(f"FAIL: scenarios.yml's scope job does not export {_key!r}, which job "
                   f"{_job!r} reads.")
             failed = True
-    _excl = ((_spec.get("strategy") or {}).get("matrix") or {}).get("exclude")
-    _want = f"${{{{ fromJSON(needs.scope.outputs.{_exclude} || '[]') }}}}"
-    if _excl != _want:
-        print(f"FAIL: scenarios.yml job {_job!r} has matrix exclude {_excl!r}, not "
-              f"{_want!r}. It would run every scenario it lists on every pull request.")
-        failed = True
+    if _job in _harness:
+        _text = " ".join(str(_s.get("run", "") or "") + " " + str(_s.get("env", "") or "")
+                         for _s in _spec.get("steps", []))
+        if f"needs.scope.outputs.{_select}" not in _text:
+            print(f"FAIL: scenarios.yml job {_job!r} never passes {_select!r} to its harness. "
+                  f"It would run every scenario on every pull request.")
+            failed = True
+    else:
+        _excl = ((_spec.get("strategy") or {}).get("matrix") or {}).get("exclude")
+        _want = f"${{{{ fromJSON(needs.scope.outputs.{_select} || '[]') }}}}"
+        if _excl != _want:
+            print(f"FAIL: scenarios.yml job {_job!r} has matrix exclude {_excl!r}, not "
+                  f"{_want!r}. It would run every scenario it lists on every pull request.")
+            failed = True
     _if = " ".join(str(_spec.get("if")).split())
     _want_if = (f"needs.scope.outputs.runtime == 'true' && "
                 f"needs.scope.outputs.{_skip} != 'true'")
@@ -385,6 +417,8 @@ def _expensive(spec):
         return "it runs on macOS, which bills at ten times the Linux rate"
     if any("pkg.osquery.io" in (s.get("run", "") or "") for s in spec.get("steps", [])):
         return "it installs osquery, so it needs a runner rather than a static check"
+    if isinstance(spec.get("env"), dict) and spec["env"].get(HARNESS_ENV):
+        return "it runs a scenario harness, which installs osquery in every container"
     return None
 
 

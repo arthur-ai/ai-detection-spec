@@ -205,7 +205,8 @@ import json  # noqa: E402
 import yaml  # noqa: E402
 
 _WF = yaml.safe_load((ROOT / ci_scope.SCENARIOS_WORKFLOW).read_text())
-_JOBS = ci_scope.matrix_lists(_WF)
+_JOBS = ci_scope.job_scenarios(_WF)
+_HARNESS = ci_scope.harness_jobs(_WF)
 _LISTED = set().union(*_JOBS.values())
 _PLAT = {n: json.loads((ROOT / "test" / "scenarios" / n / "expected.json").read_text())
          .get("platform") for n in _LISTED}
@@ -237,8 +238,11 @@ def scenarios(paths, base=None, head=None):
     o = dict(line.split("=", 1) for line in out)
     ran = set()
     for job, names in _JOBS.items():
-        drop = {d["scenario"] for d in json.loads(o[ci_scope.output_key("exclude", job)])}
-        keep = [n for n in names if n not in drop]
+        if job in _HARNESS:
+            keep = o[ci_scope.output_key("run", job)].split()
+        else:
+            drop = {d["scenario"] for d in json.loads(o[ci_scope.output_key("exclude", job)])}
+            keep = [n for n in names if n not in drop]
         if (o[ci_scope.output_key("skip", job)] == "true") != (not keep):
             check(f"skip_{job} agrees with its exclusion for {paths}", False)
         ran |= set(keep)
@@ -419,6 +423,28 @@ check("guest.sh runs macOS scenarios that source it, and no Linux one",
       bool(_gm) and _gm <= DARWIN, str(sorted(_gm)))
 
 print()
+print("the harness job, which lists no scenarios and runs its platform's whole tree")
+check("scenarios.yml has a Linux harness job", "linux" in _HARNESS.values(), str(_HARNESS))
+_tree = ci_scope.tree_scenarios("linux")
+check("the Linux tree is exactly the Linux scenarios, 76 and 79 included",
+      set(_tree) == LINUX and {"76-linux-systemd", "79-linux-image"} <= set(_tree),
+      str(sorted(set(_tree) ^ LINUX)))
+_hl = subprocess.run(["bash", str(ROOT / ci_scope.HARNESS["linux"]), "--list"],
+                     capture_output=True, text=True)
+check("test/run-linux.sh --list enumerates exactly what ci_scope hands the harness job",
+      _hl.returncode == 0 and _hl.stdout.split() == _tree,
+      f"rc {_hl.returncode}: {_hl.stdout.split()} vs {_tree}; {_hl.stderr.strip()[:200]}")
+check("an edit to the Linux harness runs every Linux scenario and no macOS one",
+      scenarios([ci_scope.HARNESS["linux"]]) == LINUX)
+_ho, _ = ci_scope.scenarios_outputs(["test/scenarios/73-linux-deb/setup.sh"], _reader())
+_hd = dict(line.split("=", 1) for line in _ho)
+for _job, _plat in sorted(_HARNESS.items()):
+    check(f"{_job} is handed the one scenario by name",
+          _hd.get(ci_scope.output_key("run", _job)) == "73-linux-deb", str(_hd))
+    check(f"{_job} gets no exclude list, which it could not read",
+          ci_scope.output_key("exclude", _job) not in _hd)
+
+print()
 print("which scenarios -- the cheap direction, where it is unambiguous")
 check("a scenario's own file runs that scenario alone",
       scenarios(["test/scenarios/00-baseline/setup.sh"]) == {"00-baseline"})
@@ -572,8 +598,8 @@ out = subprocess.run([sys.executable, "tools/ci_scope.py", "--scenarios", "--pat
 _lines = out.stdout.splitlines()
 check("--scenarios writes only GITHUB_OUTPUT lines",
       out.returncode == 0 and _lines[0] == "runtime=true"
-      and all(re.fullmatch(r"(skip|exclude)_\w+=.+", l) for l in _lines[1:]), out.stdout)
-check("one skip and one exclude per matrix job", len(_lines) == 1 + 2 * len(_JOBS),
+      and all(re.fullmatch(r"(skip|exclude|run)_\w+=.*", l) for l in _lines[1:]), out.stdout)
+check("one skip and one exclude or run list per scenario job", len(_lines) == 1 + 2 * len(_JOBS),
       str(len(_lines)))
 
 print()

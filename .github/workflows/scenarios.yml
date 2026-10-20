@@ -73,14 +73,15 @@ jobs:
   # The rule itself is in tools/ci_scope.py, in ONE place, because three workflows ask
   # this question and three copies of the answer would be three lists that have to agree.
   #
-  # THIS ONE ASKS WHICH SCENARIOS, not whether, and answers per matrix job: `skip_<job>`
-  # when none of its scenarios run, `exclude_<job>` naming the ones that do not. AN
-  # EXCLUDED SCENARIO VANISHES FROM THE CHECKS LIST, which is the failure the paragraph
-  # above refuses for a whole workflow -- so this job's summary names every path, the rule
-  # that scoped it and what it selected, and that is where to look for a scenario that did
-  # not run. An UNSET output runs everything -- `skip_` is not 'true', `exclude_` falls
-  # back to [] -- so the weekly run needs no Python here, and a pull request or push refuses
-  # to finish this job without them.
+  # THIS ONE ASKS WHICH SCENARIOS, not whether, and answers per job: `skip_<job>` when
+  # none of its scenarios run, `exclude_<job>` naming the ones a matrix job drops,
+  # `run_<job>` naming the ones a harness job runs. AN EXCLUDED SCENARIO VANISHES FROM
+  # THE CHECKS LIST, which is the failure the paragraph above refuses for a whole workflow
+  # -- so this job's summary names every path, the rule that scoped it and what it
+  # selected, and that is where to look for a scenario that did not run. An UNSET output
+  # runs everything -- `skip_` is not 'true', `exclude_` falls back to [], an empty `run_`
+  # is the harness's run-everything form -- so the weekly run needs no Python here, and a
+  # pull request or push refuses to finish this job without them.
   scope:
     name: What this diff can move
     runs-on: ubuntu-latest
@@ -92,7 +93,7 @@ jobs:
       skip_scenario_linux: ${{ steps.scope.outputs.skip_scenario_linux }}
       exclude_scenario_linux: ${{ steps.scope.outputs.exclude_scenario_linux }}
       skip_scenario_linux_container: ${{ steps.scope.outputs.skip_scenario_linux_container }}
-      exclude_scenario_linux_container: ${{ steps.scope.outputs.exclude_scenario_linux_container }}
+      run_scenario_linux_container: ${{ steps.scope.outputs.run_scenario_linux_container }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -133,7 +134,7 @@ jobs:
           # result indistinguishable from a clean one, in the place that decides whether
           # anything gets checked at all. A crash is already red; this covers the rest.
           grep -qE '^runtime=(true|false)$' "$GITHUB_OUTPUT" \
-            && grep -q '^exclude_' "$GITHUB_OUTPUT" || {
+            && grep -qE '^(exclude|run)_' "$GITHUB_OUTPUT" || {
             echo "::error::ci_scope.py wrote no verdict. Refusing to skip the suite on"
             echo "::error::a gate that did not answer."
             exit 1
@@ -442,13 +443,12 @@ jobs:
           path: test/scenarios/${{ matrix.scenario }}/observed.json
           if-no-files-found: error
 
-  # THE OTHER FAMILIES, in containers on the same runner, because GitHub offers no Debian
-  # or RHEL-family runner. A separate job because `container:` applies to a whole job, and
-  # a matrix of images because the Linux artifact had been proved on one distro while a
-  # Compute Engine fleet boots three: Debian 12 by default, Ubuntu LTS by choice, Rocky or
-  # RHEL 9 where a policy says so. An EC2 fleet boots Amazon Linux 2023 by default, which
-  # is Fedora-derived but carries its own package set. fedora:41 stays as the rpm control
-  # it has been.
+  # THE OTHER FAMILIES, in containers on an ubuntu runner, because GitHub offers no Debian
+  # or RHEL-family runner. A matrix of images because the Linux artifact had been proved
+  # on one distro while a Compute Engine fleet boots three: Debian 12 by default, Ubuntu
+  # LTS by choice, Rocky or RHEL 9 where a policy says so. An EC2 fleet boots Amazon Linux
+  # 2023 by default, which is Fedora-derived but carries its own package set. fedora:41
+  # stays as the rpm control it has been.
   #
   # WHAT IT REALLY GUARDS is that ONE dist/discovery-linux.sql serves every family: the
   # artifact names deb_packages and rpm_packages, and the absent one has to return no
@@ -456,20 +456,34 @@ jobs:
   # snap_packages returns [] and exits 1 -- so these are the runs that keep the
   # difference honest.
   #
-  # WHAT A CONTAINER CANNOT HOST IS NOT LISTED HERE. 76-linux-systemd needs a system bus
-  # and 79-linux-image a Docker daemon; both are under the ubuntu job above, where they
-  # run for real, and on a real VM through test/run-gce.sh, which is also where OS Login
-  # and a shared-core shape are. They were listed here too, exiting 3 on every image on
-  # every run -- eight runners per suite spent on saying so. tools/check_workflows.py
-  # still fails a scenario listed in no job, so dropping one from here cannot lose it.
+  # ONE JOB PER IMAGE, NOT ONE PER (SCENARIO, IMAGE). This was a 76-cell matrix on
+  # GitHub's `container:`, one VM per cell, each pulling the image and installing the
+  # prerequisites to run a thirty-second scenario -- and an organisation on the Free plan
+  # has 20 concurrent jobs, so the cells were still starting twenty minutes into a run
+  # (39387524313, 2026-10-20). test/run-linux.sh runs the same scenarios on one runner,
+  # one fresh container each from an image prepared once; the container is still the
+  # clean host, so what each scenario proves is unchanged. One check per image rather
+  # than per scenario is the price: a red job names the scenario in its log and summary,
+  # and rerunning it reruns the image's list.
+  #
+  # NO SCENARIO LIST HERE. `SCENARIO_PLATFORM` below tells tools/ci_scope.py,
+  # tools/check_workflows.py and tools/agent_status.py that this job runs every Linux
+  # scenario on disk, so a new one is in it the moment its directory exists, and the scope
+  # job hands it the names a diff can move through `run_scenario_linux_container`. Unset,
+  # as on the weekly run, the harness runs them all. 76-linux-systemd and 79-linux-image
+  # exit 3 in seconds against the prepared image; they run for real on the ubuntu job
+  # above and on a real VM through test/run-gce.sh.
   scenario-linux-container:
     needs: scope
     if: needs.scope.outputs.runtime == 'true'
       && needs.scope.outputs.skip_scenario_linux_container != 'true'
-    name: ${{ matrix.scenario }} on ${{ matrix.label }}
+    name: Linux scenarios on ${{ matrix.label }}
     runs-on: ubuntu-24.04
-    container: ${{ matrix.image }}
-    timeout-minutes: 30
+    # The sum of its scenarios rather than one of them: the 2026-10-20 cells added up to
+    # about sixteen minutes per image. Room for a slow mirror, none for a hang.
+    timeout-minutes: 45
+    env:
+      SCENARIO_PLATFORM: linux
     strategy:
       fail-fast: false
       matrix:
@@ -477,34 +491,9 @@ jobs:
         # is: `debian-12` and `rocky-linux-9` move with the point release underneath,
         # and the record carries the exact one through --os. quay.io for Rocky because
         # Docker Hub's `rockylinux` library image stopped at 9.3; the Rocky project's
-        # own repository tracks the current point release.
-        image: ["debian:12", "quay.io/rockylinux/rockylinux:9", "fedora:41", "amazonlinux:2023"]
-        scenario:
-          - 70-linux-baseline
-          - 71-linux-cli-agents
-          - 72-linux-python-agents
-          - 73-linux-deb
-          - 74-linux-dpkg-removed
-          - 75-linux-browser
-          - 77-linux-rpm
-          - 78-linux-vscode
-          - 80-linux-jetbrains
-          - 81-linux-bun
-          - 82-linux-running
-          - 83-linux-claude-running
-          - 84-linux-installers
-          - 85-linux-vscode-agents
-          - 86-linux-jetbrains-agents
-          - 87-linux-pi
-          - 88-linux-pi-legacy
-          - 89-linux-claude-deb
-          - 91-linux-claude-rpm
-        # By scenario only, so every image keeps a row and each `include` below still
-        # finds one to label. An include matching no row is ADDED as a row of its own,
-        # here one with no scenario.
-        exclude: ${{ fromJSON(needs.scope.outputs.exclude_scenario_linux_container || '[]') }}
-        # A label per image, because an artifact name may not contain `:` or `/` and
-        # upload-artifact@v4 fails outright on one that does.
+        # own repository tracks the current point release. A label per image, because an
+        # artifact name may not contain `:` or `/` and upload-artifact@v4 fails outright
+        # on one that does.
         include:
           - image: "debian:12"
             label: debian-12
@@ -515,76 +504,28 @@ jobs:
           - image: "amazonlinux:2023"
             label: amazonlinux-2023
     steps:
-      - name: Install prerequisites
-        run: |
-          # What checkout and the scenarios need that a base image does not carry. The
-          # family is read off the image rather than off the matrix, so the step cannot
-          # disagree with the container it runs in. --allowerasing because Rocky ships
-          # curl-minimal, which conflicts with curl and otherwise fails the whole
-          # transaction -- pyyaml included -- while leaving every other step green. gzip by
-          # name because amazonlinux:2023 ships tar without it.
-          if command -v apt-get >/dev/null 2>&1; then
-            export DEBIAN_FRONTEND=noninteractive
-            apt-get -qq update
-            apt-get -qq install -y git curl ca-certificates tar python3 python3-yaml sudo procps
-          else
-            dnf -q -y install --allowerasing git curl tar gzip python3 python3-pyyaml findutils procps-ng
-          fi
       - uses: actions/checkout@v4
-      - name: Install osquery
-        run: |
-          # The deb and the rpm both install osqueryi to /usr/bin/osqueryi -- verified on
-          # Ubuntu 24.04 and Fedora 41 -- which is where bin/container-scan's
-          # osqueryi_path() looks.
-          if command -v dpkg >/dev/null 2>&1; then
-            curl --retry 3 --retry-all-errors --retry-delay 5 -fsSL -o /tmp/osquery.deb \
-              "https://pkg.osquery.io/deb/osquery_${OSQUERY_VERSION}-1.linux_amd64.deb"
-            dpkg -i /tmp/osquery.deb
-          else
-            curl --retry 3 --retry-all-errors --retry-delay 5 -fsSL -o /tmp/osquery.rpm \
-              "https://pkg.osquery.io/rpm/osquery-${OSQUERY_VERSION}-1.linux.x86_64.rpm"
-            # dnf, not `rpm -i --nodeps`: a missing library would otherwise surface as
-            # a runtime failure two steps later rather than as a named dependency here.
-            dnf -q -y install /tmp/osquery.rpm
-          fi
-          osqueryi --version
-      - name: Provision
-        id: provision
-        run: |
-          set +e
-          test/scenarios/${{ matrix.scenario }}/setup.sh
-          rc=$?
-          set -e
-          if [ "$rc" = 3 ]; then
-            echo "runnable=false" >> "$GITHUB_OUTPUT"
-            echo "### SKIPPED: the scenario reported this image cannot host it" \
-              >> "$GITHUB_STEP_SUMMARY"
-          elif [ "$rc" != 0 ]; then exit "$rc"
-          else echo "runnable=true" >> "$GITHUB_OUTPUT"; fi
-      - name: Query and assert
-        if: steps.provision.outputs.runnable == 'true'
-        run: |
-          # No sudo in the container -- it runs as root, which is also why
-          # test/lib/guest-linux.sh's sudo_maybe exists rather than assuming one shape.
-          # The composed artifact only: the one `deep: true` scenario needs a daemon and
-          # is not listed here, and tools/check_workflows.py fails a job that runs the
-          # deep artifact with no scenario to reach it.
-          /usr/bin/osqueryi --json < dist/discovery-linux.sql > /tmp/out.json
-          test/assert.sh /tmp/out.json test/scenarios/${{ matrix.scenario }}/expected.json
-      - name: Record which identifiers this run matched
-        if: steps.provision.outputs.runnable == 'true'
-        run: |
-          python3 tools/agent_status.py --record /tmp/out.json \
-            test/scenarios/${{ matrix.scenario }} \
-            --platform linux --os "$(. /etc/os-release && echo "$ID-$VERSION_ID")" \
-            --arch "$(uname -m)" --run-id "${{ github.run_id }}"
-      - name: Upload the observation
-        if: steps.provision.outputs.runnable == 'true'
+      # The prerequisites, the osquery download and its retries live in the harness, once
+      # per image per run; OSQUERY_VERSION reaches it from the workflow env above.
+      - name: Run the scoped scenarios, one fresh container each
+        env:
+          LINUX_IMAGE: ${{ matrix.image }}
+          SCENARIOS: ${{ needs.scope.outputs.run_scenario_linux_container }}
+          OBSERVED_OUT: ${{ runner.temp }}/observed
+          OBSERVED_LABEL: ${{ matrix.label }}
+        # Unquoted on purpose: the names are one space-separated list, and an empty one is
+        # the no-argument form, which runs every Linux scenario.
+        run: test/run-linux.sh $SCENARIOS
+      # always(): a scenario that failed must not cost the others their evidence. The
+      # harness stages only the scenarios that passed, so a job where none did uploads
+      # nothing, and `warn` keeps that from being a second red beside the first.
+      - name: Upload the observations
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: observed-${{ matrix.scenario }}--${{ matrix.label }}
-          path: test/scenarios/${{ matrix.scenario }}/observed.json
-          if-no-files-found: error
+          name: observed-${{ matrix.label }}
+          path: ${{ runner.temp }}/observed
+          if-no-files-found: warn
 
   collect:
     name: Coverage, and commit observations on main

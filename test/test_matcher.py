@@ -826,6 +826,19 @@ def _rec(value, os_ver, run="1"):
             "platform": "darwin", "os": os_ver, "arch": "arm64", "run": run}
 
 
+# THE HARNESS JOBS UPLOAD ONE ARTIFACT PER IMAGE, holding an observed-<scenario>--<label>/
+# observed.json for every scenario that passed, so those documents sit one directory
+# deeper than a matrix cell's. Both shapes must be read, or a whole image's evidence
+# vanishes from the merge and from the reported list while the run looks green.
+with _tf2.TemporaryDirectory() as _d:
+    _art = pathlib.Path(_d) / "art"
+    _artifact(_art, "zz-merge", "15.7.9", [_rec("openclaw", "15.7.9")])
+    _artifact(_art / "observed-debian-12", "zz-nested", "debian-12", [_rec("openclaw", "debian-12")])
+    _seen = _mo.seen_scenarios(_art)
+check("a harness job's nested observed.json files are read beside the matrix cells'",
+      _seen == {"zz-merge", "zz-nested"}, f"got {sorted(_seen)}")
+
+
 with _tf2.TemporaryDirectory() as _d:
     _art, _scen = pathlib.Path(_d) / "art", pathlib.Path(_d) / "scen"
     (_scen / "zz-merge").mkdir(parents=True)

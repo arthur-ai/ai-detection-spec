@@ -372,8 +372,9 @@ $ test/run-gce.sh --family debian-12    # on a real Compute Engine VM; needs gcl
 **The harnesses differ because the platforms do.** `test/run.sh` uses
 [Tart](https://tart.run), which needs an Apple Silicon Mac and a base image of roughly 25GB.
 `test/run-linux.sh` needs only Docker, because a Linux scenario needs no hypervisor — which
-is also why the Linux CI jobs run directly on the runner with no VM layer, and in Debian,
-Rocky and Fedora containers beside it. `test/run-gce.sh` exists for what neither can stage:
+is also why the Ubuntu CI job runs directly on the runner with no VM layer, and why CI's
+container job runs that same script once per image, each scenario in a fresh Debian, Rocky,
+Fedora or Amazon Linux container. `test/run-gce.sh` exists for what neither can stage:
 systemd as PID 1 on every family, OS Login accounts, and a shared-core machine shape.
 
 A Linux scenario that no row of a job can host is not listed under that job, and the reason is
@@ -391,7 +392,8 @@ and let CI do it. Superseded runs on the same branch are cancelled, so pushing r
 one suite rather than one per push.
 
 `tools/ci_scope.py` maps each changed path to the scenarios that read it and excludes the rest
-from the matrix. A scenario's own files run that scenario; a catalog edit runs the scenarios that
+from each matrix, or hands the container job the names to run. A scenario's own files run that
+scenario; a catalog edit runs the scenarios that
 name, observed or probe evidence for the agents it changed; a query or composed artifact runs its
 platform; prose runs none. It decides in the expensive direction: a path it does not recognise, a
 diff it cannot compute, and a diff that comes back empty all run every scenario. An excluded
