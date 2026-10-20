@@ -186,13 +186,17 @@ def main():
                 "  over declared band, within tolerance" if r.get("over_declared") else "")
             print(f"  {r['query']:22} {r['band']:10} {r['seconds']:8.2f} {r['rows']:6}{flag}")
 
+    # The verdict goes to stderr under --json for the same reason the skipped line does:
+    # `--check --json > file` is one measurement serving both the gate and the artifact,
+    # and a PASS line after the array would make the file unparseable.
+    verdict = sys.stderr if args.json else sys.stdout
     if args.check and failures:
-        print("\nperformance: FAIL")
+        print("\nperformance: FAIL", file=verdict)
         for f in failures:
-            print(f"  {f}")
+            print(f"  {f}", file=verdict)
         sys.exit(1)
     if args.check:
-        print("\nperformance: PASS")
+        print("\nperformance: PASS", file=verdict)
 
 
 if __name__ == "__main__":

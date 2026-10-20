@@ -66,10 +66,10 @@ warning every time it does.
 
 The gap is not the data. It is how each number is taken:
 
-| | `tools/measure.py` | the `Runtime on Linux` job |
+| | `tools/measure.py`, in the `Runtime on Linux` job's cost-band step | the same job's timed step |
 |---|---|---|
 | runs | **floor of three** | one |
-| warmth | `performance.yml`'s baseline step runs `dpkg-query`, `systemctl list-unit-files` and `ls /usr/share/applications` first — **exactly what this query reads** | cold, first thing after installing osquery |
+| warmth | the baseline step before it runs `dpkg-query`, `systemctl list-unit-files` and `ls /usr/share/applications` — **exactly what this query reads** | cold, first thing after installing osquery |
 | privilege | unprivileged | `sudo`, so it can read other users' homes |
 
 `measure.py`'s own docstring is right about what it is for — *"the floor is the honest number:
