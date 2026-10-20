@@ -36,7 +36,9 @@ need_brew
 for f in aider gemini-cli hermes-agent opencode block-goose-cli; do
   brew install "$f" || echo "WARN: formula $f failed"
 done
-for c in codex copilot-cli cursor-cli kiro-cli; do
+# muse-code is binary-only and links `muse`, which 14-meta-muse's installer also writes --
+# the same two-routes-one-name reason this scenario exists, so it is here and not there.
+for c in codex copilot-cli cursor-cli kiro-cli muse-code; do
   brew install --cask "$c" || echo "WARN: cask $c failed"
 done
 brew list --versions 2>/dev/null | sed 's/^/  /'

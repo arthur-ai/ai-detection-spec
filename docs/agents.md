@@ -9,17 +9,17 @@
 Every AI agent this repo finds, every identifier it is matched on,
 and the CI test behind each one.
 
-![agents](https://img.shields.io/badge/agents-40-1D4E89)
-![identifiers](https://img.shields.io/badge/identifiers-110-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-110%2F110-2E7D57)
-![real install](https://img.shields.io/badge/by_real_install-110-2E7D57)
+![agents](https://img.shields.io/badge/agents-42-1D4E89)
+![identifiers](https://img.shields.io/badge/identifiers-113-1D4E89)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-113%2F113-2E7D57)
+![real install](https://img.shields.io/badge/by_real_install-113-2E7D57)
 
 </div>
 
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 110 of 110. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all; the build rejects it.
+**Every identifier is proved by a real install in CI** — 113 of 113. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all; the build rejects it.
 
 ## 🧪 Why a real install is the bar
 
@@ -32,7 +32,7 @@ Proof is counted **per identifier**, not per agent. Installing an agent vouches
 only for the identifiers that run actually matched, so a sibling identifier on the
 same agent is not covered by association.
 
-# Agents (40)
+# Agents (42)
 
 Software that acts on the user's behalf. This is what the catalog is for.
 
@@ -60,6 +60,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | **Kilo Code** | **`@kilocode/cli`**, **`kilocode.kilo-code`** | 20-cli-agents, 71-linux-cli-agents, 85-linux-vscode-agents |
 | **Kiro** | **`dev.kiro.desktop`**, **`kiro`** | 10-desktop-apps |
 | **Kiro CLI** | **`com.amazon.codewhisperer`**, **`kiro-cli`**, **`~/.local/bin/kiro-cli`** | 21-cli-agents-homebrew, 84-linux-installers |
+| **Muse Code** | **`muse-code`**, **`~/.local/bin/muse`** | 14-meta-muse, 21-cli-agents-homebrew, 84-linux-installers |
 | **opencode** | **`opencode`**, **`opencode-ai`**, **`~/.opencode`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 84-linux-installers |
 | **OpenHands** | **`ghcr.io/openhands/openhands`**, **`ghcr.io/all-hands-ai/openhands`**, **`https://github.com/OpenHands/OpenHands`** | 79-linux-image |
 | **Pi** | **`@earendil-works/pi-coding-agent`**, **`@mariozechner/pi-coding-agent`**, **`~/.pi`** | 20-cli-agents, 84-linux-installers, 87-linux-pi, 88-linux-pi-legacy |
@@ -73,6 +74,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | name | identifiers | scenarios |
 |---|---|---|
 | **Hermes Agent** | **`hermes-agent`**, **`hermes-agent`**, **`~/.hermes`**, **`~/.local/bin/hermes`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents |
+| **Muse for Mac** | **`com.meta.endo`** | 14-meta-muse |
 | **OpenClaw** | **`ai.openclaw.mac`**, **`com.clawdbot.mac`**, **`openclaw`**, **`ai.openclaw.`**, **`openclaw`**, **`clawdbot`**, **`moltbot`**, **`~/.openclaw`** | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 57-clawdbot-era, 60-persistence, 82-linux-running, 90-demo-fleet |
 
 ## AI browser

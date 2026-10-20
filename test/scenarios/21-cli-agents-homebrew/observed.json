@@ -326,6 +326,24 @@
       "run": "39387524313"
     },
     {
+      "agent": "muse-code",
+      "route": "homebrew",
+      "value": "muse-code",
+      "agent_version": "1.0.3-R2198.1",
+      "os": "15.7.9",
+      "arch": "arm64",
+      "run": "39314831885"
+    },
+    {
+      "agent": "muse-code",
+      "route": "homebrew",
+      "value": "muse-code",
+      "agent_version": "1.4.6-R6000.1",
+      "os": "26.6.2",
+      "arch": "arm64",
+      "run": "39314831885"
+    },
+    {
       "agent": "opencode",
       "route": "homebrew",
       "value": "opencode",

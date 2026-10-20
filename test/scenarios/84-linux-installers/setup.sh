@@ -11,6 +11,8 @@
 #   Kiro CLI    ~/.local/bin/kiro-cli       beside kiro-cli-chat and kiro-cli-term
 #   Pi          ~/.pi/agent/install/        npm ci into a prefix npm_packages never reads,
 #                                           so the route is ~/.pi. Read on 2026-10-19
+#   Muse Code   ~/.local/bin/muse           a launcher; the binary lands beside it as
+#                                           muse-bin-<version>. Read 2026-10-19
 #
 # Cursor and Grok also write ~/.local/bin/agent and ~/.grok/bin/agent. A name that generic
 # identifies nothing, so neither is catalogued.
@@ -47,6 +49,11 @@ vendor "the Kiro CLI installer" '~/.local/bin/kiro-cli' \
   'curl --retry 3 -fsSL https://cli.kiro.dev/install | bash' || true
 vendor "the Pi installer" '~/.pi/agent/bin/pi' \
   'curl --retry 3 -fsSL https://pi.dev/install.sh | sh' || true
+# Judged by the versioned binary, not the ~/.local/bin/muse launcher the catalog names:
+# Meta's installer writes the launcher first and the launcher downloads the binary, so a
+# refused download leaves the launcher behind and would otherwise count as an install.
+vendor "the Muse Code installer" '~/.local/bin/muse-bin-*' \
+  'curl --retry 3 -fsSL https://dev.meta.ai/install.sh | bash' || true
 
 echo "--- what landed in the user's home:"
 as_user 'ls -1d ~/.*/ ~/.local/bin/* 2>&1' | sed 's/^/      /'

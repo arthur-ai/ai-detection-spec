@@ -6,7 +6,7 @@
     "deb+rpm": ">=1",
     "desktop": ">=0",
     "ext": ">=0",
-    "file": ">=5",
+    "file": ">=7",
     "jbplugin": ">=0",
     "nmh": ">=0",
     "npm": ">=0",
@@ -24,6 +24,7 @@
       "cursor",
       "goose",
       "kiro-cli",
+      "muse-code",
       "pi"
     ],
     "forbid": [
@@ -39,6 +40,8 @@
     "/.local/bin/cursor-agent",
     "/.local/bin/goose",
     "/.local/bin/kiro-cli",
+    "/.local/bin/muse",
+    "/.local/bin/muse-bin-",
     "/.pi/"
   ],
   "forbid_rows": [
@@ -52,7 +55,7 @@
     }
   ],
   "known_gaps": [
-    "Only the installers' Linux branches run here. On macOS opencode, Cursor CLI, goose and Kiro CLI are proved through Homebrew in 21-cli-agents-homebrew; Pi's installer runs on macOS in 20-cli-agents; Grok Build's macOS install is unexercised, though ~/.grok is a posix route.",
-    "Nothing is run after installing, so state that appears on first use -- ~/.config/goose, ~/.local/share/opencode -- is unexamined. Neither is a top-level directory, so the enumeration would not reach it anyway."
+    "Only the installers' Linux branches run here. On macOS opencode, Cursor CLI, goose and Kiro CLI are proved through Homebrew in 21-cli-agents-homebrew, Muse Code by the same installer in 14-meta-muse, and Pi's installer runs in 20-cli-agents; Grok Build's macOS install is unexercised, though ~/.grok is a posix route.",
+    "Nothing is run after installing, so state that appears on first use -- ~/.config/goose, ~/.local/share/opencode, ~/.muse -- is unexamined. Only the last is a top-level directory the enumeration would reach, and it is not a catalog value."
   ]
 }

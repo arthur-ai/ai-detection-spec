@@ -975,8 +975,13 @@ def limits_markdown(data):
             by_ver.setdefault(l.get("min_macos"), []).append(l["scenario"])
         for ver, scens in sorted(by_ver.items(), key=lambda kv: (kv[0] is None, kv[0])):
             need = f"macOS {ver} or newer" if ver else "a newer runner"
-            out += [f"{', '.join('`' + s + '`' for s in scens)} need {need}, so CI skips "
-                    f"them on older runners rather than failing them. Each scenario's "
+            # One scenario on a floor is a sentence about it, not about "them".
+            if len(scens) == 1:
+                verb, them, whose = "needs", "it", "Its"
+            else:
+                verb, them, whose = "need", "them", "Each scenario's"
+            out += [f"{', '.join('`' + s + '`' for s in scens)} {verb} {need}, so CI skips "
+                    f"{them} on older runners rather than failing {them}. {whose} "
                     f"`requires.json` carries the reason.", ""]
 
     return "\n".join(x for x in out if x is not None).rstrip() + "\n"

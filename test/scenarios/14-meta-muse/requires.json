@@ -1,0 +1,1 @@
+{ "min_macos": 14, "why": "Muse.app declares LSMinimumSystemVersion 14.0, read off the 8.0 build's Info.plist. Both runners in the matrix clear it; a Tart guest on an older host would not." }

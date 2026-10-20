@@ -1,0 +1,39 @@
+{
+  "scenario": "14-meta-muse",
+  "identifiers": [
+    {
+      "agent": "muse-code",
+      "route": "binaries",
+      "value": "~/.local/bin/muse",
+      "os": "15.7.9",
+      "arch": "arm64",
+      "run": "39314831885"
+    },
+    {
+      "agent": "muse-code",
+      "route": "binaries",
+      "value": "~/.local/bin/muse",
+      "os": "26.6.2",
+      "arch": "arm64",
+      "run": "39314831885"
+    },
+    {
+      "agent": "muse-desktop",
+      "route": "bundle_ids",
+      "value": "com.meta.endo",
+      "agent_version": "8.0",
+      "os": "15.7.9",
+      "arch": "arm64",
+      "run": "39314831885"
+    },
+    {
+      "agent": "muse-desktop",
+      "route": "bundle_ids",
+      "value": "com.meta.endo",
+      "agent_version": "8.0",
+      "os": "26.6.2",
+      "arch": "arm64",
+      "run": "39314831885"
+    }
+  ]
+}
