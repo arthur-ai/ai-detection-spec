@@ -32,7 +32,7 @@
       "agent_version": "1.46388.4",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39394053879"
+      "run": "39472231190"
     },
     {
       "agent": "claude-desktop",
@@ -74,7 +74,7 @@
       "agent_version": "1.46388.4,50e62f90a2c85243eef42913398f7c8f1534abef",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39394053879"
+      "run": "39472231190"
     },
     {
       "agent": "claude-desktop",

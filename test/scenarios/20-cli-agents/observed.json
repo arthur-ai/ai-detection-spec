@@ -8,7 +8,7 @@
       "agent_version": "0.36.0",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39394053879"
+      "run": "39472231190"
     },
     {
       "agent": "augment",
@@ -46,7 +46,7 @@
       "value": "~/.local/bin/claude",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39394053879"
+      "run": "39472231190"
     },
     {
       "agent": "claude-code",
@@ -83,7 +83,7 @@
       "value": "~/.claude",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39394053879"
+      "run": "39472231190"
     },
     {
       "agent": "claude-code",
@@ -124,7 +124,7 @@
       "agent_version": "3.0.73",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39394053879"
+      "run": "39472231190"
     },
     {
       "agent": "cline",
@@ -166,7 +166,7 @@
       "agent_version": "0.163.0",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39394053879"
+      "run": "39472231190"
     },
     {
       "agent": "codex-cli",
@@ -204,7 +204,7 @@
       "value": "~/.codex",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39394053879"
+      "run": "39472231190"
     },
     {
       "agent": "codex-cli",
@@ -221,7 +221,7 @@
       "agent_version": "1.5.47",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39394053879"
+      "run": "39472231190"
     },
     {
       "agent": "continue",
@@ -263,7 +263,7 @@
       "agent_version": "1.0.100",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39394053879"
+      "run": "39472231190"
     },
     {
       "agent": "copilot-cli",
@@ -305,7 +305,7 @@
       "agent_version": "0.64.0",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39394053879"
+      "run": "39472231190"
     },
     {
       "agent": "gemini-cli",
@@ -323,7 +323,7 @@
       "agent_version": "7.8.15",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39394053879"
+      "run": "39472231190"
     },
     {
       "agent": "kilo-code",
@@ -341,7 +341,7 @@
       "agent_version": "1.19.3",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39394053879"
+      "run": "39472231190"
     },
     {
       "agent": "opencode",
@@ -358,7 +358,7 @@
       "value": "~/.pi",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39394053879"
+      "run": "39472231190"
     },
     {
       "agent": "pi",
