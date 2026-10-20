@@ -57,7 +57,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "39394053879"
+      "run": "39472231190"
     },
     {
       "agent": "augment",
@@ -137,7 +137,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "39394053879"
+      "run": "39472231190"
     },
     {
       "agent": "claude-code",
@@ -215,7 +215,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "39394053879"
+      "run": "39472231190"
     },
     {
       "agent": "claude-code",
@@ -300,7 +300,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "39394053879"
+      "run": "39472231190"
     },
     {
       "agent": "cline",
@@ -387,7 +387,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "39394053879"
+      "run": "39472231190"
     },
     {
       "agent": "codex-cli",
@@ -467,7 +467,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "39394053879"
+      "run": "39472231190"
     },
     {
       "agent": "codex-cli",
@@ -543,7 +543,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "39394053879"
+      "run": "39472231190"
     },
     {
       "agent": "continue",
@@ -626,11 +626,11 @@
       "agent": "copilot-cli",
       "route": "npm",
       "value": "@github/copilot",
-      "agent_version": "1.0.100",
+      "agent_version": "1.0.101",
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "39394053879"
+      "run": "39472231190"
     },
     {
       "agent": "copilot-cli",
@@ -717,7 +717,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "39394053879"
+      "run": "39472231190"
     },
     {
       "agent": "gemini-cli",
@@ -795,7 +795,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "39394053879"
+      "run": "39472231190"
     },
     {
       "agent": "kilo-code",
@@ -873,7 +873,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "39394053879"
+      "run": "39472231190"
     },
     {
       "agent": "opencode",
