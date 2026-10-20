@@ -12,10 +12,10 @@
 # and apt verifying the InRelease signature is part of what such a fleet installs.
 set -e
 source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest-linux.sh"
-# The rpm family has a repository of its own that no scenario installs yet. On a dnf image
-# the apt steps would fail and the assertion would then report the signature missing, which
-# is the wrong thing to be red about.
-[ "$(pm)" = apt ] || { echo "SKIP: the apt repository needs dpkg; the dnf repository is not a scenario yet"; exit 3; }
+# The rpm family's repository is 91-linux-claude-rpm. On a dnf image the apt steps would
+# fail and the assertion would then report the signature missing, which is the wrong thing
+# to be red about.
+[ "$(pm)" = apt ] || { echo "SKIP: the apt repository needs dpkg; 91-linux-claude-rpm carries the dnf repository"; exit 3; }
 need_curl
 need_pkgs gnupg ca-certificates || true
 

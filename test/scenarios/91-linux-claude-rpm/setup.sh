@@ -12,7 +12,11 @@
 set -e
 source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest-linux.sh"
 [ "$(pm)" = dnf ] || { echo "SKIP: this scenario needs an rpm distro; 89-linux-claude-deb carries the apt repository"; exit 3; }
-need_pkgs curl gnupg2 || true
+# Separately, not one transaction: amazonlinux:2023 ships curl-minimal, which `dnf install
+# curl` conflicts with, and a failed transaction would take gnupg2 down with it and leave
+# the fingerprint unchecked. need_curl installs curl only where there is none.
+need_curl
+need_pkgs gnupg2 || true
 
 key_url=https://downloads.claude.ai/keys/claude-code.asc
 fpr=31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE
