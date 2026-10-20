@@ -19,7 +19,9 @@ Rules are in `CONTRIBUTING.md` under **Versioning**. Read the diff, not the comm
 | **minor** | a new query, or new signatures. Additive |
 | **patch** | a corrected identifier, a fixed glob, documentation |
 
-A changed catalog *value* is a patch; a changed *key* is major.
+A changed catalog *value* is a patch; a changed *key* is major. **On `0.x` the major rule
+over-fires**: pre-1.0 a break conventionally rides the minor. Say which convention you followed,
+and lead with the breaks either way.
 
 **Check removals too** — none of these appears in a diff of the six-column contract:
 
@@ -27,10 +29,10 @@ A changed catalog *value* is a patch; a changed *key* is major.
 |---|---|
 | an **entry** leaves | its findings stop appearing, and nothing errors |
 | a **classification** empties | a consumer mapping it to a UI loses a value |
-| a **route key** falls out of use | `validate_catalog.py` still accepts it with no entry carrying it, so the route never fires. `model_stores` is in that state now; `ports` is declared `retired: true`, which is the visible case |
-| a **row kind** stops being emitted | `kind='model'` left with the model runners |
-| an identifier is **superseded** | it stays matched but leaves continuous testing, and `agent_status.py` drops it from the coverage denominator — so the identifier count falls with nothing removed. Say which value, and that machines on the old build still report it |
-| a **flag or mode** leaves a shipped script | nothing in `dist/` or `catalog/` moves, so every check above says patch. It is not: a script in `bin/` is an interface, and someone has the old invocation in a LaunchDaemon or a runbook. `--pretty` went this way at v0.5.0. Say which invocation to replace, and confirm the flag is refused by name rather than falling through to "unknown argument" |
+| a **route key** falls out of use | `validate_catalog.py` still accepts it with no entry carrying it, so the route never fires. `model_stores` is in that state; `ports` is `retired: true`, which is the visible case |
+| a **row kind** stops being emitted | a consumer reading that kind gets no rows, and nothing errors |
+| an identifier is **superseded** | it stays matched but leaves continuous testing, so the identifier count falls with nothing removed. Say which value, and that machines on the old build still report it |
+| a **flag or mode** leaves a shipped script | nothing in `dist/` or `catalog/` moves, so every check above says patch. It is not: a script in `bin/` is an interface, and someone has the old invocation in a LaunchDaemon. Say which invocation to replace, and confirm the flag is refused by name rather than falling through to "unknown argument" |
 
 ```console
 $ python3 - <<'EOF'
@@ -53,13 +55,8 @@ $ for p in darwin linux; do
 ```
 
 **Diff both artifacts**: they are per platform and name disjoint tables, so diffing one hides
-whichever platform you are not sitting on.
-
-`catalog/agents.yaml`'s `version:` key does not track the release — it read `2` across a release
-that removed a schema key. Diff the keys instead.
-
-**On `0.x` the major rule over-fires**: pre-1.0 a break conventionally rides the minor. Say which
-convention you followed, and lead with the breaks either way.
+the platform you are not sitting on. `agents.yaml`'s `version:` key does not track the release;
+diff the keys.
 
 ## 2. Verify before you tag
 
@@ -74,48 +71,45 @@ $ sudo python3 tools/check_pack.py    # every pack query actually returns rows
 $ sudo test/docker_states.sh          # every Docker state, guard, bound, catalog
 ```
 
-**Call `gates.sh`; don't re-list the gates.** A hand-rolled loop once reported `FAIL` twice and
-exited 0, and this is the only place the list is maintained, so a gate added later still runs.
-Three of its failures reach the notes directly:
+**Call `gates.sh` rather than re-listing the gates**: it is the one maintained list, and it exits
+non-zero. Three of its failures reach the notes directly:
 
 | gate | what it means |
 |---|---|
 | `check_doc_numbers.py` | a number in prose is no longer true. The notes are prose full of numbers |
-| `check_workflows.py` | a workflow references a deleted file, or a scenario is in no job's matrix. An unparseable workflow *vanishes* from the checks list instead of going red |
+| `check_workflows.py` | a workflow references a deleted file, or a scenario is in no job |
 | `agent_status.py --check` | `docs/agents.md` is stale, and that is where the notes' coverage figures come from |
 
-The last three need osquery or sudo, so they sit outside it. Run them: **several things ship and
-they are not the same query** (`CLAUDE.md` has the table). The pack once shipped with four of five
-queries silently returning zero rows.
+The last three commands need osquery or sudo, so they sit outside it. Run them: several things
+ship and they are not the same query (`CLAUDE.md` has the table).
 
 ### One machine verifies one platform
 
 `measure.py`, `check_pack.py` and `docker_states.sh` each resolve the platform and skip the
-other's queries by name — deliberately, because a Linux query measured on macOS reported
-`0.24s, 0 rows`, which is an error recorded as speed. They say which half they ran:
+other's queries by name. They say which half they ran — read that line:
 
 ```console
 pack: ok, 10 of 15 queries run on darwin
 ```
 
-**Read that line.** For the other half, CI is the one that counts:
+For the other half, CI is the one that counts: `ci.yml`'s Runtime jobs run the cost bands,
+`check_pack.py` and `docker_states.sh` on each platform.
 
 ```console
 $ gh run list --workflow=ci.yml --branch=main --limit=1     # macOS AND Linux
 $ test/run-linux.sh                                          # locally, needs Docker
 ```
 
-`run-linux.sh` skips scenarios for reasons about the container, the image or the host arch, not
-the software — `76` needs a real system bus, `79` a reachable Docker daemon, `75` an x86_64 host
-(Google ships no arm64 Linux Chrome), `83` the ptrace right (`LINUX_DOCKER_ARGS='--cap-add
-SYS_PTRACE'`), and `73`/`74` an apt image while `77` needs a dnf one. Each prints its reason and
-exits 3. **Read them**: a suite reporting SKIP for the half you care about has verified nothing
-about it.
+`run-linux.sh` skips a scenario the container, image or host arch cannot host, prints the
+reason and exits 3 — a SKIP for the half you care about has verified nothing about it. CI's
+container job is the same script, one `Linux scenarios on <image>` job per image, so a green
+check per image can hold a SKIP: the job's step summary has a `PASS`, `SKIP` or `FAIL` line per
+scenario. `76` and `79` skip on every image and run for real on the Ubuntu job.
 
 ### Confirm the suite ran for the exact commit you are tagging
 
 Check the commit, not the branch: a `pull_request` run reports against the PR's merge commit and
-a `push` run against `main`, and reading the wrong one cuts a release on someone else's result.
+a `push` run against `main`.
 
 ```console
 $ sha=$(git rev-parse HEAD)
@@ -128,15 +122,20 @@ Nothing printed means the suite has not run for that commit — wait, do not rea
 A **queued** run has no jobs yet, which is not the same as nothing failing.
 
 **A `push` run is not always the suite.** It runs the scenarios its merge could move
-(`tools/ci_scope.py`), and every scenario only when the scoper falls back -- a path it does not
-recognise, a diff it cannot read. Its scope job's summary says which: every job reading
-`runs N of N` is the suite. A `schedule` or `workflow_dispatch` run has no diff and always runs
-every scenario. If neither covers the commit, start one: `gh workflow run scenarios.yml --ref main`.
+(`tools/ci_scope.py`), and every scenario only when the scoper falls back. Its scope job's
+summary says which: every job reading `runs N of N` is the suite. A `schedule` run always runs
+every scenario, and so does a `workflow_dispatch` with its `scenarios` input empty; given names,
+a dispatch runs only those, and its summary opens with `dispatched with names:`.
 
-**The `collect` commit can never have a run of its own, and you will hit this nearly every
-release.** A push made with the default `GITHUB_TOKEN` triggers no further runs, and `collect`
-pushes with it — so the runs appearing against those SHAs are the next *scheduled* one, which
-merely started there. Check the `event` field:
+**Expect to dispatch.** The schedule is weekly (Mondays 06:00 UTC) and pushes are scoped, so a
+release commit usually has no full run. Start one with no input, once, at the commit you will
+tag, after the last merge: `gh workflow run scenarios.yml --ref main`. Its `collect` lands on
+top, and the next paragraph is how to tag past that.
+
+**The `collect` commit can never have a run of its own.** A push made with the default
+`GITHUB_TOKEN` triggers no further runs, and `collect` pushes with it — a run appearing against
+one of those SHAs is the weekly or a dispatch that merely started there. Check the `event` field,
+and for a `workflow_dispatch` its scope summary:
 
 ```console
 $ gh run list --workflow=scenarios.yml --branch=main --limit=6 \
@@ -144,9 +143,9 @@ $ gh run list --workflow=scenarios.yml --branch=main --limit=6 \
     --jq '.[] | "\(.databaseId) \(.headSha[0:7]) \(.event) \(.conclusion)"'
 ```
 
-With the next section telling you to move to the post-`collect` commit, waiting for a run there
-deadlocks. What resolves it is that `collect` commits **generated files only** — verify that,
-then tag on the strength of the run at the commit beneath it:
+Waiting for a run at the `collect` commit deadlocks. What resolves it is that `collect` commits
+**generated files only** — verify that, then tag on the strength of the run at the commit
+beneath it:
 
 ```console
 $ git diff --name-only <verified-sha> HEAD | grep -v 'observed.json\|docs/agents.md\|README.md'
@@ -155,27 +154,16 @@ $ badge() { git show "$1:README.md" | sed -E \
 $ diff <(badge <verified-sha>) <(badge HEAD)
 ```
 
-`collect` rewrites README's coverage badge, so README is in its commit — but README is also
-hand-edited, which is what the second line is for: the badge must be all that moved there. This
-check left README out until 2026-10-08 and printed it on every pure `collect` commit.
-
-**Blank exactly the fields `collect` writes, then diff.** The sed pattern is `BADGE` in
-`tools/agent_status.py` — two counts and a colour — so any other edit survives it, including one
-on the badge's own line. Filtering `git diff` output instead failed twice, each found on a
-throwaway repo: dropping lines that begin `--`/`++` also dropped changed Markdown bullets, and
-dropping lines that mention the badge also dropped any other edit on that line.
-
-Both empty means the code, queries and catalog are byte-identical to what the suite ran on. Anything
-printed means this is not just a `collect` commit.
+`collect` rewrites README's coverage badge and README is also hand-edited, so the second line
+blanks exactly the fields `collect` writes (the `BADGE` pattern in `tools/agent_status.py`)
+before diffing. Both empty means the code, queries and catalog are byte-identical to what the
+suite ran on. Anything printed means this is not just a `collect` commit.
 
 ### Confirm the observations landed
 
-`collect` runs **only on `main`** — a PR asserts and uploads without committing, so coverage
-cannot be moved by a PR. It commits each scenario's `observed.json`, README's coverage badge
-**and the regenerated `docs/agents.md`**, which is where every coverage figure in the notes
-comes from. Immediately
-after merging, that page is a merge behind: `79-linux-image` installed `paulgauthier/aider` for
-real and the page still read *"47 of them by a real install"* until collect ran and moved it to 48.
+`collect` runs **only on `main`**. It commits each scenario's `observed.json`, README's coverage
+badge and the regenerated `docs/agents.md`, which is where every coverage figure in the notes
+comes from, so immediately after merging that page is a merge behind.
 
 ```console
 $ git log --oneline -3 origin/main    # expect a "record identifier coverage" commit after your merge
@@ -186,15 +174,19 @@ $ tools/gates.sh                      # agent_status --check fails on a stale pa
 `gates.sh` catches a stale page but not a *pending* one: a tree matching its own uncommitted
 observations is internally consistent and still a merge behind. Pull again after collect lands.
 
-**A `collect` push race is not a gate failure, and it now retries.** Two runs finishing together
-both push, and so does a re-run of a run whose first collect already landed; the loser used to
-report `! [rejected] main -> main (fetch first)` and go red. The step now re-merges onto the
-current main before each of three push attempts, so only three rejections in a row are an
-error. If a run is red, check which job failed:
+`collect` re-merges onto current main and retries its push three times, so one
+`! [rejected] main -> main` in its log is not a failure; three in a row are. If a run is red,
+find the job, then the scenario:
 
 ```console
-$ gh run view <id> --json jobs --jq '.jobs[] | select(.conclusion=="failure") | .name'
+$ gh run view <id> --json jobs --jq '.jobs[] | select(.conclusion=="failure") | "\(.databaseId) \(.name)"'
+$ gh api repos/<owner>/<repo>/check-runs/<job id>/annotations --jq '.[].title'
 ```
+
+A macOS or Ubuntu job is named for its scenario. A `Linux scenarios on <image>` job is named for
+its image, and the second line reads the `<scenario> on <image>` annotation the harness writes,
+which is also in the job's step summary. To rerun one scenario rather than the image's whole
+list, dispatch with its name in the `scenarios` input.
 
 ## 3. Write the notes
 
@@ -210,20 +202,14 @@ State the change, then its consequence for someone running this on a fleet. Cove
 - **Breaking changes first**, with the migration.
 - **What consumers deploy** — whether the six-column contract or the row kinds moved, and which
   artifact a new query landed in. An `expensive` one is pack-only and never reaches the composed file.
-- **What the deployer must do** that the repo cannot. `containers.sql` is the standing case:
-  `bin/container-scan` is the supported way to run the deep artifact, on its own schedule, scoped
-  to machines with Docker — **never inlined on a synchronous reporting path**. Non-zero outcomes
-  print a `kind=scan` marker row, which is all a consumer sees if it records stdout and discards
-  the exit status. Folding it into the inventory costs more than it looks: measured, a bound on
-  the combined query returns the full base inventory, exits 0, silently omits the container half,
-  and spends 6 of the 10 seconds doing it. Unbounded, the value blanks outright.
-- **What the endpoint needs installed**, if that moved. A prerequisite that DISAPPEARS is as
-  deployment-relevant as one that appears, and it is the easier one to omit because nothing
-  breaks by omitting it: a fleet that provisioned for the old requirement keeps working and
-  nobody learns they can stop. v0.5.0 is the standing case — the endpoint stopped needing
-  `python3`, which on a Mac without Command Line Tools was a stub that made the scheduled writer
-  emit nothing at all. Say what it runs on now, what a deployer can stop provisioning, and
-  whether a machine that was failing recovers on its own.
+- **What the deployer must do** that the repo cannot. The standing case: `bin/container-scan` is
+  the supported way to run the deep artifact, on its own schedule, scoped to machines with
+  Docker, never inlined on a synchronous reporting path. Its non-zero outcomes are a `kind=scan`
+  marker row, which is all a consumer sees if it records stdout and discards the exit status.
+- **What the endpoint needs installed**, if that moved. A prerequisite that disappears is as
+  deployment-relevant as one that appears, and easier to omit because nothing breaks. Say what
+  the endpoint runs on now, what a deployer can stop provisioning, and whether a machine that
+  was failing recovers on its own.
 - **Detection changes** — new agents, corrected identifiers, routes now covered. Say plainly
   whether a Mac must rescan or whether reclassifying retained evidence repairs history. **A
   removal on scope grounds is a detection change**: the honest framing is that the last release
@@ -233,10 +219,10 @@ State the change, then its consequence for someone running this on a fleet. Cove
   belongs in the notes.
 - **Which platform a claim is about.** The coverage figure is all-or-nothing and says nothing about
   where. For a platform claim, name the scenarios that proved it.
-- **A cold cost, where one is recorded.** `measure.py` reports the floor of three warm runs; the
-  composed Linux artifact measured 1.12s that way and 8–14s cold under `sudo`. Cold is what an
-  endpoint's first scheduled scan pays.
-- **Known gaps** carried forward, with the reason each is a gap.
+- **A cold cost, where one is recorded.** `measure.py` reports the floor of three warm runs;
+  `queries/COST.md` carries the cold number, which is what an endpoint's first scheduled scan pays.
+- **Known gaps** carried forward, with the reason each is a gap. A gap belonging to one query is
+  in that query's own header comment.
 
 Every quantity is read off the tree, and each source is the **only** copy of what it holds —
 quoting a second one against it is how the notes and the docs come to disagree:
@@ -246,58 +232,27 @@ quoting a second one against it is how the notes and the docs come to disagree:
 | `tools/agent_status.py` | *generated* — entry and identifier counts, per-identifier CI coverage, and the **Identifiers that did not pass** table. Its `did not appear` and `no test` states are the honest gaps |
 | `docs/agents.md` | *generated* — the page a reader checks the notes against. Take figures from the tool, not by re-counting this |
 | `docs/blind-spots.yaml` | hand-maintained, and the canonical list |
-| `queries/COST.md` | measured costs **and the machine they came from** — and on Linux, whether it is the warm floor or the cold run, which differ by 8x |
-| `catalog/routes.yaml` | which routes exist, how each matches, and **which platform each is on**. The matcher, validator, coverage report and lint all derive from it |
+| `queries/COST.md` | measured costs **and the machine they came from** — and on Linux, whether it is the warm floor or the cold run |
+| `catalog/routes.yaml` | which routes exist, how each matches, and **which platform each is on** |
 
-For a gap belonging to one query rather than the platform, use that query's own comment — the
-`npx`/`bunx` cache at the foot of `queries/filesystem.sql` is the standing case.
+### The title
 
-### The title is the one line written for someone who has not read the diff
+It is read where nobody chose to open anything — the Releases page, a watcher's email, a Slack
+unfurl — so the house register does not apply. It answers two things in order: **what changed**,
+then **must I act**, which is usually `nothing to redeploy` or the one thing to do.
+`v0.7.1 — Nothing to redeploy: clearer bundle errors and complete download docs` is the shape.
 
-**`CLAUDE.md`'s Register does not apply to it.** State-the-measurement-then-the-consequence
-governs code comments, and the notes body earns that density because the reader chose to open
-it. The title is read where nobody chose anything: the Releases page, a watcher's email, a
-changelog someone else compiles, a Slack unfurl. Written in the house register it becomes a
-sentence only this repository can parse — which is the same failure as a README intro opening
-with "Runs them".
-
-Every title below shipped, and each one fails on a reader who has not read the tree:
-
-| shipped | why it fails |
-|---|---|
-| `"not a bundle" is an answer now, and nothing you deploy changes` | quotes an internal argument about error handling. "Is an answer" means nothing until you have read `matches()` |
-| `the --driver hook is tested, and a bundle can be read back` | names a flag and an internal capability. A reader learns what was worked on, not what they get |
-| `the endpoint no longer needs python3, and the Macs it silenced report again` | the second clause cannot be parsed without the v0.5.0 story it is summarising |
-
-A title answers two things in order — **what changed**, then **must I act**. The second half is
-what most readers opened the page for, and it is usually either `nothing to redeploy` or the
-one thing they must do:
-
-Only the first of these shipped; the other two are rewrites of the titles that did, kept here
-because the contrast with the table above is the point:
-
-| works | why |
-|---|---|
-| `v0.7.1 — Nothing to redeploy: clearer bundle errors and complete download docs` | shipped. Leads with the operator's answer |
-| `v0.5.0 — Macs that silently reported nothing now report; the endpoint no longer needs python3` | rewrite. The symptom first, the cause second |
-| `v0.4.0 — Container images are now scanned, and every signature is proved by a real install` | rewrite. Plain words for both halves |
-
-Rules, in the order they are usually broken:
-
-- **No term the notes themselves have to define.** If the body explains what a word means, the
-  title cannot use it. `--driver`, `read_member()`, `kind=scan`, `superseded` and `six-column
-  contract` are all body words.
+- **No term the notes themselves have to define.** If the body explains a word, the title cannot
+  use it: `kind=scan`, `superseded` and `six-column contract` are body words.
 - **No quoted internal argument**, and no clause that is a punchline to a comment in the tree.
-- **Say the effect, not the edit.** "Clearer error when you pass the wrong file" over "`_split`
-  moved inside the try".
-- **Plain words over repo nouns** where one exists: *downloads* for assets, *the scanner* or
-  *the Mac* for the endpoint, *what gets detected* for coverage.
+- **Say the effect, not the edit**: "Clearer error when you pass the wrong file", not what moved
+  inside which `try`.
+- **Plain words over repo nouns**: *downloads* for assets, *the scanner* or *the Mac* for the
+  endpoint, *what gets detected* for coverage.
 - **Under about 80 characters**, because the Releases page and every email subject truncate.
-- **A patch that changes nothing a fleet deploys should say so in the title.** That is the whole
-  question for most readers, and burying it in the body wastes the one line they read.
+- **A patch that changes nothing a fleet deploys says so in the title.**
 
-Write it last, from the notes you have just written: if you cannot say what changed without
-using a body word, the release's own summary is not settled yet.
+Write it last: if you cannot say what changed without a body word, the summary is not settled.
 
 ## 4. Open it as a draft
 
@@ -313,11 +268,9 @@ $ git log --format='%h %ad %s' --date=iso --since='<draft createdAt>' origin/mai
 
 A draft holds no tag, so its version is not spent. Keep it and rewrite the body in place
 (`gh release edit --notes-file` replaces outright), or `gh release delete v<X.Y.Z> --yes`. Two
-drafts is an ambiguity.
-
-**Rewrite the notes, never append.** A draft describes a tree that has changed, and the stale
-parts — a route table, a coverage figure, a row count — are the ones that read most convincingly.
-Re-derive every quantity and confirm every identifier it names is still in the catalog.
+drafts is an ambiguity. **Rewrite, never append**: the stale parts of an old draft — a route
+table, a coverage figure, a row count — are the ones that read most convincingly. Re-derive every
+quantity and confirm every identifier it names is still in the catalog.
 
 ```console
 $ gh release create v<X.Y.Z> --draft --target main \
@@ -325,31 +278,21 @@ $ gh release create v<X.Y.Z> --draft --target main \
     --notes-file <notes.md>
 ```
 
-Hand the user the draft URL and let them publish; that creates the tag on `main`.
-
-**A draft's `untagged-<hash>` URL is regenerated by every edit, so the one `gh release create`
-printed is dead the moment you retitle.** Observed 2026-09-22 cutting v0.7.1: `create` printed
-`…/tag/untagged-e7a3415d6843eef22979`, a `gh release edit --title --draft` moved it to
-`…/tag/untagged-a09603ed293735c0a64d`, and the user was left holding a 404 — the draft was fine,
-the link was not. The hash is not derived from the content, so it cannot be predicted; re-read it
-after the **last** edit:
+Hand the user the draft and let them publish; that creates the tag on `main`. **A draft's
+`untagged-<hash>` URL changes on every edit**, a retitle included, so the one `create` printed is
+dead after the first `gh release edit`. Re-read it after the last edit:
 
 ```console
 $ gh api repos/<owner>/<repo>/releases --jq '.[] | select(.draft) | .html_url'
 ```
 
-Better, hand over the two links that cannot go stale — a draft is only visible to someone with
-write access on either:
-
-| link | |
-|---|---|
-| `https://github.com/<owner>/<repo>/releases` | drafts sit at the top. Never changes |
-| `…/releases/edit/untagged-<hash>` | opens the editor directly, where the Publish button is |
+Better, hand over the two links that cannot go stale: `https://github.com/<owner>/<repo>/releases`,
+where drafts sit at the top, and `…/releases/edit/untagged-<hash>`, which opens the editor where
+the Publish button is. Both need write access.
 
 **Do not upload `dist/` by hand.** `release.yml` fires on publish, checks the tag is an ancestor
 of `main`, re-runs the static gates at that commit, rebuilds `dist/` from `queries/` and attaches
-the rebuild — so the artifacts derive from the tagged source by construction. Uploading from a
-working copy defeats that.
+the rebuild, so the artifacts derive from the tagged source by construction.
 
 ```console
 $ gh run list --workflow=release.yml --limit=1
@@ -360,20 +303,13 @@ $ gh release view v<X.Y.Z> --json assets --jq '[.assets[].name]'
 `discovery-linux.sql`, `discovery-deep.sql`, `ai-discovery.conf`, `signatures.sql`,
 `agents-darwin.sql`, `agents-linux.sql`, `fleet-policies.yml`, `discover`, `container-scan`,
 `classify`, `agents.yaml`, `routes.yaml`, `ai-discovery-darwin.sh`, `ai-discovery-linux.sh`.
-`tools/check_workflows.py` derives this list from `release.yml` and fails when the two
-disagree — it read `Nine` for a release after the bundles were added, because no gate read
-this file.
+`tools/check_workflows.py` holds this list to `release.yml`'s upload step.
 
-Two things the notes must say about layout, because the scripts resolve each other by relative
+The notes must say two things about layout, because the scripts resolve each other by relative
 path: ship `bin/`, `dist/` and `catalog/` **side by side** — loose in one folder, `bin/discover`
-will not find its artifact — and `classify` needs both catalog files beside it, since it defaults
-to `catalog/agents.yaml` relative to its own parent and derives its route vocabulary from
-`routes.yaml`. The two `ai-discovery-*.sh` bundles are that layout packed into one file, for a
-consumer who would rather not reproduce it; they carry no catalog and no classifier.
-
-
-**Deployment glue for a particular MDM is not released from here.** This repo ships osquery
-materials; a consumer wraps them.
+will not find its artifact — and `classify` needs both catalog files beside it. The two
+`ai-discovery-*.sh` bundles are that layout packed into one file; they carry no catalog and no
+classifier. Deployment glue for a particular MDM is not released from here.
 
 ## Don'ts
 
