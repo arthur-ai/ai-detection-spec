@@ -161,9 +161,10 @@ suite ran on. Anything printed means this is not just a `collect` commit.
 
 ### Confirm the observations landed
 
-`collect` runs **only on `main`**. It commits each scenario's `observed.json`, README's coverage
-badge and the regenerated `docs/agents.md`, which is where every coverage figure in the notes
-comes from, so immediately after merging that page is a merge behind.
+`collect` checks coverage on every run and **commits only on `main`**: each scenario's
+`observed.json`, README's coverage badge and the regenerated `docs/agents.md`, which is where
+every coverage figure in the notes comes from, so immediately after merging that page is a merge
+behind.
 
 ```console
 $ git log --oneline -3 origin/main    # expect a "record identifier coverage" commit after your merge
