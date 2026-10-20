@@ -25,13 +25,16 @@ sudo_maybe install -d -m 0755 /etc/apt/keyrings
 retry "the Claude Code signing key" sudo_maybe curl --retry 3 -fsSL -o /etc/apt/keyrings/claude-code.asc "$key_url" \
   || { echo "FAIL: the signing key did not download"; exit 1; }
 # The documented check, and not optional: without it apt trusts whatever the host served.
-# A key that changed is what this scenario must report, not work around.
-if command -v gpg >/dev/null 2>&1; then
-  gpg --show-keys --with-colons /etc/apt/keyrings/claude-code.asc 2>/dev/null | grep -q "^fpr:*:$fpr:" \
-    || { echo "FAIL: the signing key's fingerprint is not $fpr"; exit 1; }
-else
-  echo "WARN: no gpg, so the key's fingerprint was not checked"
-fi
+# A key that changed is what this scenario must report, not work around -- so no gpg is a
+# FAIL, not a warning, and the file must hold exactly one key. signed-by trusts every key
+# in the file it names, so a file carrying the expected key plus another would pass a
+# presence check and still let apt accept a package the other key signed.
+command -v gpg >/dev/null 2>&1 \
+  || { echo "FAIL: gpg is needed to check the signing key's fingerprint and could not be installed"; exit 1; }
+keys=$(gpg --show-keys --with-colons /etc/apt/keyrings/claude-code.asc 2>/dev/null | grep -c '^pub:' || true)
+[ "$keys" = 1 ] || { echo "FAIL: the signing key file holds $keys keys, not one"; exit 1; }
+gpg --show-keys --with-colons /etc/apt/keyrings/claude-code.asc 2>/dev/null | grep -q "^fpr:*:$fpr:" \
+  || { echo "FAIL: the signing key's fingerprint is not $fpr"; exit 1; }
 echo "deb [signed-by=/etc/apt/keyrings/claude-code.asc] https://downloads.claude.ai/claude-code/apt/stable stable main" \
   | sudo_maybe tee /etc/apt/sources.list.d/claude-code.list >/dev/null
 export DEBIAN_FRONTEND=noninteractive

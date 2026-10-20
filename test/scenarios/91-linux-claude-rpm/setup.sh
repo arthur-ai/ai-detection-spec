@@ -22,12 +22,14 @@ key_url=https://downloads.claude.ai/keys/claude-code.asc
 fpr=31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE
 retry "the Claude Code signing key" curl --retry 3 -fsSL -o /tmp/claude-code.asc "$key_url" \
   || { echo "FAIL: the signing key did not download"; exit 1; }
-if command -v gpg >/dev/null 2>&1; then
-  gpg --show-keys --with-colons /tmp/claude-code.asc 2>/dev/null | grep -q "^fpr:*:$fpr:" \
-    || { echo "FAIL: the signing key's fingerprint is not $fpr"; exit 1; }
-else
-  echo "WARN: no gpg, so the key's fingerprint was not checked"
-fi
+# No gpg is a FAIL, not a warning: an unchecked key imported into rpm is a key gpgcheck=1
+# then trusts. And exactly one key, because `rpm --import` imports every key in the file.
+command -v gpg >/dev/null 2>&1 \
+  || { echo "FAIL: gpg is needed to check the signing key's fingerprint and could not be installed"; exit 1; }
+keys=$(gpg --show-keys --with-colons /tmp/claude-code.asc 2>/dev/null | grep -c '^pub:' || true)
+[ "$keys" = 1 ] || { echo "FAIL: the signing key file holds $keys keys, not one"; exit 1; }
+gpg --show-keys --with-colons /tmp/claude-code.asc 2>/dev/null | grep -q "^fpr:*:$fpr:" \
+  || { echo "FAIL: the signing key's fingerprint is not $fpr"; exit 1; }
 try "importing the verified key into rpm" sudo_maybe rpm --import /tmp/claude-code.asc \
   || { echo "FAIL: rpm would not import the key"; exit 1; }
 rm -f /tmp/claude-code.asc
