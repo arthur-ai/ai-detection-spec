@@ -10,16 +10,16 @@ Every AI agent this repo finds, every identifier it is matched on,
 and the CI test behind each one.
 
 ![agents](https://img.shields.io/badge/agents-40-1D4E89)
-![identifiers](https://img.shields.io/badge/identifiers-109-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-109%2F109-2E7D57)
-![real install](https://img.shields.io/badge/by_real_install-109-2E7D57)
+![identifiers](https://img.shields.io/badge/identifiers-110-1D4E89)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-110%2F110-2E7D57)
+![real install](https://img.shields.io/badge/by_real_install-110-2E7D57)
 
 </div>
 
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 109 of 109. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all; the build rejects it.
+**Every identifier is proved by a real install in CI** — 110 of 110. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all; the build rejects it.
 
 ## 🧪 Why a real install is the bar
 
@@ -45,7 +45,7 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | **Google Antigravity** | **`com.google.antigravity`**, **`com.google.antigravity-ide`**, **`antigravity`**, **`antigravity-ide`** | 10-desktop-apps |
 | **Augment Code** | **`@augmentcode/auggie`**, **`augment.vscode-augment`** | 20-cli-agents, 71-linux-cli-agents, 85-linux-vscode-agents |
 | **BLACKBOX AI** | **`blackboxapp.blackbox`**, **`blackboxapp.blackboxagent`** | 85-linux-vscode-agents |
-| **Claude Code** | **`@anthropic-ai/claude-code`**, **`anthropic.claude-code`**, **`~/.claude`**, **`~/.local/bin/claude`**, **`~/.local/share/claude/versions/`**, **`claude-code`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 83-linux-claude-running, 85-linux-vscode-agents, 89-linux-claude-deb, 90-demo-fleet |
+| **Claude Code** | **`@anthropic-ai/claude-code`**, **`anthropic.claude-code`**, **`~/.claude`**, **`~/.local/bin/claude`**, **`~/.local/share/claude/versions/`**, **`claude-code`**, **`claude-code`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 83-linux-claude-running, 85-linux-vscode-agents, 89-linux-claude-deb, 90-demo-fleet, 91-linux-claude-rpm |
 | **Cline** | **`cline`**, **`saoudrizwan.claude-dev`**, **`cline`** | 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode, 80-linux-jetbrains |
 | **CodeGPT** | **`danielsanmedium.dscodegpt`** | 85-linux-vscode-agents |
 | **Codex CLI** | **`codex`**, **`@openai/codex`**, **`openai.chatgpt`**, **`~/.codex`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 85-linux-vscode-agents, 90-demo-fleet |

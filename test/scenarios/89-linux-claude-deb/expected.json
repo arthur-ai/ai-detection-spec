@@ -31,6 +31,6 @@
   ],
   "known_gaps": [
     "/usr/bin/claude is not a route. binaries is home-rooted, and the package row carries the version, which the binary's path does not, so dpkg's row is the better evidence anyway.",
-    "The dnf and apk repositories carry the same package name and are not exercised. rpm_packages for Claude Code is deliberately absent until a scenario installs it."
+    "The apk repository is not exercised, and could not be: no route reads Alpine's apk_packages table, so an Alpine install of Claude Code is a blind spot of the catalog rather than a missing identifier. 91-linux-claude-rpm carries the dnf repository."
   ]
 }

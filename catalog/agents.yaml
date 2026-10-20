@@ -247,10 +247,14 @@ agents:
     # signed with the release key 31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE. The package puts
     # an ELF at /usr/bin/claude and nothing under any home, so every route above misses it:
     # a fleet installed through apt reported this row while the classifier called each
-    # machine clean. 89-linux-claude-deb installs it. The dnf and apk repositories carry the
-    # same package name and are DELIBERATELY ABSENT until a scenario installs one: a name
-    # read off a repository index is not a fact.
+    # machine clean. 89-linux-claude-deb installs it.
     deb_packages: [claude-code]
+    # The dnf repository, https://downloads.claude.ai/claude-code/rpm/stable, same key, same
+    # package name, x86_64 and aarch64. Read off 91-linux-claude-rpm's install rather than off
+    # the repository index. The apk repository exists too and is not a route this catalog
+    # has: Alpine's apk_packages table is not read by any query, so an Alpine install is a
+    # blind spot rather than a missing identifier.
+    rpm_packages: [claude-code]
 
   - id: openclaw
     name: OpenClaw

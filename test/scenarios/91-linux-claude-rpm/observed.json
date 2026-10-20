@@ -1,0 +1,14 @@
+{
+  "scenario": "91-linux-claude-rpm",
+  "identifiers": [
+    {
+      "agent": "claude-code",
+      "route": "rpm_packages",
+      "value": "claude-code",
+      "agent_version": "2.1.304",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "aarch64"
+    }
+  ]
+}

@@ -94,6 +94,8 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 86-linux-jetbrains-agents | Amazon Q's plugin needs AWS Core (aws.toolkit.core) to load in an IDE. It is not installed, because only the directory is under test. |
 | 87-linux-pi | Over-matches under bun: OpenClaw 2026.1.29 to 2026.5.27 depended on pi-coding-agent, and `bun add -g` hoists it beside the global, so such a host reports Pi as well. npm -g nests it and is unaffected. Measured with bun 1.4.3. |
 | 89-linux-claude-deb | /usr/bin/claude is not a route. binaries is home-rooted, and the package row carries the version, which the binary's path does not, so dpkg's row is the better evidence anyway. |
-| 89-linux-claude-deb | The dnf and apk repositories carry the same package name and are not exercised. rpm_packages for Claude Code is deliberately absent until a scenario installs it. |
+| 89-linux-claude-deb | The apk repository is not exercised, and could not be: no route reads Alpine's apk_packages table, so an Alpine install of Claude Code is a blind spot of the catalog rather than a missing identifier. 91-linux-claude-rpm carries the dnf repository. |
+| 91-linux-claude-rpm | Runs in Rocky 9, Fedora 41 and Amazon Linux 2023 containers on an ubuntu runner, because GitHub offers no RPM-distro runner. A container has no systemd, so `unit` is 0 here and the systemd marker reports absent, correctly. |
+| 91-linux-claude-rpm | The apk repository is not exercised, and could not be: no route reads Alpine's apk_packages table, so an Alpine install of Claude Code is a blind spot of the catalog rather than a missing identifier. |
 
 `11-perplexity-desktop`, `50-autonomous`, `57-clawdbot-era` need macOS 15 or newer, so CI skips them on older runners rather than failing them. Each scenario's `requires.json` carries the reason.
