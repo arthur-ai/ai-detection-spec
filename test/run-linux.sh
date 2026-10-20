@@ -140,6 +140,9 @@ note() { [ -n "${GITHUB_STEP_SUMMARY:-}" ] && printf -- '- %s: %s\n' "$1" "$2" >
 [ -n "${GITHUB_STEP_SUMMARY:-}" ] && printf '### %s\n\n' "$LINUX_IMAGE" >> "$GITHUB_STEP_SUMMARY"
 stage() {
   [ -n "$OBSERVED_OUT" ] || return 0
+  # A scenario can pass and leave no file: a new one whose record() found nothing to
+  # write. Nothing to upload is not a failure of the scenario that just passed.
+  [ -f "$HERE/scenarios/$1/observed.json" ] || return 0
   local dst="$OBSERVED_OUT/observed-$1--$OBSERVED_LABEL"
   mkdir -p "$dst" && cp "$HERE/scenarios/$1/observed.json" "$dst/observed.json"
 }
