@@ -135,7 +135,8 @@ jobs:
           # transient rather than an image's whole list. A name no job lists fails this
           # job rather than running nothing.
           if [ "$EVENT" = workflow_dispatch ] && [ -n "$ONLY" ]; then
-            # shellcheck disable=SC2086 -- ONLY is a space-separated list, split on purpose
+            # ONLY is a space-separated list, split on purpose.
+            # shellcheck disable=SC2086
             python3 tools/ci_scope.py --scenarios --summary "$GITHUB_STEP_SUMMARY" \
               --only $ONLY >> "$GITHUB_OUTPUT"
           else

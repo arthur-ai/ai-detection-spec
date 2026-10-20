@@ -123,7 +123,8 @@ rm -f /tmp/o.deb /tmp/o.rpm
 # scenario starts from. Tagged with this shell's pid so two runs on one machine do not
 # share a tag, and removed on exit; the next run rebuilds it from the base image.
 prepped="ai-discovery-prep:$(printf '%s' "$LINUX_IMAGE" | tr '/:' '__')-$$"
-# shellcheck disable=SC2086 -- LINUX_DOCKER_ARGS is a list of flags, split on purpose
+# LINUX_DOCKER_ARGS is a list of flags, split on purpose.
+# shellcheck disable=SC2086
 cid="$(docker create $LINUX_DOCKER_ARGS "$LINUX_IMAGE" bash -c "$prep")" \
   || { echo "run-linux: could not create a container from $LINUX_IMAGE" >&2; exit 1; }
 cleanup() { docker rm -f "$cid" >/dev/null 2>&1; docker rmi -f "$prepped" >/dev/null 2>&1; }
@@ -140,9 +141,8 @@ note() { [ -n "${GITHUB_STEP_SUMMARY:-}" ] && printf -- '- %s: %s\n' "$1" "$2" >
 [ -n "${GITHUB_STEP_SUMMARY:-}" ] && printf '### %s\n\n' "$LINUX_IMAGE" >> "$GITHUB_STEP_SUMMARY"
 stage() {
   [ -n "$OBSERVED_OUT" ] || return 0
-  # A scenario can pass and leave no file: a new one whose record() found nothing to
-  # write. Nothing to upload is not a failure of the scenario that just passed.
-  [ -f "$HERE/scenarios/$1/observed.json" ] || return 0
+  # record() writes the file on every run that reaches it, so a missing one here is a
+  # failure, not a scenario with nothing to say.
   local dst="$OBSERVED_OUT/observed-$1--$OBSERVED_LABEL"
   mkdir -p "$dst" && cp "$HERE/scenarios/$1/observed.json" "$dst/observed.json"
 }
@@ -153,7 +153,8 @@ for s in "${scenarios[@]}"; do
   [ -f "$exp" ] || { echo "run-linux: no such scenario: $s" >&2; fail=$((fail+1)); continue; }
   if in_actions; then echo "::group::$s"; else echo; echo "=============== $s ($LINUX_IMAGE)"; fi
 
-  # shellcheck disable=SC2086 -- LINUX_DOCKER_ARGS is a list of flags, split on purpose
+  # LINUX_DOCKER_ARGS is a list of flags, split on purpose.
+  # shellcheck disable=SC2086
   docker run --rm $LINUX_DOCKER_ARGS -v "$ROOT:/repo" -w /repo "$prepped" bash -c "
 set -uo pipefail
 test/scenarios/$s/setup.sh
@@ -192,7 +193,16 @@ python3 tools/agent_status.py --record /tmp/out.json test/scenarios/$s \
   rc=$?
   in_actions && echo "::endgroup::"
   case "$rc" in
-    0) echo "--- $s PASS"; pass=$((pass+1)); stage "$s"; note "$s" PASS ;;
+    0) # A PASS WHOSE EVIDENCE DID NOT STAGE IS NOT A PASS. Nothing would be uploaded,
+       # collect would count the scenario pending rather than reported, and the coverage
+       # gate would let the run through without the proof it just produced.
+       if stage "$s"; then
+         echo "--- $s PASS"; pass=$((pass+1)); note "$s" PASS
+       else
+         echo "--- $s FAIL: passed, but its observation could not be staged for upload"
+         fail=$((fail+1)); note "$s" "FAIL (observation not staged)"
+         in_actions && echo "::error title=$s on $LINUX_IMAGE::$s passed but its observed.json could not be staged for upload"
+       fi ;;
     3) echo "--- $s SKIP"; skip=$((skip+1)); note "$s" SKIP ;;
     *) echo "--- $s FAIL (exit $rc)"; fail=$((fail+1)); note "$s" "FAIL (exit $rc)"
        # An annotation names the scenario on the job page and in the checks tab, so a
