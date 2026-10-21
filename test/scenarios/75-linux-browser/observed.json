@@ -8,7 +8,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "39553935056"
+      "run": "39553942976"
     },
     {
       "agent": "claude-desktop",
@@ -17,7 +17,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "39553935056"
+      "run": "39553942976"
     },
     {
       "agent": "claude-desktop",
@@ -26,7 +26,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "39553935056"
+      "run": "39553942976"
     },
     {
       "agent": "claude-desktop",
@@ -35,7 +35,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "39553935056"
+      "run": "39553942976"
     },
     {
       "agent": "claude-desktop",
@@ -44,7 +44,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "39553935056"
+      "run": "39553942976"
     }
   ]
 }
