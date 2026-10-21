@@ -7,7 +7,7 @@
       "value": "~/.local/bin/muse",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39552193224"
+      "run": "39553935056"
     },
     {
       "agent": "muse-code",
@@ -15,7 +15,7 @@
       "value": "~/.local/bin/muse",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39552193224"
+      "run": "39553935056"
     },
     {
       "agent": "muse-desktop",
@@ -24,7 +24,7 @@
       "agent_version": "8.0",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39552193224"
+      "run": "39553935056"
     },
     {
       "agent": "muse-desktop",
@@ -33,7 +33,7 @@
       "agent_version": "8.0",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39552193224"
+      "run": "39553935056"
     }
   ]
 }
