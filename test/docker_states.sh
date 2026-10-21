@@ -358,6 +358,13 @@ check "the rows survived" "$(printf '%s' "$BOUNDED_OUT" | grep -q '"x"' && echo 
       "BOUNDED_OUT held: $BOUNDED_OUT"
 check "returns well inside the bound (${elapsed}s)" \
       "$(python3 -c "print(1 if $elapsed < 2 else 0)")" "took ${elapsed}s"
+# The wedge above left BOUNDED_SIGNAL set; a call that finished must not carry it forward.
+check "and records no kill, though the last call was killed" \
+      "$([ -z "$BOUNDED_SIGNAL" ] && echo 1 || echo 0)" "BOUNDED_SIGNAL held: $BOUNDED_SIGNAL"
+run_bounded 3 /dev/null sh -c 'exit 124'; rc=$?
+check "a child's own exit 124 comes back as 124 with no kill recorded, so it is no timeout" \
+      "$([ "$rc" = 124 ] && [ -z "$BOUNDED_SIGNAL" ] && echo 1 || echo 0)" \
+      "rc=$rc BOUNDED_SIGNAL=$BOUNDED_SIGNAL"
 
 echo "  inlining the branch costs the whole inventory, which is why the split exists"
 # THE EVIDENCE FOR THE ARCHITECTURE, and the reason nobody should fold containers back into
@@ -481,6 +488,43 @@ except Exception: print(0); raise SystemExit
 print(1 if len(r) == 1 and r[0]["kind"] == "scan"
       and r[0]["extra"].startswith("timeout:") else 0)' 2>/dev/null)" \
       "got: $out"
+stop_fake
+
+echo "  a run leaves nothing in TMPDIR, finished or stopped"
+# Each runner keeps every temporary file in one directory, exported as TMPDIR, and removes
+# it on exit and on a signal. That covers osqueryi's own leftovers -- it leaves an empty
+# osquery-<n> directory in TMPDIR on every exit -- and a run that a scheduler stops.
+start_fake wedge
+STOPDIR="$(mktemp -d "${TMPDIR:-/tmp}/stopped.XXXXXX")"
+# Finished, and the bound fired: osqueryi was SIGKILLed, the one exit it cannot tidy after.
+# With a RUN_DIR in the environment, which is somebody else's: the runner makes its own.
+RUN_DIR="$STOPDIR/inherited" TMPDIR="$STOPDIR" OSQI="$OSQI" "$ROOT/bin/container-scan" \
+  --socket "$SOCK" --scan-timeout 2 >/dev/null 2>&1
+check "a finished scan left nothing behind" \
+      "$([ -z "$(ls -A "$STOPDIR")" ] && echo 1 || echo 0)" \
+      "left in TMPDIR: $(ls -A "$STOPDIR" | tr '\n' ' ')"
+# Stopped the way systemd or launchd stops an overrunning run: TERM to its whole process
+# group, two seconds into a 30s bound -- bin/container-scan alone, and bin/discover --write
+# with container-scan as one of its branches.
+# Job control, so each run leads a process group of its own and the TERM reaches it all.
+set -m
+TMPDIR="$STOPDIR" OSQI="$OSQI" "$ROOT/bin/container-scan" --socket "$SOCK" \
+  --scan-timeout 30 >/dev/null 2>&1 &
+stop_cs=$!
+TMPDIR="$STOPDIR" OSQI="$OSQI" CONTAINER_SCAN_TIMEOUT=30 "$ROOT/bin/discover" \
+  --write "$STOPDIR.json" --socket "$SOCK" >/dev/null 2>&1 &
+stop_d=$!
+set +m
+sleep 2
+kill -TERM -- "-$stop_cs" "-$stop_d" 2>/dev/null
+wait "$stop_cs" "$stop_d" 2>/dev/null
+check "a stopped run left nothing behind, from either runner" \
+      "$([ -z "$(ls -A "$STOPDIR")" ] && echo 1 || echo 0)" \
+      "left in TMPDIR: $(ls -A "$STOPDIR" | tr '\n' ' ')"
+# A wedged osqueryi ignores TERM (see run_bounded), and a scheduler's SIGKILL is what ends
+# it. Sent here, so the cases below do not start with one holding the socket.
+pkill -KILL -f "docker_socket=$SOCK" 2>/dev/null
+rm -rf "$STOPDIR" "$STOPDIR.json"
 stop_fake
 
 # --- the cache pattern -------------------------------------------------------------------
@@ -1063,8 +1107,9 @@ json.dump(pack, open(sys.argv[2], "w"))
 # Hand the expected kinds to the verdict below rather than making it guess.
 json.dump(sorted(BORROW[1]), open(sys.argv[2] + ".kinds", "w"))
 MKPACK
-DISCOVER_PACK="$PACKDIR/pack.conf" OSQI="$OSQI" "$ROOT/bin/discover" \
-  --write "$PACKDIR/out.json" >/dev/null 2>/dev/null
+mkdir "$PACKDIR/tmp"
+TMPDIR="$PACKDIR/tmp" DISCOVER_PACK="$PACKDIR/pack.conf" OSQI="$OSQI" "$ROOT/bin/discover" \
+  --write "$PACKDIR/out.json" >/dev/null 2>"$PACKDIR/stderr"
 eval "$(python3 - "$PACKDIR/out.json" <<'VERDICT'
 import json, sys
 valid = good = attributed = 0
@@ -1089,6 +1134,15 @@ VERDICT
 check "the payload is still valid JSON" "$V_VALID" "$V_DETAIL"
 check "the good branches still reported" "$V_GOOD" "$V_DETAIL"
 check "the broken branch reports its own failure, not silence" "$V_ATTR" "$V_DETAIL"
+# The reason as well as the fact: osqueryi names the missing table, and a log reading only
+# "did not complete" leaves whoever reads it to find that out by hand.
+check "and its log line says why, in osqueryi's words" \
+      "$(grep -q "branch 'broken' did not complete (exit [1-9]" "$PACKDIR/stderr" \
+         && grep -q "osqueryi: .*table_that_does_not_exist" "$PACKDIR/stderr" && echo 1 || echo 0)" \
+      "stderr said: $(head -c 400 "$PACKDIR/stderr")"
+check "and the writer left nothing in TMPDIR" \
+      "$([ -z "$(ls -A "$PACKDIR/tmp")" ] && echo 1 || echo 0)" \
+      "left: $(ls -A "$PACKDIR/tmp" | tr '\n' ' ')"
 rm -rf "$PACKDIR"
 
 echo

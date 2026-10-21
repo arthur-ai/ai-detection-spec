@@ -334,8 +334,65 @@ fi
 # lends out the guard and the bound rather than having them copied. Two things can break
 # that silently: deleting the `(return 0 2>/dev/null) && return 0` line, after which
 # sourcing runs a live scan; and renaming a function the callers use.
-bash -c '. "'"$HERE"'/../bin/container-scan" && type -t run_bounded docker_healthy docker_socket_path marker json_str json_row osq_run json_concat pack_branches merge_sql merge_branches >/dev/null' \
+bash -c '. "'"$HERE"'/../bin/container-scan" && type -t own_run_dir run_bounded docker_healthy docker_socket_path marker json_str json_row osq_run json_concat pack_branches merge_sql merge_branches >/dev/null' \
   || { echo "FAIL: bin/container-scan is no longer safely sourceable, or a shared function was renamed"; fail=1; }
+
+# ONE NAMESPACE, TWO FILES. bin/discover sources bin/container-scan, so a global or function
+# either assigns overwrites the other's in silence -- DEEP and CACHE both collided that way.
+# bin/discover's header lists what each file defines, for the next addition to be checked
+# against; this derives the same sets from the code, because that list went stale without
+# anything failing. The files may share ROOT and nothing else: both set it to one directory.
+python3 - "$HERE/.." <<'NAMES' || fail=1
+import re, sys
+root = sys.argv[1]
+SHARED = {"ROOT"}
+
+def defined(path):
+    code = "\n".join(l for l in open(path).read().splitlines() if not l.lstrip().startswith("#"))
+    fns = set(re.findall(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\(\)\s*\{", code, re.M))
+    # Upper case is a global: every local in both files is lower case. IFS is only ever a
+    # prefix on one `read`, which scopes it to that command.
+    glb = set(re.findall(r"(?<![A-Za-z0-9_$])([A-Z][A-Z0-9_]*)\+?=", code)) - {"IFS"}
+    return glb, fns
+
+def documented(path):
+    lists, cur = [], None
+    for line in open(path).read().splitlines():
+        m = re.match(r"#\s{3}(globals|functions)\s+(\S.*)$", line)
+        if m:
+            cur = set(m.group(2).split())
+            lists.append(cur)
+            continue
+        m = re.match(r"#\s{10,}(\S.*)$", line)
+        if cur is not None and m:
+            cur.update(m.group(1).split())
+        else:
+            cur = None
+    return lists
+
+cs_g, cs_f = defined(f"{root}/bin/container-scan")
+d_g, d_f = defined(f"{root}/bin/discover")
+lists = documented(f"{root}/bin/discover")
+bad = []
+if len(lists) != 4:
+    bad.append(f"bin/discover's header should hold four lists, and holds {len(lists)}")
+else:
+    for label, doc, code in (("container-scan globals", lists[0], cs_g),
+                             ("container-scan functions", lists[1], cs_f),
+                             ("discover globals", lists[2], d_g - SHARED),
+                             ("discover functions", lists[3], d_f)):
+        if doc != code:
+            bad.append(f"{label}: listed and not defined {sorted(doc - code)}; "
+                       f"defined and not listed {sorted(code - doc)}")
+clash = ((cs_g & d_g) | (cs_f & d_f)) - SHARED
+if clash:
+    bad.append(f"both files define {sorted(clash)}, and sourcing makes them one name")
+for b in bad:
+    print(f"FAIL: namespace -- {b}")
+if bad:
+    sys.exit(1)
+print("namespace: ok, bin/discover lists what both files define, and they share only ROOT")
+NAMES
 
 # test/lib/assert.sh is sourced by test/assert.sh, test/run.sh and test/run-gce.sh. `bash -n`
 # cannot see a function that is missing, and a scenario found exactly that: assert_match_sql
