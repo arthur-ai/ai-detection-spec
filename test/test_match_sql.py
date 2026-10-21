@@ -257,6 +257,8 @@ def main():
         ("daemon", "ai.openclaw.gateway", "openclaw"),
         ("daemon", "AI.OPENCLAW.X", None),                       # prefix is case-sensitive
         ("file", "/Users/u/.local/bin/hermes-acp", "hermes"),         # home-prefix, open
+        ("file", "/home/u/.local/bin/muse-bin-1.4.10-R6427.1", "muse-code"),  # after a `-`
+        ("file", "/home/u/.local/bin/musescore", None),               # ...and nothing else
         ("file", "/home/u/.local/share/uv/tools/openclaw/", "openclaw"),   # npm bridge
         ("file", "/root/.local/pipx/venvs/aider-chat/", "aider"),          # tool-dir
         ("image", "docker.io/paulgauthier/aider:v1,paulgauthier/aider:latest", "aider"),

@@ -1278,19 +1278,19 @@ check("...and matched with the vendor's case (`sourcegraph` is not Cody's direct
 _c, _u = _claims(_kind("file", "/Users/dana/.local/bin/muse",
                        "/home/dana/.local/bin/muse-bin-1.4.10-R6427.1",
                        "/home/dana/.local/bin/amuse", "/home/dana/.muse/",
-                       "/home/dana/.local/bin/musescore"))
+                       "/home/dana/.local/bin/musescore",
+                       "/home/dana/.local/bin/museum"))
 check("Muse Code's launcher and the versioned binary beside it are one install",
       _c.get("/Users/dana/.local/bin/muse") == "muse-code"
       and _c.get("/home/dana/.local/bin/muse-bin-1.4.10-R6427.1") == "muse-code", f"got {_c}")
 check("the anchor is the front: `amuse` claims nothing, and ~/.muse is not a value",
       "/home/dana/.local/bin/amuse" in _u and "/home/dana/.muse/" in _u,
       "~/.muse appears on first run, which no scenario does, so it stays evidence")
-# THE OVER-MATCH, RECORDED RATHER THAN HIDDEN. `binaries` is front-anchored for hermes's
-# siblings, so a MuseScore alias at ~/.local/bin/musescore reads as Muse Code today. This
-# asserts the current behaviour so that a change to the route is seen here, not in the field.
-check("...and the known over-match: a `musescore` alias is claimed as Muse Code",
-      _c.get("/home/dana/.local/bin/musescore") == "muse-code",
-      "if this stopped matching, the route's anchoring changed; re-read the catalog comment")
+# `binaries` admits a `-` after the value for hermes's siblings and Muse Code's versioned
+# binary, and nothing else, so a MuseScore alias is not Muse Code.
+check("...and neither a `musescore` alias nor a tool named `museum` is claimed",
+      {"/home/dana/.local/bin/musescore", "/home/dana/.local/bin/museum"} <= set(_u),
+      f"got {_c}")
 _c, _u = _claims(_kind("app", "com.meta.endo", "org.sparkle-project.Sparkle.Updater"))
 check("Muse for Mac is its bundle id and not the coding agent",
       _c == {"com.meta.endo": "muse-desktop"}, f"got {_c}")

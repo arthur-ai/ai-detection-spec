@@ -153,13 +153,17 @@ def home_pattern(value, mode):
                    returns both directories side by side.
       home-prefix  `~/.local/bin/hermes` -> still matches hermes-acp and hermes-agent,
                    which is DELIBERATE: one `uv tool install` writes all three commands
-                   and they are the same install. Anchoring this mode would lose two of
-                   the three, which is why the missing `$` is not a blanket fix.
+                   and they are the same install. So the value may be followed by a `-`
+                   or a `/`, and by nothing else: `~/.local/bin/muse` keeps Muse Code's
+                   muse-bin-<version> and stops claiming a `musescore` alias. A value
+                   ending in `/` is a directory, and claims everything under it.
     """
     body = re.escape(value[2:])                      # strip the leading '~/'
     if mode == "home-dir":
         return re.compile("^" + HOME_ROOTS + body + "/?$")
-    return re.compile("^" + HOME_ROOTS + body)
+    # A group rather than a lookahead: dist/signatures.sql hands this pattern to osquery's
+    # regex_match, and a pattern it cannot compile aborts the whole statement.
+    return re.compile("^" + HOME_ROOTS + body + ("" if value.endswith("/") else "(?:[-/]|$)"))
 
 
 def build_index(catalog, registry):
