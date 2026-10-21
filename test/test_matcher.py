@@ -1352,6 +1352,57 @@ check("...and passes the same value under the route it borrows from",
 check("...and refuses the key empty too: present, it says the route is declared here",
       any("bundle_ids" in e for e in _bre("probe", {"running_apps": []}, _reg)))
 
+# --- the row that speaks for a finding ----------------------------------------------
+# One rule for every consumer, so each one does not pick its own. Rows are the real shapes:
+# dpkg's row off an apt install of Claude Code (Ubuntu 22.04), osquery's chrome_extensions
+# rows, and a node process running an npm global.
+_rank = _cl.kind_rank(_cl.load_routes())
+
+
+def _r(kind, ident, ver="", loc="", perms=""):
+    return {"kind": kind, "id": ident, "ver": ver, "loc": loc, "extra": "", "perms": perms}
+
+
+_claude_deb = [_r("file", "/home/u/.claude/", loc="/home/u/.claude/"),
+               _r("deb", "claude-code", "2.1.292-1")]
+check("an install record speaks before a state directory declared ahead of it",
+      _cl.describe(_claude_deb, _rank) == {"primary": 1, "version": "2.1.292-1"},
+      str(_cl.describe(_claude_deb, _rank)))
+check("...the order this rule overrides: `file` is declared ahead of `deb`",
+      _rank["file"] < _rank["deb"], str(_rank))
+_live = [_r("proc", "@openai/codex", loc="/usr/bin/node"),
+         _r("npm", "@openai/codex", "0.150.1", "/usr/lib/node_modules/@openai/codex")]
+check("presence speaks before liveness, and a running row's path is never the install's",
+      _cl.describe(_live, _rank)
+      == {"primary": 1, "version": "0.150.1", "path": "/usr/lib/node_modules/@openai/codex"},
+      str(_cl.describe(_live, _rank)))
+_native = [_r("proc", "/home/u/.local/share/claude/versions/2.1.292",
+              loc="/home/u/.local/share/claude/versions/2.1.292"),
+           _r("file", "/home/u/.local/bin/claude", loc="/home/u/.local/bin/claude")]
+check("...and when neither carries a version and `proc` is declared ahead of `file`",
+      _cl.primary(_native, _rank) == 1 and _rank["proc"] < _rank["file"], str(_rank))
+_profile = "/Users/x/Library/Application Support/Google/Chrome/Default"
+_exts = [_r("ext", "fcoeoabgfenejglbffodgkkbkcdhcgfn", "1.0.90", _profile, "tabs,unreferenced"),
+         _r("ext", "fcoeoabgfenejglbffodgkkbkcdhcgfn", "1.0.94", _profile, "tabs")]
+check("a loaded extension speaks before a leftover version directory",
+      _cl.primary(_exts, _rank) == 1)
+check("a container's state is never reported as a version",
+      "version" not in _cl.describe([_r("container", "x/y:1", "running", "abc123")], _rank))
+check("ties keep evidence order",
+      _cl.primary([_r("file", "/home/u/.a/"), _r("file", "/home/u/.b/")], _rank) == 0)
+check("every kind that carries a version or a path is a registered kind",
+      (_cl.VERSION_KINDS | _cl.PATH_KINDS) <= set(_rank),
+      str(sorted((_cl.VERSION_KINDS | _cl.PATH_KINDS) - set(_rank))))
+with _tf2.NamedTemporaryFile("w", suffix=".json", delete=False) as _fh6:
+    json.dump(_claude_deb, _fh6)
+_pj = json.loads(subprocess.run(
+    [sys.executable, str(ROOT / "bin" / "classify"), _fh6.name, "--json"],
+    capture_output=True, text=True, check=True).stdout)
+_pf = {f["id"]: f for f in _pj["findings"]}.get("claude-code", {})
+check("--json names the primary row and carries its version",
+      _pf.get("primary") == 1 and _pf.get("version") == "2.1.292-1" and "path" not in _pf,
+      json.dumps(_pf))
+
 print()
 if failures:
     print(f"matcher: FAIL ({len(failures)})")

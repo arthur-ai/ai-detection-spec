@@ -165,6 +165,11 @@ OpenClaw  [Personal agent]
     npm     openclaw  2026.8.1
 ```
 
+With `--json`, each finding also names the evidence row that speaks for it: `primary` is its
+index, and `version` and `path` are that row's, where its kind carries one. A package or
+bundle record speaks before a path that merely exists, so a consumer recording one version
+per agent does not have to choose.
+
 Run the inventory query alone and you get the raw rows it matched those from:
 
 ```json
