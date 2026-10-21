@@ -30,6 +30,6 @@
     "cursor"
   ],
   "known_gaps": [
-    "Runs in Rocky 9, Fedora 41 and Amazon Linux 2023 containers on an ubuntu runner, because GitHub offers no RPM-distro runner. A container has no systemd, so `unit` is 0 here and the systemd marker reports absent -- correctly. test/run-gce.sh runs it on a Rocky 9 VM, where it is not."
+    "Runs in Rocky 9, Fedora 41 and Amazon Linux 2023 containers on an ubuntu runner, because GitHub offers no RPM-distro runner. A container has no systemd, so `unit` is 0 here and the systemd marker reports absent -- correctly. test/run-gce.sh runs it on a Rocky 9 VM and test/run-ec2.sh on Amazon Linux 2023 instances, where it is not."
   ]
 }

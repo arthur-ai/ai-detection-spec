@@ -32,6 +32,6 @@
   ],
   "known_gaps": [
     "`claude mcp serve` runs unauthenticated with no client connected, so this proves what a running Claude Code process looks like to osquery, not an agent at work.",
-    "Skips in a default container, where osquery cannot read another user's executable path. It runs for real on CI's ubuntu runner and under test/run-gce.sh."
+    "Skips in a default container, where osquery cannot read another user's executable path. It runs for real on CI's ubuntu runner and under test/run-gce.sh and test/run-ec2.sh."
   ]
 }

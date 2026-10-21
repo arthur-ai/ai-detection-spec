@@ -8,6 +8,15 @@
       "agent_version": "1.3.0",
       "platform": "linux",
       "os": "amzn-2023",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "pi",
+      "route": "npm",
+      "value": "@earendil-works/pi-coding-agent",
+      "agent_version": "1.3.0",
+      "platform": "linux",
+      "os": "amzn-2023",
       "arch": "x86_64",
       "run": "39563223448"
     },

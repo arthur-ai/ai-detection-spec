@@ -317,7 +317,7 @@
       "agent": "claude-code",
       "route": "vscode_extensions",
       "value": "anthropic.claude-code",
-      "agent_version": "2.1.301",
+      "agent_version": "2.1.306",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "aarch64"
@@ -707,7 +707,7 @@
       "agent": "kilo-code",
       "route": "vscode_extensions",
       "value": "kilocode.kilo-code",
-      "agent_version": "7.8.8",
+      "agent_version": "7.8.15",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "aarch64"

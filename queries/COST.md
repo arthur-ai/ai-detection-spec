@@ -156,6 +156,51 @@ same number twice — so `runtime-linux.sql` is banded `slow` on the strength of
 VM, and the composed figure should be read as "usually two seconds, occasionally fourteen"
 rather than as either number alone.
 
+## EC2, `t3.small` and `t4g.small`, 2026-10-21
+
+Stock Amazon Linux 2023 and Ubuntu 24.04 images, osquery 5.23.1, run by `test/run-ec2.sh`
+before any scenario installed anything. Both shapes have 2 vCPU and 2GB, and both are
+burstable. In the default **unlimited** credit mode they run at full speed, and AWS bills for
+any surplus. In **standard** mode an instance that has spent its credits is held to its
+baseline, 20% of each vCPU. `tools/measure.py --check` passed on every instance; floors of three.
+
+**Unlimited credits:**
+
+| query | AL2023 `t3.small` | AL2023 arm64 `t4g.small` | Ubuntu 24.04 `t3.small` |
+|---|---|---|---|
+| `packages-linux.sql` | 0.53s, 495 rows | 0.68s, 492 | 0.25s, 652 |
+| `runtime-linux.sql` | 1.23s, 296 | 1.52s, 286 | 0.97s, 395 |
+| every other Linux query | 0.23–0.28s | 0.04–0.31s | 0.03–0.29s |
+| `dist/discovery-linux.sql` | 1.73s, 801 | 2.22s, 788 | 1.08s, 1068 |
+
+Cold, as an endpoint's first scan pays it: 2.8s, 2.3s and 1.6s. `bin/discover --write`: 5.8s,
+4.6s and 5.0s. A second Amazon Linux `t3.small` measured 3.0s and 6.0s.
+
+**Standard credits, held to the baseline.** A fresh instance in standard mode has no credits
+to spend. The harness keeps every vCPU busy until the hypervisor throttles it, and that took
+one minute on each shape: 80% steal on the `t3.small` and 78% on the `t4g.small`, which is the
+20% baseline exactly. The scan, measured right after, saw 49–57% steal on every step:
+
+| | AL2023 `t3.small` | AL2023 arm64 `t4g.small` |
+|---|---|---|
+| composed artifact, cold | 11.9s | 10.2s |
+| composed artifact, warm | 10.1s | 8.7s |
+| `bin/discover --write` | 16.2s | 14.0s |
+| floor, `runtime-linux.sql` | 2.15s | 3.90s |
+| floor, `dist/discovery-linux.sql` | 4.26s | 5.21s |
+
+- **A single run on a held instance is four to five times slower; its floors only about
+  twice.** Between short runs a throttled instance earns back a little credit, which a
+  best-of-three measurement finds and a scheduled scan does not.
+- **The write path stays inside its bound.** Every branch runs in its own process under a 30s
+  kill, and the whole `--write` took 16s at worst.
+- **The composed artifact does not stay under its 10s gate on a single cold run** when held:
+  11.9s on the `t3.small`. That gate is the self-imposed convention described above, checked
+  on floors, which passed at 4.3s. It is one more reason to deploy the scheduled `--write`,
+  with its bound per branch, on a burstable fleet.
+- **On the held `t4g.small`, `packages-linux.sql` ran over its `fast` band** (1.85s), within
+  the 2x tolerance.
+
 ## CI baseline
 
 GitHub-hosted `macos-15`, image macOS **15.7.7 arm64**, 26 applications, 117 Homebrew

@@ -239,7 +239,7 @@
       "agent": "cline",
       "route": "npm",
       "value": "cline",
-      "agent_version": "3.0.71",
+      "agent_version": "3.0.73",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "aarch64"
@@ -326,7 +326,7 @@
       "agent": "codex-cli",
       "route": "npm",
       "value": "@openai/codex",
-      "agent_version": "0.162.1",
+      "agent_version": "0.163.0",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "aarch64"
@@ -569,7 +569,7 @@
       "agent": "copilot-cli",
       "route": "npm",
       "value": "@github/copilot",
-      "agent_version": "1.0.98",
+      "agent_version": "1.0.102",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "aarch64"
@@ -743,7 +743,7 @@
       "agent": "kilo-code",
       "route": "npm",
       "value": "@kilocode/cli",
-      "agent_version": "7.8.8",
+      "agent_version": "7.8.15",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "aarch64"

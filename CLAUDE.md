@@ -346,7 +346,8 @@ Tart; `test/run-linux.sh` runs the Linux scenarios in containers and needs no hy
 `LINUX_IMAGE` choosing the distro. CI runs them on Debian 12, Rocky 9, Fedora 41 and Amazon
 Linux 2023 containers and on Ubuntu runners, x86_64 and arm64; `test/run-gce.sh` runs them on
 a real Compute Engine VM per family, which is the only path with systemd, OS Login and a
-shared-core shape. Each
+shared-core shape, and `test/run-ec2.sh` on a real EC2 instance per family, reached over SSM,
+for Amazon Linux 2023, Graviton and the burstable credit modes. Each
 scenario declares its `platform` in `expected.json`, and `tools/check_workflows.py` asserts it
 is paired with a runner that can host it — a Linux scenario listed under the macOS job would
 otherwise skip on every run while looking scheduled.

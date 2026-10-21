@@ -5,7 +5,7 @@
       "agent": "openclaw",
       "route": "npm",
       "value": "openclaw",
-      "agent_version": "2026.10.3",
+      "agent_version": "2026.10.5",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "aarch64"
