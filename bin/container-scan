@@ -78,6 +78,8 @@ CACHE=""
 # Set by run_bounded. A global rather than a command substitution, because the output has
 # to be discardable without ever being parsed.
 BOUNDED_OUT=""
+# Set by run_bounded too: the child's stderr, kept on every outcome so a failure can say why.
+BOUNDED_ERR=""
 # The wait status of a killed query, and it is NOT one number. Both measured on 5.23.1:
 #
 #   docker_images alone            **0**. osqueryi installs a SIGTERM handler and shuts
@@ -483,6 +485,21 @@ docker_state() {
   esac
 }
 
+# ONE DIRECTORY PER RUN FOR EVERY TEMPORARY FILE, exported as TMPDIR so the children's land
+# in it too, and removed on exit and on HUP, INT or TERM. osqueryi 5.23.1 leaves an empty
+# osquery-<n> directory in TMPDIR on every exit, clean or killed -- 9,964 of them on one Mac
+# -- and a scheduler stops an overrunning scan with TERM. Call it from the executing
+# script's shell, never inside a command substitution: a trap set there guards only that
+# subshell. osqueryi keeps nothing in that directory while it runs, and a 194-character
+# TMPDIR was measured to work.
+own_run_dir() {
+  [ -z "${RUN_DIR:-}" ] || return 0
+  RUN_DIR="$(mktemp -d "${TMPDIR:-/tmp}/$1.XXXXXX")" || return 1
+  trap 'rm -rf "$RUN_DIR"' EXIT
+  trap 'exit 1' HUP INT TERM
+  export TMPDIR="$RUN_DIR"
+}
+
 # Run a command with a hard wall-clock bound, reading stdin from a file. Portable to bash
 # 3.2, which is the only bash a managed Mac has: no `wait -n`, no timeout(1), no coreutils.
 # Output lands in BOUNDED_OUT on success and is DISCARDED on a timeout; the child's stderr
@@ -501,8 +518,6 @@ run_bounded() {
   local tmp err rc pid waited grace
   BOUNDED_OUT=""; BOUNDED_ERR=""
   tmp="$(mktemp "${TMPDIR:-/tmp}/container-scan.XXXXXX")" || return 1
-  # stderr to a file of its own, not /dev/null: test/docker_states.sh saw this child exit
-  # 1 against a healthy fake (2026-10-20) and the log could say only "exit 1".
   err="$(mktemp "${TMPDIR:-/tmp}/container-scan.XXXXXX")" || { rm -f "$tmp"; return 1; }
   "$@" <"$input" >"$tmp" 2>"$err" &
   pid=$!
@@ -750,4 +765,5 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+own_run_dir container-scan || { echo "container-scan: cannot create a working directory" >&2; exit 1; }
 scan_and_cache
