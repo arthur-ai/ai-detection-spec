@@ -783,6 +783,9 @@ check("the superseded identifier is named", _oc.get("superseded") == ["moltbot"]
       f"got {_oc.get('superseded')}")
 check("a finding with a current match is NOT only_superseded",
       _oc.get("only_superseded") is False, f"got {_oc.get('only_superseded')}")
+check("--json speaks with the current generation, though the replaced one came first",
+      _oc.get("primary") == 1 and _oc.get("version") == "2026.9.1",
+      f"got primary={_oc.get('primary')} version={_oc.get('version')}")
 
 # The same catalog, a payload carrying ONLY the superseded generation.
 with _tf3.NamedTemporaryFile("w", suffix=".json", delete=False) as _fh4:
@@ -1386,6 +1389,24 @@ _exts = [_r("ext", "fcoeoabgfenejglbffodgkkbkcdhcgfn", "1.0.90", _profile, "tabs
          _r("ext", "fcoeoabgfenejglbffodgkkbkcdhcgfn", "1.0.94", _profile, "tabs")]
 check("a loaded extension speaks before a leftover version directory",
       _cl.primary(_exts, _rank) == 1)
+_brew = _r("brew", "claude", "1.2.3", "/opt/homebrew/Caskroom/claude")
+_app = _r("app", "com.anthropic.claudefordesktop", "", "/Applications/Claude.app")
+check("the KIND decides: a bundle that declares no version still speaks before its cask",
+      _cl.describe([_brew, _app], _rank)
+      == {"primary": 1, "path": "/Applications/Claude.app"},
+      str(_cl.describe([_brew, _app], _rank)))
+check("...and between two install records, kind_rank: the bundle id before the cask",
+      _cl.primary([_brew, dict(_app, ver="1.2.3")], _rank) == 1 and _rank["app"] < _rank["brew"])
+_loaded_blank = _r("ext", "fcoeoabgfenejglbffodgkkbkcdhcgfn", "", _profile, "tabs")
+check("a loaded copy speaks before a leftover even when only the leftover has a version",
+      _cl.primary([_exts[0], _loaded_blank], _rank) == 1)
+_old_new = [_r("app", "com.clawdbot.mac", "2026.1.1", "/Applications/Clawdbot.app"),
+            _r("app", "ai.openclaw.mac", "2026.7.1", "/Applications/OpenClaw.app")]
+check("a current identifier speaks before one the vendor replaced",
+      _cl.primary(_old_new, _rank, [True, False]) == 1
+      and _cl.primary(_old_new, _rank) == 0)
+check("...but a replaced identifier still speaks when it is the only install record",
+      _cl.primary([_r("file", "/Users/u/.openclaw/"), _old_new[0]], _rank, [False, True]) == 1)
 check("a container's state is never reported as a version",
       "version" not in _cl.describe([_r("container", "x/y:1", "running", "abc123")], _rank))
 check("ties keep evidence order",
