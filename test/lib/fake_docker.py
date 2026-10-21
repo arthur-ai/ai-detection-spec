@@ -291,7 +291,16 @@ def main():
     while True:
         conn, _ = srv.accept()
         try:
-            req = conn.recv(8192).decode(errors="replace")
+            # TO THE END OF THE REQUEST LINE, not one recv(): a stream may deliver it in
+            # pieces, and a partial line parses as an empty path, which is served the images
+            # list -- osquery's "No such node (State)" again, against a healthy fake.
+            raw = b""
+            while b"\r\n" not in raw and len(raw) < 8192:
+                chunk = conn.recv(8192)
+                if not chunk:
+                    break
+                raw += chunk
+            req = raw.decode(errors="replace")
             # A local name: `path` is the socket path and rebinding it here would quietly
             # take that away from anything added to this loop later.
             req_path = req.split(" ")[1] if req.count(" ") >= 2 else ""

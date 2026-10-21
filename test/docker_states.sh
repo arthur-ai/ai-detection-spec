@@ -358,6 +358,13 @@ check "the rows survived" "$(printf '%s' "$BOUNDED_OUT" | grep -q '"x"' && echo 
       "BOUNDED_OUT held: $BOUNDED_OUT"
 check "returns well inside the bound (${elapsed}s)" \
       "$(python3 -c "print(1 if $elapsed < 2 else 0)")" "took ${elapsed}s"
+# The wedge above left BOUNDED_SIGNAL set; a call that finished must not carry it forward.
+check "and records no kill, though the last call was killed" \
+      "$([ -z "$BOUNDED_SIGNAL" ] && echo 1 || echo 0)" "BOUNDED_SIGNAL held: $BOUNDED_SIGNAL"
+run_bounded 3 /dev/null sh -c 'exit 124'; rc=$?
+check "a child's own exit 124 comes back as 124 with no kill recorded, so it is no timeout" \
+      "$([ "$rc" = 124 ] && [ -z "$BOUNDED_SIGNAL" ] && echo 1 || echo 0)" \
+      "rc=$rc BOUNDED_SIGNAL=$BOUNDED_SIGNAL"
 
 echo "  inlining the branch costs the whole inventory, which is why the split exists"
 # THE EVIDENCE FOR THE ARCHITECTURE, and the reason nobody should fold containers back into
@@ -490,8 +497,9 @@ echo "  a run leaves nothing in TMPDIR, finished or stopped"
 start_fake wedge
 STOPDIR="$(mktemp -d "${TMPDIR:-/tmp}/stopped.XXXXXX")"
 # Finished, and the bound fired: osqueryi was SIGKILLed, the one exit it cannot tidy after.
-TMPDIR="$STOPDIR" OSQI="$OSQI" "$ROOT/bin/container-scan" --socket "$SOCK" \
-  --scan-timeout 2 >/dev/null 2>&1
+# With a RUN_DIR in the environment, which is somebody else's: the runner makes its own.
+RUN_DIR="$STOPDIR/inherited" TMPDIR="$STOPDIR" OSQI="$OSQI" "$ROOT/bin/container-scan" \
+  --socket "$SOCK" --scan-timeout 2 >/dev/null 2>&1
 check "a finished scan left nothing behind" \
       "$([ -z "$(ls -A "$STOPDIR")" ] && echo 1 || echo 0)" \
       "left in TMPDIR: $(ls -A "$STOPDIR" | tr '\n' ' ')"

@@ -418,7 +418,7 @@ EOF
       : > "$tmpdir/$name.failed"
       # The reason as well as the fact, as container_scan gives it: osqueryi's own stderr,
       # unless the bound fired, when what a killed child printed is not evidence of anything.
-      if [ "$branch_rc" = 124 ]; then
+      if [ "$branch_rc" = 124 ] && [ -n "$BOUNDED_SIGNAL" ]; then
         echo "discover: branch '$name' did not complete (no answer in 30s)" >> "$tmpdir/stderr"
       else
         echo "discover: branch '$name' did not complete (exit $branch_rc)" >> "$tmpdir/stderr"
