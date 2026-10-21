@@ -8,6 +8,15 @@
       "agent_version": "0.73.1",
       "platform": "linux",
       "os": "amzn-2023",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "pi",
+      "route": "npm",
+      "value": "@mariozechner/pi-coding-agent",
+      "agent_version": "0.73.1",
+      "platform": "linux",
+      "os": "amzn-2023",
       "arch": "x86_64",
       "run": "39563223448"
     },
@@ -60,6 +69,14 @@
       "os": "ubuntu-24.04",
       "arch": "x86_64",
       "run": "39563223448"
+    },
+    {
+      "agent": "pi",
+      "route": "state_dirs",
+      "value": "~/.pi",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
     },
     {
       "agent": "pi",

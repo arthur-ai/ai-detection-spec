@@ -5,7 +5,7 @@
       "agent": "gemini-cli",
       "route": "npm",
       "value": "@google/gemini-cli",
-      "agent_version": "0.64.0",
+      "agent_version": "0.65.0",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "aarch64"

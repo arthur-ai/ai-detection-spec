@@ -242,7 +242,8 @@ x86_64 and arm64, so the one
 `dist/discovery-linux.sql` is proved on the three families a GCE fleet boots, on the image an
 EC2 fleet boots by default, and on the deb and rpm sides of each. A container
 cannot host systemd or OS Login, so `test/run-gce.sh` runs the same scenarios on one real
-VM per family and brings the observations back into the tree.
+VM per family and brings the observations back into the tree. `test/run-ec2.sh` does the same
+on EC2, reached over SSM: Amazon Linux 2023 on x86_64 and arm64, and Ubuntu 24.04.
 
 **OS Login.** With OS Login on, accounts come from an NSS module rather than `/etc/passwd`,
 and a home directory appears on first login. osquery's Linux `users` table has read
@@ -260,6 +261,13 @@ shipped artifact.** So an account that has logged in is covered, and one that ne
 nothing to find. The remaining gap is an NSS-only account with a home outside `/home` or
 `/root`, which `docs/blind-spots.yaml` records.
 
+**EC2 accounts.** EC2 logins are ordinary `/etc/passwd` accounts, so OS Login's gap doesn't
+apply. They are `ec2-user`, `ubuntu`, and `ssm-user`, which Session Manager creates on first
+use. On every instance, `users` returned exactly the `/etc/passwd` count. Measured 2026-10-21:
+after one real Session Manager session, `users` listed `ssm-user` with its home, and a state
+directory planted in that home came back from the shipped artifact. A directory-joined
+instance (SSSD) is OS Login's case, and stays in `docs/blind-spots.yaml`.
+
 **Headless.** No desktop session means the desktop-entry, browser and native-messaging
 branches return no rows, and that is the correct answer rather than a silent one: each is
 a glob over paths that exist or do not, with nothing that can fail soft. On the write path
@@ -275,6 +283,13 @@ same afternoon, with `systemd_units` alone at 5.5s against 1.2s.
 [`queries/COST.md`](../queries/COST.md#compute-engine-e2-small-2026-10-04) has the table. It
 is why `queries/runtime-linux.sql` is banded `slow`, and why a scheduled `--write`, where each
 branch has its own bound, is the shape to prefer over anything that waits.
+
+**Burstable EC2 shapes.** In the default unlimited credit mode, `t3.small` and `t4g.small` run
+at full speed: the composed artifact takes 1.6–2.8s cold, and `--write` 4.6–6.0s. In standard
+mode a fresh instance has no credits, and is held to its 20% baseline from the start. The same
+scan then takes 10–12s cold, and 14–16s for `--write`. That is still inside every branch's own
+30s bound, but over the composed artifact's 10s convention.
+[`queries/COST.md`](../queries/COST.md#ec2-t3small-and-t4gsmall-2026-10-21) has the tables.
 
 ## The `python3` stub, which used to bite only on a fleet
 

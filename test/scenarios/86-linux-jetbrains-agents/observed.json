@@ -161,7 +161,7 @@
       "agent": "copilot-cli",
       "route": "jetbrains_plugins",
       "value": "github-copilot-intellij",
-      "agent_version": "1.19.1-252",
+      "agent_version": "1.19.2-261-linux-arm64",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "aarch64"

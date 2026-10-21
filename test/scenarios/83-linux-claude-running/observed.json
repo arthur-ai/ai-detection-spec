@@ -6,6 +6,22 @@
       "route": "binaries",
       "value": "~/.local/bin/claude",
       "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "claude-code",
+      "route": "binaries",
+      "value": "~/.local/bin/claude",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64"
+    },
+    {
+      "agent": "claude-code",
+      "route": "binaries",
+      "value": "~/.local/bin/claude",
+      "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
       "run": "39563223448"
@@ -24,6 +40,22 @@
       "route": "process_paths",
       "value": "~/.local/share/claude/versions/",
       "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "claude-code",
+      "route": "process_paths",
+      "value": "~/.local/share/claude/versions/",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64"
+    },
+    {
+      "agent": "claude-code",
+      "route": "process_paths",
+      "value": "~/.local/share/claude/versions/",
+      "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
       "run": "39563223448"
@@ -36,6 +68,22 @@
       "os": "ubuntu-24.04",
       "arch": "x86_64",
       "run": "39563223448"
+    },
+    {
+      "agent": "claude-code",
+      "route": "state_dirs",
+      "value": "~/.claude",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "aarch64"
+    },
+    {
+      "agent": "claude-code",
+      "route": "state_dirs",
+      "value": "~/.claude",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64"
     },
     {
       "agent": "claude-code",

@@ -367,6 +367,7 @@ $ test/run-linux.sh 70-linux-baseline   # Linux, in a disposable container
 $ test/run-linux.sh                 # every Linux scenario
 $ LINUX_IMAGE=quay.io/rockylinux/rockylinux:9 test/run-linux.sh   # on another distro
 $ test/run-gce.sh --family debian-12    # on a real Compute Engine VM; needs gcloud
+$ test/run-ec2.sh --family al2023-arm64 # on a real EC2 instance, over SSM; needs the AWS CLI
 ```
 
 **The harnesses differ because the platforms do.** `test/run.sh` uses
@@ -376,6 +377,9 @@ is also why the Ubuntu CI job runs directly on the runner with no VM layer, and 
 container job runs that same script once per image, each scenario in a fresh Debian, Rocky,
 Fedora or Amazon Linux container. `test/run-gce.sh` exists for what neither can stage:
 systemd as PID 1 on every family, OS Login accounts, and a shared-core machine shape.
+`test/run-ec2.sh` does the same on EC2, for Amazon Linux 2023, Graviton, burstable `t3`
+and `t4g` shapes in either credit mode, and Session Manager's `ssm-user`. It reaches each
+instance over SSM, so it needs no inbound rule and no key pair.
 
 The Ubuntu job lists what its runners can host, so `77-linux-rpm` and `91-linux-claude-rpm`,
 which need dnf, are not there. The container job lists nothing and runs every Linux scenario on

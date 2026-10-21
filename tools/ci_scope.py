@@ -98,8 +98,8 @@ CATALOG = "catalog/agents.yaml"
 # runs every scenario, which costs minutes and nothing else.
 INERT = frozenset({
     "test/check_names_line.py", "test/docker_states.sh", "test/lib/fake_amplitude.py",
-    "test/lib/fake_docker.py", "test/lib/vm.sh", "test/lint.sh", "test/run-gce.sh",
-    "test/run.sh", "test/test_ci_scope.py", "test/test_matcher.py",
+    "test/lib/fake_docker.py", "test/lib/vm.sh", "test/lint.sh", "test/run-ec2.sh",
+    "test/run-gce.sh", "test/run.sh", "test/test_ci_scope.py", "test/test_matcher.py",
     # test/run-linux.sh is NOT here: scenarios.yml's container job runs it. See HARNESS.
     "test/test_telemetry.py", "tools/bundle.py", "tools/check_doc_numbers.py",
     "tools/check_no_catalog.py", "tools/check_output.py", "tools/check_pack.py",
