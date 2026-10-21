@@ -32,7 +32,7 @@
       "agent_version": "1.46388.4",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39563216835"
+      "run": "39563223448"
     },
     {
       "agent": "claude-desktop",
@@ -41,7 +41,7 @@
       "agent_version": "2.31226.1",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39563216835"
+      "run": "39563223448"
     },
     {
       "agent": "claude-desktop",
@@ -74,7 +74,7 @@
       "agent_version": "1.46388.4,50e62f90a2c85243eef42913398f7c8f1534abef",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39563216835"
+      "run": "39563223448"
     },
     {
       "agent": "claude-desktop",
@@ -83,7 +83,7 @@
       "agent_version": "2.31226.1,8576520051724193e9f74fc538f9ce8125e9ddd2",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39563216835"
+      "run": "39563223448"
     }
   ]
 }
