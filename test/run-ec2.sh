@@ -231,7 +231,11 @@ lock() {
 }
 unlock() { [ "$HOLDING_LOCK" = 1 ] && rmdir "$LOCK" 2>/dev/null; HOLDING_LOCK=0; }
 finish() { cleanup; drop_sg; unlock; rm -f "$TREE" "$GUEST" "$KEY" "$KEY.pub" "$USERDATA" "$ART/terminate-$$.err"; }
-trap finish EXIT INT TERM
+# A signal ENDS the run, and cleanup runs once, from EXIT. A handler that only cleaned up would
+# return into the loop, and the next scenario would launch without its key or security group.
+trap finish EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 if [ -z "${EC2_SECURITY_GROUP:-}" ]; then
   OWN_SG="$(aws ec2 create-security-group --vpc-id "$VPC" --group-name "run-ec2-$$-$(date +%s)" \
