@@ -365,14 +365,17 @@ for near in ("/Users/dana/.claudefoo/", "/home/dana/.claudefoo/", "/root/.claude
           _ids(_rows(near)) == set(),
           "front-anchored only, this matched -- the bug the home-dir anchor closes")
 
-# THE OTHER HALF, and the reason the `$` is not a blanket fix: `binaries` is
-# front-anchored ON PURPOSE. One `uv tool install hermes-agent` writes hermes, hermes-acp
-# and hermes-agent, and all three are the same install.
-for cmd in ("/Users/alice/.local/bin/hermes", "/home/alice/.local/bin/hermes-acp",
-            "/root/.local/bin/hermes-agent"):
-    check(f"a sibling command still lands on the agent ({cmd})",
-          _ids(_rows(cmd)) == {"hermes"},
-          "anchoring home-prefix would lose two of the three commands")
+# THE OTHER HALF: `binaries` names a command, never a prefix of one. One `uv tool install
+# hermes-agent` writes hermes, hermes-acp and hermes-agent, so hermes alone finds the
+# install, and a prefix would claim any tool that shares the name -- `claude-monitor`, a
+# third-party usage monitor installed with uv, is not Claude Code.
+check("the command is claimed, wherever the home is",
+      _ids(_rows("/Users/alice/.local/bin/hermes")) == {"hermes"}
+      and _ids(_rows("/root/.local/bin/hermes")) == {"hermes"})
+for cmd in ("/home/alice/.local/bin/hermes-acp", "/root/.local/bin/hermes-agent",
+            "/home/alice/.local/bin/claude-monitor"):
+    check(f"a name that merely starts with a value is not claimed ({cmd})",
+          _ids(_rows(cmd)) == set(), "a prefix match claims other vendors' tools")
 
 # PI'S LOOKALIKES, which a Python host carries for free: ~/.pipx starts with Pi's ~/.pi.
 check("~/.pi is Pi and ~/.pipx is not",
@@ -783,6 +786,9 @@ check("the superseded identifier is named", _oc.get("superseded") == ["moltbot"]
       f"got {_oc.get('superseded')}")
 check("a finding with a current match is NOT only_superseded",
       _oc.get("only_superseded") is False, f"got {_oc.get('only_superseded')}")
+check("--json speaks with the current generation, though the replaced one came first",
+      _oc.get("primary") == 1 and _oc.get("version") == "2026.9.1",
+      f"got primary={_oc.get('primary')} version={_oc.get('version')}")
 
 # The same catalog, a payload carrying ONLY the superseded generation.
 with _tf3.NamedTemporaryFile("w", suffix=".json", delete=False) as _fh4:
@@ -1239,13 +1245,16 @@ check("Codex's companion extension claims nothing (openai.codex-audio)",
       "openai.codex-audio" in _u, "it installs beside openai.chatgpt and acts on nothing")
 
 _c, _u = _claims(_kind("file", "/home/dana/.local/bin/cursor-agent",
-                       "/home/dana/.local/bin/agent", "/home/dana/.local/bin/kiro-cli-chat",
+                       "/home/dana/.local/bin/agent", "/home/dana/.local/bin/kiro-cli",
+                       "/home/dana/.local/bin/kiro-cli-chat",
                        "/home/dana/.grok/", "/home/dana/.opencode/"))
 check("the curl installers' paths resolve to their agents",
       _c == {"/home/dana/.local/bin/cursor-agent": "cursor",
-             "/home/dana/.local/bin/kiro-cli-chat": "kiro-cli",
+             "/home/dana/.local/bin/kiro-cli": "kiro-cli",
              "/home/dana/.grok/": "grok", "/home/dana/.opencode/": "opencode"},
       f"got {_c}")
+check("kiro-cli-chat, written beside kiro-cli, is evidence rather than a value",
+      "/home/dana/.local/bin/kiro-cli-chat" in _u, f"got {_c}")
 check("Cursor's generic ~/.local/bin/agent link claims nothing",
       "/home/dana/.local/bin/agent" in _u,
       "Cursor CLI and Grok Build both write an `agent`; a name that generic identifies nobody")
@@ -1274,20 +1283,19 @@ check("...and matched with the vendor's case (`sourcegraph` is not Cody's direct
 
 # META'S TWO MUSE PRODUCTS, read off real installs on 2026-10-19 and told apart by route: a
 # bundle id for the desktop agent, a ~/.local/bin launcher for the coding agent. The launcher
-# fetches the binary beside it under a versioned name, so both paths are one install.
+# fetches the binary beside it under a versioned name, and the launcher alone finds it.
 _c, _u = _claims(_kind("file", "/Users/dana/.local/bin/muse",
                        "/home/dana/.local/bin/muse-bin-1.4.10-R6427.1",
                        "/home/dana/.local/bin/amuse", "/home/dana/.muse/",
                        "/home/dana/.local/bin/musescore",
                        "/home/dana/.local/bin/museum"))
-check("Muse Code's launcher and the versioned binary beside it are one install",
+check("Muse Code is its launcher; the versioned binary beside it is evidence, not a value",
       _c.get("/Users/dana/.local/bin/muse") == "muse-code"
-      and _c.get("/home/dana/.local/bin/muse-bin-1.4.10-R6427.1") == "muse-code", f"got {_c}")
+      and "/home/dana/.local/bin/muse-bin-1.4.10-R6427.1" in _u, f"got {_c}")
 check("the anchor is the front: `amuse` claims nothing, and ~/.muse is not a value",
       "/home/dana/.local/bin/amuse" in _u and "/home/dana/.muse/" in _u,
       "~/.muse appears on first run, which no scenario does, so it stays evidence")
-# `binaries` admits a `-` after the value for hermes's siblings and Muse Code's versioned
-# binary, and nothing else, so a MuseScore alias is not Muse Code.
+# `binaries` names the path itself, so a MuseScore alias is not Muse Code.
 check("...and neither a `musescore` alias nor a tool named `museum` is claimed",
       {"/home/dana/.local/bin/musescore", "/home/dana/.local/bin/museum"} <= set(_u),
       f"got {_c}")
@@ -1386,6 +1394,24 @@ _exts = [_r("ext", "fcoeoabgfenejglbffodgkkbkcdhcgfn", "1.0.90", _profile, "tabs
          _r("ext", "fcoeoabgfenejglbffodgkkbkcdhcgfn", "1.0.94", _profile, "tabs")]
 check("a loaded extension speaks before a leftover version directory",
       _cl.primary(_exts, _rank) == 1)
+_brew = _r("brew", "claude", "1.2.3", "/opt/homebrew/Caskroom/claude")
+_app = _r("app", "com.anthropic.claudefordesktop", "", "/Applications/Claude.app")
+check("the KIND decides: a bundle that declares no version still speaks before its cask",
+      _cl.describe([_brew, _app], _rank)
+      == {"primary": 1, "path": "/Applications/Claude.app"},
+      str(_cl.describe([_brew, _app], _rank)))
+check("...and between two install records, kind_rank: the bundle id before the cask",
+      _cl.primary([_brew, dict(_app, ver="1.2.3")], _rank) == 1 and _rank["app"] < _rank["brew"])
+_loaded_blank = _r("ext", "fcoeoabgfenejglbffodgkkbkcdhcgfn", "", _profile, "tabs")
+check("a loaded copy speaks before a leftover even when only the leftover has a version",
+      _cl.primary([_exts[0], _loaded_blank], _rank) == 1)
+_old_new = [_r("app", "com.clawdbot.mac", "2026.1.1", "/Applications/Clawdbot.app"),
+            _r("app", "ai.openclaw.mac", "2026.7.1", "/Applications/OpenClaw.app")]
+check("a current identifier speaks before one the vendor replaced",
+      _cl.primary(_old_new, _rank, [True, False]) == 1
+      and _cl.primary(_old_new, _rank) == 0)
+check("...but a replaced identifier still speaks when it is the only install record",
+      _cl.primary([_r("file", "/Users/u/.openclaw/"), _old_new[0]], _rank, [False, True]) == 1)
 check("a container's state is never reported as a version",
       "version" not in _cl.describe([_r("container", "x/y:1", "running", "abc123")], _rank))
 check("ties keep evidence order",

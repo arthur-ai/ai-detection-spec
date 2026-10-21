@@ -31,7 +31,7 @@
     "/.local/bin/muse-bin-"
   ],
   "known_gaps": [
-    "`~/.local/bin/muse` claims the name and anything after a `-` -- the launcher and muse-bin-<version> -- so another tool installed as `~/.local/bin/muse-<something>` would read as Muse Code. None was on this host. A MuseScore alias or a tool named museum is not claimed: test_matcher asserts it.",
+    "`~/.local/bin/muse` claims the launcher only. muse-bin-<version> beside it is read as unmatched evidence, not as a value: the launcher is always written with it, so the agent is found anyway, and claiming every `muse-<something>` would claim other vendors' tools.",
     "Sign-in gated once installed, like 10: Muse for Mac is never launched, so its first-run permission prompts and whatever it writes under ~/Library go unobserved, and Muse Code is never run, so ~/.muse -- which the binary names for projects and worktrees -- is not produced here.",
     "The DMG is whatever the production Sparkle channel serves on the day. A build that changes its bundle id shows up as a missing com.meta.endo, which is the point; a build that only bumps the version is recorded as that version."
   ]

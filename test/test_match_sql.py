@@ -256,9 +256,11 @@ def main():
         ("file", "/root/.claude/", "claude-code"),               # /root is its own root
         ("daemon", "ai.openclaw.gateway", "openclaw"),
         ("daemon", "AI.OPENCLAW.X", None),                       # prefix is case-sensitive
-        ("file", "/Users/u/.local/bin/hermes-acp", "hermes"),         # home-prefix, open
-        ("file", "/home/u/.local/bin/muse-bin-1.4.10-R6427.1", "muse-code"),  # after a `-`
-        ("file", "/home/u/.local/bin/musescore", None),               # ...and nothing else
+        ("file", "/Users/u/.local/bin/hermes", "hermes"),             # home-prefix: the path
+        ("file", "/Users/u/.local/bin/hermes-acp", None),             # ...not a name prefix
+        ("file", "/home/u/.local/bin/muse-bin-1.4.10-R6427.1", None),
+        ("file", "/home/u/.local/bin/musescore", None),
+        ("file", "/home/u/.local/bin/claude-monitor", None),
         ("file", "/home/u/.local/share/uv/tools/openclaw/", "openclaw"),   # npm bridge
         ("file", "/root/.local/pipx/venvs/aider-chat/", "aider"),          # tool-dir
         ("image", "docker.io/paulgauthier/aider:v1,paulgauthier/aider:latest", "aider"),
