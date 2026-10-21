@@ -57,10 +57,10 @@
 #                     match `.../.claude` and `.../.claude/` and must NOT match
 #                     `.../.claudefoo` -- it did, for as long as the glob was
 #                     front-anchored only
-#   home-prefix       a `~/`-rooted path, front-anchored ON PURPOSE. `~/.local/bin/hermes`
+#   home-prefix       a `~/`-rooted path, then a `-`, a `/` or the end. `~/.local/bin/hermes`
 #                     has to keep matching hermes-acp and hermes-agent: one uv install
-#                     writes all three commands. This is why the missing `$` above is a
-#                     per-route fix and not a blanket one
+#                     writes all three commands. `~/.local/bin/muse` must not match
+#                     `musescore`. A value ending in `/` claims everything under it
 #   tool-dir          reached through bin/classify's TOOL_DIR bridge rather than the
 #                     generic loop: pipx and uv name each tool's directory after the
 #                     PACKAGE, so a path row can yield a package name. Excluded from the

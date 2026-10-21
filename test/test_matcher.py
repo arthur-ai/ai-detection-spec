@@ -1285,12 +1285,10 @@ check("Muse Code's launcher and the versioned binary beside it are one install",
 check("the anchor is the front: `amuse` claims nothing, and ~/.muse is not a value",
       "/home/dana/.local/bin/amuse" in _u and "/home/dana/.muse/" in _u,
       "~/.muse appears on first run, which no scenario does, so it stays evidence")
-# THE OVER-MATCH, RECORDED RATHER THAN HIDDEN. `binaries` is front-anchored for hermes's
-# siblings, so a MuseScore alias at ~/.local/bin/musescore reads as Muse Code today. This
-# asserts the current behaviour so that a change to the route is seen here, not in the field.
-check("...and the known over-match: a `musescore` alias is claimed as Muse Code",
-      _c.get("/home/dana/.local/bin/musescore") == "muse-code",
-      "if this stopped matching, the route's anchoring changed; re-read the catalog comment")
+# `binaries` admits a `-` after the value for hermes's siblings and Muse Code's versioned
+# binary, and nothing else, so a MuseScore alias is not Muse Code.
+check("...and a `musescore` alias is not claimed: the value ends at `-`, `/` or the end",
+      "/home/dana/.local/bin/musescore" in _u, f"got {_c}")
 _c, _u = _claims(_kind("app", "com.meta.endo", "org.sparkle-project.Sparkle.Updater"))
 check("Muse for Mac is its bundle id and not the coding agent",
       _c == {"com.meta.endo": "muse-desktop"}, f"got {_c}")
