@@ -284,6 +284,31 @@ print(f"ok: {len(demanded)} kinds across {len(seen_platforms)} platform(s) "
       f"({', '.join(sorted(seen_platforms))}), every one exercised")
 PY
 
+# EVERY "$ROOT/..." AND "$REPO/..." A SCRIPT NAMES MUST EXIST. Each of these scripts sets ROOT
+# to osquery/, and the move into osquery/ left docker_states.sh calling "$ROOT/bin/classify",
+# which is at the repository root: the call failed into 2>/dev/null and the suite reported
+# "finds aider" failed with no findings, on a runner, minutes later. bash -n cannot see it.
+python3 - "$OSQ" "$HERE/docker_states.sh" "$OSQ/bin/discover" "$OSQ/bin/container-scan" <<'ROOTS' || fail=1
+import pathlib, re, sys
+osq = pathlib.Path(sys.argv[1])
+bases = {"ROOT": osq, "REPO": osq.parent}
+bad, seen = [], 0
+for name in sys.argv[2:]:
+    for n, line in enumerate(pathlib.Path(name).read_text().splitlines(), 1):
+        if line.lstrip().startswith("#"):
+            continue
+        for var, rel in re.findall(r'\$\{?(ROOT|REPO)\}?/([\w.-]+(?:/[\w.-]+)*)(?![\w.$-])', line):
+            seen += 1
+            if not (bases[var] / rel).exists():
+                bad.append(f"{pathlib.Path(name).name}:{n}: ${var}/{rel} does not exist "
+                           f"(${var} is {bases[var].relative_to(osq.parent) or '.'}/)")
+for b in bad:
+    print(f"FAIL: {b}")
+if bad:
+    sys.exit(1)
+print(f"script paths: ok, {seen} $ROOT and $REPO paths in the binding's scripts exist")
+ROOTS
+
 for f in "$HERE"/docker_states.sh "$OSQ"/bin/container-scan "$OSQ"/bin/discover; do
   bash -n "$f" || { echo "FAIL: bash syntax in $f"; fail=1; }
 done
