@@ -104,7 +104,7 @@ def validate_registry(reg):
     legal_platform = platforms | set(groups)
     modes = {"exact", "prefix", "exact-normalised", "home-dir", "home-prefix", "tool-dir"}
     required = {"platform", "kind", "match"}
-    optional = {"value_pattern", "retired", "values_from"}
+    optional = {"value_pattern", "retired", "values_from", "live"}
     for name, r in (reg.get("routes") or {}).items():
         # Lowercase, digits and underscores: the names every reader of the registry can parse.
         if not re.fullmatch(r"[a-z][a-z0-9_]*", str(name)):
@@ -217,6 +217,11 @@ def route_value_errors(aid, agent, reg):
         if reg["routes"][route].get("retired"):
             errors.append(f"{aid}: {route} is retired and identifies nothing, so it may "
                           f"carry no values")
+        if reg["routes"][route]["match"] in ("exact", "tool-dir") and isinstance(values, list):
+            for v in values:
+                if str(v).endswith("*"):
+                    errors.append(f"{aid}: {route} {v!r} ends in `*`, which is not a pattern: "
+                                  f"this route matches exactly")
     return errors
 
 

@@ -1408,6 +1408,19 @@ check("...and a binding missing a field",
           "x": {"platform": "darwin", "kind": "app", "match": "exact",
                 "osquery": {"table": "apps"}}}})))
 check("the real registry binds every route", _vr(_reg) == [], str(_vr(_reg)))
+check("a trailing `*` is refused: an exact route matches exactly",
+      any("`*`" in e for e in _rve("probe", {"npm": ["@modelcontextprotocol/*"]}, _reg)))
+
+# --- what the matcher takes from the registry rather than from itself ------------------
+_mini = {"platforms": ["darwin"], "routes": {
+    "a": {"platform": "darwin", "kind": "app", "match": "exact"},
+    "b": {"platform": "darwin", "kind": "proc", "match": "exact", "live": True},
+    "c": {"platform": "darwin", "kind": "file", "match": "tool-dir"}}}
+check("live kinds are the kinds of routes marked `live`, and only those",
+      _cl.Registry(_mini).live_kinds == {"proc"}, str(_cl.Registry(_mini).live_kinds))
+check("the tool-dir bridge names the tool-dir routes and no npm route",
+      _cl.Registry(_mini).bridged() == ["c"]
+      and _cl.Registry(_reg).bridged() == ["pypi"], str(_cl.Registry(_reg).bridged()))
 
 # --- the row that speaks for a finding ----------------------------------------------
 # One rule for every consumer, so each one does not pick its own. Rows are the real shapes:
