@@ -20,25 +20,29 @@
 # checks. Two that a coordinate-conscious reader will miss are absent for exactly that
 # reason and are recorded here instead of half-added:
 #
-#   purl:    the PURL type for the route. Omitted -- nothing emits a PURL yet, and two
-#            of the types we would need (`brew`, `chocolatey`) are NOT on the official
-#            list, so shipping them would put a coordinate an SBOM consumer rejects
-#            inside someone else's pipeline where nobody here can see it.
+#   purl:    the PURL type for the route. Omitted -- nothing emits a PURL yet. purl-spec
+#            registers `brew` now, but its coordinate cannot tell a cask from a formula and
+#            `codex` ships as both; `chocolatey` and JetBrains plugins are not registered.
+#            A wrong coordinate lands inside someone else's SBOM pipeline, where nobody
+#            here can see it.
 #   version: what a row's `ver` column MEANS. Not a route field: the query that emits a
 #            kind fixes it, so bin/classify declares it per kind (VERSION_KINDS, beside
 #            PATH_KINDS and LIVE_KINDS) and a custom registry cannot get it wrong.
-#            `table` and `min_osquery` below are present because test/lint.sh does check
-#            them against the query frontmatter.
+#            `osquery` below is present because osquery/tools/build.py checks every
+#            binding against the query frontmatter.
 #
 # FIELDS
 #   platform      darwin | linux | windows | posix   (posix == darwin AND linux)
 #   kind          the row kind that carries this route, from the six-column contract
 #   match         how a catalog value is compared to a row -- see MATCH MODES
-#   table         the osquery table the evidence comes from. lint asserts some query
-#                 declares it in `-- tables:` for this route's platform, so a route
-#                 nothing can feed fails the build instead of quietly matching nothing
-#   min_osquery   the floor this route needs. lint asserts the feeding query declares
-#                 at least this in `-- min-osquery:`
+#   osquery       the route's BINDING to osquery: {table, min_osquery}, the table the
+#                 evidence comes from and the floor it needs. osquery/tools/build.py
+#                 asserts that on each platform the route covers, some query emitting its
+#                 kind declares that table in `-- tables:` and at least that floor in
+#                 `-- min-osquery:`, so a route nothing can feed fails the build instead of
+#                 quietly matching nothing. It used to say lint checked this; nothing did.
+#                 Every route needs a binding. A second binding is a second key beside
+#                 this one, and the rest of the route does not change
 #   value_pattern optional regex every catalog value on this route must fullmatch
 #   retired       optional. The route no longer identifies anything, but rows of its
 #                 kind are still collected and MUST stay registered -- see `ports`
@@ -67,8 +71,6 @@
 #                     generic per-kind list, which is what stops a PyPI-only signature
 #                     claiming an npm package of the same name -- npm's `mcp` is
 #                     Mintlify's, and it was reported as the MCP SDK until that split
-version: 1
-
 # The platform vocabulary. A value outside it is a typo, and `macos` used to build clean
 # and yield a pack query osqueryd silently never scheduled.
 platforms: [darwin, linux, windows]
@@ -86,8 +88,7 @@ routes:
     platform: darwin
     kind: app
     match: exact
-    table: apps
-    min_osquery: 5.10.0
+    osquery: {table: apps, min_osquery: 5.10.0}
     # Reverse-DNS, and case-SENSITIVE by necessity: com.kagi.kagimacOS is a real shipped
     # identifier, so a lowercase-only pattern would reject a fact. Verified against all
     # ten bundle_ids in the catalog before being written down.
@@ -96,14 +97,12 @@ routes:
     platform: darwin
     kind: brew
     match: exact
-    table: homebrew_packages
-    min_osquery: 5.10.0
+    osquery: {table: homebrew_packages, min_osquery: 5.10.0}
   launchd_prefixes:
     platform: darwin
     kind: daemon
     match: prefix
-    table: launchd
-    min_osquery: 5.10.0
+    osquery: {table: launchd, min_osquery: 5.10.0}
   running_apps:
     # LIVENESS, built as that and named as that, which is what the catalog said it would
     # take when `ports` was retired. A `proc` row says the agent is RUNNING. The value is the
@@ -112,8 +111,7 @@ routes:
     platform: darwin
     kind: proc
     match: exact
-    table: processes
-    min_osquery: 5.10.0
+    osquery: {table: processes, min_osquery: 5.10.0}
     values_from: bundle_ids
 
   # --- portable ----------------------------------------------------------------------
@@ -121,31 +119,27 @@ routes:
     platform: posix
     kind: npm
     match: exact
-    table: npm_packages
-    min_osquery: 5.10.0
+    osquery: {table: npm_packages, min_osquery: 5.10.0}
   running_npm:
     # A process running out of a package, or a node, bun or deno process whose script sits
-    # in one. queries/running.sql extracts the package name and never ships the cmdline.
+    # in one. osquery/queries/running.sql extracts the package name and never ships the cmdline.
     platform: posix
     kind: proc
     match: exact
-    table: processes
-    min_osquery: 5.10.0
+    osquery: {table: processes, min_osquery: 5.10.0}
     values_from: npm
   pypi:
     platform: posix
     kind: file
     match: tool-dir
-    table: file
-    min_osquery: 5.10.0
+    osquery: {table: file, min_osquery: 5.10.0}
   extension_ids:
     # Chromium extension ids are derived from the developer's public key, so they are
     # identical on every OS and across every browser_type osquery enumerates.
     platform: posix
     kind: ext
     match: exact
-    table: chrome_extensions
-    min_osquery: 5.10.0
+    osquery: {table: chrome_extensions, min_osquery: 5.10.0}
     # 32 characters from a-p: a base16 encoding of the first half of a SHA-256 over the
     # key, remapped onto letters. A hex-looking id, one with a digit, or one of the
     # wrong length was transcribed rather than read off an install.
@@ -159,8 +153,7 @@ routes:
     platform: posix
     kind: nmh
     match: exact
-    table: file
-    min_osquery: 5.10.0
+    osquery: {table: file, min_osquery: 5.10.0}
   vscode_extensions:
     # NEW, and it retires a blind spot rather than adding one. docs/blind-spots.yaml said
     # "osquery has no table for them at all" -- true at 5.10.0, false from 5.11.0.
@@ -183,8 +176,7 @@ routes:
     platform: posix
     kind: vscodeext
     match: exact
-    table: vscode_extensions
-    min_osquery: 5.11.0
+    osquery: {table: vscode_extensions, min_osquery: 5.11.0}
     value_pattern: '^[A-Za-z0-9][A-Za-z0-9._-]*\.[A-Za-z0-9][A-Za-z0-9._-]*$'
   jetbrains_plugins:
     # THE VALUE IS THE PLUGIN DIRECTORY NAME, the last component of the row's `path`. The
@@ -201,15 +193,13 @@ routes:
     platform: posix
     kind: jbplugin
     match: exact
-    table: jetbrains_plugins
-    min_osquery: 5.18.0
+    osquery: {table: jetbrains_plugins, min_osquery: 5.18.0}
     value_pattern: '^[A-Za-z0-9][A-Za-z0-9._-]*$'
   images:
     platform: posix
     kind: image
     match: exact-normalised
-    table: docker_images
-    min_osquery: 5.10.0
+    osquery: {table: docker_images, min_osquery: 5.10.0}
   container_images:
     # THE SAME VALUES AS `images`, REACHED THROUGH A RUNNING CONTAINER. Catalogued under
     # `images:` on the agent -- an agent does not need a second list -- and separate here
@@ -231,8 +221,7 @@ routes:
     platform: posix
     kind: container
     match: exact-normalised
-    table: docker_containers
-    min_osquery: 5.10.0
+    osquery: {table: docker_containers, min_osquery: 5.10.0}
     # Reads `images:` off each agent rather than a list of its own. See bin/classify's
     # Registry for why duplication was rejected, and note the consequence for coverage:
     # an aliased route contributes no catalog key, so tools/agent_status.py counts the
@@ -269,8 +258,7 @@ routes:
     platform: posix
     kind: ilabel
     match: exact
-    table: docker_image_labels
-    min_osquery: 5.10.0
+    osquery: {table: docker_image_labels, min_osquery: 5.10.0}
     # A URL, because that is what `source` holds. Anchored at both ends so a bare project
     # name cannot be written here by someone reaching for `title` instead.
     value_pattern: '^https?://[A-Za-z0-9.-]+/[A-Za-z0-9._~:/?#@!$&()*+,;=%-]+$'
@@ -278,14 +266,12 @@ routes:
     platform: posix
     kind: file
     match: home-dir
-    table: file
-    min_osquery: 5.10.0
+    osquery: {table: file, min_osquery: 5.10.0}
   binaries:
     platform: posix
     kind: file
     match: home-prefix
-    table: file
-    min_osquery: 5.10.0
+    osquery: {table: file, min_osquery: 5.10.0}
   process_paths:
     # A `~/`-rooted path a RUNNING agent's executable sits under, for an agent whose process
     # does not run from the path `binaries` names. Its own values, so every one must be
@@ -294,8 +280,7 @@ routes:
     platform: posix
     kind: proc
     match: home-prefix
-    table: processes
-    min_osquery: 5.10.0
+    osquery: {table: processes, min_osquery: 5.10.0}
   model_stores:
     # Carries no values today: it went with the model runners, which are not agents.
     # Kept registered because its kind is still collected -- see `ports` below for what
@@ -303,15 +288,14 @@ routes:
     platform: posix
     kind: file
     match: home-prefix
-    table: file
-    min_osquery: 5.10.0
+    osquery: {table: file, min_osquery: 5.10.0}
   ports:
     # RETIRED AS A SIGNATURE, AND IT MUST STAY REGISTERED ANYWAY. A port only ever
     # matched when the process holding it already named the agent, so it added no
     # identifying power -- a second opinion from the same witness. catalog/agents.yaml's
     # header has the measurement.
     #
-    # But queries/ports.sql still emits kind='port' rows as raw evidence, and a kind
+    # But osquery/queries/ports.sql still emits kind='port' rows as raw evidence, and a kind
     # absent from the registry is DROPPED by bin/classify, not unmatched. Deleting this
     # entry would reproduce the `ext` bug exactly: rows collected, rows correct, rows
     # invisible even under --show-unmatched. `retired` keeps the kind registered and the
@@ -319,8 +303,7 @@ routes:
     platform: posix
     kind: port
     match: exact
-    table: listening_ports
-    min_osquery: 5.10.0
+    osquery: {table: listening_ports, min_osquery: 5.10.0}
     retired: true
 
   # --- Linux -------------------------------------------------------------------------
@@ -329,22 +312,20 @@ routes:
     # Verified in a container against a real `apt-get remove` without purge: dpkg keeps
     # the row as `deinstall ok config-files` WITH THE VERSION STILL ATTACHED, and
     # osquery reports it. Unfiltered, an uninstalled agent reads as an installed one.
-    # queries/packages-linux.sql carries the filter and the measurement.
+    # osquery/queries/packages-linux.sql carries the filter and the measurement.
     platform: linux
     kind: deb
     match: exact
-    table: deb_packages
-    min_osquery: 5.10.0
+    osquery: {table: deb_packages, min_osquery: 5.10.0}
   rpm_packages:
     # Verified to coexist with deb_packages in ONE composed artifact: on Debian this
     # returns 0 rows and exit 0 with no stderr, and deb_packages does the same on
-    # Fedora. That is what lets a single dist/discovery-linux.sql serve both families
+    # Fedora. That is what lets a single osquery/dist/discovery-linux.sql serve both families
     # instead of splitting the artifact per package manager.
     platform: linux
     kind: rpm
     match: exact
-    table: rpm_packages
-    min_osquery: 5.10.0
+    osquery: {table: rpm_packages, min_osquery: 5.10.0}
   desktop_ids:
     # Linux's nearest analogue to a bundle id, and THE ONLY ROUTE THAT CAN SEE AN
     # AppImage OR TARBALL INSTALL: neither leaves a package record, and both commonly
@@ -357,8 +338,7 @@ routes:
     platform: linux
     kind: desktop
     match: exact
-    table: file
-    min_osquery: 5.10.0
+    osquery: {table: file, min_osquery: 5.10.0}
     value_pattern: '^[A-Za-z0-9][A-Za-z0-9._+-]*\.desktop$'
   systemd_prefixes:
     # REGISTERED, AND CARRYING NO VALUES. That is the whole state of this route, and it is
@@ -370,7 +350,7 @@ routes:
     # test that caught it is in test/test_matcher.py -- a unit named
     # ai.openclaw.gateway.service resolved to nothing, because nothing claims it.
     #
-    # SO WHY KEEP THE ROUTE AT ALL. Because queries/runtime-linux.sql emits kind='unit'
+    # SO WHY KEEP THE ROUTE AT ALL. Because osquery/queries/runtime-linux.sql emits kind='unit'
     # rows, and a kind absent from this registry is DROPPED by bin/classify rather than
     # reported unmatched -- invisible even under --show-unmatched. That is the `ext` bug,
     # and it is why `ports` is still here too. Registering the kind is what keeps a
@@ -383,7 +363,7 @@ routes:
     # vendor-named unit the value goes here and 76-linux-systemd's assertion changes with
     # it. Until then docs/blind-spots.yaml carries the gap.
     #
-    # systemd_units FAILS SOFT, which is why queries/runtime-linux.sql pairs it with a
+    # systemd_units FAILS SOFT, which is why osquery/queries/runtime-linux.sql pairs it with a
     # kind=scan marker: with no reachable system bus it logs to stderr, contributes ZERO
     # rows, and the statement still exits 0 and returns every other row. Measured in a
     # container: 0 units, exit 0, 131 other rows. Without the marker a chroot, a
@@ -392,5 +372,4 @@ routes:
     platform: linux
     kind: unit
     match: prefix
-    table: systemd_units
-    min_osquery: 5.10.0
+    osquery: {table: systemd_units, min_osquery: 5.10.0}

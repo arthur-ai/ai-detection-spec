@@ -104,10 +104,15 @@ for name in NEUTRAL:
             if isinstance(n, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
             and n.body and isinstance(n.body[0], ast.Expr)
             and isinstance(n.body[0].value, ast.Constant)}
+    # A PATH, not a word: a string starting `osquery/`, or `... / "osquery"` joining one.
+    # The binding's NAME is legitimate here -- the registry declares which bindings exist.
     for n in ast.walk(tree):
         if (isinstance(n, ast.Constant) and isinstance(n.value, str) and id(n) not in docs
-                and (n.value == "osquery" or n.value.startswith("osquery/"))):
+                and n.value.startswith("osquery/")):
             bad.append(f"{name}:{n.lineno}: names {n.value!r}")
+        if (isinstance(n, ast.BinOp) and isinstance(n.op, ast.Div)
+                and isinstance(n.right, ast.Constant) and n.right.value == "osquery"):
+            bad.append(f"{name}:{n.lineno}: joins a path into osquery/")
 for b in bad:
     print(f"FAIL: boundary -- {b}. The matcher and the catalog tools read no binding's files.")
 if bad:

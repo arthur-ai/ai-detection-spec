@@ -560,6 +560,31 @@ print(f"perms provenance: ok, browser.sql and bin/classify agree on {sorted(emit
 PERMS
 
 python3 "$OSQ/tools/build.py" --check || fail=1
+# THE BINDING CHECK REFUSES WHAT IT EXISTS TO REFUSE. build.py runs it on the real registry
+# above; these feed it a broken one, so a check that stopped looking would go red here.
+python3 - "$OSQ/tools" "$REPO/catalog/routes.yaml" <<'BINDING' || fail=1
+import sys
+sys.path.insert(0, sys.argv[1])
+import build
+text = open(sys.argv[2]).read()
+qs = build.queries()
+cases = {
+    "a floor above every feeding query": text.replace(
+        "{table: jetbrains_plugins, min_osquery: 5.18.0}", "{table: jetbrains_plugins, min_osquery: 5.99.0}"),
+    "a table no query names": text.replace(
+        "{table: homebrew_packages, min_osquery: 5.10.0}", "{table: brew_packages, min_osquery: 5.10.0}"),
+    "a binding it cannot read": text.replace(
+        "    osquery: {table: apps, min_osquery: 5.10.0}", "    osquery: {table: apps}"),
+}
+bad = [name for name, mutated in cases.items()
+       if mutated == text or not build.binding_errors(qs, mutated)]
+if build.binding_errors(qs, text):
+    bad.append("the real registry")
+if bad:
+    print(f"FAIL: binding check: wrong answer for {bad}")
+    sys.exit(1)
+print(f"binding check: ok, refuses {len(cases)} broken registries and passes the real one")
+BINDING
 # The rendered match SQL is generated from the catalog the way dist/ is from queries/, and
 # gated the same way. The parity test needs osqueryi and SKIPs without one, which is what
 # lets this file stay runnable on a runner with no osquery; ci.yml's runtime jobs run it

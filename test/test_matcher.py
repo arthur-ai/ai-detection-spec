@@ -1357,6 +1357,52 @@ check("...and passes the same value under the route it borrows from",
 check("...and refuses the key empty too: present, it says the route is declared here",
       any("bundle_ids" in e for e in _bre("probe", {"running_apps": []}, _reg)))
 
+# --- the registry, made true: each rule refuses its case and passes its control -------
+_rve = _vc.route_value_errors
+check("validate_catalog refuses a bare string where a list belongs, which iterates by letter",
+      any("non-empty list" in e for e in _rve("probe", {"npm": "openclaw"}, _reg)))
+check("...and an empty list, a route that claims nothing",
+      any("non-empty list" in e for e in _rve("probe", {"npm": []}, _reg)))
+check("...and passes a list of strings", _rve("probe", {"npm": ["openclaw"]}, _reg) == [])
+check("a retired route may carry no values",
+      any("retired" in e for e in _rve("probe", {"ports": ["18789"]}, _reg)))
+_ie = _vc.image_errors
+check("an images value must be written as the matcher normalises it",
+      any("normalises" in e for e in _ie("probe", {"images": ["docker.io/paulgauthier/aider"]},
+                                         _cl.image_repo)))
+check("...and the normalised form passes",
+      _ie("probe", {"images": ["paulgauthier/aider"]}, _cl.image_repo) == [])
+_oe = _vc.overlap_errors
+check("a home-prefix value that claims another agent's path is refused",
+      bool(_oe([{"id": "a", "binaries": ["~/.local/bin/kiro"]},
+                {"id": "b", "binaries": ["~/.local/bin/kiro/x"]}], _reg)))
+check("...but not a sibling name, which home-prefix does not claim",
+      _oe([{"id": "a", "binaries": ["~/.local/bin/kiro"]},
+           {"id": "b", "binaries": ["~/.local/bin/kiro-cli"]}], _reg) == [])
+check("a launchd prefix covering another agent's label is refused",
+      bool(_oe([{"id": "a", "launchd_prefixes": ["ai."]},
+                {"id": "b", "launchd_prefixes": ["ai.openclaw."]}], _reg)))
+check("...and within one agent it is allowed",
+      _oe([{"id": "a", "launchd_prefixes": ["ai.", "ai.openclaw."]}], _reg) == [])
+_lse = _vc.live_superseded_errors
+check("a superseded value a run still observes is refused: it is current",
+      bool(_lse("a", {"superseded": [{"route": "npm", "value": "x"}]},
+                {("a", "npm", "x"): {"21-cli-agents-homebrew"}})))
+check("...and one no run observes passes",
+      _lse("a", {"superseded": [{"route": "npm", "value": "x"}]}, {}) == [])
+_ve = _vc.version_errors
+check("the catalog version must equal bin/classify's",
+      bool(_ve({"version": 1}, 2)) and _ve({"version": 2}, 2) == [])
+_vr = _vc.validate_registry
+check("a route with no binding is refused: nothing would collect its rows",
+      any("no binding" in e for e in _vr({"platforms": ["darwin"], "routes": {
+          "x": {"platform": "darwin", "kind": "app", "match": "exact"}}})))
+check("...and a binding missing a field",
+      any("exactly" in e for e in _vr({"platforms": ["darwin"], "routes": {
+          "x": {"platform": "darwin", "kind": "app", "match": "exact",
+                "osquery": {"table": "apps"}}}})))
+check("the real registry binds every route", _vr(_reg) == [], str(_vr(_reg)))
+
 # --- the row that speaks for a finding ----------------------------------------------
 # One rule for every consumer, so each one does not pick its own. Rows are the real shapes:
 # dpkg's row off an apt install of Claude Code (Ubuntu 22.04), osquery's chrome_extensions
