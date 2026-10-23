@@ -17,7 +17,7 @@
 #     for, and one no container can stage. The guest script measures it directly: the old
 #     `users` join against the shipped artifact, on a profile owned by the login account.
 #   * a shared-core shape. e2-small is what a fleet is full of and what CI has none of,
-#     so the wall-clock figures in docs/deployment.md come from here, dated.
+#     so the wall-clock figures in osquery/docs/deployment.md come from here, dated.
 #
 # ONE VM PER SCENARIO, because the first version of this ran them all on one and every
 # `forbid` after 71-linux-cli-agents failed: that scenario installs claude-code and

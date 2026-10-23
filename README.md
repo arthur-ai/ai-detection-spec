@@ -115,7 +115,7 @@ one.
 
 **Everything that runs on the endpoint needs osquery alone.** `osquery/bin/discover` and
 `osquery/bin/container-scan` are bash and `osqueryi`; `python3` and PyYAML are for the classifier and
-the tools, which run off the machine. [`docs/deployment.md`](docs/deployment.md) says why that
+the tools, which run off the machine. [`osquery/docs/deployment.md`](osquery/docs/deployment.md) says why that
 is a rule rather than a detail, why `curl` is not listed, and what the one-file bundle adds.
 
 `sudo` is needed because some tables read other users' home directories. Without it you see
@@ -149,7 +149,7 @@ tagged release is the recommended posture, and one ships the same artifacts plus
 catalog; see [SECURITY.md](SECURITY.md).
 
 For a fleet, do not run either of those on a synchronous reporting path — schedule
-`osquery/bin/discover --write` and `cat` the file. See [Running it on a fleet](docs/deployment.md).
+`osquery/bin/discover --write` and `cat` the file. See [Running it on a fleet](osquery/docs/deployment.md).
 
 `bin/classify` prints the agents it found and the evidence for each:
 
@@ -278,7 +278,7 @@ returns against a daemon that accepts the connection and does not answer.
 $ sudo osquery/bin/discover --deep | bin/classify     # base inventory plus containers
 ```
 
-**[How the bound works, the exit codes, and how image names resolve →](docs/containers.md)**
+**[How the bound works, the exit codes, and how image names resolve →](osquery/docs/containers.md)**
 
 ## Running it on a fleet
 
@@ -296,7 +296,7 @@ names and the status as one line, which Smart Groups can match on. **With Fleet*
 `fleet-policies.yml` to get one policy per agent. **With your own collector**, store the JSON
 and run `bin/classify` over it.
 
-**[The scheduled writer, the status line, the one-file bundle, and the one-line and Fleet options →](docs/deployment.md)**
+**[The scheduled writer, the status line, the one-file bundle, and the one-line and Fleet options →](osquery/docs/deployment.md)**
 
 ## Contributing — genuinely, please do
 

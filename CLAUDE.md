@@ -37,7 +37,7 @@ So the runtime is named from a socket or a binary on disk, and nothing more. **D
 look and finding nothing may not share a word.**
 
 **`stale:<n>` was in that list and is now retired**, because nothing ever emitted it. It was
-documented here, in `docs/deployment.md` and accepted by `ci.yml`'s vocabulary check, while no
+documented here, in `osquery/docs/deployment.md` and accepted by `ci.yml`'s vocabulary check, while no
 writer produced it — a contract term with no producer, which is the same class of claim as an
 identifier no test can generate. Staleness is already carried better: every marker row's `ver`
 holds the unix time of the scan, and `bin/classify` computes the age from it. That way the
