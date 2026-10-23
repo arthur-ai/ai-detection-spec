@@ -18,7 +18,7 @@ need_pkgs python3 || true
 # `aider-chat` while its state dir is ~/.aider, and the bridge is the only thing that
 # makes those two the same agent.
 #
-# The installer also writes ~/.local/bin, which queries/filesystem-linux.sql globs, so uv
+# The installer also writes ~/.local/bin, which osquery/queries/filesystem-linux.sql globs, so uv
 # itself comes back as an unmatched `file` row -- correctly, being no kind of agent.
 try_user "the uv installer" 'curl --retry 3 -fsSL https://astral.sh/uv/install.sh | sh' || true
 for pkg in aider-chat hermes-agent litellm; do

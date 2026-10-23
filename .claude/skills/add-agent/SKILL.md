@@ -1,12 +1,12 @@
 ---
 name: add-agent
-description: Add an agent to catalog/agents.yaml, or a missing install route or identifier to an existing entry — decide it is an agent, read every value off a real install, prove it in a scenario that can tell it from a lookalike, record the observation, and regenerate dist/ and the docs. Use when asked to add, catalog or detect a new AI agent, tool, extension or app, or to cover another way an existing one installs.
+description: Add an agent to catalog/agents.yaml, or a missing install route or identifier to an existing entry — decide it is an agent, read every value off a real install, prove it in a scenario that can tell it from a lookalike, record the observation, and regenerate osquery/dist/ and the docs. Use when asked to add, catalog or detect a new AI agent, tool, extension or app, or to cover another way an existing one installs.
 ---
 
 # Adding an agent
 
 The gates already refuse the mechanical mistakes: an agent no scenario installs, a value two
-agents claim, a stale `dist/` or `docs/agents.md`, a scenario in no CI matrix. This skill is
+agents claim, a stale `osquery/dist/` or `docs/agents.md`, a scenario in no CI matrix. This skill is
 for what they cannot see — whether it is an agent, whether every route is covered, whether each
 value came off a real install, and whether the scenario can tell a match from a lookalike.
 
@@ -119,7 +119,7 @@ Mechanics:
 ## 5. Regenerate and run the gates
 
 ```console
-$ python3 tools/build.py                  # dist/, and the rendered match files if PyYAML is present
+$ python3 osquery/tools/build.py                  # osquery/dist/, and the rendered match files if PyYAML is present
 $ python3 tools/agent_status.py --write   # docs/agents.md, docs/limits.md, README badge
 $ tools/gates.sh
 ```
@@ -131,7 +131,7 @@ $ tools/gates.sh
   the gate against the run's observations, merged across scenarios and platforms, and a
   value none of them produced fails there. The scenario itself fails only if the value is the
   sole witness or `must_contain` names it.
-- `test/test_match_sql.py` needs `osqueryi` and SKIPs without it. CI runs it for real.
+- `osquery/test/test_match_sql.py` needs `osqueryi` and SKIPs without it. CI runs it for real.
 
 ## 6. Commit
 
@@ -145,7 +145,7 @@ The body is what `.claude/skills/release` writes the notes from, so it says:
 
 ## Don'ts
 
-- Don't put an agent identifier in `queries/`. The endpoint enumerates; `check_no_catalog.py`
+- Don't put an agent identifier in `osquery/queries/`. The endpoint enumerates; `check_no_catalog.py`
   fails the build.
 - Don't write a `superseded:` record yourself. Paste the one `--supersede` prints;
   `validate_catalog.py` refuses a record no archived observation backs.

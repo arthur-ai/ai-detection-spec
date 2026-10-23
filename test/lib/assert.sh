@@ -25,8 +25,8 @@ assert_counts() {
   local actual_json="$1" expected_json="$2"
   python3 - "$actual_json" "$expected_json" <<'PY'
 import json, sys, collections
-# A BARE ARRAY IS THE ONLY SHAPE ANY PRODUCER EMITS -- `osqueryi --json`, bin/discover and
-# bin/container-scan alike. This used to unwrap a `findings` envelope as well, from an
+# A BARE ARRAY IS THE ONLY SHAPE ANY PRODUCER EMITS -- `osqueryi --json`, osquery/bin/discover and
+# osquery/bin/container-scan alike. This used to unwrap a `findings` envelope as well, from an
 # endpoint script that predates this repo: nothing in the tree could produce a dict, and
 # the unwrap would have raised on bin/classify's findings anyway, which carry no `kind`.
 actual = json.load(open(sys.argv[1]))
@@ -75,7 +75,7 @@ for probe in expected.get("must_contain", []):
 # because what is being asserted is that a QUERY excluded something -- and a substring
 # probe would be satisfied or defeated by whatever else happened to be installed.
 #
-# This exists for queries/packages-linux.sql's dpkg status filter. A package removed
+# This exists for osquery/queries/packages-linux.sql's dpkg status filter. A package removed
 # without --purge stays in dpkg's database as `deinstall ok config-files`, WITH ITS
 # VERSION, so an unfiltered query reports software nobody has as installed. Asserting the
 # absence of {kind: deb, id: nano} is the only way to see that the filter works: row
@@ -154,11 +154,11 @@ sys.exit(1 if fail else 0)
 PY_INNER
 }
 
-# The rendered match SQL -- dist/signatures.sql and dist/agents-<platform>.sql -- against
+# The rendered match SQL -- osquery/dist/signatures.sql and osquery/dist/agents-<platform>.sql -- against
 # the same real install, held to the classifier.
 #
 # The rendered SQL is derived from the classifier's own index, which makes agreement likely
-# and proves nothing; the fixtures in test/test_match_sql.py prove the predicates, and this
+# and proves nothing; the fixtures in osquery/test/test_match_sql.py prove the predicates, and this
 # is where the two meet REAL rows from a scenario that installed real software. Two checks:
 # the fragment over the rows just collected must claim exactly the evidence rows the
 # classifier claims, and the standalone artifact, run live, must find what `must_find`
@@ -170,6 +170,6 @@ PY_INNER
 # itself, with `sudo -n` for the live artifact when not already root.
 assert_match_sql() {
   local actual_json="$1" expected_json="$2" root="$3" agents_json="${4:-}" parity_json="${5:-}"
-  python3 "$root/test/test_match_sql.py" --assert "$actual_json" "$expected_json" \
-    --root "$root" ${agents_json:+--agents "$agents_json"} ${parity_json:+--parity "$parity_json"}
+  python3 "$root/osquery/test/test_match_sql.py" --assert "$actual_json" "$expected_json" \
+    --root "$root/osquery" ${agents_json:+--agents "$agents_json"} ${parity_json:+--parity "$parity_json"}
 }

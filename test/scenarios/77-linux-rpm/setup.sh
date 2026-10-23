@@ -4,7 +4,7 @@
 # carries a real identifier rather than proving the route can merely be reached.
 #
 # WHAT THIS SCENARIO REALLY CHECKS is that one composed artifact serves both distro
-# families. dist/discovery-linux.sql names deb_packages AND rpm_packages, and the obvious
+# families. osquery/dist/discovery-linux.sql names deb_packages AND rpm_packages, and the obvious
 # fear is that the missing one errors the whole statement -- which is what a genuinely
 # absent table does: `SELECT * FROM snap_packages` returns "[\n\n]" and exits 1 on every
 # Linux box. Measured instead: both tables are REGISTERED on both families and the absent

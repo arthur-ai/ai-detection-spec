@@ -247,7 +247,7 @@ if [ -z "${EC2_SECURITY_GROUP:-}" ]; then
 fi
 
 # THE WHOLE TREE, as test/run-gce.sh ships it and for its reasons: setup.sh sources ../../lib,
-# the assertions run bin/classify against catalog/, the guest's own dist/ is what gets
+# the assertions run bin/classify against catalog/, the guest's own osquery/dist/ is what gets
 # measured, and test/artifacts is excluded. COPYFILE_DISABLE, or macOS tar adds an AppleDouble
 # `._name` beside every file with an extended attribute, and tools/agent_status.py chokes on
 # `._observed.json`; --no-xattrs, or it writes them as pax headers instead, and GNU tar on the
@@ -290,7 +290,7 @@ if [ "$MODE" = ssm-user ]; then
   log "=== ssm-user"
   log "passwd: $(getent passwd ssm-user || echo 'absent: no session created it')"
   log "users table: $(sudo osqueryi --line "select username, uid, directory from users where username = 'ssm-user'" | tr -s '\n ' ' ')"
-  n="$(sudo osqueryi --json < dist/discovery-linux.sql 2>/dev/null | python3 -c "
+  n="$(sudo osqueryi --json < osquery/dist/discovery-linux.sql 2>/dev/null | python3 -c "
 import json, sys
 print(sum(1 for r in json.load(sys.stdin) if r['kind'] == 'file' and r['loc'] == '/home/ssm-user/.claude/'))")"
   log "rows for /home/ssm-user/.claude/ in the shipped artifact: $n"
@@ -355,19 +355,19 @@ if [ "$MODE" = facts ]; then
 
   # --- timing, on this shape, before anything is installed ---------------------------
   log "=== timing"
-  c=$(cpu); s=$(date +%s%N); sudo osqueryi --json < dist/discovery-linux.sql > "$OUT/base.json"; rc=$?
+  c=$(cpu); s=$(date +%s%N); sudo osqueryi --json < osquery/dist/discovery-linux.sql > "$OUT/base.json"; rc=$?
   log "composed artifact, cold: $(ms $s)ms $(steal "$c") exit=$rc rows=$(python3 -c "import json;print(len(json.load(open('$OUT/base.json'))))") bytes=$(wc -c < "$OUT/base.json")"
-  c=$(cpu); s=$(date +%s%N); sudo osqueryi --json < dist/discovery-linux.sql > /dev/null
+  c=$(cpu); s=$(date +%s%N); sudo osqueryi --json < osquery/dist/discovery-linux.sql > /dev/null
   log "composed artifact, warm: $(ms $s)ms $(steal "$c")"
   log "scan rows: $(python3 -c "import json;print(' '.join(r['id']+'='+r['extra'] for r in json.load(open('$OUT/base.json')) if r['kind']=='scan'))")"
   log "per kind: $(python3 -c "import json,collections;c=collections.Counter(r['kind'] for r in json.load(open('$OUT/base.json')));print(' '.join(k+'='+str(v) for k,v in sorted(c.items())))")"
-  c=$(cpu); s=$(date +%s%N); sudo bin/discover --deep > "$OUT/deep.json" 2>"$OUT/deep.err"; rc=$?
-  log "bin/discover --deep: $(ms $s)ms $(steal "$c") exit=$rc $(sed -n 1p "$OUT/deep.err")"
-  c=$(cpu); s=$(date +%s%N); sudo bin/discover --write "$OUT/inventory.json" --status "$OUT/status.txt" >/dev/null 2>"$OUT/write.err"; rc=$?
-  log "bin/discover --write: $(ms $s)ms $(steal "$c") exit=$rc"
+  c=$(cpu); s=$(date +%s%N); sudo osquery/bin/discover --deep > "$OUT/deep.json" 2>"$OUT/deep.err"; rc=$?
+  log "osquery/bin/discover --deep: $(ms $s)ms $(steal "$c") exit=$rc $(sed -n 1p "$OUT/deep.err")"
+  c=$(cpu); s=$(date +%s%N); sudo osquery/bin/discover --write "$OUT/inventory.json" --status "$OUT/status.txt" >/dev/null 2>"$OUT/write.err"; rc=$?
+  log "osquery/bin/discover --write: $(ms $s)ms $(steal "$c") exit=$rc"
   log "status.txt: $(cat "$OUT/status.txt" 2>/dev/null || echo '(none written)')"
   log "measure.py --check:"
-  sudo python3 tools/measure.py --check 2>&1 | sed 's/^/    /' | tee -a "$OUT/facts.txt"
+  sudo python3 osquery/tools/measure.py --check 2>&1 | sed 's/^/    /' | tee -a "$OUT/facts.txt"
 fi
 
 # --- the scenario -------------------------------------------------------------------
@@ -376,9 +376,9 @@ sudo "test/scenarios/$SC/setup.sh"; rc=$?
 if [ "$rc" = 3 ]; then log "--- $SC SKIP"; exit 3; fi
 if [ "$rc" != 0 ]; then log "--- $SC FAIL (setup exit $rc)"; exit 1; fi
 if python3 -c "import json,sys;sys.exit(0 if json.load(open('test/scenarios/$SC/expected.json')).get('deep') else 1)"; then
-  sudo bin/discover --deep > "$OUT/payload.json" 2>"$OUT/payload.err"
+  sudo osquery/bin/discover --deep > "$OUT/payload.json" 2>"$OUT/payload.err"
 else
-  sudo osqueryi --json < dist/discovery-linux.sql > "$OUT/payload.json" 2>"$OUT/payload.err"
+  sudo osqueryi --json < osquery/dist/discovery-linux.sql > "$OUT/payload.json" 2>"$OUT/payload.err"
 fi
 [ -s "$OUT/payload.err" ] && { echo '--- osquery stderr:'; sed 's/^/    /' "$OUT/payload.err"; }
 result=0

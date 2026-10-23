@@ -6,7 +6,7 @@
 # prove that each BRANCH still returns rows; whether the evidence resolves to the right
 # agent is a question for the classifier, and `classified` asks it there. The third holds
 # the rendered match SQL -- the catalog as the endpoint runs it -- to the classifier's
-# answer on the same rows, and runs dist/agents-<platform>.sql live.
+# answer on the same rows, and runs osquery/dist/agents-<platform>.sql live.
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$HERE/lib/assert.sh"

@@ -1,6 +1,6 @@
 #!/bin/bash
 # A bun global, which osquery's npm_packages never looks for: its search list has npm, nvm,
-# asdf, fnm, mise and volta, and not ~/.bun. queries/packages.sql reaches it with a
+# asdf, fnm, mise and volta, and not ~/.bun. osquery/queries/packages.sql reaches it with a
 # `directory` constraint per home, and this is the run that proves the constraint is pushed
 # down rather than applied after a scan of the default list, which would return nothing.
 #

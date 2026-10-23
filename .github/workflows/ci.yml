@@ -134,7 +134,7 @@ jobs:
           # so `sudo osqueryi` is "command not found" for root.
           OSQI=/usr/local/bin/osqueryi
           start=$(date +%s)
-          sudo -n "$OSQI" --json < dist/discovery-darwin.sql > /tmp/out.json
+          sudo -n "$OSQI" --json < osquery/dist/discovery-darwin.sql > /tmp/out.json
           elapsed=$(( $(date +%s) - start ))
           rows=$(python3 -c "import json;print(len(json.load(open('/tmp/out.json'))))")
           echo "$rows rows in ${elapsed}s"
@@ -160,7 +160,7 @@ jobs:
         run: |
           OSQI=/usr/local/bin/osqueryi
           start=$(date +%s)
-          sudo -n "$OSQI" --json < dist/agents-darwin.sql > /tmp/agents.json
+          sudo -n "$OSQI" --json < osquery/dist/agents-darwin.sql > /tmp/agents.json
           elapsed=$(( $(date +%s) - start ))
           agents=$(python3 -c "import json;print(len(json.load(open('/tmp/agents.json'))))")
           echo "$agents agents in ${elapsed}s"
@@ -171,7 +171,7 @@ jobs:
             echo "::warning::the match query took ${elapsed}s, over the self-imposed ${QUERY_BUDGET_S}s budget."
           fi
 
-      # THE COST BANDS. Every query declares a band and tools/measure.py holds it to the
+      # THE COST BANDS. Every query declares a band and osquery/tools/measure.py holds it to the
       # band, floor of three runs -- after the two cold timings above, so those stay the
       # first osqueryi calls after install. The runner ships Xcode, Homebrew, four
       # browsers, Node and Python, so it is a loaded machine rather than an empty one. An
@@ -184,15 +184,15 @@ jobs:
       # ONE PASS, TWO GATES: the band check here and the parseable-JSON check below read
       # one results list. This ran `--check` and then `--json`, two full measurements.
       - name: Enforce cost bands
-        run: sudo -n python3 tools/measure.py --check --json > /tmp/perf.json
+        run: sudo -n python3 osquery/tools/measure.py --check --json > /tmp/perf.json
       # A daemon that is installed but not answering is the worst case for any query that
       # touches one, and it is invisible on a machine where the daemon is simply absent.
       # The hosted runner has no Docker, so this asserts the absent case only; the stopped
-      # and mid-startup cases are test/docker_states.sh's, at the foot of this job.
+      # and mid-startup cases are osquery/test/docker_states.sh's, at the foot of this job.
       - name: Confirm no query blocks on an absent dependency
         run: |
           test ! -S /var/run/docker.sock || echo "note: a docker socket exists on this runner"
-          python3 tools/check_output.py /tmp/perf.json
+          python3 osquery/tools/check_output.py /tmp/perf.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -206,15 +206,15 @@ jobs:
       - name: bin/discover, with and without --deep
         run: |
           OSQI=/usr/local/bin/osqueryi
-          sudo -n env OSQI="$OSQI" bin/discover > /tmp/base.json
-          sudo -n env OSQI="$OSQI" bin/discover --deep > /tmp/deep.json
+          sudo -n env OSQI="$OSQI" osquery/bin/discover > /tmp/base.json
+          sudo -n env OSQI="$OSQI" osquery/bin/discover --deep > /tmp/deep.json
           python3 - <<'EOF'
           import json, sys
           base = json.load(open("/tmp/base.json"))
           deep = json.load(open("/tmp/deep.json"))
           gaps = [r for r in deep if r["kind"] == "scan"]
           if not base:
-              sys.exit("::error::bin/discover returned no rows at all")
+              sys.exit("::error::osquery/bin/discover returned no rows at all")
           # THE SIX-COLUMN CONTRACT, CHECKED WHERE IT CAN STILL BE BROKEN. These rows come
           # straight out of the composed artifact, so their keys are whatever the SQL named
           # -- and the pack once shipped a browser query whose columns were 'ext' and
@@ -242,14 +242,14 @@ jobs:
       - name: The cache pattern, write then read
         run: |
           OSQI=/usr/local/bin/osqueryi
-          sudo -n env OSQI="$OSQI" bin/discover \
+          sudo -n env OSQI="$OSQI" osquery/bin/discover \
             --write /tmp/inv.json --status /tmp/inv.status > /dev/null
-          sudo -n env OSQI="$OSQI" bin/discover --cache /tmp/inv.json > /tmp/read.json
+          sudo -n env OSQI="$OSQI" osquery/bin/discover --cache /tmp/inv.json > /tmp/read.json
           python3 - <<'EOF'
           import json, sys, time
           inv = json.load(open("/tmp/inv.json"))
           scans = {r["id"]: r for r in inv if r["kind"] == "scan"}
-          # The six-column check that stood here moved to the bin/discover step above. The
+          # The six-column check that stood here moved to the osquery/bin/discover step above. The
           # merge selects those six columns by name, so asserting them on its output tests
           # the assertion rather than the payload; on the composed artifact's own rows it
           # still tests something that has actually been wrong.
@@ -259,7 +259,7 @@ jobs:
           # neighbours, so darwin runs ten. A floor that trails the real number stops
           # being a per-branch check and becomes a check that at least six of them
           # reported -- which is exactly the attribution this row exists to give.
-          pack = json.load(open("dist/ai-discovery.conf"))["queries"]
+          pack = json.load(open("osquery/dist/ai-discovery.conf"))["queries"]
           want = {n for n, q in pack.items()
                   if q.get("platform") in ("darwin", "posix", "all")}
           if set(scans) != want:
@@ -280,13 +280,13 @@ jobs:
           # --names IN EVERY SHAPE IT COMPOSES WITH. One line each; the right half is the
           # status line and must obey its vocabulary; and the --write form's right half
           # must be the status file the same run wrote, byte for byte -- one statement
-          # produces both. test/check_names_line.py holds it to that, for both platforms.
-          sudo -n env OSQI="$OSQI" bin/discover --names --cache /tmp/inv.json > /tmp/names.cache
-          sudo -n env OSQI="$OSQI" bin/discover --names \
+          # produces both. osquery/test/check_names_line.py holds it to that, for both platforms.
+          sudo -n env OSQI="$OSQI" osquery/bin/discover --names --cache /tmp/inv.json > /tmp/names.cache
+          sudo -n env OSQI="$OSQI" osquery/bin/discover --names \
             --write /tmp/inv2.json --status /tmp/inv2.status > /tmp/names.write
-          sudo -n env OSQI="$OSQI" bin/discover --names > /tmp/names.base
+          sudo -n env OSQI="$OSQI" osquery/bin/discover --names > /tmp/names.base
           cat /tmp/names.write
-          python3 test/check_names_line.py --status-file /tmp/inv2.status \
+          python3 osquery/test/check_names_line.py --status-file /tmp/inv2.status \
             /tmp/names.write /tmp/names.cache /tmp/names.base
 
       # THE STATUS LINE IS A CONTRACT. Its vocabulary is what a consumer branches on, so
@@ -321,8 +321,8 @@ jobs:
               # look wider than it is, and a consumer branching on it would be writing
               # dead code. Staleness comes from the marker row's `ver` instead.
               # `unreadable:<runtime>` was added under that rule with its producer:
-              # bin/container-scan emits it when there is no Docker socket but another
-              # runtime is on disk, and test/docker_states.sh produces the row.
+              # osquery/bin/container-scan emits it when there is no Docker socket but another
+              # runtime is on disk, and osquery/test/docker_states.sh produces the row.
               if not (v in ok or v.startswith(("unhealthy:", "timeout:", "unreadable:"))):
                   sys.exit(f"::error::unknown outcome {v!r} for {k}. Consumers branch on this "
                            f"vocabulary and it must not grow silently")
@@ -330,7 +330,7 @@ jobs:
           EOF
 
       # THE BUNDLE IS THE DEPLOYABLE SHAPE, AND IT IS ONLY PROVEN AWAY FROM THE CHECKOUT.
-      # tools/bundle.py packs bin/ and dist/ into one self-extracting script, for a
+      # osquery/tools/bundle.py packs bin/ and osquery/dist/ into one self-extracting script, for a
       # management platform that can host a script and cannot place files on disk. Built
       # here, then run from `/` with no repo beside it: a bundle that quietly resolved a
       # path back into this checkout would pass on this runner and fail on every machine
@@ -345,13 +345,13 @@ jobs:
           # reproduce it: it only bites if you replicate the cd, which is the part that
           # looks like scenery.
           repo="$PWD"
-          python3 "$repo/tools/bundle.py" --platform darwin --out /tmp/bundle/ai-discovery.sh
+          python3 "$repo/osquery/tools/bundle.py" --platform darwin --out /tmp/bundle/ai-discovery.sh
           cd /
           sudo -n env OSQI=/usr/local/bin/osqueryi /tmp/bundle/ai-discovery.sh \
             --write /tmp/bundle-inv.json --status /tmp/bundle.status > /dev/null
           cat /tmp/bundle.status
           # --names THROUGH THE BUNDLE, which is how an Extension Attribute calls it. The
-          # bundle carries dist/signatures.sql for this and nothing else checks that it
+          # bundle carries osquery/dist/signatures.sql for this and nothing else checks that it
           # does: lint compares the payload to the same tuple that lists it, so dropping
           # the file passes lint. Here it prints nothing and exits 1.
           sudo -n env OSQI=/usr/local/bin/osqueryi /tmp/bundle/ai-discovery.sh \
@@ -399,14 +399,14 @@ jobs:
             || { echo "::error::arguments did not reach the driver: $*"; exit 1; }
           exit 7
           DRV
-          python3 "$repo/tools/bundle.py" --platform darwin --driver /tmp/drv.sh \
+          python3 "$repo/osquery/tools/bundle.py" --platform darwin --driver /tmp/drv.sh \
             --out /tmp/bundle/wrapped.sh
           set +e; /tmp/bundle/wrapped.sh passed-through; s=$?; set -e
           [ "$s" = 7 ] \
             || { echo "::error::the driver's exit status did not propagate: got $s"; exit 1; }
           # And it must be readable back out, which is how a consumer's own guards inspect
           # what they shipped.
-          python3 "$repo/tools/bundle.py" --platform darwin --member driver \
+          python3 "$repo/osquery/tools/bundle.py" --platform darwin --member driver \
             /tmp/bundle/wrapped.sh | grep -q "exit 7" \
             || { echo "::error::--member could not read the driver back"; exit 1; }
           echo "driver: tree, arguments and exit status all arrived, and it reads back"
@@ -449,22 +449,22 @@ jobs:
           # THE RENDERED MATCH SQL, HELD TO THE CLASSIFIER ON THIS RUNNER'S OWN PAYLOAD,
           # evidence row for evidence row -- plus the fixtures and the controls. Lint runs
           # the same file without osqueryi and SKIPs; here it must run.
-          python3 test/test_match_sql.py --require-osqueryi /tmp/inv.json
+          python3 osquery/test/test_match_sql.py --require-osqueryi /tmp/inv.json
 
       # The pack is a separate artifact built by a different code path, and nothing ran
       # it until it shipped with four of five queries silently returning zero rows.
       - name: Run every query in the pack
-        run: sudo -n python3 tools/check_pack.py
+        run: sudo -n python3 osquery/tools/check_pack.py
 
       # Every daemon state, against a fake socket. No Docker needed, which is the point:
       # the hosted runner has none, and the states that break things cannot be produced
       # on demand from a real install anyway.
       - name: Container query against every Docker state
-        run: sudo -n test/docker_states.sh
+        run: sudo -n osquery/test/docker_states.sh
 
   # THE LINUX TWIN, and adding it is why labelling the jobs by platform was worth doing:
   # once "Query executes" was renamed "Runtime on macOS", the absence of a Linux one was
-  # the obvious next question. Until now nothing in CI ran bin/discover on Linux at all --
+  # the obvious next question. Until now nothing in CI ran osquery/bin/discover on Linux at all --
   # so its `uname -s` artifact selection and its platform-filtered --write loop, both of
   # which exist only for Linux, had no coverage on either platform's jobs.
   #
@@ -483,7 +483,7 @@ jobs:
       - name: Install osquery
         run: |
           # Both the deb and the rpm install to /usr/bin/osqueryi, which is the path
-          # bin/container-scan's osqueryi_path() looks for after the two macOS ones.
+          # osquery/bin/container-scan's osqueryi_path() looks for after the two macOS ones.
           curl --retry 3 --retry-all-errors --retry-delay 5 -fsSL -o /tmp/osquery.deb \
             "https://pkg.osquery.io/deb/osquery_${OSQUERY_VERSION}-1.linux_amd64.deb"
           sudo dpkg -i /tmp/osquery.deb
@@ -494,15 +494,15 @@ jobs:
       - name: Run the query and time it
         run: |
           start=$(date +%s)
-          sudo -n /usr/bin/osqueryi --json < dist/discovery-linux.sql > /tmp/out.json
+          sudo -n /usr/bin/osqueryi --json < osquery/dist/discovery-linux.sql > /tmp/out.json
           elapsed=$(( $(date +%s) - start ))
           rows=$(python3 -c "import json;print(len(json.load(open('/tmp/out.json'))))")
           echo "$rows rows in ${elapsed}s"
           # THIS IS A COLD RUN UNDER SUDO, and that is the number a synchronous reporting
-          # path actually pays. It is NOT the number tools/measure.py reports: that takes
+          # path actually pays. It is NOT the number osquery/tools/measure.py reports: that takes
           # the floor of three runs, after the baseline step below has warmed exactly what
           # this query reads. Cold, it varies from 3s to 25s on unchanged code, against
-          # 1.12s warm. queries/COST.md carries both and says why.
+          # 1.12s warm. osquery/queries/COST.md carries both and says why.
           #
           # WARN ABOVE THE BUDGET, FAIL ABOVE QUERY_FAIL_S. The 10s budget is self-imposed
           # and it is a declaration a reader can trust; the GATE exists to catch a query
@@ -517,7 +517,7 @@ jobs:
           elif [ "$elapsed" -gt "$QUERY_BUDGET_S" ]; then
             echo "::warning::query took ${elapsed}s, over the self-imposed ${QUERY_BUDGET_S}s budget but"
             echo "::warning::inside the ${QUERY_FAIL_S}s the gate allows for runner variance. This is"
-            echo "::warning::the cold cost on a loaded machine -- see queries/COST.md."
+            echo "::warning::the cold cost on a loaded machine -- see osquery/queries/COST.md."
           fi
           # THE LINUX ARTIFACT MUST NOT BE EMPTY. Any Linux box has packages, so zero rows
           # means the artifact did not run rather than that the machine is clean -- which
@@ -528,7 +528,7 @@ jobs:
       - name: The rendered match query, timed
         run: |
           start=$(date +%s)
-          sudo -n /usr/bin/osqueryi --json < dist/agents-linux.sql > /tmp/agents.json
+          sudo -n /usr/bin/osqueryi --json < osquery/dist/agents-linux.sql > /tmp/agents.json
           elapsed=$(( $(date +%s) - start ))
           agents=$(python3 -c "import json;print(len(json.load(open('/tmp/agents.json'))))")
           echo "$agents agents in ${elapsed}s"
@@ -546,7 +546,7 @@ jobs:
           # only reason that state is recoverable is the non-zero exit, so this asserts the
           # exit rather than trusting it.
           set +e
-          sudo -n /usr/bin/osqueryi --json < dist/discovery-darwin.sql > /tmp/wrong.json
+          sudo -n /usr/bin/osqueryi --json < osquery/dist/discovery-darwin.sql > /tmp/wrong.json
           rc=$?
           set -e
           if [ "$rc" = 0 ]; then
@@ -558,9 +558,9 @@ jobs:
           echo "exit $rc, and stdout was: $(tr -d '\n' < /tmp/wrong.json)"
 
       # THE LINUX BANDS, MEASURED, in the same shape as the macOS job. One number here was
-      # genuinely unknown until this ran: queries/runtime-linux.sql enumerates EVERY
+      # genuinely unknown until this ran: osquery/queries/runtime-linux.sql enumerates EVERY
       # systemd unit with no vendor exclusion, because Linux has no `com.apple.%`
-      # equivalent. queries/COST.md carries what it measured.
+      # equivalent. osquery/queries/COST.md carries what it measured.
       #
       # A LOADED MACHINE IS THE ONLY VALID BASELINE, and the three listings below warm
       # exactly what the composed query reads -- which is why measure.py's floor is a warm
@@ -572,9 +572,9 @@ jobs:
           echo "systemd units: $(systemctl list-unit-files --no-legend 2>/dev/null | wc -l)"
           echo "desktop entries: $(ls /usr/share/applications/*.desktop 2>/dev/null | wc -l)"
       - name: Enforce the declared bands
-        run: python3 tools/measure.py --check --json > /tmp/perf-linux.json
+        run: python3 osquery/tools/measure.py --check --json > /tmp/perf-linux.json
       - name: Confirm every query returned JSON
-        run: python3 tools/check_output.py /tmp/perf-linux.json
+        run: python3 osquery/tools/check_output.py /tmp/perf-linux.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -583,14 +583,14 @@ jobs:
 
       - name: bin/discover, with and without --deep
         run: |
-          sudo -n bin/discover > /tmp/base.json
-          sudo -n bin/discover --deep > /tmp/deep.json
+          sudo -n osquery/bin/discover > /tmp/base.json
+          sudo -n osquery/bin/discover --deep > /tmp/deep.json
           python3 - <<'EOF'
           import json, sys
           base = json.load(open("/tmp/base.json"))
           deep = json.load(open("/tmp/deep.json"))
           if not base:
-              sys.exit("::error::bin/discover returned no rows at all")
+              sys.exit("::error::osquery/bin/discover returned no rows at all")
           # THE SIX-COLUMN CONTRACT, CHECKED WHERE IT CAN STILL BE BROKEN: these rows carry
           # whatever names the artifact's SQL gave them. See the darwin job for why it is
           # here rather than on the --write payload.
@@ -611,8 +611,8 @@ jobs:
 
       - name: The cache pattern, and the Linux status vocabulary
         run: |
-          sudo -n bin/discover --write /tmp/inv.json --status /tmp/inv.status > /dev/null
-          sudo -n bin/discover --cache /tmp/inv.json > /tmp/read.json
+          sudo -n osquery/bin/discover --write /tmp/inv.json --status /tmp/inv.status > /dev/null
+          sudo -n osquery/bin/discover --cache /tmp/inv.json > /tmp/read.json
           cat /tmp/inv.status
           python3 - <<'EOF'
           import json, sys
@@ -620,18 +620,18 @@ jobs:
           read = json.load(open("/tmp/read.json"))
           if read != inv:
               sys.exit("::error::--cache did not return exactly what --write wrote")
-          # The six-column check moved to the bin/discover step above: the merge selects
+          # The six-column check moved to the osquery/bin/discover step above: the merge selects
           # those six by name, so here it would assert only that the assertion is right.
 
           scans = {r["id"]: r for r in inv if r["kind"] == "scan"}
-          pack = json.load(open("dist/ai-discovery.conf"))["queries"]
+          pack = json.load(open("osquery/dist/ai-discovery.conf"))["queries"]
           want = {n for n, q in pack.items()
                   if q.get("platform") in ("linux", "posix", "all")}
-          # ONE MARKER PER BRANCH, PLUS `systemd`. queries/runtime-linux.sql emits a
+          # ONE MARKER PER BRANCH, PLUS `systemd`. osquery/queries/runtime-linux.sql emits a
           # kind=scan row of its own -- systemd_units returns zero rows and exits 0 with no
           # system bus, so the marker is the only thing separating "no agent units" from
           # "we could not read the unit list". It carries a DIFFERENT id from its branch,
-          # which is exactly why bin/discover must not let it replace the branch's marker.
+          # which is exactly why osquery/bin/discover must not let it replace the branch's marker.
           missing = want - set(scans)
           if missing:
               sys.exit(f"::error::no scan row for branch(es) {sorted(missing)}")
@@ -653,15 +653,15 @@ jobs:
           print(f"{len(inv)} rows, {len(scans)} branches, every outcome in vocabulary")
           EOF
           # --names in every shape it composes with; the same check as the macOS job.
-          sudo -n bin/discover --names --cache /tmp/inv.json > /tmp/names.cache
-          sudo -n bin/discover --names --write /tmp/inv2.json --status /tmp/inv2.status > /tmp/names.write
-          sudo -n bin/discover --names > /tmp/names.base
+          sudo -n osquery/bin/discover --names --cache /tmp/inv.json > /tmp/names.cache
+          sudo -n osquery/bin/discover --names --write /tmp/inv2.json --status /tmp/inv2.status > /tmp/names.write
+          sudo -n osquery/bin/discover --names > /tmp/names.base
           cat /tmp/names.write
-          python3 test/check_names_line.py --status-file /tmp/inv2.status \
+          python3 osquery/test/check_names_line.py --status-file /tmp/inv2.status \
             /tmp/names.write /tmp/names.cache /tmp/names.base
 
       # THE BUNDLE IS THE DEPLOYABLE SHAPE, AND IT IS ONLY PROVEN AWAY FROM THE CHECKOUT.
-      # tools/bundle.py packs bin/ and dist/ into one self-extracting script, for a
+      # osquery/tools/bundle.py packs bin/ and osquery/dist/ into one self-extracting script, for a
       # management platform that can host a script and cannot place files on disk. Built
       # here, then run from `/` with no repo beside it: a bundle that quietly resolved a
       # path back into this checkout would pass on this runner and fail on every machine
@@ -676,7 +676,7 @@ jobs:
           # reproduce it: it only bites if you replicate the cd, which is the part that
           # looks like scenery.
           repo="$PWD"
-          python3 "$repo/tools/bundle.py" --platform linux --out /tmp/bundle/ai-discovery.sh
+          python3 "$repo/osquery/tools/bundle.py" --platform linux --out /tmp/bundle/ai-discovery.sh
           cd /
           sudo -n /tmp/bundle/ai-discovery.sh \
             --write /tmp/bundle-inv.json --status /tmp/bundle.status > /dev/null
@@ -726,14 +726,14 @@ jobs:
             || { echo "::error::arguments did not reach the driver: $*"; exit 1; }
           exit 7
           DRV
-          python3 "$repo/tools/bundle.py" --platform linux --driver /tmp/drv.sh \
+          python3 "$repo/osquery/tools/bundle.py" --platform linux --driver /tmp/drv.sh \
             --out /tmp/bundle/wrapped.sh
           set +e; /tmp/bundle/wrapped.sh passed-through; s=$?; set -e
           [ "$s" = 7 ] \
             || { echo "::error::the driver's exit status did not propagate: got $s"; exit 1; }
           # And it must be readable back out, which is how a consumer's own guards inspect
           # what they shipped.
-          python3 "$repo/tools/bundle.py" --platform linux --member driver \
+          python3 "$repo/osquery/tools/bundle.py" --platform linux --member driver \
             /tmp/bundle/wrapped.sh | grep -q "exit 7" \
             || { echo "::error::--member could not read the driver back"; exit 1; }
           echo "driver: tree, arguments and exit status all arrived, and it reads back"
@@ -775,11 +775,11 @@ jobs:
                 f"{'hedged' if hedged else 'unhedged'}")
           EOF
           # The rendered match SQL against this runner's payload; see the macOS job.
-          python3 test/test_match_sql.py --require-osqueryi /tmp/inv.json
+          python3 osquery/test/test_match_sql.py --require-osqueryi /tmp/inv.json
 
       - name: Run every query in the pack
-        run: sudo -n python3 tools/check_pack.py
+        run: sudo -n python3 osquery/tools/check_pack.py
 
       - name: Container query against every Docker state
-        run: sudo -n test/docker_states.sh
+        run: sudo -n osquery/test/docker_states.sh
 

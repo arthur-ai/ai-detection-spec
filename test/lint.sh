@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Static checks on the query and scenarios. No VM, and no network beyond a loopback socket
+# Static checks on the catalog, the matcher, the scenarios and the repo's own gates, then
+# osquery/test/lint.sh for the osquery binding. No VM, and no network beyond a loopback socket
 # the telemetry suite binds for itself — 11.4s measured here, so CI can gate on it and a VM
 # run never burns 20 minutes on a typo. It was about one second before test_telemetry.py
 # joined it, and most of the difference is that suite waiting out a sender it has pointed
@@ -14,258 +15,6 @@ fail=0
 # an event for every fixture it classifies and the field data would be mostly us. Set
 # explicitly rather than relied upon: see docs/telemetry.md.
 export AI_DISCOVERY_TELEMETRY=0
-
-for q in "$HERE"/../queries/*.sql; do
-python3 - "$q" <<'PY' || fail=1
-import re, sys
-raw = open(sys.argv[1]).read()
-sql = "\n".join(l for l in raw.splitlines() if not l.strip().startswith("--"))
-
-if ";" in sql:
-    print(f"FAIL: {sys.argv[1].split('/')[-1]}: a query fragment must not contain a semicolon. "
-          "The build joins files with UNION ALL; a stray semicolon ends the composed "
-          "query early and silently turns the rest into a second statement."); sys.exit(1)
-stmts = [sql]
-
-# A UNION ALL arm with the wrong column count is the failure mode this guards. osqueryi
-# does reject it, but only after a VM boot and an osquery install — about twenty minutes
-# later than here.
-widths = []
-for part in re.split(r"\bUNION ALL\b", stmts[0]):
-    if "SELECT" not in part.upper(): continue
-    frag = part[part.upper().index("SELECT"):]
-    frag = frag[:re.search(r"\bFROM\b", frag, re.I).start()]
-    # Commas inside string literals are not column separators. Counting them is how
-    # this check first reported a false positive on `CASE WHEN .. THEN ',<all_urls>'`.
-    depth = 0; n = 1; instr = False
-    for ch in frag:
-        if ch == "'": instr = not instr
-        elif instr: continue
-        elif ch == "(": depth += 1
-        elif ch == ")": depth -= 1
-        elif ch == "," and depth == 0: n += 1
-    widths.append((re.search(r"'(\w+)'", frag).group(1), n))
-
-bad = [(k, v) for k, v in widths if v != 6]
-if bad:
-    print(f"FAIL: {sys.argv[1].split('/')[-1]}: wrong column count (want 6): {bad}"); sys.exit(1)
-print(f"ok: {sys.argv[1].split('/')[-1]}: {len(widths)} branches, 6 columns each")
-
-# Two UNION ALLs with nothing between them. Removing a branch and leaving its keyword
-# behind is a syntax error osqueryi only reports at runtime -- and the failing query then
-# returns instantly, which reads as a SPEEDUP if you happen to be timing it.
-if re.search(r"UNION\s+ALL\s+UNION\s+ALL", sql, re.I):
-    print("FAIL: two consecutive UNION ALL - a branch was removed without its keyword"); sys.exit(1)
-if re.search(r"UNION\s+ALL\s*;?\s*$", sql.strip(), re.I):
-    print("FAIL: trailing UNION ALL with no branch after it"); sys.exit(1)
-
-# Semicolons inside comments break naive statement splitting in the EA wrapper.
-for i, l in enumerate(raw.splitlines(), 1):
-    if l.strip().startswith("--") and ";" in l:
-        print(f"FAIL: semicolon in comment at line {i}"); sys.exit(1)
-PY
-done
-
-# THE FIRST ARM OF EVERY FILE MUST ALIAS ALL SIX COLUMNS, IN ORDER.
-#
-# A UNION ALL takes its column NAMES from its first arm alone. So an unaliased first arm
-# silently inherits names from whatever happens to precede it -- apps.sql, inside
-# a composed artifact, because it sorts first -- and gets nothing at all when the file runs
-# on its own. browser.sql shipped that way: the pack's browser query returned 74 rows keyed
-# 'ext', identifier, browser_type and "permissions || CASE WHEN manifest_json LIKE ...",
-# which no consumer of the six-column contract can read. Row counts were correct throughout,
-# so check_pack.py passed it and the column-count check below passed it too.
-#
-# This matters more now than it did: bin/discover --write runs each branch in its own
-# process precisely so one failure cannot take the rest down, and a branch running alone is
-# exactly the case an unaliased first arm gets wrong.
-python3 - "$HERE/../queries" <<'ALIASES' || fail=1
-import glob, os, re, sys
-COLS = ["kind", "id", "ver", "loc", "extra", "perms"]
-bad = False
-for path in sorted(glob.glob(os.path.join(sys.argv[1], "*.sql"))):
-    name = os.path.basename(path)
-    body = "\n".join(l for l in open(path).read().splitlines()
-                     if not l.strip().startswith("--"))
-    head = body.split("FROM", 1)[0]
-    found = re.findall(r"\bAS\s+([a-z_]+)", head)
-    if found[:6] != COLS:
-        print(f"FAIL: {name}: first arm must alias all six columns in order "
-              f"(kind, id, ver, loc, extra, perms); found {found[:6] or 'none'}. "
-              f"Without it the file is only well-formed inside a composed artifact.")
-        bad = True
-if bad:
-    sys.exit(1)
-print("first-arm aliases: ok, every query names its own columns")
-ALIASES
-
-python3 - "$HERE" <<'PY' || fail=1
-import glob, json, os, re, sys
-here = sys.argv[1]
-root = os.path.dirname(here)
-
-# THE KIND VOCABULARY IS DERIVED FROM catalog/routes.yaml, not written out here.
-#
-# It used to be a hardcoded set, and it was one of five copies that had to agree -- the
-# same drift that let kind='ext' go missing from bin/classify for months, dropping every
-# browser-extension row in silence. Deriving it means adding a route to the registry is
-# the whole edit.
-#
-# AND IT IS SCOPED BY PLATFORM, which is what stops a Linux route breaking every macOS
-# scenario. A scenario pins the kinds its own platform can produce: `deb` is meaningless
-# on a Mac, and demanding it there would have forced a `"deb": 0` line into all thirteen
-# macOS scenarios to say nothing.
-reg = open(os.path.join(root, "catalog", "routes.yaml")).read()
-_plats = re.search(r"^platforms:\s*\[(.+?)\]\s*$", reg, re.M).group(1)
-PLATFORMS = [x.strip() for x in _plats.split(",")]
-_groups = dict(re.findall(r"^  ([a-z]+):\s*\[(.+?)\]\s*$",
-                          reg.split("platform_groups:", 1)[-1], re.M))
-GROUPS = {g: [x.strip() for x in v.split(",")] for g, v in _groups.items()}
-ROUTE_KIND, ROUTE_PLAT = {}, {}
-for block in re.finditer(r"^  ([a-z_]+):\s*$", reg, re.M):
-    name = block.group(1)
-    tail = reg[block.end():]
-    nxt = re.search(r"^  [a-z_]+:\s*$", tail, re.M)
-    body = tail[:nxt.start()] if nxt else tail
-    kind = re.search(r"^    kind:\s*(\S+)", body, re.M)
-    plat = re.search(r"^    platform:\s*(\S+)", body, re.M)
-    if kind and plat:
-        ROUTE_KIND[name] = kind.group(1)
-        ROUTE_PLAT[name] = GROUPS.get(plat.group(1), [plat.group(1)])
-
-# WHAT A SCENARIO MUST PIN IS WHAT ITS PLATFORM'S QUERIES ACTUALLY EMIT, read off the
-# query files rather than off the registry alone. The registry says which kinds a route
-# can be reached through; the queries say which kinds a composed artifact will contain,
-# and a scenario asserts on the artifact.
-#
-# The two differ in both directions, and each direction is a real check:
-#
-#   * `image` is a registry kind NO COMPOSED ARTIFACT carries. containers.sql is
-#     `expensive`, so it reaches nobody through dist/discovery-<platform>.sql -- which is
-#     why only a `deep: true` scenario may pin it, and why every other scenario must not.
-#   * `scan` is emitted by a QUERY and is not a route kind at all. queries/runtime-linux.sql
-#     emits one on every run, because systemd_units fails soft -- zero rows, exit 0 -- and
-#     the marker is the only thing that separates "no agent units" from "we could not read
-#     the unit list". A Linux scenario pins it, and pinning it is worth doing: it asserts
-#     the marker is present rather than assuming it.
-#
-# `scan` was previously excluded on the grounds that a scenario pinning it would be
-# "pinning its own failure". That was right about the CONTAINER marker, which
-# bin/container-scan emits INSTEAD of rows. It is not right about a marker emitted
-# alongside rows on every run, and the distinction is the reason this is derived now
-# rather than listed.
-bad_registry = False
-QUERY_DIR = os.path.join(root, "queries")
-EMITTED = {}          # platform -> kinds its fast/slow queries emit
-EMITTED_DEEP = {}     # platform -> kinds only the `expensive` queries emit
-PRODUCERS = {}        # kind -> set of query files emitting it
-for q in sorted(glob.glob(os.path.join(QUERY_DIR, "*.sql"))):
-    text = open(q).read()
-    head = []
-    for line in text.splitlines():
-        if line.strip() and not line.lstrip().startswith("--"):
-            break
-        head.append(line)
-    fm = dict(re.findall(r"^--\s*([a-z-]+):\s*(.+?)\s*$", "\n".join(head), re.M))
-    body = "\n".join(l for l in text.splitlines() if not l.lstrip().startswith("--"))
-    kinds = set(re.findall(r"SELECT\s+'(\w+)'", body, re.I))
-    # THE EXPENSIVE QUERIES GO IN THEIR OWN BUCKET rather than being skipped. They used to
-    # be `continue`d, which is why `image` needed a hardcoded exception two checks below:
-    # with no record that containers.sql emits it, a registry kind nothing produced looked
-    # like a route that could never match. Tracked separately, the exception is derived.
-    target = EMITTED_DEEP if fm.get("cost") == "expensive" else EMITTED
-    for plat in GROUPS.get(fm["platform"], [fm["platform"]]):
-        target.setdefault(plat, set()).update(kinds)
-    for k in kinds:
-        PRODUCERS.setdefault(k, set()).add(os.path.basename(q))
-
-# EVERY ROUTE'S KIND MUST HAVE A PRODUCER, on every platform the route claims. This is
-# the direction that fails silently: a route in the registry whose kind no query emits is
-# a signature nothing can ever feed, and it reads as coverage on the generated page.
-for r, k in sorted(ROUTE_KIND.items()):
-    for plat in ROUTE_PLAT[r]:
-        if plat not in EMITTED:            # no queries for that platform at all yet
-            continue
-        if k not in EMITTED[plat] | EMITTED_DEEP.get(plat, set()):
-            print(f"FAIL: route {r!r} needs kind {k!r} on {plat}, and no {plat} query "
-                  f"emits it -- the route could never match")
-            bad_registry = True
-
-def kinds_for(platform):
-    return set(EMITTED.get(platform, set()))
-
-# WHAT A DEEP SCENARIO PINS IS MORE, because it runs more. `deep: true` in expected.json
-# means the scenario asserts against `bin/discover --deep`, which is the composed artifact
-# PLUS dist/discovery-deep.sql -- so `image` becomes a kind it can and must pin. Nothing
-# else may pin it, and that asymmetry is the check: pinning `image` without `deep` fails
-# here rather than failing on a runner with no daemon.
-def deep_kinds_for(platform):
-    return set(EMITTED_DEEP.get(platform, set()))
-
-
-covered, bad = set(), False
-bad = bad or bool(globals().get("bad_registry"))
-seen_platforms, deep_platforms = set(), set()
-for f in sorted(glob.glob(os.path.join(here, "scenarios/*/expected.json"))):
-    name = os.path.basename(os.path.dirname(f))
-    d = json.load(open(f))
-    # REQUIRED, and it lives in expected.json rather than requires.json because every
-    # scenario already has one of these. An absent platform is the same ambiguity the
-    # catalog refuses for agents: "macOS" or "nobody said" are different claims.
-    platform = d.get("platform")
-    if platform not in PLATFORMS:
-        print(f"FAIL: {name} declares platform {platform!r}, want one of {PLATFORMS}")
-        bad = True
-        continue
-    seen_platforms.add(platform)
-    want = kinds_for(platform)
-    if d.get("deep"):
-        want |= deep_kinds_for(platform)
-        deep_platforms.add(platform)
-    counts = d.get("counts", {})
-    missing = want - set(counts)
-    if missing:
-        print(f"FAIL: {name} ({platform}) does not pin {sorted(missing)}")
-        bad = True
-    for k, v in counts.items():
-        # A `+` KEY SUMS KINDS -- test/lib/assert.sh reads it -- and every part of it
-        # must be a kind this platform emits. It proves the SUM, so it covers neither
-        # part below: `deb+rpm >= 1` says the package branch ran, not that either
-        # family was installed.
-        for part in k.split("+"):
-            if part not in want:
-                print(f"FAIL: {name} ({platform}) pins {part!r}, which no {platform} "
-                      f"route produces"); bad = True
-        if "+" in k:
-            continue
-        if isinstance(v, str) and not v.startswith(">="):
-            print(f"FAIL: {name}.{k} = {v!r}, want an int or '>=N'"); bad = True
-        # A FLOOR OF ZERO IS NOT EVIDENCE. `">=0"` used to count a kind as exercised,
-        # so a kind pinned `>=0` by every scenario satisfied the "every kind is
-        # exercised somewhere" check while nothing installed anything that produces it
-        # -- the check read as coverage and was a tautology. Only a positive floor
-        # counts now.
-        floor = v if isinstance(v, int) else int(v[2:] or 0)
-        if floor > 0:
-            covered.add(k)
-    if not os.access(os.path.join(os.path.dirname(f), "setup.sh"), os.X_OK):
-        print(f"FAIL: {name}/setup.sh is not executable"); bad = True
-
-# Every kind must be exercised somewhere, or a branch ships untested -- which is the exact
-# state four of these were in before this harness existed. Only kinds belonging to a
-# platform some scenario actually covers are demanded: a Windows kind cannot be exercised
-# by a suite that has no Windows scenario, and failing for that would be noise.
-# `image` is demanded only of a platform that HAS a deep scenario -- the same reason a
-# Windows kind is not demanded of a suite with no Windows scenario.
-demanded = set().union(*(kinds_for(p) for p in seen_platforms)) if seen_platforms else set()
-demanded |= set().union(*(deep_kinds_for(p) for p in deep_platforms)) if deep_platforms else set()
-never = demanded - covered
-if never:
-    print(f"FAIL: no scenario exercises {sorted(never)}"); bad = True
-if bad: sys.exit(1)
-print(f"ok: {len(demanded)} kinds across {len(seen_platforms)} platform(s) "
-      f"({', '.join(sorted(seen_platforms))}), every one exercised")
-PY
 
 # THE CHECKER IS CHOSEN BY THE SHEBANG, not by one rule for every scenario.
 #
@@ -291,8 +40,7 @@ else
     esac
   done
 fi
-for f in "$HERE"/run.sh "$HERE"/run-ec2.sh "$HERE"/run-gce.sh "$HERE"/lib/vm.sh "$HERE"/lib/assert.sh \
-         "$HERE"/docker_states.sh "$HERE"/../bin/container-scan "$HERE"/../bin/discover ; do
+for f in "$HERE"/run.sh "$HERE"/run-ec2.sh "$HERE"/run-gce.sh "$HERE"/lib/vm.sh "$HERE"/lib/assert.sh ; do
   bash -n "$f" || { echo "FAIL: bash syntax in $f"; fail=1; }
 done
 
@@ -330,70 +78,6 @@ else
   echo "guest.sh, guest-linux.sh: one retry"
 fi
 
-# bin/container-scan is SOURCED by test/docker_states.sh and by bin/discover, so that it
-# lends out the guard and the bound rather than having them copied. Two things can break
-# that silently: deleting the `(return 0 2>/dev/null) && return 0` line, after which
-# sourcing runs a live scan; and renaming a function the callers use.
-bash -c '. "'"$HERE"'/../bin/container-scan" && type -t own_run_dir run_bounded docker_healthy docker_socket_path marker json_str json_row osq_run json_concat pack_branches merge_sql merge_branches >/dev/null' \
-  || { echo "FAIL: bin/container-scan is no longer safely sourceable, or a shared function was renamed"; fail=1; }
-
-# ONE NAMESPACE, TWO FILES. bin/discover sources bin/container-scan, so a global or function
-# either assigns overwrites the other's in silence -- DEEP and CACHE both collided that way.
-# bin/discover's header lists what each file defines, for the next addition to be checked
-# against; this derives the same sets from the code, because that list went stale without
-# anything failing. The files may share ROOT and nothing else: both set it to one directory.
-python3 - "$HERE/.." <<'NAMES' || fail=1
-import re, sys
-root = sys.argv[1]
-SHARED = {"ROOT"}
-
-def defined(path):
-    code = "\n".join(l for l in open(path).read().splitlines() if not l.lstrip().startswith("#"))
-    fns = set(re.findall(r"^\s*([A-Za-z_][A-Za-z0-9_]*)\(\)\s*\{", code, re.M))
-    # Upper case is a global: every local in both files is lower case. IFS is only ever a
-    # prefix on one `read`, which scopes it to that command.
-    glb = set(re.findall(r"(?<![A-Za-z0-9_$])([A-Z][A-Z0-9_]*)\+?=", code)) - {"IFS"}
-    return glb, fns
-
-def documented(path):
-    lists, cur = [], None
-    for line in open(path).read().splitlines():
-        m = re.match(r"#\s{3}(globals|functions)\s+(\S.*)$", line)
-        if m:
-            cur = set(m.group(2).split())
-            lists.append(cur)
-            continue
-        m = re.match(r"#\s{10,}(\S.*)$", line)
-        if cur is not None and m:
-            cur.update(m.group(1).split())
-        else:
-            cur = None
-    return lists
-
-cs_g, cs_f = defined(f"{root}/bin/container-scan")
-d_g, d_f = defined(f"{root}/bin/discover")
-lists = documented(f"{root}/bin/discover")
-bad = []
-if len(lists) != 4:
-    bad.append(f"bin/discover's header should hold four lists, and holds {len(lists)}")
-else:
-    for label, doc, code in (("container-scan globals", lists[0], cs_g),
-                             ("container-scan functions", lists[1], cs_f),
-                             ("discover globals", lists[2], d_g - SHARED),
-                             ("discover functions", lists[3], d_f)):
-        if doc != code:
-            bad.append(f"{label}: listed and not defined {sorted(doc - code)}; "
-                       f"defined and not listed {sorted(code - doc)}")
-clash = ((cs_g & d_g) | (cs_f & d_f)) - SHARED
-if clash:
-    bad.append(f"both files define {sorted(clash)}, and sourcing makes them one name")
-for b in bad:
-    print(f"FAIL: namespace -- {b}")
-if bad:
-    sys.exit(1)
-print("namespace: ok, bin/discover lists what both files define, and they share only ROOT")
-NAMES
-
 # test/lib/assert.sh is sourced by test/assert.sh, test/run.sh and test/run-gce.sh. `bash -n`
 # cannot see a function that is missing, and a scenario found exactly that: assert_match_sql
 # was dropped in an edit, the file parsed, and every scenario went red at "command not found".
@@ -405,160 +89,42 @@ _fns_missing="$(bash -c '. "'"$HERE"'/lib/assert.sh"; set +e; m=""
 [ -z "$_fns_missing" ] \
   || { echo "FAIL: test/lib/assert.sh no longer defines:$_fns_missing (test/assert.sh calls them)"; fail=1; }
 
-# NOTHING ON THE ENDPOINT IS PYTHON, AND THE FAILURE IT PREVENTS IS SILENCE RATHER THAN AN
-# ERROR. These two scripts run on managed Macs where /usr/bin/python3 is a STUB -- no Command
-# Line Tools, so it prints an install prompt on stderr and exits 1 with empty stdout. That
-# took the no-cache marker with it: the one row whose whole job is to say the writer never
-# ran was built by the interpreter that stopped the writer, so a collector saw nothing, and
-# nothing reads as a machine with nothing on it. docs/deployment.md has the history.
-#
-# `python` rather than `python3`, and no path anchor, so `/usr/bin/python3` and `env python`
-# fail here too. COMMENTS ARE EXCLUDED -- shell `#` and SQL `--` alike -- because the
-# comments in both files are what explain the removal, and a check that counts its own
-# documentation is one nobody can satisfy. bin/classify is the python half and is off the
-# endpoint by design, so it is not in this list and must not be added to it.
-#
-# A DENY-LIST, AND IT IS HONEST ABOUT BEING ONE. These seven are what someone reaches for when
-# they need to read JSON in a shell script, which is the only reason this rule has ever been
-# broken; `jq` in particular is the obvious next one and does not ship with macOS at all. It
-# does NOT enumerate every command these scripts may call, so it cannot enforce the whole rule
-# in CLAUDE.md -- an allow-list over two files this size is mostly shell builtins and control
-# flow, and one tuned to pass today would go stale as noise. What it catches is the failure
-# that has actually happened. Read the rule, not just the gate.
-#
-# `|| true` on the greps, because this file runs under `set -e` and a grep that matches
-# NOTHING exits 1 -- which is the passing case here. Without it lint stops dead at the first
-# clean file and every check below this line silently stops running.
-_endpoint_clean=1
-for _f in "$HERE/../bin/discover" "$HERE/../bin/container-scan"; do
-  _hits="$( { grep -nE '(^|[^a-zA-Z_.-])(python|jq|perl|ruby|node|deno|php)([^a-zA-Z0-9_-]|$)' \
-              "$_f" || true; } \
-            | { grep -vE '^[0-9]+:[[:space:]]*(#|--)' || true; } )"
-  if [ -n "$_hits" ]; then
-    echo "FAIL: $(basename "$_f") reaches for an interpreter or a JSON tool:"
-    printf '%s\n' "$_hits" | sed 's/^/      /'
-    echo "      The endpoint is bash 3.2, osqueryi and curl, and osqueryi is the JSON parser:"
-    echo "      json_str/json_row build rows, osq_run/json_concat/merge_sql read them."
-    echo "      bin/classify is the python half, and it runs off the machine."
-    fail=1; _endpoint_clean=0
-  fi
-done
-# Guarded, or the summary line prints `ok` directly underneath its own FAIL -- which is how
-# a reader skimming for the last line concludes the check passed.
-[ "$_endpoint_clean" = 1 ] &&
-  echo "endpoint: ok, bin/discover and bin/container-scan reach for no interpreter or JSON tool"
-
-# NO QUERY MAY NAME A CONTAINER'S ENVIRONMENT. `docker_containers.env_variables` and the
-# whole `docker_container_envs` table hold ANTHROPIC_API_KEY, OPENAI_API_KEY, model
-# endpoints and session tokens. Every other hazard in this repo is a wrong answer; this one
-# is an employee's credentials in a Jamf inventory record, and it cannot be walked back
-# once a recon has run.
-#
-# FILTERING DOWNSTREAM IS TOO LATE, which is why the gate is here and not in bin/classify.
-# The six-column contract is written ON the endpoint: by the time a collector could drop
-# the column, the row has already left the machine. The column must never be selected.
-#
-# NOTHING ELSE CATCHES IT, and that was measured rather than assumed. Injecting
-# `c.command || ' ' || c.env_variables AS extra` into the docker_containers branch produces
-# a query that is six columns wide, correctly aliased in its first arm, on a registered
-# kind, inside the one expensive file -- and lint, tools/build.py --check,
-# check_no_catalog.py, validate_catalog.py and test/test_matcher.py ALL PASSED. The
-# contract checks count and name columns; they cannot know what is inside one.
-#
-# A DENY-LIST OF TWO NAMES, and an allow-list was rejected rather than overlooked: it would
-# have to enumerate every column of nineteen docker tables plus everything else these
-# queries touch, and one tuned to pass today goes stale as noise. These two are different
-# from the rest because they are the only columns here whose CONTENTS are structurally
-# guaranteed to be secrets -- not "might contain a path", but "holds the API key". The
-# neighbouring hazard, docker_container_processes.cmdline, is NOT on this list: it *can*
-# carry `--api-key`, so it wants redaction rather than prohibition, and it is unreachable
-# today because no query selects the table at all. UP-5025 owns that; do not fold it in
-# here, because a name on a deny-list is a decision not to have the column, and that is the
-# wrong decision for cmdline.
-#
-# dist/ IS GENERATED AND IS CHECKED ANYWAY. tools/build.py --check gates drift both ways,
-# so a leak in queries/ is the only way one reaches an artifact today -- but the artifacts
-# are what ship, the pack embeds its SQL as JSON strings, and a check that reads the thing
-# that leaves the machine costs one glob. COMMENTS ARE EXCLUDED, shell `#` and SQL `--`
-# alike: queries/containers.sql explains this rule in a comment and dist/discovery-deep.sql
-# carries the copy, so a check counting its own documentation is one nobody can satisfy.
-_envs_clean=1
-for _f in "$HERE"/../queries/*.sql "$HERE"/../dist/*.sql "$HERE"/../dist/*.conf \
-          "$HERE"/../dist/*.yml "$HERE/../bin/discover" "$HERE/../bin/container-scan"; do
-  [ -f "$_f" ] || continue
-  _hits="$( { grep -nE '(^|[^a-zA-Z0-9_])(env_variables|docker_container_envs)([^a-zA-Z0-9_]|$)' \
-              "$_f" || true; } \
-            | { grep -vE '^[0-9]+:[[:space:]]*(#|--)' || true; } )"
-  if [ -n "$_hits" ]; then
-    echo "FAIL: $(basename "$_f") names a container's environment:"
-    printf '%s\n' "$_hits" | sed 's/^/      /'
-    echo "      env_variables and docker_container_envs hold ANTHROPIC_API_KEY and its like,"
-    echo "      and this payload leaves the machine. The column is never selected -- not"
-    echo "      selected-and-filtered, because the row is written on the endpoint."
-    fail=1; _envs_clean=0
-  fi
-done
-[ "$_envs_clean" = 1 ] &&
-  echo "container envs: ok, no query or artifact names env_variables or docker_container_envs"
-
-# ONE expensive query, and the check exists because the second one is a trap.
-# dist/discovery-deep.sql is run by bin/container-scan behind a guard that is specific to
-# Docker: a round trip to /_ping demanding HTTP 200. A second expensive branch composed
-# into the same artifact would inherit that guard, which says nothing whatsoever about
-# whatever daemon or directory the new branch blocks on -- and it would be bounded by a
-# wall clock sized for this one. When that day comes, split the artifact per branch and
-# give each its own guard. Do not delete this check to make the build pass.
-python3 - "$HERE/.." <<'PY' || fail=1
-import glob, os, re, sys
-root = sys.argv[1]
-expensive = [os.path.basename(f) for f in sorted(glob.glob(os.path.join(root, "queries/*.sql")))
-             if re.search(r"^--\s*cost:\s*expensive", open(f).read(), re.M)]
-if len(expensive) > 1:
-    print(f"FAIL: {len(expensive)} expensive queries ({', '.join(expensive)}), and they would "
-          "share one wall clock and one Docker-specific health guard in "
-          "dist/discovery-deep.sql. Split the artifact per branch first; see the comment "
-          "above this check in test/lint.sh.")
-    sys.exit(1)
-print(f"expensive queries: {len(expensive)} ({expensive[0] if expensive else 'none'})")
-PY
-# THE PACK'S NAME AND QUERY CROSS ONE osqueryi IN ONE COLUMN, joined by a tab and split back
-# in the shell. bin/discover --write reads the branch list and every branch's SQL in a single
-# call that way, and the separator is safe because tools/build.py's flatten() is
-# `" ".join(text.split())` -- a property of the BUILDER, so it is asserted against the FILE.
-#
-# MEASURED, because the two characters do not fail the same way. A tab survives: `read -r
-# name qtext` hands the remainder to the last variable with its tabs intact. A newline does
-# not, and it does not fail loudly either -- the loop reads the second half as a fresh
-# record, so `SELECT 'app'\nAS kind FROM apps;` becomes a branch named `AS kind FROM apps;`
-# and a truncated `apps`. Both are rejected anyway: the tab is only harmless while qtext is
-# the last field, and a third column would make today's safe case tomorrow's silent one.
-python3 - "$HERE/../dist/ai-discovery.conf" <<'PY' || fail=1
-import json, sys
-pack = json.load(open(sys.argv[1]))["queries"]
-bad = [n for n, q in pack.items() if "\t" in q["query"] or "\n" in q["query"]]
+# THE MATCHER AND THE CATALOG TOOLS NEVER READ osquery/. They work on evidence rows from any
+# binding; a check that needs the binding's files belongs to osquery/test/lint.sh. Code only:
+# a docstring or comment may say where rows come from.
+python3 - "$HERE/.." <<'BOUNDARY' || fail=1
+import ast, pathlib, sys
+root = pathlib.Path(sys.argv[1])
+NEUTRAL = ["bin/classify", "tools/validate_catalog.py", "tools/agent_status.py",
+           "tools/merge_observations.py", "tools/successor_candidates.py"]
+bad = []
+for name in NEUTRAL:
+    tree = ast.parse((root / name).read_text())
+    docs = {id(n.body[0].value) for n in ast.walk(tree)
+            if isinstance(n, (ast.Module, ast.ClassDef, ast.FunctionDef, ast.AsyncFunctionDef))
+            and n.body and isinstance(n.body[0], ast.Expr)
+            and isinstance(n.body[0].value, ast.Constant)}
+    for n in ast.walk(tree):
+        if (isinstance(n, ast.Constant) and isinstance(n.value, str) and id(n) not in docs
+                and (n.value == "osquery" or n.value.startswith("osquery/"))):
+            bad.append(f"{name}:{n.lineno}: names {n.value!r}")
+for b in bad:
+    print(f"FAIL: boundary -- {b}. The matcher and the catalog tools read no binding's files.")
 if bad:
-    print("FAIL: pack queries contain a tab or newline: " + ", ".join(sorted(bad)))
-    print("      bin/discover --write joins name and query with a tab and splits them back.")
-    print("      A newline there invents a branch out of the second half. Keep build.py's")
-    print("      flatten() collapsing whitespace, or give --write another separator.")
     sys.exit(1)
-print(f"pack: ok, {len(pack)} queries, none carrying the separator --write splits on")
-PY
+print(f"boundary: ok, {len(NEUTRAL)} catalog and matcher files name nothing under osquery/")
+BOUNDARY
+
+# The osquery binding's own checks: queries, artifacts, the endpoint scripts and the bundle.
+"$HERE/../osquery/test/lint.sh" || fail=1
+
 python3 "$HERE/../tools/validate_catalog.py" || fail=1
-python3 "$HERE/../tools/build.py" --check || fail=1
-# The rendered match SQL is generated from the catalog the way dist/ is from queries/, and
-# gated the same way. The parity test needs osqueryi and SKIPs without one, which is what
-# lets this file stay runnable on a runner with no osquery; ci.yml's runtime jobs run it
-# with --require-osqueryi.
-python3 "$HERE/../tools/render_match.py" --check || fail=1
-python3 "$HERE/../test/test_match_sql.py" >/dev/null || { echo "FAIL: match-SQL tests"; fail=1; }
 python3 "$HERE/../test/test_matcher.py" >/dev/null || { echo "FAIL: matcher tests"; fail=1; }
 python3 "$HERE/../test/test_telemetry.py" >/dev/null || { echo "FAIL: telemetry tests"; fail=1; }
 python3 "$HERE/../test/test_ci_scope.py" >/dev/null || { echo "FAIL: ci scope tests"; fail=1; }
 python3 "$HERE/../tools/check_workflows.py" || fail=1
-python3 "$HERE/../tools/check_no_catalog.py" || fail=1
-# docs/agents.md is generated from the catalog and its coverage, exactly as dist/ is
-# generated from queries/. Gated here so a contributor sees it locally in seconds rather
+# docs/agents.md is generated from the catalog and its coverage, exactly as osquery/dist/ is
+# generated from osquery/queries/. Gated here so a contributor sees it locally in seconds rather
 # than finding out from a red PR -- and so the doc cannot quietly describe a catalog that
 # has moved on without it, which is the same failure this repo keeps having in other forms.
 # A SUBMODULE YOU DID NOT IMPORT. `import importlib.util` leaves importlib.machinery
@@ -578,9 +144,15 @@ LAZY = {"importlib": {"machinery", "util", "resources", "metadata", "abc"},
         "xml": {"etree", "dom", "sax"},
         "collections": {"abc"}}
 bad = []
-for path in sorted(pathlib.Path(sys.argv[1]).glob("*/*.py")):
-    if ".git" in path.parts:
-        continue
+# RECURSIVE, because the files this was written for moved a level down into osquery/tools/;
+# a `*/*.py` glob kept passing after they had left its reach.
+paths = [p for p in sorted(pathlib.Path(sys.argv[1]).glob("**/*.py"))
+         if ".git" not in p.parts]
+if not any(p.name == "render_match.py" for p in paths):
+    print("FAIL: lazy imports: render_match.py is not among the files scanned, so the "
+          "glob has lost the tree it was written for")
+    sys.exit(1)
+for path in paths:
     tree = ast.parse(path.read_text())
     imported = set()
     for node in ast.walk(tree):
@@ -629,196 +201,6 @@ python3 "$HERE/../tools/check_doc_numbers.py" || fail=1
 # both passed clean. One gate per output format, or a format breaks unobserved.
 python3 "$HERE/../tools/agent_status.py" --json >/dev/null \
   || { echo "FAIL: agent_status.py --json does not serialise"; fail=1; }
-
-# --- the one-file bundle -----------------------------------------------------------------
-# tools/bundle.py packs bin/ and dist/ into one self-extracting script, for a management
-# platform that can host a script and cannot place files on disk. Everything it produces is
-# invisible afterwards: the payload is base64, so which files went in, and whether the
-# shell around them is sound, cannot be read off the artifact by eye. Checked here instead.
-#
-# Built into a temp directory rather than artifacts/, so a lint run never leaves a stale
-# bundle somewhere a release might pick it up.
-_bundle_tmp="$(mktemp -d "${TMPDIR:-/tmp}/lint-bundle.XXXXXX")"
-trap 'rm -rf "$_bundle_tmp"' EXIT HUP INT TERM
-_bundle_ok=1
-for _p in darwin linux; do
-  python3 "$HERE/../tools/bundle.py" --platform "$_p" --out "$_bundle_tmp/$_p.sh" >/dev/null \
-    || { echo "FAIL: tools/bundle.py --platform $_p did not build"; fail=1; _bundle_ok=0; continue; }
-  # GENERATED SHELL IS EXACTLY THE SHELL NOBODY READS. A wrapper edit in bundle.py produces
-  # this file unexamined, and bash reports a syntax error only when a fleet runs it.
-  bash -n "$_bundle_tmp/$_p.sh" \
-    || { echo "FAIL: bash syntax in the $_p bundle"; fail=1; _bundle_ok=0; }
-  # The check mode is what a consumer committing a bundle depends on, so it is exercised
-  # rather than assumed -- a --check that cannot fail is worse than no --check.
-  python3 "$HERE/../tools/bundle.py" --platform "$_p" --check "$_bundle_tmp/$_p.sh" >/dev/null \
-    || { echo "FAIL: a freshly built $_p bundle does not pass --check"; fail=1; _bundle_ok=0; }
-done
-
-# THE BUNDLE REFUSES THE OTHER PLATFORM BY NAME. The composed artifacts name disjoint sets
-# of tables, so the wrong bundle would die on a missing path and report a file when the
-# truth is about the build. Run here because the guard is the first thing in the script and
-# costs nothing: it fires before mktemp, before base64, before anything is unpacked.
-case "$(uname -s)" in Darwin) _other=linux ;; *) _other=darwin ;; esac
-if [ "$_bundle_ok" = 1 ]; then
-  if _out="$("$_bundle_tmp/$_other.sh" 2>&1)"; then
-    echo "FAIL: the $_other bundle ran on $(uname -s) instead of refusing"; fail=1
-  else
-    case "$_out" in
-      # AND THE COMMAND IT PRINTS MUST RUN. `--platform` takes a value; the message omitted
-      # it, so following the advice exited with an argument error. It must also name the
-      # OTHER platform -- this bundle's own is the one the reader is already holding.
-      *"runs on"*only*"--platform $(uname -s | tr 'A-Z' 'a-z')."*) : ;;
-      *"runs on"*only*) echo "FAIL: the $_other bundle's refusal does not name the platform "\
-                             "to build: $_out"; fail=1 ;;
-      *) echo "FAIL: the $_other bundle refused without naming the cause: $_out"; fail=1 ;;
-    esac
-  fi
-fi
-
-python3 - "$HERE/.." "$_bundle_tmp" <<'BUNDLE' || fail=1
-import base64, gzip, io, os, pathlib, re, sys, tarfile
-root, tmp = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
-sys.path.insert(0, str(root / "tools"))
-import bundle as B
-bad = []
-
-for plat in ("darwin", "linux"):
-    path = tmp / f"{plat}.sh"
-    if not path.exists():
-        bad.append(f"{plat}: not built"); continue
-    text = path.read_text()
-    head, body, tail = B._split(text)
-
-    # WHAT IS ACTUALLY IN THE PAYLOAD, read out of the payload. A list of filenames in
-    # bundle.py is a statement of intent; the tar is the artifact, and inside 37KB of
-    # base64 the difference between them is not something a reviewer can see.
-    names = sorted(tarfile.open(fileobj=io.BytesIO(
-        gzip.decompress(base64.b64decode(body))), mode="r").getnames())
-    want = sorted(B.payload_files(plat))
-    if names != want:
-        bad.append(f"{plat}: payload is {names}, declared {want}")
-
-    # THE ENDPOINT HOLDS NO CATALOG FILE AND NO CLASSIFIER, and this is the check that
-    # survives someone adding one to the list for a good-sounding reason. It DOES carry
-    # dist/signatures.sql, the catalog rendered into SQL for `--names` -- a deliberate
-    # exception tools/bundle.py's header argues, and one this check cannot see: the
-    # payload-vs-declared comparison above reads the same payload_files tuple, so
-    # dropping that file from the tuple passes here. ci.yml running `--names` through the
-    # bundle is the gate for that.
-    for leak in B.FORBIDDEN:
-        if any(leak in n for n in names) or leak in text:
-            bad.append(f"{plat}: the bundle carries or names {leak!r}")
-
-    # THE WRAPPER SHIPS TO THE SAME MACHINES bin/discover DOES, so it lives under the same
-    # rule: no interpreter, no JSON tool. On a managed Mac /usr/bin/python3 is a stub that
-    # prints an install prompt and exits 1, and a wrapper built on it would fail before the
-    # runner it was written to protect ever started.
-    wrapper = head[:head.index("<<")] + tail
-    code = "\n".join(l for l in wrapper.splitlines() if not l.strip().startswith("#"))
-    hit = re.search(r"(?:^|[|;&(`]|\$\(|\s)(python3?|jq|perl|ruby|node|deno|php)\b", code)
-    if hit:
-        bad.append(f"{plat}: the wrapper reaches for {hit.group(1)}")
-
-    # RUN, NOT exec. A shell replaced by exec does not run its EXIT trap, so the extracted
-    # tree stays in TMPDIR -- one copy per run on a schedule, surfacing months later as a
-    # full volume and looking like anything but this script. Verified behaviour, not a
-    # style preference, which is why it is a gate.
-    if re.search(r"^\s*exec\s", code, re.M):
-        bad.append(f"{plat}: the wrapper execs the runner, which skips the cleanup trap")
-    if "trap " not in code or "rm -rf" not in code:
-        bad.append(f"{plat}: the wrapper does not remove its working directory")
-
-# --driver IS THE ONE THING A CONSUMER BUILDS ON, AND IT SHIPPED WITH NO TEST AT ALL.
-# release.yml names it in a comment; nothing exercised it. The first repo to adopt it made
-# its entire deployable out of it -- a wrapper around its own script -- so a --driver that
-# quietly stopped embedding, or a --check that ignored the driver and blessed a stale
-# bundle, would be someone's fleet.
-_drv = tmp / "driver.sh"
-_drv.write_text("#!/bin/bash\necho marker-in-driver\n")
-_wrapped = B.build(root, "darwin", driver=str(_drv), label="lint")
-
-if B.read_member(_wrapped, "driver") != _drv.read_bytes():
-    bad.append("--driver did not put the driver in the payload byte for byte")
-if "AI_DISCOVERY_ROOT" not in _wrapped:
-    bad.append("a --driver bundle does not set AI_DISCOVERY_ROOT, which is the whole "
-               "interface the driver is handed")
-# CHECK MUST BE DRIVER-SENSITIVE. Comparing only the wrapper would pass a bundle carrying
-# somebody else's driver, which is the one substitution this hook makes possible.
-if not B.matches(_wrapped, root, "darwin", driver=str(_drv), label="lint"):
-    bad.append("--check rejects a bundle it has just built with a driver")
-if B.matches(_wrapped, root, "darwin", label="lint"):
-    bad.append("--check accepts a driver bundle as a plain one -- it is not reading the "
-               "payload, so any driver would pass")
-# The default bundle must NOT carry one, or every consumer ships a file it did not ask for.
-try:
-    B.read_member(B.build(root, "darwin", label="lint"), "driver")
-    bad.append("a bundle built without --driver carries a driver anyway")
-except KeyError:
-    pass
-
-# A CORRUPT PAYLOAD IS AN ANSWER, NOT A TRACEBACK. matches() is what --check calls and what
-# a consumer's own gate calls, so it must say "this bundle does not carry the tree" rather
-# than raise -- a crashed gate reports nothing about the artifact it was asked about. Three
-# ways a payload goes wrong, and EOFError (a truncated bundle: half-written, half-copied)
-# was the one that got through: base64 raises ValueError, gzip raises OSError on bad magic
-# but EOFError on truncation, and tarfile raises TarError on a blob that ungzips to
-# something else.
-_head, _body, _tail = B._split(_wrapped)
-def _corrupt(raw):
-    b = base64.b64encode(raw).decode()
-    return _head + "\n".join(b[i:i + 76] for i in range(0, len(b), 76)) + _tail
-_gz = gzip.compress(os.urandom(4000))          # incompressible: a long DEFLATE stream
-for _what, _text in (
-        ("a truncated payload", _corrupt(_gz[:20])),
-        # MALFORMED DEFLATE IS ITS OWN FAILURE and was the third type this list was short
-        # of: zlib.error inherits straight from Exception, and three of four ways of
-        # corrupting a stream produce it rather than a gzip or tar error.
-        ("malformed DEFLATE", _corrupt(_gz[:10] + bytes(x ^ 0xFF for x in _gz[10:14]) + _gz[14:])),
-        ("a failed CRC", _corrupt(_gz[:100] + bytes([_gz[100] ^ 0xFF]) + _gz[101:])),
-        ("gzip that is not a tar", _corrupt(gzip.compress(b"not a tar"))),
-        ("a body that is not base64", _head + "!!!! not base64 !!!!" + _tail),
-        # NOT A BUNDLE AT ALL is the same answer and used to arrive differently: _split()
-        # sat outside the wrapped region, so a missing marker came back as a bare
-        # ValueError while every other failure came back as CorruptBundle. A caller cannot
-        # be asked to catch two things to learn one thing, and this is the commonest
-        # mistake there is -- the wrong path.
-        ("a file with no payload marker", "#!/bin/bash\nnot a bundle\n"),
-        ("an empty file", "")):
-    try:
-        if B.matches(_text, root, "darwin", driver=str(_drv), label="lint"):
-            bad.append(f"matches() accepted {_what}")
-    except Exception as exc:
-        bad.append(f"matches() raised {type(exc).__name__} on {_what} instead of "
-                   f"answering False -- this is what --check calls")
-    # And the reader turns every one of them into the SAME exception, so a caller has one
-    # thing to catch rather than a list that has now been short three times.
-    try:
-        B.read_member(_text, "driver")
-        bad.append(f"read_member() returned a member out of {_what}")
-    except B.CorruptBundle:
-        pass
-    except Exception as exc:
-        bad.append(f"read_member() raised {type(exc).__name__} on {_what}; every decode "
-                   f"failure must arrive as CorruptBundle")
-
-# A LABEL IS THE ONLY CALLER TEXT THAT REACHES THE GENERATED SHELL, and it lands in a
-# comment line. A newline in it ends the comment and the rest becomes shell, in a file
-# that still looks exactly like a bundle. The refusal lives in wrapper(), so --check is
-# covered too; asserted here because a guard nothing exercises is a guard that can be
-# removed without anything going red.
-try:
-    B.wrapper("darwin", list(B.payload_files("darwin")), None, "v1\necho pwned")
-    bad.append("a --label containing a newline was accepted")
-except SystemExit:
-    pass
-
-for b in bad:
-    print(f"FAIL: bundle: {b}")
-if bad:
-    sys.exit(1)
-print("bundle: ok, both platforms build, carry only endpoint material, embed and compare a "
-      "--driver, refuse a label that would escape the banner, and clean up after themselves")
-BUNDLE
 
 [ "$fail" -eq 0 ] && echo "lint: PASS" || echo "lint: FAIL"
 exit "$fail"

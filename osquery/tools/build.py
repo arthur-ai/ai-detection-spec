@@ -41,7 +41,8 @@ import pathlib
 import re
 import sys
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent
+ROOT = pathlib.Path(__file__).resolve().parent.parent  # osquery/, the binding
+REPO = ROOT.parent  # the catalog and bin/classify sit at the repository root
 QUERIES, DIST = ROOT / "queries", ROOT / "dist"
 COLUMNS = ["kind", "id", "ver", "loc", "extra", "perms"]
 
@@ -141,7 +142,7 @@ def platform_vocabulary():
     One vocabulary for the whole repo: a route's platform and a query's platform are the
     same words, so they cannot drift into needing a translation table.
     """
-    reg = ROOT / "catalog" / "routes.yaml"
+    reg = REPO / "catalog" / "routes.yaml"
     if not reg.exists():
         sys.exit(f"{reg} is missing; it is the route registry every tool reads")
     # Read WITHOUT PyYAML. tools/build.py has never had a dependency and the endpoint

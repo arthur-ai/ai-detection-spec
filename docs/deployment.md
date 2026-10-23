@@ -33,7 +33,7 @@ a clean machine.
 
 ## One file, when your platform can host a script and not a package
 
-The loose files a release attaches only work in the layout this repo has:
+The loose files a release attaches only work in one layout, `bin/`, `dist/` and `catalog/` side by side:
 `bin/container-scan` resolves `dist/discovery-deep.sql` relative to its own parent, and
 `bin/discover` sources `bin/container-scan`. Putting files in a fixed place on a managed
 machine is the part a management platform is worst at — it wants a package, which on macOS
@@ -43,7 +43,7 @@ schedule is the part every one of them does well.
 So: the layout, inside one script.
 
 ```console
-$ python3 tools/bundle.py --platform darwin        # or download it from the release
+$ python3 osquery/tools/bundle.py --platform darwin   # or download it from the release
 wrote artifacts/ai-discovery-darwin.sh (46 KB, 6 files, darwin)
 
 $ ./artifacts/ai-discovery-darwin.sh --write /var/lib/ai-discovery/inventory.json \
@@ -78,7 +78,7 @@ size budget, a particular exit status. None of that is a fact about osquery and 
 in here. `--driver` is the seam:
 
 ```console
-$ python3 tools/bundle.py --platform darwin --driver ./my-collector.sh
+$ python3 osquery/tools/bundle.py --platform darwin --driver ./my-collector.sh
 ```
 
 The bundle then runs `my-collector.sh` instead of `bin/discover`, with `AI_DISCOVERY_ROOT`
@@ -90,7 +90,7 @@ Your driver is inside the payload once it is bundled, so anything you had that c
 own collector by reading it needs a way back in:
 
 ```console
-$ python3 tools/bundle.py --platform darwin --member driver ./my-bundle.sh
+$ python3 osquery/tools/bundle.py --platform darwin --member driver ./my-bundle.sh
 ```
 
 That is a supported interface, not a debugging trick — `read_member()` in Python is the same
@@ -138,7 +138,7 @@ A few things to know:
   evidence, like a config directory, has no version, so an agent can appear without one.
 
 The names come from `dist/signatures.sql`, which is the catalog converted to SQL by
-`tools/render_match.py`. **When the catalog gains a signature, you have to redeploy that file
+`osquery/tools/render_match.py`. **When the catalog gains a signature, you have to redeploy that file
 for `--names` to pick it up.** The JSON inventory does not have this problem, because it is
 matched against the catalog later, off the machine.
 
@@ -280,8 +280,8 @@ changes on a VM: with systemd as PID 1 and osquery running as root it reads `ok`
 **Small shapes.** A shared-core `e2-small` does not promise the same number twice: the same
 Rocky image measured the composed artifact at 2.4s cold on one VM and 14.0s on another the
 same afternoon, with `systemd_units` alone at 5.5s against 1.2s.
-[`queries/COST.md`](../queries/COST.md#compute-engine-e2-small-2026-10-04) has the table. It
-is why `queries/runtime-linux.sql` is banded `slow`, and why a scheduled `--write`, where each
+[`osquery/queries/COST.md`](../osquery/queries/COST.md#compute-engine-e2-small-2026-10-04) has the table. It
+is why `osquery/queries/runtime-linux.sql` is banded `slow`, and why a scheduled `--write`, where each
 branch has its own bound, is the shape to prefer over anything that waits.
 
 **Burstable EC2 shapes.** In the default unlimited credit mode, `t3.small` and `t4g.small` run
@@ -289,7 +289,7 @@ at full speed: the composed artifact takes 1.6–2.8s cold, and `--write` 4.6–
 mode a fresh instance has no credits, and is held to its 20% baseline from the start. The same
 scan then takes 10–12s cold, and 14–16s for `--write`. That is still inside every branch's own
 30s bound, but over the composed artifact's 10s convention.
-[`queries/COST.md`](../queries/COST.md#ec2-t3small-and-t4gsmall-2026-10-21) has the tables.
+[`osquery/queries/COST.md`](../osquery/queries/COST.md#ec2-t3small-and-t4gsmall-2026-10-21) has the tables.
 
 ## The `python3` stub, which used to bite only on a fleet
 
@@ -305,7 +305,7 @@ Neither endpoint script uses `python3` now. `bin/discover` and `bin/container-sc
 and `osqueryi`; marker rows are built by `printf`, so the row that says the writer never ran
 needs nothing that could have been what stopped it, and the documents they read are parsed by
 the same SQLite that wrote them. `test/lint.sh` greps for a reintroduction, and
-`test/docker_states.sh` runs every mode with `python3` and `python` stubbed out and asserts
+`osquery/test/docker_states.sh` runs every mode with `python3` and `python` stubbed out and asserts
 neither was called.
 
 `bin/classify` is still Python and still runs off the endpoint, where a missing interpreter

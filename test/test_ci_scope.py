@@ -45,7 +45,7 @@ check("LICENSE skips", not runs(["LICENSE"]))
 
 print()
 print("the expensive direction -- anything that is not plainly prose")
-check("one query beside a doc runs", runs(["README.md", "queries/browser.sql"]))
+check("one query beside a doc runs", runs(["README.md", "osquery/queries/browser.sql"]))
 check("the catalog runs", runs(["catalog/agents.yaml"]))
 # docs/ IS NOT A DOCUMENTATION DIRECTORY. blind-spots.yaml lives there and
 # tools/agent_status.py reads it, so the coverage gate -- which runs on a runner --
@@ -56,7 +56,7 @@ check("docs/blind-spots.yaml runs, despite living under docs/",
 check("a workflow edit runs", runs([".github/workflows/scenarios.yml"]))
 check("a scenario's expected.json runs", runs(["test/scenarios/00-baseline/expected.json"]))
 check("a dotfile nobody listed runs", runs([".gitignore"]))
-check("an extension this file has never heard of runs", runs(["queries/new.rq"]))
+check("an extension this file has never heard of runs", runs(["osquery/queries/new.rq"]))
 
 print()
 print("the fail-safe -- a diff nobody could compute is not an empty diff")
@@ -381,36 +381,36 @@ check("an agent added mid-list reorders nobody", _order(
 check("a catalog comment runs nothing",
       scenarios([ci_scope.CATALOG], head={ci_scope.CATALOG: _cat + "\n# a note\n"}) == set())
 check("the rendered files add nothing beside a catalog edit",
-      scenarios([ci_scope.CATALOG, "dist/signatures.sql", "dist/agents-darwin.sql"],
+      scenarios([ci_scope.CATALOG, "osquery/dist/signatures.sql", "osquery/dist/agents-darwin.sql"],
                 head=_with_agent("pi", name="edited")) == _edit("pi"))
-check("but without one, dist/signatures.sql runs every scenario",
-      scenarios(["dist/signatures.sql"]) == _LISTED)
-check("and dist/agents-linux.sql runs the Linux ones", scenarios(["dist/agents-linux.sql"]) == LINUX)
+check("but without one, osquery/dist/signatures.sql runs every scenario",
+      scenarios(["osquery/dist/signatures.sql"]) == _LISTED)
+check("and osquery/dist/agents-linux.sql runs the Linux ones", scenarios(["osquery/dist/agents-linux.sql"]) == LINUX)
 
 print()
 print("which scenarios -- by platform")
-check("dist/discovery-darwin.sql runs exactly the macOS scenarios",
-      scenarios(["dist/discovery-darwin.sql"]) == DARWIN)
-check("dist/discovery-linux.sql runs exactly the Linux scenarios",
-      scenarios(["dist/discovery-linux.sql"]) == LINUX)
+check("osquery/dist/discovery-darwin.sql runs exactly the macOS scenarios",
+      scenarios(["osquery/dist/discovery-darwin.sql"]) == DARWIN)
+check("osquery/dist/discovery-linux.sql runs exactly the Linux scenarios",
+      scenarios(["osquery/dist/discovery-linux.sql"]) == LINUX)
 DEEP = {n for n in _LISTED if _expected(n).get("deep")}
-check("the deep artifact runs the deep scenarios, the only ones that run bin/discover",
-      bool(DEEP) and scenarios(["dist/discovery-deep.sql"]) == DEEP, str(sorted(DEEP)))
-check("so does the pack", scenarios(["dist/ai-discovery.conf"]) == DEEP)
+check("the deep artifact runs the deep scenarios, the only ones that run osquery/bin/discover",
+      bool(DEEP) and scenarios(["osquery/dist/discovery-deep.sql"]) == DEEP, str(sorted(DEEP)))
+check("so does the pack", scenarios(["osquery/dist/ai-discovery.conf"]) == DEEP)
 # What a darwin query edit actually touches, so the platform rule is seen to save something.
-_dq = scenarios(["queries/runtime.sql", "dist/discovery-darwin.sql", "dist/agents-darwin.sql",
-                 "dist/ai-discovery.conf"])
+_dq = scenarios(["osquery/queries/runtime.sql", "osquery/dist/discovery-darwin.sql", "osquery/dist/agents-darwin.sql",
+                 "osquery/dist/ai-discovery.conf"])
 check("a darwin query PR, with its generated files, runs no Linux scenario but the deep one",
       _dq == DARWIN | DEEP, str(sorted(_dq - DARWIN)))
 # A scenario whose own facts cannot be read is run by every rule that consults them.
 check("an unreadable expected.json is run by a rule for the other platform",
-      "00-baseline" in scenarios(["dist/discovery-linux.sql"], head={
+      "00-baseline" in scenarios(["osquery/dist/discovery-linux.sql"], head={
           "test/scenarios/00-baseline/expected.json": "{not json"}))
 check("an unreadable setup.sh is run by a setup-library rule",
       "00-baseline" in scenarios(["test/lib/guest-linux.sh"], head={
           "test/scenarios/00-baseline/setup.sh": None}))
 _q = {re.search(r"^-- platform:\s*(\w+)", p.read_text(), re.M).group(1): p
-      for p in sorted((ROOT / "queries").glob("*.sql"))}
+      for p in sorted((ROOT / "osquery" / "queries").glob("*.sql"))}
 for _p, _want in (("linux", LINUX), ("darwin", DARWIN), ("posix", _LISTED)):
     _path = str(_q[_p].relative_to(ROOT))
     check(f"a {_p} query ({_path}) runs {'every scenario' if _p == 'posix' else _p}",
@@ -482,8 +482,8 @@ check("a scenario no job lists runs nothing", scenarios(["test/scenarios/90-demo
       == set())
 check("docs only runs nothing", scenarios(["README.md", "docs/agents.md"]) == set())
 check("another workflow runs nothing", scenarios([".github/workflows/docs.yml"]) == set())
-check("dist/fleet-policies.yml runs nothing: no scenario reads it",
-      scenarios(["dist/fleet-policies.yml"]) == set())
+check("osquery/dist/fleet-policies.yml runs nothing: no scenario reads it",
+      scenarios(["osquery/dist/fleet-policies.yml"]) == set())
 check("an INERT check runs nothing", scenarios(["test/lint.sh", "tools/validate_catalog.py"])
       == set())
 check("docs/blind-spots.yaml runs nothing", scenarios(["docs/blind-spots.yaml"]) == set())
@@ -530,7 +530,7 @@ def reachable(through_scenarios=True):
     are read rather than followed. Generous on purpose: a false reach only keeps a file
     out of INERT, which costs minutes, never a skipped scenario."""
     files = [p for p in _git(str(ROOT), "ls-files").split()
-             if p.split("/")[0] in ("test", "tools", "bin", "dist", "queries", "catalog")
+             if p.split("/")[0] in ("osquery", "test", "tools", "bin", "catalog")
              and (through_scenarios or not p.startswith("test/scenarios/"))]
 
     def names(path, text):
@@ -599,8 +599,8 @@ print("INERT and SETUP_LIBS, against what the scenario jobs can actually reach")
 _reach = reachable()
 # The positive controls: without them a broken analysis that reached nothing would pass
 # the INERT check below by having looked at nothing.
-for _f in ("bin/classify", "tools/agent_status.py", "test/test_match_sql.py",
-           "tools/build.py", "test/lib/guest-linux.sh"):
+for _f in ("bin/classify", "tools/agent_status.py", "osquery/test/test_match_sql.py",
+           "osquery/tools/build.py", "test/lib/guest-linux.sh"):
     check(f"the analysis reaches {_f}", _f in _reach)
 _tracked = set(_git(str(ROOT), "ls-files").split())
 check("every INERT path is a tracked file", ci_scope.INERT <= _tracked,

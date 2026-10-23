@@ -2,7 +2,7 @@
 # THE VENDORS' OWN CURL INSTALLERS: the route each of these agents documents first, and the
 # one no package manager records. Every one lands where the enumeration already reaches --
 # a file directly under ~/.local/bin, or a top-level ~/.<dir>/ -- so this scenario needed
-# catalog values and nothing in queries/. Read off the installers on 2026-10-07:
+# catalog values and nothing in osquery/queries/. Read off the installers on 2026-10-07:
 #
 #   opencode    ~/.opencode/bin/opencode    the route is ~/.opencode; bin/ is a level too deep
 #   Grok Build  ~/.grok/bin/grok            likewise ~/.grok

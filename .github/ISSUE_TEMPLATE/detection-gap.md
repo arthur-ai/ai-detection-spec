@@ -14,7 +14,7 @@ Tool, version, and how it was installed.
 **What the query returned**
 
 ```console
-$ sudo osqueryi --json < queries/discovery.sql
+$ sudo osqueryi --json < osquery/dist/discovery-darwin.sql    # or discovery-linux.sql
 ```
 
 **What you expected**

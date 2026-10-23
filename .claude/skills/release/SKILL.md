@@ -1,11 +1,11 @@
 ---
 name: release
-description: Cut a release of osquery-ai-discovery — pick the version, verify the tree is green and dist/ is in sync, write notes from commit bodies, and open a draft GitHub Release with the dist artifacts attached. Use when asked to cut, tag, or publish a release, or to draft release notes.
+description: Cut a release of ai-detection-spec — pick the version, verify the tree is green and osquery/dist/ is in sync, write notes from commit bodies, and open a draft GitHub Release with the dist artifacts attached. Use when asked to cut, tag, or publish a release, or to draft release notes.
 ---
 
 # Cutting a release
 
-No `CHANGELOG.md`. The [Releases page](https://github.com/arthur-ai/osquery-ai-discovery/releases)
+No `CHANGELOG.md`. The [Releases page](https://github.com/arthur-ai/ai-detection-spec/releases)
 is the record, and each release carries the artifacts a fleet deploys. Write it for someone
 deciding whether to take the upgrade.
 
@@ -32,7 +32,7 @@ and lead with the breaks either way.
 | a **route key** falls out of use | `validate_catalog.py` still accepts it with no entry carrying it, so the route never fires. `model_stores` is in that state; `ports` is `retired: true`, which is the visible case |
 | a **row kind** stops being emitted | a consumer reading that kind gets no rows, and nothing errors |
 | an identifier is **superseded** | it stays matched but leaves continuous testing, so the identifier count falls with nothing removed. Say which value, and that machines on the old build still report it |
-| a **flag or mode** leaves a shipped script | nothing in `dist/` or `catalog/` moves, so every check above says patch. It is not: a script in `bin/` is an interface, and someone has the old invocation in a LaunchDaemon. Say which invocation to replace, and confirm the flag is refused by name rather than falling through to "unknown argument" |
+| a **flag or mode** leaves a shipped script | nothing in `osquery/dist/` or `catalog/` moves, so every check above says patch. It is not: a script in `bin/` is an interface, and someone has the old invocation in a LaunchDaemon. Say which invocation to replace, and confirm the flag is refused by name rather than falling through to "unknown argument" |
 
 ```console
 $ python3 - <<'EOF'
@@ -47,9 +47,10 @@ for label, g in (("ids", lambda e: {e["id"]}), ("keys", set),
     print(f"{label:10}", sorted(set(f(o,g)) - set(f(n,g))), "gone")
 EOF
 $ for p in darwin linux; do
-    diff <(git show <prev-tag>:dist/discovery-$p.sql 2>/dev/null \
+    diff <({ git show <prev-tag>:osquery/dist/discovery-$p.sql 2>/dev/null \
+               || git show <prev-tag>:dist/discovery-$p.sql; } \
              | grep -oE "SELECT '[a-z]+'" | sort -u) \
-         <(grep -oE "SELECT '[a-z]+'" dist/discovery-$p.sql | sort -u) \
+         <(grep -oE "SELECT '[a-z]+'" osquery/dist/discovery-$p.sql | sort -u) \
       && echo "$p: same kinds"
   done
 ```
@@ -66,9 +67,9 @@ a published release with no artifacts on it.
 ```console
 $ git switch main && git pull
 $ tools/gates.sh                      # every fast gate, non-zero when one fails
-$ python3 tools/measure.py --check    # cost bands; needs osquery locally
-$ sudo python3 tools/check_pack.py    # every pack query actually returns rows
-$ sudo test/docker_states.sh          # every Docker state, guard, bound, catalog
+$ python3 osquery/tools/measure.py --check    # cost bands; needs osquery locally
+$ sudo python3 osquery/tools/check_pack.py    # every pack query actually returns rows
+$ sudo osquery/test/docker_states.sh          # every Docker state, guard, bound, catalog
 ```
 
 **Call `gates.sh` rather than re-listing the gates**: it is the one maintained list, and it exits
@@ -203,7 +204,7 @@ State the change, then its consequence for someone running this on a fleet. Cove
 - **Breaking changes first**, with the migration.
 - **What consumers deploy** — whether the six-column contract or the row kinds moved, and which
   artifact a new query landed in. An `expensive` one is pack-only and never reaches the composed file.
-- **What the deployer must do** that the repo cannot. The standing case: `bin/container-scan` is
+- **What the deployer must do** that the repo cannot. The standing case: `osquery/bin/container-scan` is
   the supported way to run the deep artifact, on its own schedule, scoped to machines with
   Docker, never inlined on a synchronous reporting path. Its non-zero outcomes are a `kind=scan`
   marker row, which is all a consumer sees if it records stdout and discards the exit status.
@@ -215,13 +216,13 @@ State the change, then its consequence for someone running this on a fleet. Cove
   whether a Mac must rescan or whether reclassifying retained evidence repairs history. **A
   removal on scope grounds is a detection change**: the honest framing is that the last release
   overstated the finding, and `agents.yaml`'s `removed:` block already has the wording.
-- **Payload and cost** if either moved, with the measured number and the machine. `queries/COST.md`
+- **Payload and cost** if either moved, with the measured number and the machine. `osquery/queries/COST.md`
   must say so too, and if enumeration is pushing the payload toward the 30KB budget, that number
   belongs in the notes.
 - **Which platform a claim is about.** The coverage figure is all-or-nothing and says nothing about
   where. For a platform claim, name the scenarios that proved it.
 - **A cold cost, where one is recorded.** `measure.py` reports the floor of three warm runs;
-  `queries/COST.md` carries the cold number, which is what an endpoint's first scheduled scan pays.
+  `osquery/queries/COST.md` carries the cold number, which is what an endpoint's first scheduled scan pays.
 - **Known gaps** carried forward, with the reason each is a gap. A gap belonging to one query is
   in that query's own header comment.
 
@@ -233,7 +234,7 @@ quoting a second one against it is how the notes and the docs come to disagree:
 | `tools/agent_status.py` | *generated* — entry and identifier counts, per-identifier CI coverage, and the **Identifiers that did not pass** table. Its `did not appear` and `no test` states are the honest gaps |
 | `docs/agents.md` | *generated* — the page a reader checks the notes against. Take figures from the tool, not by re-counting this |
 | `docs/blind-spots.yaml` | hand-maintained, and the canonical list |
-| `queries/COST.md` | measured costs **and the machine they came from** — and on Linux, whether it is the warm floor or the cold run |
+| `osquery/queries/COST.md` | measured costs **and the machine they came from** — and on Linux, whether it is the warm floor or the cold run |
 | `catalog/routes.yaml` | which routes exist, how each matches, and **which platform each is on** |
 
 ### The title
@@ -291,8 +292,8 @@ Better, hand over the two links that cannot go stale: `https://github.com/<owner
 where drafts sit at the top, and `…/releases/edit/untagged-<hash>`, which opens the editor where
 the Publish button is. Both need write access.
 
-**Do not upload `dist/` by hand.** `release.yml` fires on publish, checks the tag is an ancestor
-of `main`, re-runs the static gates at that commit, rebuilds `dist/` from `queries/` and attaches
+**Do not upload `osquery/dist/` by hand.** `release.yml` fires on publish, checks the tag is an ancestor
+of `main`, re-runs the static gates at that commit, rebuilds `osquery/dist/` from `osquery/queries/` and attaches
 the rebuild, so the artifacts derive from the tagged source by construction.
 
 ```console
@@ -317,4 +318,4 @@ classifier. Deployment glue for a particular MDM is not released from here.
 - Don't tag a commit that isn't on `main`, or tag before the PR that belongs in the release merges.
 - Don't re-tag a published version. Cut a patch instead; a moved tag breaks every pin.
 - Don't reintroduce `CHANGELOG.md`. A note that belongs in the tree belongs next to the thing it
-  describes — `CONTRIBUTING.md`, `README.md` or `queries/COST.md`.
+  describes — `CONTRIBUTING.md`, `README.md` or `osquery/queries/COST.md`.

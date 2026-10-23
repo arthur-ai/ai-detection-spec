@@ -804,7 +804,7 @@ def markdown(data):  # noqa: C901
         # NO EXPLANATION IS WRITTEN IN HERE, because the last one outlived its own fact.
         # It read "no scenario can emit an `image` row at all" -- true while containers.sql
         # reached nobody, false the day 79-linux-image began asserting against
-        # bin/discover --deep. A generated page is the wrong place for a standing excuse:
+        # osquery/bin/discover --deep. A generated page is the wrong place for a standing excuse:
         # this names the identifier and where its evidence comes from, and the sentence
         # disappears on its own when a real install records one.
         # The floor note names scenarios in CI that have recorded nothing yet -- but only

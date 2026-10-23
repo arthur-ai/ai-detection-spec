@@ -256,7 +256,7 @@ jobs:
       - name: Query and assert
         if: steps.runnable.outputs.runnable == 'true'
         run: |
-          sudo -n /usr/local/bin/osqueryi --json < dist/discovery-darwin.sql > /tmp/out.json
+          sudo -n /usr/local/bin/osqueryi --json < osquery/dist/discovery-darwin.sql > /tmp/out.json
           test/assert.sh /tmp/out.json test/scenarios/${{ matrix.scenario }}/expected.json
 
       # These runners install the REAL software, so this job's output is real-install
@@ -311,7 +311,7 @@ jobs:
       - name: Measure the payload
         if: always() && steps.runnable.outputs.runnable == 'true'
           && steps.provision.outcome == 'success'
-        run: python3 tools/measure_payload.py /tmp/out.json
+        run: python3 osquery/tools/measure_payload.py /tmp/out.json
       - name: Keep the output
         # THE SAME CONDITION, deliberately. This one merely warns on a missing file rather
         # than failing, so it stayed green through the run above -- it uploaded an empty
@@ -388,7 +388,7 @@ jobs:
         run: |
           # The deb, not the pkg. Both the deb and the rpm install osqueryi to
           # /usr/bin/osqueryi -- verified on Ubuntu 24.04 and Fedora 41 -- which is the
-          # path bin/container-scan's osqueryi_path() now looks for. The runner's own
+          # path osquery/bin/container-scan's osqueryi_path() now looks for. The runner's own
           # architecture names the package, amd64 or arm64.
           curl --retry 3 --retry-all-errors --retry-delay 5 -fsSL -o /tmp/osquery.deb \
             "https://pkg.osquery.io/deb/osquery_${OSQUERY_VERSION}-1.linux_$(dpkg --print-architecture).deb"
@@ -423,9 +423,9 @@ jobs:
           fi
       # THE ARTIFACT IS CHOSEN BY THE SCENARIO, because one of them asserts on a kind no
       # composed artifact carries. containers.sql is `expensive` and lives only in
-      # dist/discovery-deep.sql, so a scenario that pulls a container image has nothing to
+      # osquery/dist/discovery-deep.sql, so a scenario that pulls a container image has nothing to
       # assert against unless the deep artifact runs -- and the only supported way to run
-      # it is bin/container-scan, behind bin/discover --deep, because that artifact can
+      # it is osquery/bin/container-scan, behind osquery/bin/discover --deep, because that artifact can
       # block forever and the bound lives in the runner. Declared in expected.json rather
       # than by scenario name here: a name-matched `if` in a workflow is a list that has to
       # agree with the tree, which is the drift catalog/routes.yaml exists to end.
@@ -437,9 +437,9 @@ jobs:
         if: steps.provision.outputs.runnable == 'true'
         run: |
           if python3 -c "import json,sys; sys.exit(0 if json.load(open('test/scenarios/${{ matrix.scenario }}/expected.json')).get('deep') else 1)"; then
-            sudo -n bin/discover --deep > /tmp/out.json
+            sudo -n osquery/bin/discover --deep > /tmp/out.json
           else
-            sudo -n /usr/bin/osqueryi --json < dist/discovery-linux.sql > /tmp/out.json
+            sudo -n /usr/bin/osqueryi --json < osquery/dist/discovery-linux.sql > /tmp/out.json
           fi
           test/assert.sh /tmp/out.json test/scenarios/${{ matrix.scenario }}/expected.json
       - name: Record which identifiers this run matched
@@ -471,7 +471,7 @@ jobs:
   # 2023 by default, which is Fedora-derived but carries its own package set. fedora:41
   # stays as the rpm control it has been.
   #
-  # WHAT IT REALLY GUARDS is that ONE dist/discovery-linux.sql serves every family: the
+  # WHAT IT REALLY GUARDS is that ONE osquery/dist/discovery-linux.sql serves every family: the
   # artifact names deb_packages and rpm_packages, and the absent one has to return no
   # rows rather than error the statement. A genuinely missing table does the opposite --
   # snap_packages returns [] and exits 1 -- so these are the runs that keep the

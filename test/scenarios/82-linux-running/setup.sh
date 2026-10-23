@@ -1,7 +1,7 @@
 #!/bin/bash
 # An agent RUNNING, not only installed: the scenario the `proc` kind needs. OpenClaw's
 # gateway is a long-lived node process, so it is still running when the query reads the
-# process table, and queries/running.sql names it by the package its workers run from.
+# process table, and osquery/queries/running.sql names it by the package its workers run from.
 #
 # THE TOKEN IS THROWAWAY and the gateway has no channel and no model. That is enough to
 # start the process this run asserts on and nothing more. In a container the gateway binds

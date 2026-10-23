@@ -1,20 +1,20 @@
 <div align="center">
 
-# 🔎 osquery-ai-discovery
+# 🔎 ai-detection-spec
 
 **Find the AI agents on your fleet — with SQL you can read.**
 
 Which coding agents, chat clients, AI browsers and browser extensions are installed,
 *which route each one arrived by*, and what those extensions are permitted to access.
 
-[![CI](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/ci.yml/badge.svg)](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/ci.yml)
-[![Scenarios](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/scenarios.yml/badge.svg)](https://github.com/arthur-ai/osquery-ai-discovery/actions/workflows/scenarios.yml)
+[![CI](https://github.com/arthur-ai/ai-detection-spec/actions/workflows/ci.yml/badge.svg)](https://github.com/arthur-ai/ai-detection-spec/actions/workflows/ci.yml)
+[![Scenarios](https://github.com/arthur-ai/ai-detection-spec/actions/workflows/scenarios.yml/badge.svg)](https://github.com/arthur-ai/ai-detection-spec/actions/workflows/scenarios.yml)
 [![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-113%2F113-2E7D57)](docs/agents.md)
 [![osquery](https://img.shields.io/badge/osquery-5.23.1-1D4E89)](https://osquery.io)
 [![macOS](https://img.shields.io/badge/macOS-shipping-2E7D57)](#requirements)
 [![Linux](https://img.shields.io/badge/Linux-shipping-2E7D57)](#requirements)
 [![Windows](https://img.shields.io/badge/Windows-not_yet-6B7480)](#scope-so-you-know-what-you-are-getting)
-[![License](https://img.shields.io/badge/license-MIT-6B7480)](LICENSE)
+[![License](https://img.shields.io/badge/license-Apache--2.0-6B7480)](LICENSE)
 
 **[What we detect, and what tests it →](docs/agents.md)**
 
@@ -32,9 +32,9 @@ runtime dependencies beyond osquery.
 
 ### Why you might like it
 
-- **🔍 Nothing hidden.** It is SQL. Read `dist/discovery-darwin.sql` (or
-  `dist/discovery-linux.sql`) and you know exactly what it collects: names, paths, versions
-  and declared permissions, and nothing else. Read `dist/agents-darwin.sql` and you also see
+- **🔍 Nothing hidden.** It is SQL. Read `osquery/dist/discovery-darwin.sql` (or
+  `osquery/dist/discovery-linux.sql`) and you know exactly what it collects: names, paths, versions
+  and declared permissions, and nothing else. Read `osquery/dist/agents-darwin.sql` and you also see
   every identifier it matches on.
 - **✅ Every signature tested against a real install.** Not against documentation — which is how
   this repo once shipped an identifier that matched nothing on any Mac. **Every identifier** is
@@ -52,7 +52,7 @@ runtime dependencies beyond osquery.
 | 🗂 | **A query** | Runs on each machine and lists what is installed — apps, packages, browser extensions, state directories. **No agent name appears anywhere in it.** It reports what it finds; which of those findings add up to an agent is decided later, by the classifier. One per platform, because macOS and Linux read different tables |
 | ▶️ | **A runner** | Runs that query on the endpoint and prints the result as one JSON array. A second one covers agents packaged as Docker images, separately and on a time limit, because a wedged Docker daemon never answers and would otherwise hang the scan |
 | 🔎 | **A classifier and its catalog** | Reads the collected JSON and tells you which agents are on the machine, matching the evidence against **42 agents and 113 identifiers**. It runs wherever you keep the output, never on the endpoint |
-| 🧾 | **The same catalog, as SQL** | A query that returns the agent names directly, a set of Fleet policies, and `bin/discover --names`, which prints the names as one line for a Jamf Extension Attribute |
+| 🧾 | **The same catalog, as SQL** | A query that returns the agent names directly, a set of Fleet policies, and `osquery/bin/discover --names`, which prints the names as one line for a Jamf Extension Attribute |
 
 **Two ways to match, one catalog.** Pick the one that fits how you collect:
 
@@ -62,7 +62,7 @@ runtime dependencies beyond osquery.
   shape for a collector that stores the JSON.
 - **Match on the machine.** Run `agents-darwin.sql` or `agents-linux.sql` and get the agent
   names straight from osquery, load `fleet-policies.yml` into Fleet, or point a Jamf
-  Extension Attribute at `bin/discover --names`. This is the shape for tools that work with
+  Extension Attribute at `osquery/bin/discover --names`. This is the shape for tools that work with
   one query or one value per machine. A new signature reaches these files when you redeploy
   them.
 
@@ -89,9 +89,9 @@ registry rather than a description of it:
 | **Linux only** | `deb_packages`, `desktop_ids`, `rpm_packages`, `systemd_prefixes` | `deb_packages`, `rpm_packages`, `systemd_units`, `file` |
 | **Both** | `binaries`, `extension_ids`, `images`, `jetbrains_plugins`, `model_stores`, `native_messaging_hosts`, `npm`, `process_paths`, `pypi`, `running_npm`, `state_dirs`, `vscode_extensions` | `npm_packages`, `chrome_extensions`, `vscode_extensions`, `jetbrains_plugins`, `docker_images`, `processes`, `file` |
 
-The composed artifact is per platform for that reason — `dist/discovery-darwin.sql` and
-`dist/discovery-linux.sql` name disjoint sets of tables, so **there is no single file that runs
-on both**. `bin/discover` picks by `uname -s`.
+The composed artifact is per platform for that reason — `osquery/dist/discovery-darwin.sql` and
+`osquery/dist/discovery-linux.sql` name disjoint sets of tables, so **there is no single file that runs
+on both**. `osquery/bin/discover` picks by `uname -s`.
 
 **Windows has no code and no date**, because a date this repo cannot enforce is the kind of
 claim it exists to avoid.
@@ -108,13 +108,13 @@ one.
 |---|---|
 | macOS | Apple Silicon or Intel. **No lower bound established** — a floor would be a guess |
 | Linux | Any distro with dpkg or rpm. One artifact serves both: on Debian `rpm_packages` returns no rows and exits 0, and on Fedora `deb_packages` does the same — measured, not assumed |
-| osquery | **5.10.0** for `bin/discover --write`, which runs each query separately and reports any that fail. **5.18.0** to run the whole inventory as one query, because the JetBrains query needs a table added in that release |
+| osquery | **5.10.0** for `osquery/bin/discover --write`, which runs each query separately and reports any that fail. **5.18.0** to run the whole inventory as one query, because the JetBrains query needs a table added in that release |
 | `bash` | 3.2, which is the macOS system `bash`, so `/bin/bash` is enough |
 | `python3` | **3.7** (`subprocess` `capture_output`) — for `bin/classify` and `tools/`. **Nothing on the endpoint needs it** |
 | PyYAML | Only for the tools that read the catalog: `bin/classify` and `tools/validate_catalog.py` |
 
-**Everything that runs on the endpoint needs osquery alone.** `bin/discover` and
-`bin/container-scan` are bash and `osqueryi`; `python3` and PyYAML are for the classifier and
+**Everything that runs on the endpoint needs osquery alone.** `osquery/bin/discover` and
+`osquery/bin/container-scan` are bash and `osqueryi`; `python3` and PyYAML are for the classifier and
 the tools, which run off the machine. [`docs/deployment.md`](docs/deployment.md) says why that
 is a rule rather than a detail, why `curl` is not listed, and what the one-file bundle adds.
 
@@ -124,32 +124,32 @@ only your own account.
 ## Quickstart
 
 ```console
-$ git clone https://github.com/arthur-ai/osquery-ai-discovery
-$ cd osquery-ai-discovery              # or download the assets from a tagged release
+$ git clone https://github.com/arthur-ai/ai-detection-spec
+$ cd ai-detection-spec                # or download the assets from a tagged release
 $ brew install --cask osquery          # or https://osquery.io/downloads
 $ python3 -m pip install pyyaml        # for bin/classify only -- the endpoint needs nothing
 
 # Match on the machine: one query, agent names out
-$ sudo osqueryi --json < dist/agents-darwin.sql
-$ sudo bin/discover --names                   # the same as one line, for a Jamf Extension Attribute
+$ sudo osqueryi --json < osquery/dist/agents-darwin.sql
+$ sudo osquery/bin/discover --names                   # the same as one line, for a Jamf Extension Attribute
 
 # Match off the machine: inventory out, classify wherever you keep the output
-$ sudo osqueryi --json < dist/discovery-darwin.sql | bin/classify
-$ sudo bin/discover --deep | bin/classify     # the same, plus container images
+$ sudo osqueryi --json < osquery/dist/discovery-darwin.sql | bin/classify
+$ sudo osquery/bin/discover --deep | bin/classify     # the same, plus container images
 
-# On Linux, the same thing. The bin/discover commands need no change -- it picks the
+# On Linux, the same thing. The osquery/bin/discover commands need no change -- it picks the
 # platform by `uname -s`. The osqueryi commands take the -linux files instead.
 $ sudo apt install ./osquery_5.23.1-1.linux_amd64.deb
-$ sudo osqueryi --json < dist/agents-linux.sql
-$ sudo osqueryi --json < dist/discovery-linux.sql | bin/classify
+$ sudo osqueryi --json < osquery/dist/agents-linux.sql
+$ sudo osqueryi --json < osquery/dist/discovery-linux.sql | bin/classify
 ```
 
-`dist/` is committed, so a clone is ready to run — there is nothing to build. Pinning a
+`osquery/dist/` is committed, so a clone is ready to run — there is nothing to build. Pinning a
 tagged release is the recommended posture, and one ships the same artifacts plus the
 catalog; see [SECURITY.md](SECURITY.md).
 
 For a fleet, do not run either of those on a synchronous reporting path — schedule
-`bin/discover --write` and `cat` the file. See [Running it on a fleet](docs/deployment.md).
+`osquery/bin/discover --write` and `cat` the file. See [Running it on a fleet](docs/deployment.md).
 
 `bin/classify` prints the agents it found and the evidence for each:
 
@@ -275,7 +275,7 @@ branch asks the Docker daemon — under a wall-clock bound, because `docker_imag
 returns against a daemon that accepts the connection and does not answer.
 
 ```console
-$ sudo bin/discover --deep | bin/classify     # base inventory plus containers
+$ sudo osquery/bin/discover --deep | bin/classify     # base inventory plus containers
 ```
 
 **[How the bound works, the exit codes, and how image names resolve →](docs/containers.md)**
@@ -314,8 +314,9 @@ within five working days.**
 
 ## License
 
-**MIT** — use it, fork it, vendor it into your own tooling, ship it inside a product. No
-attribution theatre required. See [LICENSE](LICENSE).
+**Apache-2.0** — use it, fork it, vendor it into your own tooling, ship it inside a product.
+See [LICENSE](LICENSE) and [NOTICE](NOTICE). Releases up to and including v0.14.1 were published
+under MIT, and copies of those stay MIT.
 
 Maintained by the Arthur Unify team, and built on [osquery](https://osquery.io), which does all
 the hard parts.

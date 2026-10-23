@@ -4,12 +4,12 @@
 # row rather than a live install.
 #
 # WHY IT NEEDED A SCENARIO OF ITS OWN. containers.sql is `cost: expensive`, so it is
-# deliberately absent from dist/discovery-linux.sql -- which is the artifact every other
+# deliberately absent from osquery/dist/discovery-linux.sql -- which is the artifact every other
 # scenario asserts against. No amount of installing could make an `image` row appear there.
-# So this scenario asserts against `bin/discover --deep`, the only supported way to run the
+# So this scenario asserts against `osquery/bin/discover --deep`, the only supported way to run the
 # deep artifact, declared by `"deep": true` in expected.json.
 #
-# WHAT test/docker_states.sh DOES NOT COVER. That suite serves captured images through a
+# WHAT osquery/test/docker_states.sh DOES NOT COVER. That suite serves captured images through a
 # fake socket and is the better test of the RUNNER -- every daemon state, the guard, the
 # bound. What it cannot prove is that the catalogued name is still the name Docker Hub
 # serves today. A pull is the only thing that proves that, and it is the same class of

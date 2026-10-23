@@ -32,8 +32,8 @@ import re
 import subprocess
 import sys
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent
-FIXTURES = ROOT / "test" / "fixtures"
+ROOT = pathlib.Path(__file__).resolve().parent.parent  # osquery/, the binding
+FIXTURES = ROOT.parent / "test" / "fixtures"  # the matcher's, at the repository root
 sys.path.insert(0, str(ROOT / "tools"))
 import render_match as R  # noqa: E402
 os.environ.setdefault("AI_DISCOVERY_TELEMETRY", "0")

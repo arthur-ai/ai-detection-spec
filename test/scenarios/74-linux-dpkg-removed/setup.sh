@@ -1,6 +1,6 @@
 #!/bin/bash
 # THE MUST-NOT-MATCH TEST FOR THE dpkg STATUS FILTER, and it exists because the obvious
-# version of queries/packages-linux.sql was wrong.
+# version of osquery/queries/packages-linux.sql was wrong.
 #
 # dpkg keeps a record of a package that was REMOVED BUT NOT PURGED -- state `rc`, status
 # `deinstall ok config-files` -- and osquery reports it WITH THE VERSION STILL ATTACHED.

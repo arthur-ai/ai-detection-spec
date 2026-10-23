@@ -27,11 +27,11 @@ Each of those changes what gets built next. None of them needs to know who you a
 | | |
 |---|---|
 | `bin/classify` | **sends one event per run.** It runs off the endpoint, on a collector or an analyst's machine, over a payload someone already chose to collect |
-| `bin/discover` | sends nothing |
-| `bin/container-scan` | sends nothing |
-| `dist/*.sql`, `dist/ai-discovery.conf` | sends nothing. They are SQL; osquery executes them and they have no network to reach |
+| `osquery/bin/discover` | sends nothing |
+| `osquery/bin/container-scan` | sends nothing |
+| `osquery/dist/*.sql`, `osquery/dist/ai-discovery.conf` | sends nothing. They are SQL; osquery executes them and they have no network to reach |
 
-That split is deliberate and is not an oversight to correct later. `bin/discover` runs as
+That split is deliberate and is not an oversight to correct later. `osquery/bin/discover` runs as
 root on employee endpoints under MDM. An outbound call from there would be a fleet-wide
 beacon on machines whose owners never chose this tool, and no analytics question is worth
 that.
@@ -80,7 +80,7 @@ zero, because "no timeout happened" and "a timeout of zero seconds" are differen
 | `gap_rows` | `kind=scan` markers reporting that a branch could not look |
 | `absence_rows` | `kind=scan` markers reporting `absent` — the branch read the machine and there was nothing there. High here with `gap_rows` at zero is a fleet without containers, not a fleet whose container scan is failing |
 | `payload_bytes` | size of the payload as read, in bytes |
-| `payload_packed_bytes` | the same after gzip -9 and base64, matching `tools/measure_payload.py`. This is the figure a single-text-value channel actually pays. **The 30KB budget it is judged against is self-imposed** — a Jamf Extension Attribute convention this project keeps to, not a documented platform limit |
+| `payload_packed_bytes` | the same after gzip -9 and base64, matching `osquery/tools/measure_payload.py`. This is the figure a single-text-value channel actually pays. **The 30KB budget it is judged against is self-imposed** — a Jamf Extension Attribute convention this project keeps to, not a documented platform limit |
 | `scan_rows` | `kind=scan` markers reporting a branch ran fine |
 | `kinds_seen` | the row kinds present, comma-joined and sorted. Anything outside the route vocabulary is reported as `other` |
 | `deep_scan` | whether the container branch was attempted — including when it failed, because asking and being refused is still use |

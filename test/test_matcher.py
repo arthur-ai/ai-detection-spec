@@ -246,7 +246,7 @@ check("exactly one agent, no more", found == {"aider"},
       f"got {sorted(found)}; every model runner and gateway in this fixture must be declined")
 
 # --- scan rows: provenance, gaps, and staleness -----------------------------------
-# All pure bin/classify behaviour, so it lives in the fast suite. test/docker_states.sh
+# All pure bin/classify behaviour, so it lives in the fast suite. osquery/test/docker_states.sh
 # proves the daemon states that PRODUCE these rows; this proves what is done with them.
 import subprocess as _sp, tempfile as _tf, time as _time
 
@@ -280,7 +280,7 @@ check("...and says so in the text output",
 # fixes a wedged daemon differently from a machine that has no Docker, and differently
 # again from a writer that was never installed.
 #
-# `error` IS IN THIS LIST NOW, and it is the one that was missing. bin/discover emits it
+# `error` IS IN THIS LIST NOW, and it is the one that was missing. osquery/bin/discover emits it
 # for every non-container branch that ran and failed, and the renderer had no case for
 # it, so it fell through to a generic sentence that substituted "the socket" as the
 # place -- naming a socket that had nothing to do with a failed `apps` query.
@@ -321,7 +321,7 @@ check("a gap is never silently an empty finding set",
 # WHAT IT CATCHES, checked by mutation rather than assumed: a renderer that gives the two
 # reasons the same sentence -- which is what "simplifying" this band into one branch would
 # do. It CANNOT see a producer that stops emitting the term, because the rows here are
-# written by hand; test/docker_states.sh owns that half and fails on it.
+# written by hand; osquery/test/docker_states.sh owns that half and fails on it.
 check("a runtime we cannot read does not read as a machine with none",
       classify_rows([scan_row("unreadable:podman")]) != classify_rows([scan_row("absent")]),
       "`absent` and `unreadable:podman` rendered identically, which is the bug itself")
@@ -1146,7 +1146,7 @@ check("...and offers --supersede beside --allow-shrink",
 # whoever ran `docker tag`, a label is written by the vendor, and a running container says
 # something no other route in this repo can say about anything.
 #
-# Rows are shaped exactly as queries/containers.sql emits them, and every id below was
+# Rows are shaped exactly as osquery/queries/containers.sql emits them, and every id below was
 # read off a real daemon (Docker 28.4.0 / osquery 5.23.1, 2026-09-11) rather than invented.
 
 
@@ -1328,11 +1328,8 @@ check("...including when there is no permission before it",
 check("...and an empty or missing `perms` is no permissions and no provenance",
       _cl.split_perms("") == ((), "") and _cl.split_perms(None) == ((), ""))
 
-import re as _re
-_emitted = set(_re.findall(r"THEN ',([^'<][^']*)'", (ROOT / "queries" / "browser.sql").read_text()))
-check("PERMS_PROVENANCE names exactly the tokens queries/browser.sql appends",
-      _emitted == set(_cl.PERMS_PROVENANCE),
-      f"browser.sql emits {sorted(_emitted)}, classify names {sorted(_cl.PERMS_PROVENANCE)}")
+# That PERMS_PROVENANCE names exactly the tokens the osquery binding's browser.sql appends is
+# checked in osquery/test/lint.sh: the binding reads the matcher, and not the other way round.
 
 _ext = {"kind": "ext", "id": "fcoeoabgfenejglbffodgkkbkcdhcgfn", "ver": "1.0.94",
         "loc": "/Users/x/Library/Application Support/Google/Chrome/Default",

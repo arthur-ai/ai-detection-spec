@@ -25,7 +25,7 @@
       "claude-code"
     ]
   },
-  "why": "Two things at once. The identifier: rpm_packages `cursor`, read off a real rpm install rather than assumed to equal the deb's name. And the artifact: dist/discovery-linux.sql names deb_packages AND rpm_packages, and this is the run where the ABSENT one has to return no rows instead of erroring the whole statement -- which is what a genuinely missing table does, as `snap_packages` demonstrates by returning [] and exit 1 on every Linux box. `deb` is pinned at >=0 here for exactly that reason, and it is the assertion, not an omission.",
+  "why": "Two things at once. The identifier: rpm_packages `cursor`, read off a real rpm install rather than assumed to equal the deb's name. And the artifact: osquery/dist/discovery-linux.sql names deb_packages AND rpm_packages, and this is the run where the ABSENT one has to return no rows instead of erroring the whole statement -- which is what a genuinely missing table does, as `snap_packages` demonstrates by returning [] and exit 1 on every Linux box. `deb` is pinned at >=0 here for exactly that reason, and it is the assertion, not an omission.",
   "must_contain": [
     "cursor"
   ],
