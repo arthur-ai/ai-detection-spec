@@ -137,7 +137,12 @@ cleanup() {
 }
 TREE="$ART/tree-$$.tgz"; GUEST="$ART/guest-$$.sh"
 finish() { cleanup; rm -f "$TREE" "$GUEST"; }
-trap finish EXIT INT TERM
+# A signal ENDS the run, and cleanup runs once, from EXIT. A handler that only cleaned up would
+# return into the loop, and every remaining scenario would create a VM, fail to copy the
+# deleted tree onto it, and delete it again.
+trap finish EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 # THE WHOLE TREE, not a scenario subset: setup.sh sources ../../lib, the assertions run
 # bin/classify against catalog/, and the guest's own dist/ is what gets measured.
