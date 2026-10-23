@@ -291,7 +291,7 @@ else
     esac
   done
 fi
-for f in "$HERE"/run.sh "$HERE"/run-ec2.sh "$HERE"/lib/vm.sh "$HERE"/lib/assert.sh \
+for f in "$HERE"/run.sh "$HERE"/run-ec2.sh "$HERE"/run-gce.sh "$HERE"/lib/vm.sh "$HERE"/lib/assert.sh \
          "$HERE"/docker_states.sh "$HERE"/../bin/container-scan "$HERE"/../bin/discover ; do
   bash -n "$f" || { echo "FAIL: bash syntax in $f"; fail=1; }
 done
