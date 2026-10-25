@@ -113,8 +113,10 @@ jobs:
         run: pip install --quiet jsonschema==4.26.0
       - name: Static checks
         run: test/lint.sh
-      - name: The format's conformance vectors, schemas required
-        run: python3 test/test_conformance.py --require-jsonschema
+      - name: The format's conformance vectors and the exported catalog, schemas required
+        run: |
+          python3 test/test_conformance.py --require-jsonschema
+          python3 test/test_export.py --require-jsonschema
 
   query-runs:
     needs: scope

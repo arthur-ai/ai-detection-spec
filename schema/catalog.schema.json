@@ -79,7 +79,9 @@
         "values_from": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
         "live": {"type": "boolean"},
         "retired": {"type": "boolean"},
-        "value_pattern": {"type": "string", "minLength": 1}
+        "value_pattern": {"type": "string", "minLength": 1},
+        "purl": {"type": "string", "pattern": "^[a-z][a-z0-9.+-]*$",
+                 "description": "The package-url type of this route's identifiers (SPEC.md 4.3)."}
       }
     },
     "osquery_binding": {
@@ -113,6 +115,8 @@
       "properties": {
         "route": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
         "value": {"type": "string", "minLength": 1},
+        "purl": {"type": "string", "pattern": "^pkg:[a-z][a-z0-9.+-]*/[^@?#]+$",
+                 "description": "The package URL this identifier names, with no version."},
         "status": {"enum": ["current", "superseded"]},
         "proof": {"type": "array", "items": {"$ref": "#/$defs/observation"}},
         "superseded": {"$ref": "#/$defs/superseded"}

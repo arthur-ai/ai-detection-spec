@@ -83,6 +83,13 @@ jobs:
           python3 osquery/tools/bundle.py --platform darwin --label "$TAG"
           python3 osquery/tools/bundle.py --platform linux  --label "$TAG"
 
+      # THE CATALOG IN THE FORMAT'S OWN DOCUMENT, for a tool that is not this repository's
+      # classifier: every identifier with its status, its package URL and the runs that
+      # proved it. Built here and never committed, because its proof changes with every
+      # collect. --strict refuses a release with a current identifier no run has proved.
+      - name: Export the catalog as an Open Agent Detection Format document
+        run: python3 tools/export.py --strict --commit "$GITHUB_SHA" --out artifacts/catalog.json
+
       # --clobber replaces whatever was attached to the draft by hand. A consumer pins a
       # tag and downloads these files; they are the deliverable, not a convenience.
       #
@@ -129,5 +136,5 @@ jobs:
             osquery/dist/signatures.sql osquery/dist/agents-darwin.sql osquery/dist/agents-linux.sql \
             osquery/dist/fleet-policies.yml \
             osquery/bin/discover osquery/bin/container-scan bin/classify \
-            catalog/agents.yaml catalog/routes.yaml \
+            catalog/agents.yaml catalog/routes.yaml artifacts/catalog.json \
             artifacts/ai-discovery-darwin.sh artifacts/ai-discovery-linux.sh --clobber

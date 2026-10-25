@@ -102,13 +102,15 @@ of the names.
 | `live` | OPTIONAL. `true` when a row of this route says the agent is running, not only installed (§6.6) |
 | `retired` | OPTIONAL. `true` when the route identifies nothing. Its kind stays registered, because evidence of that kind is still collected (§6.1) |
 | `value_pattern` | OPTIONAL. A regular expression every identifier on the route MUST match in full |
+| `purl` | OPTIONAL. The [package-url](https://github.com/package-url/purl-spec) type of the route's identifiers, present only when an identifier alone determines a package URL. A route whose coordinate needs more than the identifier, such as a distribution namespace, does not declare one |
 
 ### 4.4 Agents and identifiers
 
 An agent is `{id, name, classification, platforms, identifiers}`. `id` is lowercase, with
 hyphens, and unique in the catalog. `platforms` lists the platforms the agent can be found on.
 `identifiers` is a non-empty list of `{route, value, status}`, with the optional members
-described in §7.
+described in §7. An identifier on a route that declares `purl` carries `purl`: the package
+URL that identifier names, with no version.
 
 A conforming catalog MUST meet all of these:
 

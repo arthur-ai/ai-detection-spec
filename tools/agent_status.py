@@ -458,6 +458,28 @@ def ci_platforms():
     return plats
 
 
+def observations(scenarios=None):
+    """Every recorded observation, keyed (agent, route, value), each carrying its
+    scenario and that scenario's platform. ONE READER: collect() counts coverage from
+    these and tools/export.py publishes them as proof, so the two cannot read
+    observed.json differently. `archived` holds the observations of superseded values.
+
+    The platform comes from the scenario's expected.json when the record has none: the
+    macOS runners record without `--platform`, and the scenario declares it anyway."""
+    scenarios = SCENARIOS if scenarios is None else scenarios
+    platform_of = {p.parent.name: json.loads(p.read_text()).get("platform")
+                   for p in sorted(scenarios.glob("*/expected.json"))}
+    live, archived = collections.defaultdict(list), collections.defaultdict(list)
+    for path in sorted(scenarios.glob("*/observed.json")):
+        doc = json.loads(path.read_text())
+        for bucket, key in ((live, "identifiers"), (archived, "archived")):
+            for rec in doc.get(key, []):
+                full = {**rec, "scenario": doc["scenario"],
+                        "platform": rec.get("platform") or platform_of.get(doc["scenario"])}
+                bucket[(rec["agent"], rec["route"], str(rec["value"]))].append(full)
+    return live, archived
+
+
 def collect():
     catalog = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
 
@@ -486,10 +508,9 @@ def collect():
     # one a pull request would catch.
     seen_in = collections.defaultdict(set)      # (agent, route, value) -> {scenario}
     observed_os = set()
-    for path in sorted(SCENARIOS.glob("*/observed.json")):
-        doc = json.loads(path.read_text())
-        for rec in doc.get("identifiers", []):
-            seen_in[(rec["agent"], rec["route"], rec["value"])].add(doc["scenario"])
+    for key, recs in observations()[0].items():
+        for rec in recs:
+            seen_in[key].add(rec["scenario"])
             if rec.get("os"):
                 observed_os.add(rec["os"])
     in_ci = ci_scenarios()

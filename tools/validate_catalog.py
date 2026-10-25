@@ -104,7 +104,7 @@ def validate_registry(reg, modes=None):
     legal_platform = platforms | set(groups)
     modes = load_classify().MATCH_MODES if modes is None else modes
     required = {"platform", "kind", "match"}
-    optional = {"value_pattern", "retired", "values_from", "live"}
+    optional = {"value_pattern", "retired", "values_from", "live", "purl"}
     for name, r in (reg.get("routes") or {}).items():
         # Lowercase, digits and underscores: the names every reader of the registry can parse.
         if not re.fullmatch(r"[a-z][a-z0-9_]*", str(name)):
