@@ -586,10 +586,21 @@ bad = [name for name, mutated in cases.items()
        if mutated == text or not build.binding_errors(qs, mutated)]
 if build.binding_errors(qs, text):
     bad.append("the real registry")
+# AND IT READS EVERY FORM validate_catalog ACCEPTS. PyYAML takes the binding inline or one key
+# per line, in any order, quoted or not; a catalog it accepts has to build.
+_inline = "    osquery: {table: apps, min_osquery: 5.10.0}"
+for name, form in (
+        ("one key per line", "    osquery:\n      table: apps\n      min_osquery: 5.10.0"),
+        ("keys reversed", "    osquery: {min_osquery: 5.10.0, table: apps}"),
+        ("values quoted", "    osquery:\n      min_osquery: '5.10.0'\n      table: \"apps\""),
+):
+    if build.binding_errors(qs, text.replace(_inline, form)):
+        bad.append(f"a valid binding written {name}")
 if bad:
     print(f"FAIL: binding check: wrong answer for {bad}")
     sys.exit(1)
-print(f"binding check: ok, refuses {len(cases)} broken registries and passes the real one")
+print(f"binding check: ok, refuses {len(cases)} broken registries, reads every binding form "
+      f"validate_catalog accepts, and passes the real one")
 BINDING
 # The rendered match SQL is generated from the catalog the way dist/ is from queries/, and
 # gated the same way. The parity test needs osqueryi and SKIPs without one, which is what

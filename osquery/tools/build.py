@@ -242,6 +242,32 @@ def queries(files=None):
     return out
 
 
+def _binding(block):
+    """A route block's `osquery:` mapping, in either form the YAML may take -- inline
+    `{table: .., min_osquery: ..}` or one key per indented line -- in any key order and with
+    or without quotes. validate_catalog reads the file with PyYAML and accepts both forms; a
+    binding it accepts that this cannot read would fail the build on a valid catalog."""
+    inline = re.search(r"^    osquery:\s*\{(.*)\}\s*$", block, re.M)
+    if inline:
+        pairs = [p.split(":", 1) for p in inline.group(1).split(",") if ":" in p]
+    else:
+        head = re.search(r"^    osquery:\s*$", block, re.M)
+        if not head:
+            return None
+        pairs = []
+        for line in block[head.end():].splitlines()[1:]:
+            m = re.match(r"^      (\w+):\s*(.*?)\s*$", line)
+            if not m:
+                break
+            pairs.append([m.group(1), m.group(2)])
+    fields = {k.strip(): v.strip().strip("'\"") for k, v in pairs}
+    if (set(fields) != {"table", "min_osquery"}
+            or not re.fullmatch(r"\w+", fields["table"])
+            or not re.fullmatch(r"[\d.]+", fields["min_osquery"])):
+        return None
+    return fields
+
+
 def osquery_bindings(text):
     """Each route's osquery binding, read WITHOUT PyYAML as platform_vocabulary() is.
 
@@ -261,13 +287,12 @@ def osquery_bindings(text):
             continue
         plat = re.search(r"^    platform:\s*(\S+)", block, re.M)
         kind = re.search(r"^    kind:\s*(\S+)", block, re.M)
-        bind = re.search(r"^    osquery:\s*\{table:\s*(\w+),\s*min_osquery:\s*([\d.]+)\}\s*$",
-                         block, re.M)
+        bind = _binding(block)
         if not (plat and kind and bind):
             unreadable.append(m.group(1))
             continue
         out.append({"route": m.group(1), "platform": plat.group(1), "kind": kind.group(1),
-                    "table": bind.group(1), "min": bind.group(2)})
+                    "table": bind["table"], "min": bind["min_osquery"]})
     return out, unreadable
 
 
