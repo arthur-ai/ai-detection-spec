@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "urn:open-agent-detection:schema:evidence:0.1",
+  "$id": "urn:ai-detection-spec:schema:evidence:0.1",
   "title": "Open Agent Detection Format: evidence",
   "description": "What a binding reports: an array of evidence rows. SPEC.md section 5.",
   "type": "array",

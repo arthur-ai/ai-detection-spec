@@ -1,5 +1,5 @@
 {
-  "format": "open-agent-detection/0.1",
+  "format": "ai-detection-spec/0.1",
   "vectors": [
     {
       "id": "exact",
@@ -7,7 +7,7 @@
       "mode": "exact",
       "description": "exact compares the whole id, case-sensitively",
       "catalog": {
-        "format": "open-agent-detection/0.1",
+        "format": "ai-detection-spec/0.1",
         "platforms": ["darwin", "linux", "windows"],
         "platform_groups": {"posix": ["darwin", "linux"]},
         "classifications": [
@@ -52,7 +52,7 @@
       "mode": "prefix",
       "description": "prefix matches an id that starts with the value, case-sensitively",
       "catalog": {
-        "format": "open-agent-detection/0.1",
+        "format": "ai-detection-spec/0.1",
         "platforms": ["darwin", "linux", "windows"],
         "platform_groups": {"posix": ["darwin", "linux"]},
         "classifications": [
@@ -99,7 +99,7 @@
       "mode": "exact-normalised",
       "description": "an image row names several tags; each is normalised and compared exactly",
       "catalog": {
-        "format": "open-agent-detection/0.1",
+        "format": "ai-detection-spec/0.1",
         "platforms": ["darwin", "linux", "windows"],
         "platform_groups": {"posix": ["darwin", "linux"]},
         "classifications": [
@@ -160,7 +160,7 @@
       "mode": "home-dir",
       "description": "home-dir matches the directory itself under any home root, and nothing below or beside it",
       "catalog": {
-        "format": "open-agent-detection/0.1",
+        "format": "ai-detection-spec/0.1",
         "platforms": ["darwin", "linux", "windows"],
         "platform_groups": {"posix": ["darwin", "linux"]},
         "classifications": [
@@ -208,7 +208,7 @@
       "mode": "home-prefix",
       "description": "home-prefix matches the path and what is under it, never a name that starts with it",
       "catalog": {
-        "format": "open-agent-detection/0.1",
+        "format": "ai-detection-spec/0.1",
         "platforms": ["darwin", "linux", "windows"],
         "platform_groups": {"posix": ["darwin", "linux"]},
         "classifications": [
@@ -274,7 +274,7 @@
       "mode": "tool-dir",
       "description": "a pipx or uv directory names its distribution, and only a tool-dir route reads that name",
       "catalog": {
-        "format": "open-agent-detection/0.1",
+        "format": "ai-detection-spec/0.1",
         "platforms": ["darwin", "linux", "windows"],
         "platform_groups": {"posix": ["darwin", "linux"]},
         "classifications": [
@@ -354,7 +354,7 @@
       "mode": "home-dir",
       "description": "every home root is tried for every row, whatever the route's platform",
       "catalog": {
-        "format": "open-agent-detection/0.1",
+        "format": "ai-detection-spec/0.1",
         "platforms": ["darwin", "linux", "windows"],
         "platform_groups": {"posix": ["darwin", "linux"]},
         "classifications": [
@@ -400,7 +400,7 @@
       "section": "6.4.8",
       "description": "a matcher stops with an error on a match mode it does not implement",
       "catalog": {
-        "format": "open-agent-detection/0.1",
+        "format": "ai-detection-spec/0.1",
         "platforms": ["darwin", "linux", "windows"],
         "platform_groups": {"posix": ["darwin", "linux"]},
         "classifications": [
@@ -435,7 +435,7 @@
       "section": "6.1",
       "description": "an undeclared kind is dropped; a declared kind nothing claims is unmatched, a retired route's kind included",
       "catalog": {
-        "format": "open-agent-detection/0.1",
+        "format": "ai-detection-spec/0.1",
         "platforms": ["darwin", "linux", "windows"],
         "platform_groups": {"posix": ["darwin", "linux"]},
         "classifications": [
@@ -487,7 +487,7 @@
       "section": "6.2",
       "description": "a route's platform does not filter which rows it matches",
       "catalog": {
-        "format": "open-agent-detection/0.1",
+        "format": "ai-detection-spec/0.1",
         "platforms": ["darwin", "linux", "windows"],
         "platform_groups": {"posix": ["darwin", "linux"]},
         "classifications": [
@@ -527,7 +527,7 @@
       "section": "6.3",
       "description": "a route reading another route's values matches them, and a live route marks the finding running",
       "catalog": {
-        "format": "open-agent-detection/0.1",
+        "format": "ai-detection-spec/0.1",
         "platforms": ["darwin", "linux", "windows"],
         "platform_groups": {"posix": ["darwin", "linux"]},
         "classifications": [
@@ -586,7 +586,7 @@
       "section": "6.5",
       "description": "a row two of one agent's identifiers match is evidence once",
       "catalog": {
-        "format": "open-agent-detection/0.1",
+        "format": "ai-detection-spec/0.1",
         "platforms": ["darwin", "linux", "windows"],
         "platform_groups": {"posix": ["darwin", "linux"]},
         "classifications": [
@@ -638,7 +638,7 @@
       "section": "6.6",
       "description": "a superseded identifier still finds its agent, and the finding says which rows it matched",
       "catalog": {
-        "format": "open-agent-detection/0.1",
+        "format": "ai-detection-spec/0.1",
         "platforms": ["darwin", "linux", "windows"],
         "platform_groups": {"posix": ["darwin", "linux"]},
         "classifications": [
@@ -718,7 +718,7 @@
       "section": "6.7",
       "description": "scan markers are never evidence; they sort into scans, absences and gaps",
       "catalog": {
-        "format": "open-agent-detection/0.1",
+        "format": "ai-detection-spec/0.1",
         "platforms": ["darwin", "linux", "windows"],
         "platform_groups": {"posix": ["darwin", "linux"]},
         "classifications": [

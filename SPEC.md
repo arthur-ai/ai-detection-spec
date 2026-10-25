@@ -74,7 +74,7 @@ MUST reject a catalog that does not.
 
 | member | |
 |---|---|
-| `format` | REQUIRED. `open-agent-detection/<major>.<minor>`; this version is `open-agent-detection/0.1` |
+| `format` | REQUIRED. `ai-detection-spec/<major>.<minor>`; this version is `ai-detection-spec/0.1` |
 | `platforms` | REQUIRED. The platform names a route may use: `darwin`, `linux`, `windows` |
 | `platform_groups` | REQUIRED. A name for a set of platforms. `posix` is `darwin` and `linux` |
 | `classifications` | REQUIRED. §4.2 |
