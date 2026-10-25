@@ -382,7 +382,7 @@ def main():
             sys.exit(f"dist/ is stale: {', '.join(stale)}. Run {SELF}.")
         print(f"dist/ is up to date ({len(targets)} artifacts, "
               f"platforms: {', '.join(sorted(inline))}; "
-              f"{len(rendered)} rendered files are tools/render_match.py --check's)")
+              f"{len(rendered)} rendered files are osquery/tools/render_match.py --check's)")
         return
 
     DIST.mkdir(exist_ok=True)
