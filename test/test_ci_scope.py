@@ -39,7 +39,7 @@ def runs(paths):
 
 print("the cheap direction -- prose only, and nothing else")
 check("a README-only diff skips the runners", not runs(["README.md"]))
-check("several docs still skip", not runs(["README.md", "docs/deployment.md", "CLAUDE.md"]))
+check("several docs still skip", not runs(["README.md", "osquery/docs/deployment.md", "CLAUDE.md"]))
 check("a skill's prose skips", not runs([".claude/skills/release/SKILL.md"]))
 check("LICENSE skips", not runs(["LICENSE"]))
 

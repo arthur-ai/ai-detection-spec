@@ -4,7 +4,7 @@ Best of three runs. The floor is the honest number: anything above it is schedul
 and what we are looking for is a query that *blocks*, not a microbenchmark.
 
 Bands: `fast` under 1s, `slow` 1 to 5s, `expensive` excluded from the composed artifacts and
-composed into `dist/discovery-deep.sql` instead. `tools/measure.py --check` enforces them on
+composed into `osquery/dist/discovery-deep.sql` instead. `osquery/tools/measure.py --check` enforces them on
 every pull request.
 
 `expensive` covers two different facts. `python_packages` at 15.6s is **slow** — a number.
@@ -49,13 +49,13 @@ every row count below is the empty case for those.
 | `runtime-linux.sql` | slow | **1.03** | **478** |
 | `vscode.sql` | fast | 0.23 | 0 |
 | `containers.sql` | expensive | 0.22 | 0 |
-| `dist/discovery-linux.sql` | composed | 1.12 | 1726 |
-| `dist/discovery-deep.sql` | deep | 0.22 | 0 |
+| `osquery/dist/discovery-linux.sql` | composed | 1.12 | 1726 |
+| `osquery/dist/discovery-deep.sql` | deep | 0.22 | 0 |
 
 ### The composed Linux artifact costs 8-12s COLD, not 1.12s
 
 **Both numbers above and below are real, and they answer different questions.** The 1.12s in
-the table is what `tools/measure.py` reports; the CI job that runs the artifact the way an
+the table is what `osquery/tools/measure.py` reports; the CI job that runs the artifact the way an
 endpoint does measured **8s, 9s, 12s and 14s** across four runs, with the same ~1750 rows.
 
 **Four readings, and every one of them is at or over the 10s budget.** That is worth saying
@@ -66,7 +66,7 @@ warning every time it does.
 
 The gap is not the data. It is how each number is taken:
 
-| | `tools/measure.py`, in the `Runtime on Linux` job's cost-band step | the same job's timed step |
+| | `osquery/tools/measure.py`, in the `Runtime on Linux` job's cost-band step | the same job's timed step |
 |---|---|---|
 | runs | **floor of three** | one |
 | warmth | the baseline step before it runs `dpkg-query`, `systemctl list-unit-files` and `ls /usr/share/applications` — **exactly what this query reads** | cold, first thing after installing osquery |
@@ -81,8 +81,8 @@ self-imposed 10s budget.
 
 Consequences, and none is a defect in the query:
 
-- **It reinforces the deployment advice this repo already gives.** `docs/deployment.md` says
-  not to put this on a synchronous reporting path and to schedule `bin/discover --write` and
+- **It reinforces the deployment advice this repo already gives.** `osquery/docs/deployment.md` says
+  not to put this on a synchronous reporting path and to schedule `osquery/bin/discover --write` and
   `cat` the file. A cold cost near the budget is the measurement behind that sentence rather
   than a new problem.
 - **The CI gate warns at the budget and fails at 60s** (`QUERY_FAIL_S` in `ci.yml`). A hard
@@ -137,16 +137,16 @@ did.
 
 Stock images from the three families a GCE fleet boots, OS Login on, osquery 5.23.1, run by
 `test/run-gce.sh` before any scenario installed anything. A shared-core shape with 2 vCPU
-and under 2GB. `tools/measure.py --check` passed on every VM; floors of three.
+and under 2GB. `osquery/tools/measure.py --check` passed on every VM; floors of three.
 
 | query | Debian 12 | Ubuntu 24.04 | Rocky 9.8 |
 |---|---|---|---|
 | `packages-linux.sql` | 0.24s, 361 rows | 0.24s, 595 | 0.61s, 406 |
 | `runtime-linux.sql` | 0.78s, 241 | 1.18s, 449 | 1.23s, 258 |
 | every other Linux query | 0.23–0.26s | 0.24–0.26s | 0.24–0.26s |
-| `dist/discovery-linux.sql` | 0.82s, 620 | 1.22s, 1065 | 1.71s, 671 |
+| `osquery/dist/discovery-linux.sql` | 0.82s, 620 | 1.22s, 1065 | 1.71s, 671 |
 
-Cold, as an endpoint's first scan pays it: 1.3s, 1.7s and 2.4s. `bin/discover --write`,
+Cold, as an endpoint's first scan pays it: 1.3s, 1.7s and 2.4s. `osquery/bin/discover --write`,
 every branch in its own process: 3.9s, 4.3s and 5.1s.
 
 **A second Rocky VM the same afternoon measured `runtime-linux.sql` at 5.54s and the
@@ -162,7 +162,7 @@ Stock Amazon Linux 2023 and Ubuntu 24.04 images, osquery 5.23.1, run by `test/ru
 before any scenario installed anything. Both shapes have 2 vCPU and 2GB, and both are
 burstable. In the default **unlimited** credit mode they run at full speed, and AWS bills for
 any surplus. In **standard** mode an instance that has spent its credits is held to its
-baseline, 20% of each vCPU. `tools/measure.py --check` passed on every instance; floors of three.
+baseline, 20% of each vCPU. `osquery/tools/measure.py --check` passed on every instance; floors of three.
 
 **Unlimited credits:**
 
@@ -171,9 +171,9 @@ baseline, 20% of each vCPU. `tools/measure.py --check` passed on every instance;
 | `packages-linux.sql` | 0.53s, 495 rows | 0.68s, 492 | 0.25s, 652 |
 | `runtime-linux.sql` | 1.23s, 296 | 1.52s, 286 | 0.97s, 395 |
 | every other Linux query | 0.23–0.28s | 0.04–0.31s | 0.03–0.29s |
-| `dist/discovery-linux.sql` | 1.73s, 801 | 2.22s, 788 | 1.08s, 1068 |
+| `osquery/dist/discovery-linux.sql` | 1.73s, 801 | 2.22s, 788 | 1.08s, 1068 |
 
-Cold, as an endpoint's first scan pays it: 2.8s, 2.3s and 1.6s. `bin/discover --write`: 5.8s,
+Cold, as an endpoint's first scan pays it: 2.8s, 2.3s and 1.6s. `osquery/bin/discover --write`: 5.8s,
 4.6s and 5.0s. A second Amazon Linux `t3.small` measured 3.0s and 6.0s.
 
 **Standard credits, held to the baseline.** A fresh instance in standard mode has no credits
@@ -185,9 +185,9 @@ one minute on each shape: 80% steal on the `t3.small` and 78% on the `t4g.small`
 |---|---|---|
 | composed artifact, cold | 11.9s | 10.2s |
 | composed artifact, warm | 10.1s | 8.7s |
-| `bin/discover --write` | 16.2s | 14.0s |
+| `osquery/bin/discover --write` | 16.2s | 14.0s |
 | floor, `runtime-linux.sql` | 2.15s | 3.90s |
-| floor, `dist/discovery-linux.sql` | 4.26s | 5.21s |
+| floor, `osquery/dist/discovery-linux.sql` | 4.26s | 5.21s |
 
 - **A single run on a held instance is four to five times slower; its floors only about
   twice.** Between short runs a throttled instance earns back a little credit, which a
@@ -214,7 +214,7 @@ reissue shifts these numbers visibly instead of silently.
 | `filesystem.sql` | fast | 0.25 | 0 |
 | `packages.sql` | fast | 0.24 | 0 |
 | `runtime.sql` | fast | 0.47 | 0 |
-| `dist/discovery-darwin.sql` | composed | 1.20 | 0 |
+| `osquery/dist/discovery-darwin.sql` | composed | 1.20 | 0 |
 
 **Every row count is zero, and that is a limitation of this baseline, not a result.** The
 runner has no AI agents installed and no browser profiles, so these numbers measure the
@@ -232,7 +232,7 @@ several browser profiles, 76 matching rows.
 | `filesystem.sql` | fast | 0.24 | 4 |
 | `packages.sql` | fast | 0.29 | 1 |
 | `runtime.sql` | fast | 0.38 | 0 |
-| `dist/discovery-darwin.sql` | composed | 1.07 | 76 |
+| `osquery/dist/discovery-darwin.sql` | composed | 1.07 | 76 |
 
 `jetbrains.sql` arrived after this table: on 2026-10-07, on a loaded Mac with no JetBrains
 IDE, it took 0.39s for 0 rows, and the composed artifact took 1.41s for 801.
@@ -269,14 +269,14 @@ returns zero rows in 0.22s. That number says nothing about the cost of the branc
 doing its job, and it now has three arms rather than one, so here is the live reading.
 
 macOS 15, Docker 28.4.0, osquery 5.23.1, **18 images / 1 running container / 6 label rows**,
-`dist/discovery-deep.sql` through `osqueryi` three times consecutively:
+`osquery/dist/discovery-deep.sql` through `osqueryi` three times consecutively:
 
 ```
 0.67s   0.54s   0.52s      25 rows, 4447 bytes of JSON
 ```
 
 **Roughly +0.1s over the 0.44s the images arm alone measured on the same class of host**, for
-a running container and its vendor labels. Comfortably inside `bin/container-scan`'s 6s
+a running container and its vendor labels. Comfortably inside `osquery/bin/container-scan`'s 6s
 wall-clock bound, which is the number that matters — the bound exists because
 `docker_images` is UNBOUNDED against a wedged daemon, not because the healthy path is slow.
 
@@ -289,13 +289,13 @@ is the case to measure before trusting this figure, and it has not been measured
 
 ## The container scan, and why it runs in its own process
 
-`bin/container-scan` is the only supported way to run `dist/discovery-deep.sql`. It carries
+`osquery/bin/container-scan` is the only supported way to run `osquery/dist/discovery-deep.sql`. It carries
 the two things SQL cannot express: a round trip demanding HTTP 200, and a wall-clock kill.
 
-Measured against `test/lib/fake_docker.py` on 2026-09-14, shipped defaults
+Measured against `osquery/test/lib/fake_docker.py` on 2026-09-14, shipped defaults
 (`CONTAINER_SCAN_TIMEOUT=6`, `DOCKER_PING_TIMEOUT=8`):
 
-| daemon state | `bin/container-scan` | exit | value |
+| daemon state | `osquery/bin/container-scan` | exit | value |
 |---|---|---|---|
 | no socket anywhere | 0.10s | 2 | one `scan` row, `extra=absent` |
 | stale socket / not a socket | 0.12s | 2 | one `scan` row, `extra=absent` |
@@ -323,7 +323,7 @@ here, because the probe is what waits for a wake.
 answers returns in about a tenth of a second whatever it is set to; only accepts-never-replies
 pays the whole of it. It was 1s, and a Docker Desktop Resource Saver wake does not fit in 1s:
 2.60s and 2.49s measured on macOS 15 / Docker 28.4.0 after a 340s pause, after which the query
-runs warm at 0.13s per engine request. `docs/containers.md` has the mechanism. **A nap longer
+runs warm at 0.13s per engine request. `osquery/docs/containers.md` has the mechanism. **A nap longer
 than 8s is not measured**: one Mac, one nap length.
 
 **What costs inside the wall clock is daemon latency, not inventory size.** Against a daemon
@@ -333,7 +333,7 @@ images / 40,000 label rows. One scan makes three engine requests — `/images/js
 needs ~3*t* to fit: measured against a fake answering late, 1s per request scans in 3.53s and
 3s per request does not fit at all.
 
-**Two attributes, not one.** Folded together, `bin/discover --deep` against a wedged daemon
+**Two attributes, not one.** Folded together, `osquery/bin/discover --deep` against a wedged daemon
 measures **8.64s**: it fits today and stops fitting the first time either half grows.
 
 Folding the *branch* into the composed query is worse than the arithmetic suggests. Measured,
@@ -345,9 +345,9 @@ row says which happened.
 
 | | wedged daemon | healthy | base only |
 |---|---|---|---|
-| one EA (`bin/discover --deep`) | 8.64s | 1.77s | — |
-| inventory EA (`bin/discover`) | 1.10s | 1.10s | 1.10s |
-| container EA (`bin/container-scan`) | 7.36s | 0.51s | — |
+| one EA (`osquery/bin/discover --deep`) | 8.64s | 1.77s | — |
+| inventory EA (`osquery/bin/discover`) | 1.10s | 1.10s | 1.10s |
+| container EA (`osquery/bin/container-scan`) | 7.36s | 0.51s | — |
 
 **What removing `python3` from the endpoint did to these, measured rather than reasoned.**
 The endpoint scripts parse JSON with `osqueryi` now, and an `osqueryi` spawn costs ~0.24s
@@ -357,11 +357,11 @@ on: read the DELTAS, not the absolutes, and do not fold them into the cells by a
 
 | | old (python3) | new (osqueryi) | delta |
 |---|---|---|---|
-| `bin/discover` | 1.40s | 1.37s | — neither calls an interpreter |
-| `bin/discover --deep`, healthy | 2.43s | 2.67s | **+0.24s**, one spawn: the base/deep join |
-| `bin/discover --deep`, wedged | 9.69s | 9.63s | — |
-| `bin/container-scan`, healthy | 1.01s | 0.99s | — the marker lost a spawn, the join gained one |
-| `bin/discover --write` | 6.99s | 5.55s | **−1.44s**, eleven pack reads collapsed into one |
+| `osquery/bin/discover` | 1.40s | 1.37s | — neither calls an interpreter |
+| `osquery/bin/discover --deep`, healthy | 2.43s | 2.67s | **+0.24s**, one spawn: the base/deep join |
+| `osquery/bin/discover --deep`, wedged | 9.69s | 9.63s | — |
+| `osquery/bin/container-scan`, healthy | 1.01s | 0.99s | — the marker lost a spawn, the join gained one |
+| `osquery/bin/discover --write` | 6.99s | 5.55s | **−1.44s**, eleven pack reads collapsed into one |
 
 **The budgeted path did not move.** Wedged is where the margin is thin, and it is flat there
 because `container_scan` joins its marker only on success, while `marker()` itself stopped
@@ -383,7 +383,7 @@ five registries: Docker Hub library and org, `ghcr.io`, `gcr.io`, `public.ecr.aw
 
 | | rows | raw | framed EA | % of cap |
 |---|---|---|---|---|
-| inventory EA (`bin/discover`) | 757 | 116.2 KB | 17.7 KB | 59% |
+| inventory EA (`osquery/bin/discover`) | 757 | 116.2 KB | 17.7 KB | 59% |
 | container EA, 27 images | 27 | 4.4 KB | 2.3 KB | **8%** |
 | container EA, 10 images | 10 | 1.6 KB | 0.9 KB | 3% |
 | both in one EA, 27 images | 784 | 120.5 KB | 20.1 KB | 67% |
@@ -399,15 +399,15 @@ repo emits.**
 ### The scheduled writer, which is the recommended deployment
 
 Nothing upstream will bound us, so the fix is not a faster blocking call but not making one
-while something waits. `bin/discover --write` runs on a schedule and whatever collects reads
+while something waits. `osquery/bin/discover --write` runs on a schedule and whatever collects reads
 the file. The schedule itself belongs to your management stack, not to this repo.
 
 | path | cost | can it block? |
 |---|---|---|
 | `cat` of the written file | **0.09s** | no |
-| `bin/discover` (live, composed) | 1.19s | not today; one added daemon-touching branch and yes |
-| `bin/discover --deep` (live, wedged Docker) | 8.64s | bounded at the cost of the whole budget |
-| `bin/discover --write` (the scheduled job) | 4.16s | nothing is waiting for it |
+| `osquery/bin/discover` (live, composed) | 1.19s | not today; one added daemon-touching branch and yes |
+| `osquery/bin/discover --deep` (live, wedged Docker) | 8.64s | bounded at the cost of the whole budget |
+| `osquery/bin/discover --write` (the scheduled job) | 4.16s | nothing is waiting for it |
 
 **On the write path each branch runs in its own process, and that is a reliability decision
 rather than a performance one.** Composition saves ~0.47s of osqueryi startup per branch —
@@ -475,7 +475,7 @@ exploits a run of near-identical hex that a real digest never gives it. The firs
 this table used them and would have put the ceiling near 1800 images.
 
 Note that `size_bytes` is the UNCOMPRESSED size. `ollama/ollama:latest` reports 6.98 GB from
-a 2.78 GB download, so the figure `bin/container-scan --pretty` prints is disk footprint, not
+a 2.78 GB download, so the figure `osquery/bin/container-scan --pretty` prints is disk footprint, not
 transfer.
 
 ## Measured payload
@@ -486,7 +486,7 @@ Attribute cap is roughly 30KB, so the trade only holds if the payload fits, and 
 the numbers it was accepted on. Framed sizes below are gzip plus base64, which is what a
 value channel with a size limit will cost you.
 
-`tools/measure_payload.py` prints this per scenario on every Scenarios run. It fails over
+`osquery/tools/measure_payload.py` prints this per scenario on every Scenarios run. It fails over
 the cap and warns above 80%.
 
 ### Clean runner, macOS 15.7.7 arm64

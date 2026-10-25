@@ -97,7 +97,7 @@ docker images --format '  {{.Repository}}:{{.Tag}} {{.ID}} {{.Size}}' \
 # point is to make the daemon report a RUNNING container from a catalogued image, not to
 # run an agent that would want credentials and a model endpoint. The row's `extra` carries
 # the command, so the output records plainly that this is a probe rather than a real agent
-# session -- see docs/containers.md on why the command is corroboration and not identity.
+# session -- see osquery/docs/containers.md on why the command is corroboration and not identity.
 if docker image inspect ghcr.io/block/goose:latest >/dev/null 2>&1; then
   docker rm -f goose-probe >/dev/null 2>&1 || true
   try "run a catalogued agent image as a container" \

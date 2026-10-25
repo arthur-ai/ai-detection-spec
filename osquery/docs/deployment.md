@@ -283,7 +283,7 @@ changes on a VM: with systemd as PID 1 and osquery running as root it reads `ok`
 **Small shapes.** A shared-core `e2-small` does not promise the same number twice: the same
 Rocky image measured the composed artifact at 2.4s cold on one VM and 14.0s on another the
 same afternoon, with `systemd_units` alone at 5.5s against 1.2s.
-[`osquery/queries/COST.md`](../osquery/queries/COST.md#compute-engine-e2-small-2026-10-04) has the table. It
+[`osquery/queries/COST.md`](../queries/COST.md#compute-engine-e2-small-2026-10-04) has the table. It
 is why `osquery/queries/runtime-linux.sql` is banded `slow`, and why a scheduled `--write`, where each
 branch has its own bound, is the shape to prefer over anything that waits.
 
@@ -292,7 +292,7 @@ at full speed: the composed artifact takes 1.6–2.8s cold, and `--write` 4.6–
 mode a fresh instance has no credits, and is held to its 20% baseline from the start. The same
 scan then takes 10–12s cold, and 14–16s for `--write`. That is still inside every branch's own
 30s bound, but over the composed artifact's 10s convention.
-[`osquery/queries/COST.md`](../osquery/queries/COST.md#ec2-t3small-and-t4gsmall-2026-10-21) has the tables.
+[`osquery/queries/COST.md`](../queries/COST.md#ec2-t3small-and-t4gsmall-2026-10-21) has the tables.
 
 ## The `python3` stub, which used to bite only on a fleet
 
