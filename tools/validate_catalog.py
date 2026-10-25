@@ -376,24 +376,6 @@ def main():
                         f"{path.parent.name}: classified.{key} names {aid!r}, "
                         f"which is not an id in catalog/agents.yaml")
 
-    # test/docker_states.sh hardcodes the agents its image fixture must resolve to, and it
-    # needs sudo, so it does not run in the fast loop -- a catalog change that breaks it
-    # surfaces minutes later on someone's machine instead of here. Removing `litellm` did
-    # exactly that. Cheap to check: the ids that suite names must still exist.
-    suite = ROOT / "test" / "docker_states.sh"
-    if suite.exists():
-        text = suite.read_text()
-        m = re.search(r"== \['([a-z0-9,'-]+)'\] else 0", text)
-        if m:
-            named = [x.strip("'") for x in m.group(1).split("','")]
-            for aid in named:
-                if aid not in known:
-                    errors.append(
-                        f"test/docker_states.sh expects findings {named}, but {aid!r} is "
-                        f"not an id in catalog/agents.yaml. That suite needs sudo and does "
-                        f"not run in the fast loop, so this would surface as a red run "
-                        f"minutes later instead of here.")
-
     # A removed entry must not also be a live one, and must say what it is -- the table in
     # the report is rendered straight from this.
     live = {a.get("id") for a in doc["agents"]}

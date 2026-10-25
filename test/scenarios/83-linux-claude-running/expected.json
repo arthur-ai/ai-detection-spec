@@ -26,7 +26,7 @@
       "cursor"
     ]
   },
-  "why": "The process_paths route's scenario. The proc row's loc is the executable a running Claude Code reports, under ~/.local/share/claude/versions/, which only queries/running.sql emits. must_find alone would pass on the presence routes, so the assertion is on the proc row itself.",
+  "why": "The process_paths route's scenario. The proc row's loc is the executable a running Claude Code reports, under ~/.local/share/claude/versions/, which only osquery/queries/running.sql emits. must_find alone would pass on the presence routes, so the assertion is on the proc row itself.",
   "must_contain": [
     "\"kind\": \"proc\", \"loc\": \"/home/dana/.local/share/claude/versions/"
   ],

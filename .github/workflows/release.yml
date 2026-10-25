@@ -60,19 +60,19 @@ jobs:
       - name: Static checks
         run: test/lint.sh
 
-      # dist/ is committed AND attached, so the two can disagree. test/lint.sh already
+      # osquery/dist/ is committed AND attached, so the two can disagree. test/lint.sh already
       # asserts they don't, via build.py --check. The rebuild is what actually produces
       # the file we upload, and the diff keeps that guarantee sitting next to the upload
       # instead of three steps away.
       - name: Rebuild dist/ from the tagged queries
         run: |
-          python3 tools/build.py
-          if ! git diff --exit-code -- dist/; then
-            echo "::error::dist/ does not match queries/ at this tag"
+          python3 osquery/tools/build.py
+          if ! git diff --exit-code -- osquery/dist/; then
+            echo "::error::osquery/dist/ does not match osquery/queries/ at this tag"
             exit 1
           fi
 
-      # BUILT FROM THE TAGGED COMMIT, like dist/ above, and labelled with the tag so a
+      # BUILT FROM THE TAGGED COMMIT, like osquery/dist/ above, and labelled with the tag so a
       # bundle found on a machine months later says which release it came from. Not
       # committed: it is derived, it changes with every query edit, and 37KB of base64 in
       # the tree is a diff nobody can review.
@@ -80,21 +80,22 @@ jobs:
         env:
           TAG: ${{ github.event.release.tag_name }}
         run: |
-          python3 tools/bundle.py --platform darwin --label "$TAG"
-          python3 tools/bundle.py --platform linux  --label "$TAG"
+          python3 osquery/tools/bundle.py --platform darwin --label "$TAG"
+          python3 osquery/tools/bundle.py --platform linux  --label "$TAG"
 
       # --clobber replaces whatever was attached to the draft by hand. A consumer pins a
       # tag and downloads these files; they are the deliverable, not a convenience.
       #
-      # The three dist/ files are rebuilt from queries/ at the tagged commit above, so they
-      # are derived from the tagged source by construction. bin/* are NOT generated -- they
-      # come from the checkout, and the tag-is-on-main check is the whole of their
-      # provenance.
+      # The osquery/dist/ files are rebuilt from osquery/queries/ at the tagged commit above,
+      # so they are derived from the tagged source by construction. The three scripts are NOT
+      # generated -- they come from the checkout, and the tag-is-on-main check is the whole
+      # of their provenance.
       #
-      # bin/container-scan resolves dist/discovery-deep.sql relative to its own parent
-      # directory, and bin/discover sources bin/container-scan. Downloaded loose into one
-      # folder they will not find each other: the layout is bin/, dist/ and catalog/ side
-      # by side, as in the repo. Say so in the release notes.
+      # container-scan resolves dist/discovery-deep.sql relative to its own parent directory,
+      # discover sources container-scan, and classify reads catalog/ the same way. Downloaded
+      # loose into one folder they will not find each other: the layout a download needs is
+      # bin/ (all three scripts), dist/ and catalog/ side by side. In the repo, discover,
+      # container-scan and dist/ sit under osquery/ instead. Say so in the release notes.
       #
       # THE BUNDLES ARE THAT LAYOUT, INSIDE ONE FILE, for a consumer whose platform can
       # host a script and cannot place files on disk. Same artifacts, same behaviour, every
@@ -115,18 +116,18 @@ jobs:
       # Deployment glue for a particular MDM is deliberately not here, and the bundles are
       # not an exception to that: they carry no output path, no wire format and no size
       # budget, because none of those is a fact about osquery. A consumer who needs them
-      # supplies them through `tools/bundle.py --driver`, on their side of the seam. This
-      # repo ships osquery materials.
+      # supplies them through `osquery/tools/bundle.py --driver`, on their side of the seam.
+      # This repo ships the catalog, the matcher and the osquery binding.
       - name: Attach the artifacts
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.event.release.tag_name }}
         run: |
           gh release upload "$TAG" \
-            dist/discovery-darwin.sql dist/discovery-linux.sql \
-            dist/discovery-deep.sql dist/ai-discovery.conf \
-            dist/signatures.sql dist/agents-darwin.sql dist/agents-linux.sql \
-            dist/fleet-policies.yml \
-            bin/discover bin/container-scan bin/classify \
+            osquery/dist/discovery-darwin.sql osquery/dist/discovery-linux.sql \
+            osquery/dist/discovery-deep.sql osquery/dist/ai-discovery.conf \
+            osquery/dist/signatures.sql osquery/dist/agents-darwin.sql osquery/dist/agents-linux.sql \
+            osquery/dist/fleet-policies.yml \
+            osquery/bin/discover osquery/bin/container-scan bin/classify \
             catalog/agents.yaml catalog/routes.yaml \
             artifacts/ai-discovery-darwin.sh artifacts/ai-discovery-linux.sh --clobber

@@ -16,7 +16,7 @@ source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest-linux.sh"
 
 # systemd_units reads the SYSTEM BUS. A container has no PID 1 systemd and no bus, so the
 # table returns zero rows -- with the statement still exiting 0, which is exactly why
-# queries/runtime-linux.sql emits a kind=scan marker. Skipping here is a fact about the
+# osquery/queries/runtime-linux.sql emits a kind=scan marker. Skipping here is a fact about the
 # container, not about the software: on a GitHub ubuntu-24.04 runner systemd IS PID 1 and
 # this runs for real.
 [ -S /run/dbus/system_bus_socket ] || { echo "SKIP: no system dbus, so systemd_units cannot be read"; exit 3; }
@@ -25,7 +25,7 @@ command -v systemctl >/dev/null 2>&1 || { echo "SKIP: no systemctl"; exit 3; }
 sudo_maybe mkdir -p /etc/systemd/system
 sudo_maybe tee /etc/systemd/system/ai.openclaw.gateway.service >/dev/null <<'UNIT'
 [Unit]
-Description=Inert fixture unit for osquery-ai-discovery. Runs /bin/true and nothing else.
+Description=Inert fixture unit for ai-detection-spec. Runs /bin/true and nothing else.
 [Service]
 Type=oneshot
 ExecStart=/bin/true

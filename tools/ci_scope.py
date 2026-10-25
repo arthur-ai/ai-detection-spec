@@ -12,7 +12,7 @@ THE FIRST FORM ASKS WHETHER: `runtime=true` or `runtime=false`, for ci.yml, whos
 jobs are one runner each.
 
 IT IS A DENY-LIST, AND THAT DIRECTION IS THE WHOLE SAFETY PROPERTY. An allow-list --
-"run when queries/ or catalog/ changed" -- is a list that has to agree with the tree, and
+"run when osquery/queries/ or catalog/ changed" -- is a list that has to agree with the tree, and
 a new directory nobody added to it would be SKIPPED rather than unmatched. That is the
 `ext`-missing-from-`KIND_ROUTES` bug in a new place: invisible, and green. So the
 question asked here is the other one, `is every changed path documentation`, and anything
@@ -51,9 +51,9 @@ selected by every rule that would have consulted them. The rules, and what each 
   rendered match SQL     nothing more when the catalog is in the same diff, since lint's
                          render_match.py --check holds them to it; otherwise the platform
                          that reads them.
-  dist/discovery-*.sql,  the platform that runs them. A query's platform is its own
-  queries/*.sql          `-- platform:` line; `posix` and an unreadable one run both.
-  deep artifact, pack    the `deep: true` scenarios, the only ones that run bin/discover.
+  composed artifacts,    the platform that runs them. A query's platform is its own
+  osquery/queries/*.sql  `-- platform:` line; `posix` and an unreadable one run both.
+  deep artifact, pack    the `deep: true` scenarios, the only ones that run osquery/bin/discover.
   scenarios.yml          every scenario when a job changed; the scenarios added when only
                          its lists did; nothing when only `on:`, `name:` or `concurrency:`
                          did, which decide when a run starts and never what a job does.
@@ -63,7 +63,7 @@ selected by every rule that would have consulted them. The rules, and what each 
                          its other jobs define only themselves.
   other workflows        nothing. A workflow defines only its own jobs.
   NOT_ASSERTED           nothing: docs/blind-spots.yaml renders docs/limits.md, and
-                         dist/fleet-policies.yml is checked under lint. No scenario reads
+                         osquery/dist/fleet-policies.yml is checked under lint. No scenario reads
                          either.
   INERT                  nothing. test/test_ci_scope.py proves no scenario job reaches one.
 
@@ -87,7 +87,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 # promise that no job gated by this file reads that path, and the promise is checked by
 # eye, not by a tool.
 DOC_SUFFIXES = (".md",)
-DOC_PATHS = ("LICENSE",)
+DOC_PATHS = ("LICENSE", "NOTICE")
 
 SCENARIOS_WORKFLOW = ".github/workflows/scenarios.yml"
 CI_WORKFLOW = ".github/workflows/ci.yml"
@@ -97,18 +97,19 @@ CATALOG = "catalog/agents.yaml"
 # check belongs here only once test/test_ci_scope.py agrees; until then a change to it
 # runs every scenario, which costs minutes and nothing else.
 INERT = frozenset({
-    "test/check_names_line.py", "test/docker_states.sh", "test/lib/fake_amplitude.py",
-    "test/lib/fake_docker.py", "test/lib/vm.sh", "test/lint.sh", "test/run-ec2.sh",
+    "osquery/test/check_names_line.py", "osquery/test/docker_states.sh",
+    "osquery/test/lib/fake_docker.py", "osquery/test/lint.sh", "test/lib/fake_amplitude.py",
+    "test/lib/vm.sh", "test/lint.sh", "test/run-ec2.sh",
     "test/run-gce.sh", "test/run.sh", "test/test_ci_scope.py", "test/test_matcher.py",
     # test/run-linux.sh is NOT here: scenarios.yml's container job runs it. See HARNESS.
-    "test/test_telemetry.py", "tools/bundle.py", "tools/check_doc_numbers.py",
-    "tools/check_no_catalog.py", "tools/check_output.py", "tools/check_pack.py",
+    "test/test_telemetry.py", "osquery/tools/bundle.py", "tools/check_doc_numbers.py",
+    "osquery/tools/check_no_catalog.py", "osquery/tools/check_output.py", "osquery/tools/check_pack.py",
     "tools/check_workflows.py", "tools/gates.sh", "tools/validate_catalog.py",
 })
 # Read on a runner by nothing that asserts: each is checked by ci.yml's lint job instead.
 NOT_ASSERTED = {
     "docs/blind-spots.yaml": "rendered into docs/limits.md; no scenario asserts on it",
-    "dist/fleet-policies.yml": "checked by test_match_sql.py under lint; no scenario reads it",
+    "osquery/dist/fleet-policies.yml": "checked by test_match_sql.py under lint; no scenario reads it",
 }
 # Sourced by scenario setup scripts and by nothing else a job runs, which
 # test/test_ci_scope.py also proves. A change runs the scenarios that source it.
@@ -123,14 +124,14 @@ SETUP_LIBS = ("test/lib/guest.sh", "test/lib/guest-linux.sh")
 HARNESS_ENV = "SCENARIO_PLATFORM"
 HARNESS = {"linux": "test/run-linux.sh"}
 
-# Rendered from the catalog by tools/render_match.py. `None` is every platform.
-RENDERED = {"dist/signatures.sql": None,
-            "dist/agents-darwin.sql": "darwin", "dist/agents-linux.sql": "linux"}
+# Rendered from the catalog by osquery/tools/render_match.py. `None` is every platform.
+RENDERED = {"osquery/dist/signatures.sql": None,
+            "osquery/dist/agents-darwin.sql": "darwin", "osquery/dist/agents-linux.sql": "linux"}
 # Which platform's jobs run a composed artifact.
-COMPOSED = {"dist/discovery-darwin.sql": "darwin", "dist/discovery-linux.sql": "linux"}
-# Read only by bin/discover, which only a `deep: true` scenario runs. It reads the pack only
+COMPOSED = {"osquery/dist/discovery-darwin.sql": "darwin", "osquery/dist/discovery-linux.sql": "linux"}
+# Read only by osquery/bin/discover, which only a `deep: true` scenario runs. It reads the pack only
 # under --write today; the deep scenarios are the bound, not that flag.
-DEEP_ONLY = {"dist/discovery-deep.sql", "dist/ai-discovery.conf"}
+DEEP_ONLY = {"osquery/dist/discovery-deep.sql", "osquery/dist/ai-discovery.conf"}
 
 EVERY = None  # a selection of every scenario, which an empty set must never be mistaken for
 
@@ -332,8 +333,8 @@ class Scope:
         if path in COMPOSED:
             return self.on(COMPOSED[path]), f"run only by {COMPOSED[path]} scenarios"
         if path in DEEP_ONLY:
-            return self.where(lambda i: i["deep"]), "read only by bin/discover --deep"
-        if re.fullmatch(r"queries/[^/]+\.sql", path):
+            return self.where(lambda i: i["deep"]), "read only by osquery/bin/discover --deep"
+        if re.fullmatch(r"osquery/queries/[^/]+\.sql", path):
             text = self.read("head", path) or self.read("base", path) or ""
             plat = re.search(r"^-- platform:\s*(\w+)", text, re.M)
             plat = plat.group(1) if plat else None

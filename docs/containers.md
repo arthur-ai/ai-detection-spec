@@ -5,8 +5,8 @@ Homebrew entry, no npm global, no dotdir on the host. This is the only branch th
 and it is opt-in because it is the only part of this that talks to a daemon.
 
 ```console
-$ sudo bin/discover --deep | bin/classify     # base inventory plus containers
-$ sudo bin/container-scan | bin/classify      # containers alone
+$ sudo osquery/bin/discover --deep | bin/classify    # base inventory plus containers
+$ sudo osquery/bin/container-scan | bin/classify     # containers alone
 ```
 
 It reads three things: **images** on disk, **containers** running from them, and the
@@ -19,9 +19,9 @@ table below says how.
 and never answers — Docker Desktop mid-startup, or installed and not opened today — the query
 never returns. osquery offers no way to bound it, so the only bound is a kill on the process.
 
-That is why the branch ships as its own artifact (`dist/discovery-deep.sql`) run by its own
+That is why the branch ships as its own artifact (`osquery/dist/discovery-deep.sql`) run by its own
 process: bounded there, it costs the container rows; bounded inside the composed query it
-costs six of the ten seconds and reports success anyway. `queries/COST.md` has the
+costs six of the ten seconds and reports success anyway. `osquery/queries/COST.md` has the
 measurements.
 
 ## A sleeping Docker is not a broken one
@@ -42,12 +42,12 @@ right now.
 The budget is `DOCKER_PING_TIMEOUT`, or `--timeout`, and it is **8s**. It is a ceiling rather
 than a cost — every daemon that answers is read in about a tenth of a second whatever it is
 set to — so the only machine that pays it is one whose daemon never answers at all. A nap
-longer than 8s has not been measured; `test/lib/fake_docker.py`'s `nap` state is where that
+longer than 8s has not been measured; `osquery/test/lib/fake_docker.py`'s `nap` state is where that
 assumption is pinned.
 
 ## Every outcome carries a reason
 
-`bin/container-scan` reports which happened in its exit code — `0` scanned, `2` did not scan,
+`osquery/bin/container-scan` reports which happened in its exit code — `0` scanned, `2` did not scan,
 `3` asked and gave up, `1` could not run — and, on every outcome, in a `kind=scan` row.
 
 That row is not decoration: an interrupted `osqueryi` exits 0 having printed a valid empty
@@ -138,11 +138,11 @@ stated outcomes rather than failures.
 ## On Linux, where the socket is simpler and the blind spot is wider
 
 `docker_images` is in osquery's `specs/posix`, so the SQL needs no change at all and
-`dist/discovery-deep.sql` is one file for both platforms. What differs is the runner:
+`osquery/dist/discovery-deep.sql` is one file for both platforms. What differs is the runner:
 
 - **The socket is `/var/run/docker.sock` and that is usually the only candidate.** Docker
   Engine has no per-user socket, so the two Docker-Desktop-shaped paths
-  `bin/container-scan` also probes simply never hit there.
+  `osquery/bin/container-scan` also probes simply never hit there.
 - **Podman is not probed, and on Linux that costs more.** It is often the default there, and
   `/run/podman/podman.sock` would pass the health guard and then return **zero images**,
   because `docker_images` does not read Podman's image store at all. That is a manufactured

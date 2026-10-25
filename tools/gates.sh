@@ -27,16 +27,16 @@ run() {
   fi
 }
 run test/lint.sh
-run python3 tools/build.py --check
-run python3 tools/render_match.py --check
-run python3 test/test_match_sql.py
+run python3 osquery/tools/build.py --check
+run python3 osquery/tools/render_match.py --check
+run python3 osquery/test/test_match_sql.py
 run python3 tools/validate_catalog.py
 run python3 tools/agent_status.py --check
 run python3 tools/agent_status.py --json
 run python3 test/test_matcher.py
 run python3 test/test_telemetry.py
 run python3 test/test_ci_scope.py
-run python3 tools/check_no_catalog.py
+run python3 osquery/tools/check_no_catalog.py
 run python3 tools/check_doc_numbers.py
 run python3 tools/check_workflows.py
 [ "$fail" -eq 0 ] && echo "gates: PASS" || echo "gates: FAIL"

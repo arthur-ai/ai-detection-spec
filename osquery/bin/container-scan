@@ -658,7 +658,7 @@ container_scan() {
   esac
   osqi="$(osqueryi_path)" || { echo "container-scan: no osqueryi found (set OSQI)" >&2; return 1; }
   [ -s "$DEEP" ] || {
-    echo "container-scan: no deep artifact at $DEEP (run tools/build.py)" >&2; return 1; }
+    echo "container-scan: no deep artifact at $DEEP (in a clone, run osquery/tools/build.py)" >&2; return 1; }
 
   if [ -n "$SOCKET" ]; then
     sock="$SOCKET"

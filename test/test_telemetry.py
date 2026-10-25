@@ -365,7 +365,7 @@ check("the platform reported is the PAYLOAD's, not the machine classify ran on",
       props.get("payload_platform") == "darwin", f"{props.get('payload_platform')}")
 
 # --- the gap vocabulary, end to end ----------------------------------------------------
-# Every reason bin/discover and bin/container-scan can emit, plus one nobody emits. The
+# Every reason osquery/bin/discover and osquery/bin/container-scan can emit, plus one nobody emits. The
 # unknown one must arrive as "other": `extra` comes from a payload this process did not
 # write, and forwarding it verbatim would make an analytics property a channel for
 # arbitrary text off a machine we are meant to be describing in counts.

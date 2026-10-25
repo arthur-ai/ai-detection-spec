@@ -26,7 +26,7 @@
       "cursor"
     ]
   },
-  "why": "The proc kind's scenario. A row of kind proc whose id is openclaw can come only from queries/running.sql reading a node process whose script sits under node_modules/openclaw, and it is what marks the finding running. The npm row says the same agent is installed, so the pair is installed-and-running. The gateway renames its processes, which is why the query reads the runtime off the executable path rather than the process name.",
+  "why": "The proc kind's scenario. A row of kind proc whose id is openclaw can come only from osquery/queries/running.sql reading a node process whose script sits under node_modules/openclaw, and it is what marks the finding running. The npm row says the same agent is installed, so the pair is installed-and-running. The gateway renames its processes, which is why the query reads the runtime off the executable path rather than the process name.",
   "must_contain": [
     "\"id\": \"openclaw\", \"kind\": \"proc\""
   ],

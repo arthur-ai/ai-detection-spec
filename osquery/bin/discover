@@ -246,7 +246,7 @@ names_sql() {
 summary() {
   local out
   if [ "$2" = 1 ]; then
-    [ -s "$SIGS" ] || { echo "discover: no $SIGS (run tools/render_match.py)" >&2; return 1; }
+    [ -s "$SIGS" ] || { echo "discover: no $SIGS (in a clone, run osquery/tools/render_match.py)" >&2; return 1; }
     out="$({ payload_cte "$1"; cat "$SIGS"
              printf "SELECT "; names_sql; printf " AS names, "; status_sql; printf " AS status;"
            } | osq_run "$osqi" --line)"
@@ -355,12 +355,12 @@ fi
 # Every mode below this line runs queries, so both are prerequisites for all of them. The
 # artifact check no longer gates --cache, which never reads the artifact.
 need_osqi
-[ -s "$BASE" ] || { echo "discover: no $BASE (run tools/build.py)" >&2; exit 1; }
+[ -s "$BASE" ] || { echo "discover: no $BASE (in a clone, run osquery/tools/build.py)" >&2; exit 1; }
 
 # --write: every branch in its own process, then one payload. Runs before anything else
 # because it is a different mode rather than an addition to the default one.
 if [ -n "$WRITE" ]; then
-  [ -s "$PACK" ] || { echo "discover: no $PACK (run tools/build.py)" >&2; exit 1; }
+  [ -s "$PACK" ] || { echo "discover: no $PACK (in a clone, run osquery/tools/build.py)" >&2; exit 1; }
   tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/discover.XXXXXX")" || exit 1
   # The pack is the artifact that carries one named query per file, already flattened to a
   # single argv-safe line. Running it is running what ships.

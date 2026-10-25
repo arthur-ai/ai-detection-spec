@@ -13,7 +13,7 @@
 #     container never does, so 76-linux-systemd and the systemd marker's `ok` branch had
 #     been proved on exactly one family.
 #   * OS Login. Accounts come from an NSS module rather than /etc/passwd and a home
-#     directory appears on first login -- the case queries/browser.sql's uid source exists
+#     directory appears on first login -- the case osquery/queries/browser.sql's uid source exists
 #     for, and one no container can stage. The guest script measures it directly: the old
 #     `users` join against the shipped artifact, on a profile owned by the login account.
 #   * a shared-core shape. e2-small is what a fleet is full of and what CI has none of,
@@ -145,7 +145,7 @@ trap 'exit 130' INT
 trap 'exit 143' TERM
 
 # THE WHOLE TREE, not a scenario subset: setup.sh sources ../../lib, the assertions run
-# bin/classify against catalog/, and the guest's own dist/ is what gets measured.
+# bin/classify against catalog/, and the guest's own osquery/dist/ is what gets measured.
 # test/artifacts is excluded because it is per machine and can hold gigabytes of payload.
 # Named per process so two families can run from two terminals at once.
 #
@@ -212,22 +212,22 @@ if [ "$MODE" = facts ]; then
   log "users table, uid=$(id -u): $(sudo osqueryi --line "select username, directory from users where uid = $(id -u)" | tr -s '\n ' ' ')"
   log "users table, uid=$(id -u), include_remote=1: $(sudo osqueryi --line "select username, directory from users where uid = $(id -u) and include_remote = 1" 2>&1 | tr -s '\n ' ' ')"
   log "home dirs on disk: $(sudo osqueryi --line "select count(*) as n from file where path like '/home/%/'" | awk '{print $NF}')"
-  log "uid list as queries/browser.sql builds it: $(sudo osqueryi --line "select count(*) as n from (select uid from users union select uid from file where path like '/home/%/' or path = '/root/' or path like '/Users/%/')" | awk '{print $NF}')"
+  log "uid list as osquery/queries/browser.sql builds it: $(sudo osqueryi --line "select count(*) as n from (select uid from users union select uid from file where path like '/home/%/' or path = '/root/' or path like '/Users/%/')" | awk '{print $NF}')"
 
   # --- timing, on this shape, before anything is installed ---------------------------
   log "=== timing"
-  s=$(date +%s%N); sudo osqueryi --json < dist/discovery-linux.sql > "$OUT/base.json"; rc=$?
+  s=$(date +%s%N); sudo osqueryi --json < osquery/dist/discovery-linux.sql > "$OUT/base.json"; rc=$?
   log "composed artifact, cold: $(ms $s)ms exit=$rc rows=$(python3 -c "import json;print(len(json.load(open('$OUT/base.json'))))") bytes=$(wc -c < "$OUT/base.json")"
-  s=$(date +%s%N); sudo osqueryi --json < dist/discovery-linux.sql > /dev/null; log "composed artifact, warm: $(ms $s)ms"
+  s=$(date +%s%N); sudo osqueryi --json < osquery/dist/discovery-linux.sql > /dev/null; log "composed artifact, warm: $(ms $s)ms"
   log "scan rows: $(python3 -c "import json;print(' '.join(r['id']+'='+r['extra'] for r in json.load(open('$OUT/base.json')) if r['kind']=='scan'))")"
   log "per kind: $(python3 -c "import json,collections;c=collections.Counter(r['kind'] for r in json.load(open('$OUT/base.json')));print(' '.join(k+'='+str(v) for k,v in sorted(c.items())))")"
-  s=$(date +%s%N); sudo bin/discover --deep > "$OUT/deep.json" 2>"$OUT/deep.err"; rc=$?
-  log "bin/discover --deep: $(ms $s)ms exit=$rc $(sed -n 1p "$OUT/deep.err")"
-  s=$(date +%s%N); sudo bin/discover --write "$OUT/inventory.json" --status "$OUT/status.txt" >/dev/null 2>"$OUT/write.err"; rc=$?
-  log "bin/discover --write: $(ms $s)ms exit=$rc"
+  s=$(date +%s%N); sudo osquery/bin/discover --deep > "$OUT/deep.json" 2>"$OUT/deep.err"; rc=$?
+  log "osquery/bin/discover --deep: $(ms $s)ms exit=$rc $(sed -n 1p "$OUT/deep.err")"
+  s=$(date +%s%N); sudo osquery/bin/discover --write "$OUT/inventory.json" --status "$OUT/status.txt" >/dev/null 2>"$OUT/write.err"; rc=$?
+  log "osquery/bin/discover --write: $(ms $s)ms exit=$rc"
   log "status.txt: $(cat "$OUT/status.txt" 2>/dev/null || echo '(none written)')"
   log "measure.py --check:"
-  sudo python3 tools/measure.py --check 2>&1 | sed 's/^/    /' | tee -a "$OUT/facts.txt"
+  sudo python3 osquery/tools/measure.py --check 2>&1 | sed 's/^/    /' | tee -a "$OUT/facts.txt"
 fi
 
 # --- the scenario -------------------------------------------------------------------
@@ -236,9 +236,9 @@ sudo "test/scenarios/$SC/setup.sh"; rc=$?
 if [ "$rc" = 3 ]; then log "--- $SC SKIP"; exit 3; fi
 if [ "$rc" != 0 ]; then log "--- $SC FAIL (setup exit $rc)"; exit 1; fi
 if python3 -c "import json,sys;sys.exit(0 if json.load(open('test/scenarios/$SC/expected.json')).get('deep') else 1)"; then
-  sudo bin/discover --deep > "$OUT/payload.json" 2>"$OUT/payload.err"
+  sudo osquery/bin/discover --deep > "$OUT/payload.json" 2>"$OUT/payload.err"
 else
-  sudo osqueryi --json < dist/discovery-linux.sql > "$OUT/payload.json" 2>"$OUT/payload.err"
+  sudo osqueryi --json < osquery/dist/discovery-linux.sql > "$OUT/payload.json" 2>"$OUT/payload.err"
 fi
 [ -s "$OUT/payload.err" ] && { echo '--- osquery stderr:'; sed 's/^/    /' "$OUT/payload.err"; }
 result=0
@@ -261,7 +261,7 @@ if ! grep -q "^$(id -un):" /etc/passwd && command -v google-chrome >/dev/null 2>
   # the two permissions, `unreferenced` because it was planted -- under the login account's
   # home, in the artifact that ships.
   # A probe that only prints a count is one a reader can skim past at zero.
-  probe=$(sudo osqueryi --json < dist/discovery-linux.sql 2>/dev/null \
+  probe=$(sudo osqueryi --json < osquery/dist/discovery-linux.sql 2>/dev/null \
     | python3 -c "
 import json, sys
 home = sys.argv[1]
@@ -296,7 +296,7 @@ run_vm() {
   gcloud compute instances create "$vm" --zone "$GCE_ZONE" ${PROJECT_FLAG[@]+"${PROJECT_FLAG[@]}"} \
       --machine-type "$GCE_MACHINE" --image-family "$imgfam" --image-project "$proj" \
       --metadata enable-oslogin=TRUE --boot-disk-size 20GB \
-      --labels purpose=osquery-ai-discovery ${GCE_CREATE_FLAGS:-} --quiet >/dev/null 2>"$out/create.err" \
+      --labels purpose=ai-detection-spec ${GCE_CREATE_FLAGS:-} --quiet >/dev/null 2>"$out/create.err" \
     || { echo "FAIL: could not create $vm"; sed 's/^/    /' "$out/create.err"; cleanup; return 1; }
 
   # OS Login takes a few seconds to accept a key after boot, and the guest agent longer

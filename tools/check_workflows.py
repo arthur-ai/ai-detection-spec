@@ -77,13 +77,20 @@ for path in sorted(root.glob("*.y*ml")):
     # only paths under directories this repo owns, and skipped where the step is plainly
     # creating the file rather than running it.
     repo = root.parent.parent
-    owned = r"(?:tools|test|bin|dist|queries|catalog)"
+    owned = r"(?:osquery|tools|test|bin|dist|queries|catalog)"
     steps = [s for job in doc.get("jobs", {}).values() for s in job.get("steps", [])]
     for step in steps:
         run = step.get("run", "") or ""
-        for match in re.finditer(rf"(?<![\w./-])({owned}/[\w./-]+)", run):
+        for match in re.finditer(rf"(?<![\w./-])({owned}/[\w./*-]*)", run):
             ref = match.group(1).rstrip(".,;:\"'")
+            # A DIRECTORY OR A GLOB MUST EXIST TOO. Both used to be skipped, so a diff over
+            # `dist/` kept passing once dist/ had moved: a pathspec that matches nothing has
+            # no diff.
             if ref.endswith("/") or "*" in ref:
+                if not (list(repo.glob(ref.rstrip("/"))) if "*" in ref else (repo / ref).is_dir()):
+                    print(f"FAIL: {path.name} step {step.get('name', '?')!r} names {ref}, "
+                          f"which matches nothing, so the step reads an empty set and passes.")
+                    failed = True
                 continue
             if re.search(rf"(?:>|>>|-o|--output|cp\s+\S+\s+){re.escape(ref)}", run):
                 continue
@@ -227,7 +234,7 @@ for _job, _names in sorted(_jobs.items()):
 # A `deep: true` SCENARIO MUST BE UNDER A JOB THAT RUNS THE DEEP ARTIFACT, and a job that
 # runs it must have one.
 #
-# `image` rows come from dist/discovery-deep.sql and from nowhere else -- no composed
+# `image` rows come from osquery/dist/discovery-deep.sql and from nowhere else -- no composed
 # artifact carries containers.sql, because it is `expensive`. So a deep scenario listed
 # under a job whose query step runs only the composed artifact fails on the image count,
 # on a runner, with a message about a row count rather than about the artifact. This moves

@@ -6,6 +6,8 @@ wrong. Second most valuable is a **detection gap** you can reproduce.
 **First response within five working days.** That covers a maintainer actually running your
 scenario, not just reading the diff.
 
+Contributions are accepted under the [Apache-2.0](LICENSE) license, the same as the repository.
+
 ## The one rule that breaks builds
 
 Every query branch emits **six columns, in this order**:
@@ -59,10 +61,10 @@ Two kinds are not demanded of a scenario, and `test/lint.sh` derives that rather
 it — a scenario must pin the kinds **its own platform's queries actually emit**:
 
 - **`image`** is a registry kind no composed artifact carries. `containers.sql` is `expensive`,
-  so it ships in `dist/ai-discovery.conf` and the deep artifact only. No scenario runs Docker;
-  `test/docker_states.sh` covers that branch instead, against a fake socket in every daemon
+  so it ships in `osquery/dist/ai-discovery.conf` and the deep artifact only. No scenario runs Docker;
+  `osquery/test/docker_states.sh` covers that branch instead, against a fake socket in every daemon
   state.
-- **`scan`** is not a route kind at all. `queries/runtime-linux.sql` emits one on every run
+- **`scan`** is not a route kind at all. `osquery/queries/runtime-linux.sql` emits one on every run
   because `systemd_units` **fails soft** — no system bus means zero rows, exit 0, and every
   other row returned — so the marker is the only thing separating "no agent units" from "we
   could not read the unit list". Linux scenarios pin it, and that is worth doing: it asserts
@@ -84,7 +86,7 @@ it — a scenario must pin the kinds **its own platform's queries actually emit*
    in `.github/workflows/scenarios.yml`.
 4. Regenerate the files built from the catalog, and run the checks:
    ```console
-   $ python3 tools/build.py                  # dist/
+   $ python3 osquery/tools/build.py  # osquery/dist/
    $ python3 tools/agent_status.py --write   # docs/agents.md, docs/limits.md, README badge
    $ tools/gates.sh
    ```
@@ -171,7 +173,7 @@ see, rather than shipping the identifier with a note attached.
 
 [`docs/agents.md`](docs/agents.md) lists every agent, its identifiers and the evidence
 behind each one; [`docs/limits.md`](docs/limits.md) lists what osquery cannot see and what
-each scenario leaves unproved. Both are **generated**, exactly as `dist/` is:
+each scenario leaves unproved. Both are **generated**, exactly as `osquery/dist/` is:
 
 ```console
 $ python3 tools/agent_status.py            # read it in the terminal
@@ -246,7 +248,7 @@ list any more, and an unknown agent field fails the build.
 
 ### The `images` route
 
-A container image repository, reached only by `bin/discover --deep`. It is matched exactly
+A container image repository, reached only by `osquery/bin/discover --deep`. It is matched exactly
 against the normalised tag, and the normalisation was read off 28 real images rather than
 reasoned about:
 
@@ -318,18 +320,18 @@ Two ways this hides:
   serve. A probe narrows that window; only a wall-clock bound on the process closes it. If the
   table you are adding has no timeout of its own and osquery offers no flag to give it one —
   check, because `docker_images` has neither — then it cannot go in a composed artifact at any
-  band. It goes in `dist/discovery-deep.sql`, behind a runner that can kill it.
+  band. It goes in `osquery/dist/discovery-deep.sql`, behind a runner that can kill it.
 
 If your query touches a daemon, socket or external service, test it **stopped and mid-startup**,
 not just healthy.
 
-`tools/measure.py --check` times every query against its declared band and fails the build on an
+`osquery/tools/measure.py --check` times every query against its declared band and fails the build on an
 overrun, naming the query and its measured cost. It runs on every pull request. Measured numbers
-for each query, and the machine they were taken on, are in [queries/COST.md](queries/COST.md).
+for each query, and the machine they were taken on, are in [osquery/queries/COST.md](osquery/queries/COST.md).
 
 ```console
-$ tools/measure.py             # time every query, print a table
-$ tools/measure.py --check     # fail if any query exceeds its declared band
+$ osquery/tools/measure.py     # time every query, print a table
+$ osquery/tools/measure.py --check     # fail if any query exceeds its declared band
 ```
 
 Raise a query's declared band rather than tuning the budget, and say in the PR why the cost is
@@ -342,21 +344,21 @@ Platform-free, and worth running first:
 ```console
 $ test/lint.sh                 # static checks, ~10s, no osquery, both platforms
 $ python3 test/test_matcher.py # the matcher, no osquery, no VM, no container
-$ python3 tools/build.py --check
-$ python3 tools/render_match.py --check   # the catalog rendered as SQL, up to date
+$ python3 osquery/tools/build.py --check
+$ python3 osquery/tools/render_match.py --check   # the catalog rendered as SQL, up to date
 $ python3 tools/validate_catalog.py
 ```
 
-`python3 test/test_match_sql.py` holds that rendered SQL to the matcher, evidence row for
+`python3 osquery/test/test_match_sql.py` holds that rendered SQL to the matcher, evidence row for
 evidence row. It needs `osqueryi` and says SKIP without one; it runs for real in CI.
 
 Needs osquery, and measures whichever platform you are on:
 
 ```console
-$ tools/measure.py --check     # cost bands, a few seconds
-$ sudo test/docker_states.sh   # every daemon state, that the bound kills the one the guard
+$ osquery/tools/measure.py --check     # cost bands, a few seconds
+$ sudo osquery/test/docker_states.sh   # every daemon state, that the bound kills the one the guard
                                # wrongly admits, and that image rows classify, ~35s
-$ sudo python3 tools/check_pack.py
+$ sudo python3 osquery/tools/check_pack.py
 ```
 
 Scenarios, which install real software and are therefore per platform:
@@ -404,8 +406,8 @@ scenario does not appear in the checks list, so the scope job's summary names ea
 that scoped it and what ran. The one thing scoping can miss -- a new signature over-matching rows
 in a scenario with no link to its agent -- is what the weekly run is for.
 
-The cost bands and the runtime checks skip only when every changed path is a `.md` file or
-`LICENSE`.
+The cost bands and the runtime checks skip only when every changed path is a `.md` file,
+`LICENSE` or `NOTICE`.
 `test/lint.sh` is never skipped, so the gates that read prose -- the documented numbers, the
 generated doc, the workflow parser -- still run on the commit that changes it.
 
@@ -427,17 +429,17 @@ Releases are [semantic](https://semver.org), with repository-specific meaning:
 - **patch** — a corrected identifier, a fixed glob, documentation.
 
 Releases are cut whenever signatures change, at most weekly. What changed in each one is on the
-[Releases page](https://github.com/arthur-ai/osquery-ai-discovery/releases) rather than in a file
+[Releases page](https://github.com/arthur-ai/ai-detection-spec/releases) rather than in a file
 in the tree; there is no `CHANGELOG.md`. Publishing a release triggers
 [`release.yml`](.github/workflows/release.yml), which rebuilds the composed artifacts and
-`dist/ai-discovery.conf` from the tagged `queries/` and attaches them — so a deployment can pin
+`osquery/dist/ai-discovery.conf` from the tagged `osquery/queries/` and attaches them — so a deployment can pin
 a tag instead of tracking `main`, and what it downloads is derived from the tag rather than
 uploaded by hand.
 
 ## Reporting a detection gap
 
 If you know of an agent this misses, open an issue with the tool, how you installed it, and what
-`dist/discovery-darwin.sql` or `dist/discovery-linux.sql` returned. If disclosing it
+`osquery/dist/discovery-darwin.sql` or `osquery/dist/discovery-linux.sql` returned. If disclosing it
 publicly would be unwise, see
 [SECURITY.md](SECURITY.md).
 

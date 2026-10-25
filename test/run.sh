@@ -90,12 +90,12 @@ run_scenario() {
   # Run the SHIPPING ARTIFACT, not a reimplementation of it. A predecessor harness measured
   # gzip+base64 bytes of its own capture while the endpoint script emitted raw JSON -- so
   # the suite reported ~600B where the real artifact would have produced 34KB on a developer
-  # Mac and blown the EA cap. Neither number was wrong on its own. Exercise what dist/ ships
+  # Mac and blown the EA cap. Neither number was wrong on its own. Exercise what osquery/dist/ ships
   # and there is nothing left to drift. (That script predates this repo and is not in it;
-  # the endpoint runs bin/discover, which the Linux harness exercises directly.)
+  # the endpoint runs osquery/bin/discover, which the Linux harness exercises directly.)
   # The DARWIN artifact: this harness boots a macOS guest under Tart. The Linux
   # scenarios run in containers -- test/run-linux.sh -- and on the CI runner directly.
-  vm_put "$vm" "$HERE/../dist/discovery-darwin.sql" /tmp/discovery.sql
+  vm_put "$vm" "$HERE/../osquery/dist/discovery-darwin.sql" /tmp/discovery.sql
 
   local start; start=$(date +%s)
   vm_ssh "$vm" "sudo -n /usr/local/bin/osqueryi --json < /tmp/discovery.sql" > "$ART/$s.json" \
@@ -106,11 +106,11 @@ run_scenario() {
   # the rows just collected, built on the host because the guest has no python and run in
   # the guest because the host may have no osqueryi. assert_match_sql takes both outputs
   # and runs nothing itself.
-  vm_put "$vm" "$HERE/../dist/agents-darwin.sql" /tmp/agents.sql
-  python3 "$HERE/test_match_sql.py" --wrapper "$ART/$s.json" > "$ART/$s.parity.sql"
+  vm_put "$vm" "$HERE/../osquery/dist/agents-darwin.sql" /tmp/agents.sql
+  python3 "$HERE/../osquery/test/test_match_sql.py" --wrapper "$ART/$s.json" > "$ART/$s.parity.sql"
   vm_put "$vm" "$ART/$s.parity.sql" /tmp/parity.sql
   vm_ssh "$vm" "sudo -n /usr/local/bin/osqueryi --json < /tmp/agents.sql" > "$ART/$s.agents.json" \
-    || { echo "FAIL: dist/agents-darwin.sql did not run; see $ART/$s.agents.json" >&2; return 1; }
+    || { echo "FAIL: osquery/dist/agents-darwin.sql did not run; see $ART/$s.agents.json" >&2; return 1; }
   vm_ssh "$vm" "/usr/local/bin/osqueryi --json < /tmp/parity.sql" > "$ART/$s.parity.json" \
     || { echo "FAIL: the match wrapper did not run; see $ART/$s.parity.json" >&2; return 1; }
 

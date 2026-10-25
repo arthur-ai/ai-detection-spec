@@ -46,9 +46,10 @@ import sys
 
 import build
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent
+ROOT = pathlib.Path(__file__).resolve().parent.parent  # osquery/, the binding
+REPO = ROOT.parent  # the catalog and bin/classify sit at the repository root
 DIST = ROOT / "dist"
-CATALOG = ROOT / "catalog" / "agents.yaml"
+CATALOG = REPO / "catalog" / "agents.yaml"
 
 # The files this tool owns. tools/build.py reads this so its unknown-file check can tell
 # "rendered here" from "nothing generates it"; tools/check_no_catalog.py reads it so the
@@ -133,7 +134,7 @@ def load_classify():
     its own regexes rather than a second copy of either."""
     spec = importlib.util.spec_from_loader(
         "classify", importlib.machinery.SourceFileLoader(
-            "classify", str(ROOT / "bin" / "classify")))
+            "classify", str(REPO / "bin" / "classify")))
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
@@ -375,7 +376,7 @@ def main():
         stale = check()
         if stale:
             sys.exit(f"rendered match SQL is stale: {', '.join(stale)}. "
-                     f"Run tools/render_match.py.")
+                     f"Run {pathlib.Path(__file__).resolve().relative_to(REPO)}.")
         print(f"rendered match SQL is up to date ({len(OUTPUTS)} files)")
         return
     write()

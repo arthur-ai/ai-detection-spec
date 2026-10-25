@@ -27,8 +27,8 @@ import sys
 import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-DOCS = ["README.md", "CLAUDE.md", "CONTRIBUTING.md",
-        "docs/signature-lifecycle-v2.md", "queries/COST.md"]
+DOCS = ["README.md", "CLAUDE.md", "osquery/CLAUDE.md", "CONTRIBUTING.md",
+        "docs/signature-lifecycle-v2.md", "osquery/queries/COST.md"]
 EXEMPT = "<!--fixed-number-->"
 
 
@@ -148,7 +148,10 @@ def main():
     bad = telemetry_fields() + dangling_doc_links()
     for name in DOCS:
         path = ROOT / name
+        # A MISSING FILE IS A FAILURE, not a skip: queries/COST.md moved under osquery/ and a
+        # `continue` here would have stopped checking it with nothing going red.
         if not path.exists():
+            bad.append(f"{name}: listed in DOCS and does not exist, so its numbers go unchecked")
             continue
         for n, line in enumerate(path.read_text().splitlines(), 1):
             if EXEMPT in line:

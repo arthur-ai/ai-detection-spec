@@ -24,7 +24,8 @@ set -uo pipefail
 # explicitly rather than relied upon: see docs/telemetry.md.
 export AI_DISCOVERY_TELEMETRY=0
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT="$HERE/.."
+ROOT="$HERE/.."          # osquery/, the binding
+REPO="$ROOT/.."          # bin/classify and the catalog
 SOCK=/tmp/arthur-fake-docker.sock
 # The macOS path first so a Mac's behaviour does not change, then whatever is on PATH --
 # which is how the Linux deb and rpm both present it, at /usr/bin/osqueryi. This suite is
@@ -438,8 +439,8 @@ echo "  the real image fixture classifies to the right agents"
 # route silently stopped working".
 start_fake healthy
 scan_out=$("$ROOT/bin/container-scan" --socket "$SOCK" 2>/dev/null)
-classified=$(printf '%s' "$scan_out" | "$ROOT/bin/classify" --json 2>/dev/null)
-unmatched=$(printf '%s' "$scan_out" | "$ROOT/bin/classify" --json --show-unmatched 2>/dev/null)
+classified=$(printf '%s' "$scan_out" | "$REPO/bin/classify" --json 2>/dev/null)
+unmatched=$(printf '%s' "$scan_out" | "$REPO/bin/classify" --json --show-unmatched 2>/dev/null)
 for want in aider; do
   check "finds $want" \
         "$(printf '%s' "$classified" | python3 -c "

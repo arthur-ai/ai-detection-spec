@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Turn osquery output into findings, using catalog/agents.yaml.
 
-    osqueryi --json < dist/discovery-darwin.sql | bin/classify
-    bin/discover --deep | bin/classify
+    osqueryi --json < osquery/dist/discovery-darwin.sql | bin/classify
+    osquery/bin/discover --deep | bin/classify
 
 This is the reference implementation of matching. It is deliberately small and meant
 to be read: if you want to know what a signature means, this is the answer, and any
@@ -161,7 +161,7 @@ def home_pattern(value, mode):
     body = re.escape(value[2:])                      # strip the leading '~/'
     if mode == "home-dir":
         return re.compile("^" + HOME_ROOTS + body + "/?$")
-    # A group rather than a lookahead: dist/signatures.sql hands this pattern to osquery's
+    # A group rather than a lookahead: osquery/dist/signatures.sql hands this pattern to osquery's
     # regex_match, and a pattern it cannot compile aborts the whole statement.
     return re.compile("^" + HOME_ROOTS + body + ("" if value.endswith("/") else "(?:/|$)"))
 
@@ -338,7 +338,7 @@ TOOL_DIR = re.compile(
 
 
 
-# A row that says a branch could not look, rather than what it found. bin/container-scan
+# A row that says a branch could not look, rather than what it found. osquery/bin/container-scan
 # emits one when the Docker daemon is absent, not serving, or wedged past the wall clock.
 #
 # IT HAS TO BE HANDLED EXPLICITLY OR IT DISAPPEARS. A kind outside KIND_ROUTES is dropped
@@ -353,7 +353,7 @@ GAP_KIND = "scan"
 LIVE_KINDS = frozenset({"proc", "container"})
 # `perms` ENDS WITH AT MOST ONE PROVENANCE TOKEN, after the permissions and the `<all_urls>`
 # flag: `unreferenced` (on disk, never loaded) or `sideloaded:<sha256>` (registered, not from
-# the Web Store). queries/browser.sql appends it; neither is a permission, so a consumer listing
+# the Web Store). osquery/queries/browser.sql appends it; neither is a permission, so a consumer listing
 # permissions splits with split_perms() rather than naming the tokens itself. A token ending
 # in `:` carries a value and matches as a prefix; any other matches whole, so a permission
 # that merely begins with one stays a permission. test/test_matcher.py holds these to the
@@ -594,7 +594,7 @@ def classify(rows, catalog, routes=None):
 # work inside main() also means the test suite, and every tool that imports image_repo(),
 # send nothing without having to remember not to.
 #
-# bin/discover and bin/container-scan send NOTHING, and that is not an oversight to
+# osquery/bin/discover and osquery/bin/container-scan send NOTHING, and that is not an oversight to
 # correct later. They run as root on endpoints under MDM. bin/classify runs OFF the
 # endpoint, over a payload somebody already chose to collect, and that difference is the
 # whole reason this is defensible here and would not be there.
@@ -1023,7 +1023,7 @@ def _run(state, started):
 
     for row in gaps:
         # `loc` IS NOT ALWAYS A SOCKET, and defaulting it to "the socket" was wrong in a
-        # way that read as authoritative. bin/discover's per-branch markers write
+        # way that read as authoritative. osquery/bin/discover's per-branch markers write
         # loc: "" -- so a failed `apps` branch rendered as
         # "COULD NOT LOOK: apps -- the socket reported 'error'", naming a socket that had
         # nothing to do with it. There is now no substituted noun: a marker either names
@@ -1034,7 +1034,7 @@ def _run(state, started):
             detail = (f"nothing has been written to {where or 'the cache'}. The scheduled "
                       f"writer is not installed, or has never run")
         elif reason == "error":
-            # THE REASON bin/discover ACTUALLY EMITS, and the one this renderer had no
+            # THE REASON osquery/bin/discover ACTUALLY EMITS, and the one this renderer had no
             # branch for. It means the branch ran and failed -- a missing table, a bad
             # query, a permission wall -- not that a daemon was unreachable.
             detail = f"the {branch} query ran and failed{at}"
@@ -1046,7 +1046,7 @@ def _run(state, started):
         elif reason.startswith("unreadable:"):
             # `absent` was the only word a machine with no Docker socket could get, so a
             # Podman host read as one with no containers. The runtime is named because the
-            # fix differs: Colima wants a candidate path in bin/container-scan, Podman
+            # fix differs: Colima wants a candidate path in osquery/bin/container-scan, Podman
             # wants a different tool.
             detail = (f"a {reason.split(':', 1)[1]} runtime is installed{at} and is not "
                       f"read by this scan. Any containers it holds are uncounted")
@@ -1164,7 +1164,7 @@ def _measure(raw, rows, findings, unmatched, gaps, scans, absences, aged, stale,
         # a real payload here runs 110 bytes a row for `brew` and 293 for `ext`, a 2.7x
         # spread, so a payload can grow a third in bytes while the row count barely moves.
         #
-        # `packed` is gzip level 9 THEN base64, matching tools/measure_payload.py, because
+        # `packed` is gzip level 9 THEN base64, matching osquery/tools/measure_payload.py, because
         # a channel carrying one text value pays for the encoding too and the two figures
         # have to be comparable. THE 30KB BUDGET IS SELF-IMPOSED -- a Jamf Extension
         # Attribute convention this project keeps to, not a documented platform limit --

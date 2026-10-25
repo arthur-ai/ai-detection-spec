@@ -32,8 +32,8 @@ import re
 import subprocess
 import sys
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent
-FIXTURES = ROOT / "test" / "fixtures"
+ROOT = pathlib.Path(__file__).resolve().parent.parent  # osquery/, the binding
+FIXTURES = ROOT.parent / "test" / "fixtures"  # the matcher's, at the repository root
 sys.path.insert(0, str(ROOT / "tools"))
 import render_match as R  # noqa: E402
 os.environ.setdefault("AI_DISCOVERY_TELEMETRY", "0")
@@ -225,7 +225,7 @@ def main():
     # --- the shipped fragment is the one under test, not a fresh render -------------
     shipped = shipped_fragment()
     check("dist/signatures.sql carries the fragment this test renders", frag in shipped,
-          "run tools/render_match.py")
+          "run osquery/tools/render_match.py")
 
     # --- the wrapper under test is the wrapper the runner builds ----------------------
     # bin/discover prints its `ev` CTE through printf, with `$` escaped, so the text is

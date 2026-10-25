@@ -23,7 +23,7 @@
       "claude-code"
     ]
   },
-  "why": "The must-NOT-match test for queries/packages-linux.sql's status filter, and the reason that filter exists. dpkg keeps a `deinstall ok config-files` record for a package removed without --purge, and osquery reports it WITH THE VERSION STILL ATTACHED -- so unfiltered, an uninstalled agent reads as an installed one. `nano` and `cron` are used because they ship conffiles; a first attempt used cowsay, which has none, so dpkg dropped the record entirely and the broken query looked correct.",
+  "why": "The must-NOT-match test for osquery/queries/packages-linux.sql's status filter, and the reason that filter exists. dpkg keeps a `deinstall ok config-files` record for a package removed without --purge, and osquery reports it WITH THE VERSION STILL ATTACHED -- so unfiltered, an uninstalled agent reads as an installed one. `nano` and `cron` are used because they ship conffiles; a first attempt used cowsay, which has none, so dpkg dropped the record entirely and the broken query looked correct.",
   "known_gaps": [
     "Asserts on a pair of ordinary packages rather than on an agent, because no catalogued agent's deb can be installed and removed without also removing the evidence this checks for."
   ],
