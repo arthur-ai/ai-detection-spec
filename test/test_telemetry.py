@@ -358,7 +358,8 @@ check("the payload size is reported, raw and packed, and packing helps",
       f"raw={props.get('payload_bytes')} (file is {len(KNOWN.read_bytes())}) "
       f"packed={props.get('payload_packed_bytes')}")
 check("the catalog identifies itself by content hash",
-      len(props.get("catalog_sha", "")) == 12 and props.get("catalog_schema_version") == 2)
+      len(props.get("catalog_sha", "")) == 12
+      and props.get("catalog_schema_version") == classify_mod.CATALOG_VERSION)
 check("a clean payload reports nothing dropped", props.get("dropped_rows") == 0,
       f"{props.get('dropped_rows')}")
 check("the platform reported is the PAYLOAD's, not the machine classify ran on",

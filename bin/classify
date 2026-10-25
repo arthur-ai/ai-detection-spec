@@ -26,7 +26,7 @@ DEFAULT_ROUTES = ROOT / "catalog" / "routes.yaml"
 # The catalog schema version this matcher understands. See load_catalog: a NEWER catalog
 # warns and matches what it can, because refusing would turn version skew into
 # "no agents found" -- which is the one error this repo exists to avoid.
-CATALOG_VERSION = 2
+CATALOG_VERSION = 3
 
 
 def _yaml(path):
@@ -156,6 +156,14 @@ class Registry:
 # /root gets its own alternative: root's home is not under /home, and a `[^/]+`
 # component cannot reach it. Verified against `users.directory` on Ubuntu and Fedora.
 HOME_ROOTS = r"(?:/Users/[^/]+/|/home/[^/]+/|/root/)"
+
+
+# THE MATCH MODES, declared once. tools/validate_catalog.py reads this rather than keeping
+# its own list, and test/test_conformance.py holds it equal to the format's schema, which is
+# the declaration other implementations read. A mode added here and not there, or there and
+# not here, fails the build.
+MATCH_MODES = frozenset({"exact", "prefix", "exact-normalised", "home-dir", "home-prefix",
+                         "tool-dir"})
 
 
 def home_pattern(value, mode):

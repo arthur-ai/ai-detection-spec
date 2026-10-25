@@ -1413,6 +1413,14 @@ for _flag in ("live", "retired"):
           any(f".{_flag} must be true or false" in e for e in _vr({"platforms": ["darwin"], "routes": {
               "x": {"platform": "darwin", "kind": "proc", "match": "exact", _flag: "false",
                     "osquery": {"table": "processes", "min_osquery": "5.10.0"}}}})))
+_ce = _vc.classification_errors
+check("a classification is a name AND a definition: a bare name is refused",
+      bool(_ce({"classifications": ["Coding agent"]})))
+check("...and one declared twice",
+      bool(_ce({"classifications": [{"name": "A", "definition": "x"},
+                                     {"name": "A", "definition": "y"}]})))
+check("...and the real catalog's pass", _ce(_yaml3.safe_load(
+      (ROOT / "catalog" / "agents.yaml").read_text())) == [])
 check("a trailing `*` is refused: an exact route matches exactly",
       any("`*`" in e for e in _rve("probe", {"npm": ["@modelcontextprotocol/*"]}, _reg)))
 

@@ -95,13 +95,14 @@
 #
 # A matcher expands those; the catalog does not repeat them.
 
-# BUMPED TO 2 BECAUSE THE SCHEMA CHANGED: `platforms:` is required on every agent, and the
-# route vocabulary moved to catalog/routes.yaml. This field sat here unread for the whole
+# 3: `classifications` became {name, definition}, so the catalog defines its own words.
+# 2: `platforms:` is required on every agent, and the route vocabulary moved to
+# catalog/routes.yaml. This field sat here unread for the whole
 # life of the file -- a version nothing could disagree with -- and bin/classify validates
 # it now: a catalog NEWER than the matcher understands warns on stderr and matches what it
 # can, because refusing would turn version skew into "no agents found", which is the one
 # error this repo exists to avoid.
-version: 2
+version: 3
 
 # THIS CATALOG DETECTS AGENTS. Two entries were REMOVED for failing that test, and the
 # reason is recorded here because the temptation to re-add them is obvious -- both show up
@@ -174,18 +175,23 @@ removed:
 #   MCP configs, instruction files, sockets
 #             ai_tools' other types, which describe what an agent USES
 
+# THE DEFINITIONS ARE DATA, not comments, because a catalog read by someone else's tool has
+# to explain its own words. Every one acts on the user's behalf; what does not is in
+# `removed:` above. Desktop assistant is kept on this side of the line deliberately: the old
+# definition read "no autonomous execution", which stopped being true when these clients
+# gained MCP and began running tools locally. Contested rather than settled, and overstating
+# an agent is the safer error for an inventory than missing one.
 classifications:
-  # --- acts on the user's behalf ---
-  - Coding agent        # operates on a codebase, usually with shell access
-  - Personal agent      # general-purpose, often bridged to messaging
-  - AI browser          # a browser whose AI features are the product
-  - Browser agent       # an extension that acts inside the browser on the user's behalf
-  - Desktop assistant   # chat client. Kept on THIS side of the line deliberately: the old
-                        # definition read "no autonomous execution", which stopped being
-                        # true when these clients gained MCP and began running tools
-                        # locally. Contested rather than settled, and overstating an agent
-                        # is the safer error for an inventory than missing one
-  # --- does not act on anyone's behalf; listed in removed: above ---
+  - name: Coding agent
+    definition: Operates on a codebase, usually with shell access.
+  - name: Personal agent
+    definition: General-purpose, and often bridged to messaging.
+  - name: AI browser
+    definition: A browser whose AI features are the product.
+  - name: Browser agent
+    definition: An extension that acts inside the browser on the user's behalf.
+  - name: Desktop assistant
+    definition: A chat client that can run tools on the machine, for example through MCP.
 
 
 agents:

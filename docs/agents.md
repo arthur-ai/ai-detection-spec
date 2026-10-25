@@ -38,6 +38,8 @@ Software that acts on the user's behalf. This is what the catalog is for.
 
 ## Coding agent
 
+Operates on a codebase, usually with shell access.
+
 | name | identifiers | scenarios |
 |---|---|---|
 | **aider** | **`aider`**, **`aider-chat`**, **`paulgauthier/aider`**, **`~/.aider`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
@@ -71,6 +73,8 @@ Software that acts on the user's behalf. This is what the catalog is for.
 
 ## Personal agent
 
+General-purpose, and often bridged to messaging.
+
 | name | identifiers | scenarios |
 |---|---|---|
 | **Hermes Agent** | **`hermes-agent`**, **`hermes-agent`**, **`~/.hermes`**, **`~/.local/bin/hermes`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents |
@@ -79,6 +83,8 @@ Software that acts on the user's behalf. This is what the catalog is for.
 
 ## AI browser
 
+A browser whose AI features are the product.
+
 | name | identifiers | scenarios |
 |---|---|---|
 | **Dia** | **`company.thebrowser.dia`**, **`thebrowsercompany-dia`** | 13-desktop-apps-more |
@@ -86,6 +92,8 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | **Perplexity Comet** | **`ai.perplexity.comet`**, **`comet`** | 10-desktop-apps, 90-demo-fleet |
 
 ## Browser agent
+
+An extension that acts inside the browser on the user's behalf.
 
 | name | identifiers | scenarios |
 |---|---|---|
@@ -96,6 +104,8 @@ Software that acts on the user's behalf. This is what the catalog is for.
 | **Sider** | **`difoiogjjojoaoomphldepapgpbgkhkb`** | 45-claude-extension |
 
 ## Desktop assistant
+
+A chat client that can run tools on the machine, for example through MCP.
 
 | name | identifiers | scenarios |
 |---|---|---|
