@@ -132,6 +132,13 @@ def validate_registry(reg):
         if unknown:
             errors.append(f"routes.yaml: {name} has unknown field(s) {sorted(unknown)}. "
                           f"This file carries no field that nothing reads -- see its header")
+        # FLAGS ARE BOOLEANS, because they are read by truth. `live: "false"` is a non-empty
+        # string, so it would mark presence-only findings `running`; `retired: "false"` would
+        # retire a working route, which then identifies nothing.
+        for flag in ("live", "retired"):
+            if flag in r and not isinstance(r[flag], bool):
+                errors.append(f"routes.yaml: {name}.{flag} must be true or false, not "
+                              f"{r[flag]!r}")
         if r.get("platform") not in legal_platform:
             errors.append(f"routes.yaml: {name} declares platform {r.get('platform')!r}; "
                           f"expected one of {sorted(legal_platform)}")

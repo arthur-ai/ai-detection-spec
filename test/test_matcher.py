@@ -1408,6 +1408,11 @@ check("...and a binding missing a field",
           "x": {"platform": "darwin", "kind": "app", "match": "exact",
                 "osquery": {"table": "apps"}}}})))
 check("the real registry binds every route", _vr(_reg) == [], str(_vr(_reg)))
+for _flag in ("live", "retired"):
+    check(f"`{_flag}` must be a boolean: the string 'false' is true when read",
+          any(f".{_flag} must be true or false" in e for e in _vr({"platforms": ["darwin"], "routes": {
+              "x": {"platform": "darwin", "kind": "proc", "match": "exact", _flag: "false",
+                    "osquery": {"table": "processes", "min_osquery": "5.10.0"}}}})))
 check("a trailing `*` is refused: an exact route matches exactly",
       any("`*`" in e for e in _rve("probe", {"npm": ["@modelcontextprotocol/*"]}, _reg)))
 
