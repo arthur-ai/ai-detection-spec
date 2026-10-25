@@ -202,8 +202,9 @@ An identifier matched this way keeps the status it has on `R`.
 
 ### 6.4 Match modes
 
-Every comparison is case-sensitive and covers the whole value: a value that ends in a line
-break is not the value without it.
+Every comparison is case-sensitive. A line break is a character like any other, so where a
+mode compares up to the end of a row's value, a path followed by a line break is not that path.
+Only `exact-normalised` trims whitespace (§6.4.3).
 
 #### 6.4.1 `exact`
 

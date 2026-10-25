@@ -146,13 +146,14 @@
         {"kind": "image", "id": "public.ecr.aws/docker/library/tool:1", "loc": ""},
         {"kind": "image", "id": "example/agent@sha256:0123", "loc": ""},
         {"kind": "image", "id": "other/thing:1, example/agent:2", "loc": ""},
-        {"kind": "image", "id": "example/agent:v1@sha256:0123", "loc": ""}
+        {"kind": "image", "id": "example/agent:v1@sha256:0123", "loc": ""},
+        {"kind": "image", "id": "example/agent\n", "loc": ""}
       ],
       "expect": {
-        "matches": ["a", null, null, null, "a", "b", null, null, "a", null],
+        "matches": ["a", null, null, null, "a", "b", null, null, "a", null, "a"],
         "unmatched": [1, 2, 3, 6, 7, 9],
         "dropped": [],
-        "findings": {"a": {"evidence": [0, 4, 8]}, "b": {"evidence": [5]}}
+        "findings": {"a": {"evidence": [0, 4, 8, 10]}, "b": {"evidence": [5]}}
       }
     },
     {
