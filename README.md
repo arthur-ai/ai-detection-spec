@@ -27,7 +27,7 @@ rename, so a fleet needs both, that one agent ships as a Homebrew cask *and* an
 npm global *and* a curl installer. **This is that knowledge, written down and kept true** — as
 queries you can read in ten minutes and a catalog you can check line by line.
 
-Take all of it, take one query, or take just the catalog and match it your own way. MIT, no
+Take all of it, take one query, or take just the catalog and match it your own way. Apache-2.0, no
 runtime dependencies beyond osquery.
 
 ### Why you might like it
