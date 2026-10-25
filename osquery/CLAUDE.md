@@ -9,6 +9,12 @@ one rule: an empty result must never be indistinguishable from a clean machine.
 because `bin/discover` resolves `dist/` against its own parent, in the repo and in the release
 layout alike. `catalog/`, `bin/classify` and `test/scenarios/` are always the repository root's.
 
+**Text a person reads outside the source names the path to type from the repository root**:
+an error message, or the banner of a generated file in `dist/`, says
+`osquery/tools/build.py`. Only a clone can act on it. A release ships `bin/`, `dist/` and
+`catalog/`, with no `tools/` or `queries/`, so an osquery-relative `tools/build.py` would be
+wrong there too.
+
 ## Architecture
 
 The endpoint **enumerates**; the enumeration queries hold no catalog and do no filtering.

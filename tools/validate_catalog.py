@@ -24,6 +24,18 @@ def load_routes():
     return yaml.safe_load((ROOT / "catalog" / "routes.yaml").read_text())
 
 
+def load_classify():
+    """bin/classify as a module: the catalog version it reads and the image normaliser it
+    applies are the matcher's, so the validator asks the matcher rather than copying them."""
+    import importlib.machinery
+    import importlib.util
+    loader = importlib.machinery.SourceFileLoader("classify", str(ROOT / "bin" / "classify"))
+    spec = importlib.util.spec_from_loader("classify", loader)
+    module = importlib.util.module_from_spec(spec)
+    loader.exec_module(module)
+    return module
+
+
 REQUIRED = {"id", "name", "classification", "platforms"}
 OPTIONAL = {"superseded"}
 SUPERSEDED_REQUIRED = {"route", "value", "last_version", "last_proved", "by", "run"}
@@ -66,6 +78,12 @@ def archived_match(aid, rec):
 # was never proved is not a signature.
 
 
+# A BINDING IS HOW ONE WAY OF COLLECTING EVIDENCE FEEDS A ROUTE, and each one's fields are
+# checked against that binding's own source by that binding: osquery's by
+# osquery/tools/build.py, against the query frontmatter.
+BINDINGS = {"osquery": {"table", "min_osquery"}}
+
+
 def validate_registry(reg):
     """The registry validates itself, because everything else now trusts it.
 
@@ -85,16 +103,32 @@ def validate_registry(reg):
                           f"which are not platforms")
     legal_platform = platforms | set(groups)
     modes = {"exact", "prefix", "exact-normalised", "home-dir", "home-prefix", "tool-dir"}
-    required = {"platform", "kind", "match", "table", "min_osquery"}
+    required = {"platform", "kind", "match"}
     optional = {"value_pattern", "retired", "values_from"}
     for name, r in (reg.get("routes") or {}).items():
+        # Lowercase, digits and underscores: the names every reader of the registry can parse.
+        if not re.fullmatch(r"[a-z][a-z0-9_]*", str(name)):
+            errors.append(f"routes.yaml: route name {name!r} must be lowercase letters, digits "
+                          f"and underscores, starting with a letter")
         if not isinstance(r, dict):
             errors.append(f"routes.yaml: {name} must be a mapping")
             continue
         missing = required - set(r)
         if missing:
             errors.append(f"routes.yaml: {name} is missing {sorted(missing)}")
-        unknown = set(r) - required - optional
+        unknown = set(r) - required - optional - set(BINDINGS)
+        # A ROUTE NOTHING CAN COLLECT MATCHES NOTHING, and it reads as coverage. A route is
+        # the neutral half -- kind, match, platform -- and a binding says how one way of
+        # collecting evidence feeds it. osquery is the only binding today.
+        bound = sorted(set(r) & set(BINDINGS))
+        if not bound:
+            errors.append(f"routes.yaml: {name} has no binding ({', '.join(sorted(BINDINGS))}), "
+                          f"so nothing collects the rows it would match")
+        for b in bound:
+            spec = r[b]
+            if not isinstance(spec, dict) or set(spec) != BINDINGS[b]:
+                errors.append(f"routes.yaml: {name}.{b} must be a mapping of exactly "
+                              f"{sorted(BINDINGS[b])}, got {spec!r}")
         if unknown:
             errors.append(f"routes.yaml: {name} has unknown field(s) {sorted(unknown)}. "
                           f"This file carries no field that nothing reads -- see its header")
@@ -167,6 +201,107 @@ def borrowed_route_errors(aid, agent, reg):
     return errors
 
 
+def route_value_errors(aid, agent, reg):
+    """A route's values are a non-empty list of strings, and a retired route holds none.
+
+    A bare string is iterated a character at a time -- `npm: openclaw` would index `o`,
+    `p`, `e`... -- and an empty list declares a route that claims nothing. A retired route
+    identifies nothing by definition; a value under it is a signature that cannot fire."""
+    errors = []
+    for route in sorted(set(agent) & set(reg["routes"])):
+        values = agent[route]
+        if (not isinstance(values, list) or not values
+                or not all(isinstance(v, str) for v in values)):
+            errors.append(f"{aid}: {route} must be a non-empty list of strings, got "
+                          f"{values!r}")
+        if reg["routes"][route].get("retired"):
+            errors.append(f"{aid}: {route} is retired and identifies nothing, so it may "
+                          f"carry no values")
+    return errors
+
+
+def image_errors(aid, agent, image_repo):
+    """An `images` value is written as bin/classify normalises it. Two spellings of one
+    repository -- `docker.io/x/y` and `x/y` -- pass every other check, collide after
+    normalising, and the index keeps whichever agent comes last."""
+    return [f"{aid}: images {v!r} normalises to {image_repo(str(v))!r}; write that"
+            for v in agent.get("images", []) if image_repo(str(v)) != str(v)]
+
+
+def claims(mode, p, q):
+    """Does every row the value `q` can match also match `p`, under `p`'s mode?
+    The modes are bin/classify's home_pattern() and prefix rule, read as containment."""
+    if mode == "prefix":
+        return q.startswith(p)
+    if mode == "home-prefix":
+        return q.rstrip("/") == p.rstrip("/") or q.startswith(p if p.endswith("/") else p + "/")
+    if mode == "home-dir":
+        return q.rstrip("/") == p.rstrip("/")
+    # AN EXACT VALUE CLAIMS THE EQUAL ONE, on whichever route of the kind holds it. The
+    # duplicate check is keyed by route, so one agent's bundle id equal to another's npm name
+    # passed it -- and running_apps and running_npm, which borrow those values, would both
+    # claim the one `proc` row that names it.
+    if mode in ("exact", "exact-normalised"):
+        return q == p
+    return False
+
+
+def overlap_errors(agents, reg):
+    """NO VALUE CLAIMS ANOTHER AGENT'S ROWS on the same kind. The matcher takes the first
+    hit in catalog order, so an overlap would be settled by where an entry sits in the file
+    -- `binaries: ~/.local/bin/kiro` would take kiro-cli's binary. With none allowed, a row
+    satisfies at most one agent and order decides nothing."""
+    entries = []
+    for agent in agents:
+        for name, r in reg["routes"].items():
+            if r.get("retired"):
+                continue
+            for v in agent.get(r.get("values_from", name), []) or []:
+                entries.append((r["kind"], r["match"], agent.get("id"), name, str(v)))
+    errors = []
+    for kind, mode, aid, route, p in entries:
+        for kind2, _, aid2, route2, q in entries:
+            if kind2 == kind and aid2 != aid and claims(mode, p, q):
+                errors.append(f"{aid}: {route} {p!r} ({mode}) also matches {aid2}'s "
+                              f"{route2} {q!r}, so catalog order would decide the row")
+    return errors
+
+
+def live_observations(root):
+    """(agent, route, value) -> where a current run still produces it."""
+    live = {}
+    for path in sorted((root / "test" / "scenarios").glob("*/observed.json")):
+        for o in json.loads(path.read_text()).get("identifiers", []):
+            key = (o.get("agent"), str(o.get("route")), str(o.get("value")))
+            live.setdefault(key, set()).add(path.parent.name)
+    return live
+
+
+def live_superseded_errors(aid, agent, live):
+    """A superseded value is one the release CI installs no longer produces. One a run
+    still produces is current, and marking it superseded would label live evidence as an
+    earlier release's."""
+    errors = []
+    for rec in agent.get("superseded", []) or []:
+        if not isinstance(rec, dict):
+            continue
+        where = live.get((aid, str(rec.get("route")), str(rec.get("value"))))
+        if where:
+            errors.append(f"{aid}: superseded {rec.get('route')}:{rec.get('value')!r} is still "
+                          f"observed by {', '.join(sorted(where))}, so it is current")
+    return errors
+
+
+def version_errors(doc, catalog_version):
+    """This catalog and this matcher ship together, so they agree on the version exactly.
+    bin/classify only warns on a newer catalog, which is right for a consumer pairing a
+    new catalog with an old matcher and wrong for the tree that writes both."""
+    if doc.get("version") != catalog_version:
+        return [f"catalog version is {doc.get('version')!r} and bin/classify reads version "
+                f"{catalog_version}; bump them together"]
+    return []
+
+
 def main():
     doc = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
     reg = load_routes()
@@ -183,6 +318,8 @@ def main():
     known = set(doc["classifications"])
 
     errors_registry = validate_registry(reg)
+    classify = load_classify()
+    live = live_observations(ROOT)
 
     # not_agents names classifications, so a typo here would silently count an agent as a
     # supporting tool or the reverse -- a wrong headline number with nothing to notice it.
@@ -210,6 +347,9 @@ def main():
         if unknown:
             errors.append(f"{aid}: unknown field(s) {sorted(unknown)}")
         errors.extend(borrowed_route_errors(aid, agent, reg))
+        errors.extend(route_value_errors(aid, agent, reg))
+        errors.extend(image_errors(aid, agent, classify.image_repo))
+        errors.extend(live_superseded_errors(aid, agent, live))
 
         routes = ROUTES & set(agent)
         if not routes:
@@ -387,6 +527,8 @@ def main():
                           f"One of the two is wrong.")
 
     errors.extend(top_level_errors(doc))
+    errors.extend(version_errors(doc, classify.CATALOG_VERSION))
+    errors.extend(overlap_errors(doc["agents"], reg))
 
     if errors:
         print("catalog: FAIL")

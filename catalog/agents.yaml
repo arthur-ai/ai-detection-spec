@@ -73,8 +73,8 @@
 #
 # What a port CAN tell you is that an agent is RUNNING rather than merely installed. That is
 # liveness, not identity, and it is now built as that and named as that: kind `proc`, from
-# queries/running.sql and queries/running-darwin.sql, through routes that read the
-# `bundle_ids` and `npm` values below. bin/classify marks a finding with one `running`.
+# osquery/queries/running.sql and osquery/queries/running-darwin.sql, through routes that read
+# the `bundle_ids` and `npm` values below. bin/classify marks a finding with one `running`.
 
 # AN OLD IDENTIFIER IS KEPT, AND KEEPING IT COSTS EVIDENCE. Machines on an earlier release
 # still report it, so removing one blinds the fleet to those machines -- but "an earlier

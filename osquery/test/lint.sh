@@ -560,6 +560,48 @@ print(f"perms provenance: ok, browser.sql and bin/classify agree on {sorted(emit
 PERMS
 
 python3 "$OSQ/tools/build.py" --check || fail=1
+# THE BINDING CHECK REFUSES WHAT IT EXISTS TO REFUSE. build.py runs it on the real registry
+# above; these feed it a broken one, so a check that stopped looking would go red here.
+python3 - "$OSQ/tools" "$REPO/catalog/routes.yaml" <<'BINDING' || fail=1
+import sys
+sys.path.insert(0, sys.argv[1])
+import build
+text = open(sys.argv[2]).read()
+qs = build.queries()
+cases = {
+    "a floor above every feeding query": text.replace(
+        "{table: jetbrains_plugins, min_osquery: 5.18.0}", "{table: jetbrains_plugins, min_osquery: 5.99.0}"),
+    "a table no query names": text.replace(
+        "{table: homebrew_packages, min_osquery: 5.10.0}", "{table: brew_packages, min_osquery: 5.10.0}"),
+    "a binding it cannot read": text.replace(
+        "    osquery: {table: apps, min_osquery: 5.10.0}", "    osquery: {table: apps}"),
+    # A route whose name has a digit is parsed and checked, not folded into the one above.
+    "an unfed route named with a digit": text.rstrip("\n") + "\n  npm2:\n    platform: posix\n"
+        "    kind: npm\n    match: exact\n    osquery: {table: no_such_table, min_osquery: 5.10.0}\n",
+    "a route name the parser cannot read": text.rstrip("\n") + "\n  Bad-Route:\n"
+        "    platform: posix\n    kind: npm\n    match: exact\n"
+        "    osquery: {table: npm_packages, min_osquery: 5.10.0}\n",
+}
+bad = [name for name, mutated in cases.items()
+       if mutated == text or not build.binding_errors(qs, mutated)]
+if build.binding_errors(qs, text):
+    bad.append("the real registry")
+# AND IT READS EVERY FORM validate_catalog ACCEPTS. PyYAML takes the binding inline or one key
+# per line, in any order, quoted or not; a catalog it accepts has to build.
+_inline = "    osquery: {table: apps, min_osquery: 5.10.0}"
+for name, form in (
+        ("one key per line", "    osquery:\n      table: apps\n      min_osquery: 5.10.0"),
+        ("keys reversed", "    osquery: {min_osquery: 5.10.0, table: apps}"),
+        ("values quoted", "    osquery:\n      min_osquery: '5.10.0'\n      table: \"apps\""),
+):
+    if build.binding_errors(qs, text.replace(_inline, form)):
+        bad.append(f"a valid binding written {name}")
+if bad:
+    print(f"FAIL: binding check: wrong answer for {bad}")
+    sys.exit(1)
+print(f"binding check: ok, refuses {len(cases)} broken registries, reads every binding form "
+      f"validate_catalog accepts, and passes the real one")
+BINDING
 # The rendered match SQL is generated from the catalog the way dist/ is from queries/, and
 # gated the same way. The parity test needs osqueryi and SKIPs without one, which is what
 # lets this file stay runnable on a runner with no osquery; ci.yml's runtime jobs run it

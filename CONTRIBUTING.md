@@ -112,6 +112,7 @@ ships through**:
 - id: openclaw
   name: OpenClaw
   classification: Personal agent
+  platforms: [darwin, linux]                   # required; every route must fire on one of them
   bundle_ids: [ai.openclaw.mac]                # read off a live install, never a zap stanza
   homebrew: [openclaw]
   npm: [openclaw, clawdbot, moltbot]
