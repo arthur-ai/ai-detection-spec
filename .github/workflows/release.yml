@@ -45,12 +45,13 @@ jobs:
           fi
           echo "$sha is on main"
 
-      # Same two the lint job installs: the scenario scripts are zsh, and the catalog
-      # validator and workflow parser need pyyaml.
+      # What the lint job installs: the scenario scripts are zsh, the catalog validator and
+      # workflow parser need pyyaml, and jsonschema -- pinned as there -- makes the schema
+      # checks run rather than SKIP.
       - name: Install zsh
         run: sudo apt-get update -qq && sudo apt-get install -y -qq zsh
-      - name: Install pyyaml
-        run: pip install --quiet pyyaml
+      - name: Install pyyaml and jsonschema
+        run: pip install --quiet pyyaml jsonschema==4.26.0
 
       # The static gates, re-run against the tagged commit: the six-column contract, the
       # catalog, and that no agent identifier has crept back into the SQL. The macOS
@@ -89,6 +90,23 @@ jobs:
       # collect. --strict refuses a release with a current identifier no run has proved.
       - name: Export the catalog as an Open Agent Detection Format document
         run: python3 tools/export.py --strict --commit "$GITHUB_SHA" --out artifacts/catalog.json
+
+      # THE FILE ATTACHED IS THE FILE VALIDATED. CI validates the exporter's output on every
+      # pull request; this validates the document this tag uploads, against the schema it
+      # names. --strict above checks proof coverage, not shape.
+      - name: Validate the exported catalog
+        run: |
+          python3 - <<'EOF'
+          import json, sys, jsonschema
+          schema = json.load(open("schema/catalog.schema.json"))
+          doc = json.load(open("artifacts/catalog.json"))
+          errors = [f"{e.json_path}: {e.message}"
+                    for e in jsonschema.Draft202012Validator(schema).iter_errors(doc)]
+          if errors:
+              sys.exit("::error::artifacts/catalog.json does not validate against "
+                       "schema/catalog.schema.json:\n  " + "\n  ".join(errors[:10]))
+          print(f"artifacts/catalog.json validates ({doc['format']})")
+          EOF
 
       # --clobber replaces whatever was attached to the draft by hand. A consumer pins a
       # tag and downloads these files; they are the deliverable, not a convenience.
