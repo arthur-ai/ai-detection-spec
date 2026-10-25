@@ -261,7 +261,7 @@ def main():
         ("file", "/home/u/.local/bin/muse-bin-1.4.10-R6427.1", None),
         ("file", "/home/u/.local/bin/musescore", None),
         ("file", "/home/u/.local/bin/claude-monitor", None),
-        ("file", "/home/u/.local/share/uv/tools/openclaw/", "openclaw"),   # npm bridge
+        ("file", "/home/u/.local/share/uv/tools/openclaw/", None),   # pypi only, no npm half
         ("file", "/root/.local/pipx/venvs/aider-chat/", "aider"),          # tool-dir
         ("image", "docker.io/paulgauthier/aider:v1,paulgauthier/aider:latest", "aider"),
         ("image", "paulgauthier/aider-fork:latest", None),

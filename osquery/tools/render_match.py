@@ -165,12 +165,9 @@ def signatures(classify, catalog, registry):
     sorted. `mode` is the SQL predicate: exact, prefix, path, image or tool-dir."""
     exact, prefix, glob = classify.build_index(catalog, registry)
     kind_of = {r: spec["kind"] for r, spec in registry.routes.items()}
-    tool_dir_kinds = sorted({kind_of[r] for r, m in registry.match.items() if m == "tool-dir"})
-    # The classifier's bridge: a pipx or uv directory named for a package is looked up as
-    # a pypi value AND as an npm value, for agents that ship both. Rendered as a second
-    # row per npm value rather than a second predicate, so the fragment stays one CASE.
-    npm_routes = {r for r, m in registry.match.items()
-                  if m == "exact" and kind_of[r] == "npm"}
+    # The classifier's bridge: a pipx or uv directory named for a package is looked up on
+    # the routes Registry.bridged() names, and only those.
+    bridged = set(registry.bridged())
     rows = set()
 
     def add(meta, kind, mode, value):
@@ -179,21 +176,14 @@ def signatures(classify, catalog, registry):
 
     for (route, value), meta in exact.items():
         if route in registry.retired:
-            # A retired route's hit needs the classifier's corroboration step, which no
-            # SQL below performs. No agent carries one today; refuse rather than render
-            # a signature the classifier would decline.
+            # A retired route identifies nothing: the classifier skips it and the validator
+            # refuses a value under one. Reaching here means the catalog got past both.
             sys.exit(f"render_match: {route} is retired and still carries {value!r}; "
                      f"a retired route is not rendered")
         mode = registry.match[route]
         if mode == "exact":
             add(meta, kind_of[route], "exact", value)
-            # A scoped name (`@openai/codex`) contains a '/', and the directory name the
-            # bridge captures never can -- the classifier's lookup cannot meet it either.
-            # Skipped so the fragment carries no signature nothing can satisfy.
-            if route in npm_routes and "/" not in str(value):
-                for kind in tool_dir_kinds:
-                    add(meta, kind, "tool-dir", value)
-        elif mode == "tool-dir":
+        elif mode == "tool-dir" and route in bridged:
             add(meta, kind_of[route], "tool-dir", value)
         elif mode == "exact-normalised":
             add(meta, kind_of[route], "image", image_regex(value))

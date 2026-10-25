@@ -104,7 +104,7 @@ def validate_registry(reg):
     legal_platform = platforms | set(groups)
     modes = {"exact", "prefix", "exact-normalised", "home-dir", "home-prefix", "tool-dir"}
     required = {"platform", "kind", "match"}
-    optional = {"value_pattern", "retired", "values_from"}
+    optional = {"value_pattern", "retired", "values_from", "live"}
     for name, r in (reg.get("routes") or {}).items():
         # Lowercase, digits and underscores: the names every reader of the registry can parse.
         if not re.fullmatch(r"[a-z][a-z0-9_]*", str(name)):
@@ -132,6 +132,13 @@ def validate_registry(reg):
         if unknown:
             errors.append(f"routes.yaml: {name} has unknown field(s) {sorted(unknown)}. "
                           f"This file carries no field that nothing reads -- see its header")
+        # FLAGS ARE BOOLEANS, because they are read by truth. `live: "false"` is a non-empty
+        # string, so it would mark presence-only findings `running`; `retired: "false"` would
+        # retire a working route, which then identifies nothing.
+        for flag in ("live", "retired"):
+            if flag in r and not isinstance(r[flag], bool):
+                errors.append(f"routes.yaml: {name}.{flag} must be true or false, not "
+                              f"{r[flag]!r}")
         if r.get("platform") not in legal_platform:
             errors.append(f"routes.yaml: {name} declares platform {r.get('platform')!r}; "
                           f"expected one of {sorted(legal_platform)}")
@@ -217,6 +224,11 @@ def route_value_errors(aid, agent, reg):
         if reg["routes"][route].get("retired"):
             errors.append(f"{aid}: {route} is retired and identifies nothing, so it may "
                           f"carry no values")
+        if reg["routes"][route]["match"] in ("exact", "tool-dir") and isinstance(values, list):
+            for v in values:
+                if str(v).endswith("*"):
+                    errors.append(f"{aid}: {route} {v!r} ends in `*`, which is not a pattern: "
+                                  f"this route matches exactly")
     return errors
 
 

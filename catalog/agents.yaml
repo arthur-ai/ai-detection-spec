@@ -57,11 +57,11 @@
 # one -- 18789 is OpenClaw's gateway -- and it cannot be, for a reason the code already
 # encoded in two places before anyone said it out loud:
 #
-#   * bin/classify refuses a port unless the process holding it NAMES the agent
-#     (`if route == "ports" and not _corroborates(...)`). That guard is right: it is what
-#     stops 8080-held-by-java reading as llama.cpp. But it means the port only ever fires
-#     when something else has ALREADY identified the agent, so it adds no identifying
-#     power -- it is a second opinion from the same witness.
+#   * bin/classify refused a port unless the process holding it NAMED the agent (a
+#     `_corroborates` guard, gone now that a retired route carries no values). That guard
+#     was right: it stopped 8080-held-by-java reading as llama.cpp. But it meant the port
+#     only ever fired when something else had ALREADY identified the agent, so it added no
+#     identifying power -- a second opinion from the same witness.
 #   * validate_catalog.py exempts ports from the duplicate-identifier check, because
 #     "8080 is legitimately shared". A value that two agents may both claim is not an
 #     identifier; that exemption was the admission.

@@ -108,6 +108,22 @@ class Registry:
                 continue
             self.kind_routes.setdefault(r["kind"], []).append(name)
 
+        # KINDS WHOSE ROW SAYS THE AGENT IS RUNNING, not only installed. Declared per route
+        # with `live: true` in catalog/routes.yaml; a finding with one of these kinds in its
+        # evidence is marked `running`. Every other route reports presence.
+        self.live_kinds = frozenset(r["kind"] for r in self.routes.values() if r.get("live"))
+
+    def bridged(self):
+        """The routes a pipx or uv tool directory can name: the `tool-dir` routes, and
+        nothing else. The directory is named for a PyPI distribution.
+
+        It also used to try every npm route, "for agents that ship both". None does, and
+        the only row that ever exercised it was a synthetic control naming a uv directory
+        `openclaw`, which PyPI does not carry. Computed here once; bin/classify,
+        tools/agent_status.py and osquery/tools/render_match.py each computed it before,
+        and three copies is the shape of the `ext` bug."""
+        return [r for r, m in self.match.items() if m == "tool-dir"]
+
     def expand(self, platform):
         """A route's platform to the concrete platforms it covers ('posix' -> both)."""
         return self.groups.get(platform, [platform])
@@ -206,6 +222,11 @@ def build_index(catalog, registry):
             return _base
 
         for route, mode in registry.match.items():
+            # A RETIRED ROUTE IDENTIFIES NOTHING, and tools/validate_catalog.py refuses a
+            # value under one. Skipped here as well, so a catalog from elsewhere that
+            # carries one cannot make it fire.
+            if route in registry.retired:
+                continue
             # `values_from` lets a route index another's values -- see Registry. Absent,
             # a route reads its own key, which is every route but one.
             src = registry.values_from.get(route, route)
@@ -218,15 +239,11 @@ def build_index(catalog, registry):
                 # never appear on an aliased route.
                 meta = meta_for(src, value)
                 if mode in ("exact", "tool-dir"):
-                    # A trailing `*` is a prefix, e.g. @modelcontextprotocol/*. No agent
-                    # uses one today; the form is kept because removing it would silently
-                    # turn a future scoped signature into a literal name with a star.
-                    if str(value).endswith("*"):
-                        prefix.append((str(value)[:-1], route, meta))
-                    else:
-                        # str() because `ports` values are integers in YAML and a row's
-                        # id is always text.
-                        exact[(route, str(value))] = meta
+                    # EXACT MEANS EXACT. A trailing `*` used to turn a value into a prefix
+                    # here, which no agent used, the rendered SQL refused, and a spec would
+                    # have had to define as a fourth mode hiding inside the first.
+                    # tools/validate_catalog.py now refuses one.
+                    exact[(route, str(value))] = meta
                 elif mode == "prefix":
                     prefix.append((str(value), route, meta))
                 elif mode == "exact-normalised":
@@ -289,13 +306,6 @@ def image_repos(tags):
     return [image_repo(t) for t in tags.split(",") if t.strip()]
 
 
-def _corroborates(agent, row):
-    """Does the process holding this port look like the agent that claims it?"""
-    haystack = f"{row.get('loc', '')} {row.get('extra', '')}".lower()
-    needles = {agent["id"].replace("-", ""), agent["name"].lower().replace(" ", "")}
-    return any(n and n in haystack.replace("-", "").replace(" ", "") for n in needles)
-
-
 # WHICH ROW KINDS CAN SATISFY WHICH ROUTES IS NOW DECLARED, NOT LISTED HERE.
 #
 # This used to be a hand-written dict, and it is the single most expensive list in this
@@ -347,10 +357,6 @@ TOOL_DIR = re.compile(
 # anything. So the row built specifically to stop a wedged daemon reading as an empty
 # machine would have been swallowed by the classifier one hop after surviving the scan.
 GAP_KIND = "scan"
-# KINDS WHOSE ROW SAYS THE AGENT IS RUNNING, not only installed: a process, and a container
-# (docker_containers lists running ones only). A finding with one of these in its evidence
-# is marked `running`. Every other route reports presence.
-LIVE_KINDS = frozenset({"proc", "container"})
 # `perms` ENDS WITH AT MOST ONE PROVENANCE TOKEN, after the permissions and the `<all_urls>`
 # flag: `unreferenced` (on disk, never loaded) or `sideloaded:<sha256>` (registered, not from
 # the Web Store). osquery/queries/browser.sql appends it; neither is a permission, so a consumer listing
@@ -406,7 +412,7 @@ def kind_rank(routes):
     return rank
 
 
-def primary(rows, rank, superseded=None):
+def primary(rows, rank, superseded=None, live=None):
     """The index of the row that speaks for a finding: its version, its path, its address.
 
     ONE ANSWER FOR EVERY CONSUMER. A finding is one agent proved by several rows, and a
@@ -431,11 +437,14 @@ def primary(rows, rank, superseded=None):
     Ties keep evidence order, so one payload always gives one answer.
     """
     flags = list(superseded) if superseded is not None else [False] * len(rows)
+    # `live` is the registry's live kinds; absent, this repo's own registry's, as
+    # classify() defaults its catalog and routes.
+    live = Registry(load_routes()).live_kinds if live is None else live
 
     def key(i):
         row = rows[i]
         kind = row.get("kind")
-        return (kind in LIVE_KINDS,
+        return (kind in live,
                 split_perms(row.get("perms"))[1] == "unreferenced",
                 kind not in VERSION_KINDS,
                 bool(flags[i]),
@@ -444,10 +453,10 @@ def primary(rows, rank, superseded=None):
     return min(range(len(rows)), key=key)
 
 
-def describe(rows, rank, superseded=None):
+def describe(rows, rank, superseded=None, live=None):
     """`primary`, plus that row's `version` and `path` where its kind carries one. Omitted
     rather than emitted empty: an empty version reads as a known blank, not as none."""
-    i = primary(rows, rank, superseded)
+    i = primary(rows, rank, superseded, live)
     row = rows[i]
     out = {"primary": i}
     if row.get("kind") in VERSION_KINDS and row.get("ver"):
@@ -517,22 +526,10 @@ def classify(rows, catalog, routes=None):
         if tool and kind in {registry.routes[r]["kind"]
                              for r, m in registry.match.items() if m == "tool-dir"}:
             name = tool.group(1)
-            # The routes a tool directory can legitimately name: the tool-dir routes
-            # themselves, plus the package routes that share their match mode. A pipx or
-            # uv directory holds a PyPI distribution, and the same name is meaningful as
-            # an npm package for agents that ship both.
-            bridged = [r for r, m in registry.match.items() if m == "tool-dir"]
-            bridged += [r for r, m in registry.match.items()
-                        if m == "exact" and registry.routes[r]["kind"] == "npm"]
-            for route in bridged:
+            for route in registry.bridged():
                 if (route, name) in exact:
                     hit = exact[(route, name)]
                     break
-            if hit is None:
-                for pre, proute, meta in prefix:
-                    if proute in bridged and name.startswith(pre):
-                        hit = meta
-                        break
 
         # Before the generic loop, because the identifier has to be normalised first and
         # there may be several of them in the one field.
@@ -549,16 +546,7 @@ def classify(rows, catalog, routes=None):
 
         for route in [] if hit else kind_routes.get(kind, []):
             if (route, ident) in exact:
-                candidate = exact[(route, ident)]
-                # A port number alone is not a signature. 8080 is held by half the
-                # web servers ever written, and claiming llama.cpp for every one of
-                # them is a confident wrong finding on a large share of machines.
-                # Require the owning process to corroborate: `ollama` on 11434 is a
-                # finding, an unknown process on 11434 is a question for the
-                # collector, not an identification.
-                if route in registry.retired and not _corroborates(candidate, row):
-                    continue
-                hit = candidate
+                hit = exact[(route, ident)]
                 break
             for pre, proute, meta in prefix:
                 if proute == route and ident.startswith(pre):
@@ -932,6 +920,7 @@ def _run(state, started):
     catalog = load_catalog(args.catalog)
     routes = load_routes(args.routes)
     rank = kind_rank(routes)
+    live_kinds = Registry(routes).live_kinds
     findings, unmatched, gaps, scans, absences = classify(rows, catalog, routes)
     # ONE clock reading for the whole report. time.time() used to be called three times
     # per scan row inside a comprehension, so two rows in one payload could straddle a
@@ -967,9 +956,9 @@ def _run(state, started):
                  "classification": hits[0][0]["classification"],
                  "evidence": [r for _, r in hits],
                  **describe([r for _, r in hits], rank,
-                            [bool(m.get("superseded")) for m, _ in hits]),
+                            [bool(m.get("superseded")) for m, _ in hits], live_kinds),
                  **({"running": True}
-                    if any(r.get("kind") in LIVE_KINDS for _, r in hits) else {}),
+                    if any(r.get("kind") in live_kinds for _, r in hits) else {}),
                  **({"superseded": [r.get("id") for m, r in hits if m.get("superseded")],
                      "only_superseded": all(m.get("superseded") for m, _ in hits)}
                     if any(m.get("superseded") for m, _ in hits) else {})}
@@ -1073,7 +1062,7 @@ def _run(state, started):
               "No AI agents found in the parts that could be read.")
     for aid, hits in sorted(findings.items()):
         meta = hits[0][0]
-        live = "  running" if any(r.get("kind") in LIVE_KINDS for _, r in hits) else ""
+        live = "  running" if any(r.get("kind") in live_kinds for _, r in hits) else ""
         print(f"\n{meta['name']}  [{meta['classification']}]{live}")
         for hit, row in hits:
             detail = row.get("loc") or row.get("id")

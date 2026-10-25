@@ -27,7 +27,7 @@
 #            here can see it.
 #   version: what a row's `ver` column MEANS. Not a route field: the query that emits a
 #            kind fixes it, so bin/classify declares it per kind (VERSION_KINDS, beside
-#            PATH_KINDS and LIVE_KINDS) and a custom registry cannot get it wrong.
+#            PATH_KINDS) and a custom registry cannot get it wrong.
 #            `osquery` below is present because osquery/tools/build.py checks every
 #            binding against the query frontmatter.
 #
@@ -46,6 +46,9 @@
 #   value_pattern optional regex every catalog value on this route must fullmatch
 #   retired       optional. The route no longer identifies anything, but rows of its
 #                 kind are still collected and MUST stay registered -- see `ports`
+#   live          optional. Rows of this route say the agent is RUNNING, not only
+#                 installed; bin/classify marks a finding with one `running`. Every other
+#                 route reports presence
 #   values_from   optional. Index ANOTHER route's catalog values instead of a key of this
 #                 route's own name. For a route that matches the same identifiers through
 #                 a different row kind -- `container_images` reads `images:`, because a
@@ -110,6 +113,7 @@ routes:
     # and a running app needs no second signature.
     platform: darwin
     kind: proc
+    live: true
     match: exact
     osquery: {table: processes, min_osquery: 5.10.0}
     values_from: bundle_ids
@@ -125,6 +129,7 @@ routes:
     # in one. osquery/queries/running.sql extracts the package name and never ships the cmdline.
     platform: posix
     kind: proc
+    live: true
     match: exact
     osquery: {table: processes, min_osquery: 5.10.0}
     values_from: npm
@@ -220,6 +225,7 @@ routes:
     # and the two routes cannot disagree about what a repository name is.
     platform: posix
     kind: container
+    live: true
     match: exact-normalised
     osquery: {table: docker_containers, min_osquery: 5.10.0}
     # Reads `images:` off each agent rather than a list of its own. See bin/classify's
@@ -279,6 +285,7 @@ routes:
     # follows.
     platform: posix
     kind: proc
+    live: true
     match: home-prefix
     osquery: {table: processes, min_osquery: 5.10.0}
   model_stores:

@@ -115,13 +115,6 @@ def replay(paths, catalog):
                     if mode == "exact":
                         if str(ident) in listed:
                             credit(route, ident)
-                        else:
-                            # A trailing `*` is a prefix form; credit the value as
-                            # written, because that is what the catalog carries and what
-                            # record() looks up.
-                            for value in listed:
-                                if value.endswith("*") and str(ident).startswith(value[:-1]):
-                                    credit(route, value, exact_value=False)
                     elif mode == "exact-normalised":
                         for repo in classify_mod.image_repos(ident):
                             if repo in listed:
@@ -149,10 +142,7 @@ def replay(paths, catalog):
                         or classify_mod.TOOL_DIR.match(loc))
                 if tool:
                     name = tool.group(1)
-                    bridged = [r for r, m in REGISTRY.match.items() if m == "tool-dir"]
-                    bridged += [r for r, m in REGISTRY.match.items()
-                                if m == "exact" and REGISTRY.routes[r]["kind"] == "npm"]
-                    for route in bridged:
+                    for route in REGISTRY.bridged():
                         if name in [str(v) for v in agent.get(route, [])]:
                             credit(route, name)
     return values, routes, seen_ver
@@ -205,7 +195,7 @@ def record(artifact, scenario_dir, os_version="", arch="", platform="", run_id="
         for route in ALL_ROUTES:
             for value in agent.get(route, []):
                 value = str(value)
-                if route in ROUTE_LEVEL_ONLY or value.endswith("*"):
+                if route in ROUTE_LEVEL_ONLY:
                     proven = (route, value) in values[aid]
                 else:
                     key = classify_mod.image_repo(value) if route == "images" else value
