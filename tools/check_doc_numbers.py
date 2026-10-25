@@ -27,7 +27,7 @@ import sys
 import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-DOCS = ["README.md", "CLAUDE.md", "osquery/CLAUDE.md", "CONTRIBUTING.md",
+DOCS = ["README.md", "osquery/README.md", "CLAUDE.md", "osquery/CLAUDE.md", "CONTRIBUTING.md",
         "docs/signature-lifecycle-v2.md", "osquery/queries/COST.md", "SPEC.md"]
 EXEMPT = "<!--fixed-number-->"
 
@@ -186,15 +186,19 @@ def main():
     # though it still were. Other documents may name a removed entry, because explaining the
     # removal is their job; the front page's job is to describe what the catalog has.
     cat = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
-    readme = (ROOT / "README.md")
-    if readme.exists():
+    # Both front pages: the repository's, and the osquery binding's, where the usage is.
+    for name in ("README.md", "osquery/README.md"):
+        readme = ROOT / name
+        if not readme.exists():
+            bad.append(f"{name}: missing, so nothing checks what it names")
+            continue
         text = readme.read_text()
         for r in cat.get("removed", []) or []:
             for n, line in enumerate(text.splitlines(), 1):
                 if EXEMPT in line:
                     continue
                 if re.search(rf"[`\"]{re.escape(r['id'])}[`\"]", line):
-                    bad.append(f"README.md:{n}: names `{r['id']}`, which was removed from the "
+                    bad.append(f"{name}:{n}: names `{r['id']}`, which was removed from the "
                                f"catalog ({r['what_it_is']}). A reader takes it as detected. "
                                f"Use a live agent, or mark the line {EXEMPT}.")
 

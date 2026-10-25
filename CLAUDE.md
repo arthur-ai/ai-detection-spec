@@ -1,9 +1,18 @@
 # Working in this repo
 
-This repo holds a catalog of AI agents, the matcher that applies it (`bin/classify`), and
-`osquery/`, the first **binding**: the queries and scripts that collect evidence on an endpoint.
-The binding's own rules are in [`osquery/CLAUDE.md`](osquery/CLAUDE.md). Deployment glue for a
-particular MDM belongs to whoever wraps these artifacts, not here.
+This repo holds the **Open Agent Detection Format** (`SPEC.md`, `schema/`, `conformance/`), its
+reference catalog and matcher (`catalog/`, `bin/classify`), and `osquery/`, the format's first
+**binding**: the queries and scripts that collect evidence on an endpoint. The binding's own
+rules are in [`osquery/CLAUDE.md`](osquery/CLAUDE.md). Deployment glue for a particular MDM
+belongs to whoever wraps these artifacts, not here.
+
+**The format is normative, and it may not depend on this repo.** `SPEC.md`, `schema/` and
+`conformance/` name no implementation path, and `test/test_conformance.py` fails if one does. A
+change to what matching means is one change in four places that move together: the section of
+`SPEC.md`, the schema, the vectors, and both matchers (`bin/classify` and the rendered SQL).
+The vectors are the contract; when a matcher and a vector disagree, the vector is right until
+`SPEC.md` says otherwise. The match modes and the scan outcomes are declared in the schemas, and
+the code and CI read them there.
 
 **The catalog and the matcher never read `osquery/`.** `bin/classify`, `catalog/` and the tools
 that maintain them work on evidence rows from any binding. The binding reads them, the scenario

@@ -373,7 +373,7 @@ _rel = root / "release.yml"
 # silently skipping is the bug recorded above, and both of these are checked in.
 _claimants = [(root.parent.parent / ".claude" / "skills" / "release" / "SKILL.md",
                "the release skill"),
-              (root.parent.parent / "README.md", "README.md")]
+              (root.parent.parent / "osquery" / "README.md", "osquery/README.md")]
 if _rel.exists():
     _run = ""
     for _job in (yaml.safe_load(_rel.read_text()) or {}).get("jobs", {}).values():
