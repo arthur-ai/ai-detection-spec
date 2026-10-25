@@ -296,7 +296,7 @@ run_vm() {
   gcloud compute instances create "$vm" --zone "$GCE_ZONE" ${PROJECT_FLAG[@]+"${PROJECT_FLAG[@]}"} \
       --machine-type "$GCE_MACHINE" --image-family "$imgfam" --image-project "$proj" \
       --metadata enable-oslogin=TRUE --boot-disk-size 20GB \
-      --labels purpose=osquery-ai-discovery ${GCE_CREATE_FLAGS:-} --quiet >/dev/null 2>"$out/create.err" \
+      --labels purpose=ai-detection-spec ${GCE_CREATE_FLAGS:-} --quiet >/dev/null 2>"$out/create.err" \
     || { echo "FAIL: could not create $vm"; sed 's/^/    /' "$out/create.err"; cleanup; return 1; }
 
   # OS Login takes a few seconds to accept a key after boot, and the guest agent longer

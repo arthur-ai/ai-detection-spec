@@ -240,7 +240,7 @@ trap 'exit 143' TERM
 if [ -z "${EC2_SECURITY_GROUP:-}" ]; then
   OWN_SG="$(aws ec2 create-security-group --vpc-id "$VPC" --group-name "run-ec2-$$-$(date +%s)" \
     --description "test/run-ec2.sh: no inbound rule, default egress; deleted with the run" \
-    --tag-specifications 'ResourceType=security-group,Tags=[{Key=purpose,Value=osquery-ai-discovery}]' \
+    --tag-specifications 'ResourceType=security-group,Tags=[{Key=purpose,Value=ai-detection-spec}]' \
     --query GroupId --output text)" \
     || { echo "run-ec2: could not create a security group in $VPC" >&2; exit 1; }
   EC2_SECURITY_GROUP="$OWN_SG"
@@ -414,7 +414,7 @@ run_vm() {
     --user-data "file://$USERDATA"
     --metadata-options HttpTokens=required,HttpEndpoint=enabled
     --block-device-mappings "DeviceName=$root,Ebs={VolumeSize=20,VolumeType=gp3,DeleteOnTermination=true}"
-    --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$vm},{Key=purpose,Value=osquery-ai-discovery}]")
+    --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$vm},{Key=purpose,Value=ai-detection-spec}]")
   [ -z "${EC2_INSTANCE_PROFILE:-}" ] || args+=(--iam-instance-profile "Name=$EC2_INSTANCE_PROFILE")
   [ -z "${EC2_SUBNET:-}" ] || args+=(--subnet-id "$EC2_SUBNET")
   [ -z "${EC2_SECURITY_GROUP:-}" ] || args+=(--security-group-ids "$EC2_SECURITY_GROUP")
