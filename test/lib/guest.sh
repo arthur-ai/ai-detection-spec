@@ -113,6 +113,11 @@ need_node() {
     echo "--- node ${have:-unknown} is below the $min this scenario needs; upgrading"
   fi
   need_brew || return 1
+  # FRESH METADATA FIRST. The runner images cache Homebrew's formula list, and on 2026-10-25
+  # it still named node 26.8.1 while Homebrew served 26.12.1, so `brew install node` installed
+  # the very version that had failed. The same staleness 13-desktop-apps-more refreshes for Dia.
+  # Only on this path, which only an upgrade reaches.
+  brew update >/dev/null 2>&1 || echo "WARN: brew update failed; node metadata may be stale"
   # Tolerant, because the VERIFICATION BELOW IS THE GATE, not these three. `brew install`
   # on an already-current formula and `brew link` on an already-linked one both exit
   # non-zero for reasons that are not failures, and a `set -e` caller would take the exit
