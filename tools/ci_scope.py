@@ -99,7 +99,8 @@ CATALOG = "catalog/agents.yaml"
 INERT = frozenset({
     "osquery/test/check_names_line.py", "osquery/test/docker_states.sh",
     "osquery/test/lib/fake_docker.py", "osquery/test/lint.sh", "test/lib/fake_amplitude.py",
-    "test/lib/vm.sh", "test/lint.sh", "test/run-ec2.sh",
+    "test/lib/vm.sh", "test/lint.sh", "test/run-ec2.sh", "test/test_conformance.py",
+    "schema/catalog.schema.json", "schema/evidence.schema.json",
     "test/run-gce.sh", "test/run.sh", "test/test_ci_scope.py", "test/test_matcher.py",
     # test/run-linux.sh is NOT here: scenarios.yml's container job runs it. See HARNESS.
     "test/test_telemetry.py", "osquery/tools/bundle.py", "tools/check_doc_numbers.py",

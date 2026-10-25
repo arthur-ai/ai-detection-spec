@@ -157,7 +157,11 @@ def image_regex(repo):
     """
     hub = r"(?:(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)/)?"
     lib = "" if "/" in repo else r"(?:library/)?"
-    return r"(?:^|,)" + hub + lib + re.escape(repo) + r"(?::[^/,]*)?(?:,|$)"
+    # WHITESPACE AROUND EACH TAG, because image_repo() trims it (SPEC.md 6.4.3). Without it a
+    # repository after ", " matched in the classifier and not here -- the conformance
+    # vectors found that, which nothing comparing the two on real rows had.
+    return (r"(?:^|,)\s*" + hub + lib + re.escape(repo)
+            + r"(?::[^/,]*)?\s*(?:,|$)")
 
 
 def signatures(classify, catalog, registry):

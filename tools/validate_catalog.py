@@ -289,6 +289,13 @@ def overlap_errors(agents, reg):
             if r.get("retired"):
                 continue
             for v in agent.get(r.get("values_from", name), []) or []:
+                if r["match"] == "tool-dir":
+                    # A tool-dir value matches the DIRECTORIES pipx and uv name after it, so
+                    # it is compared as those paths: another agent's `~/.local/share/uv/`
+                    # would otherwise claim its rows unseen (SPEC.md 4.4, rule 6).
+                    for d in (f"~/.local/pipx/venvs/{v}", f"~/.local/share/uv/tools/{v}"):
+                        entries.append((r["kind"], "home-dir", agent.get("id"), name, d))
+                    continue
                 entries.append((r["kind"], r["match"], agent.get("id"), name, str(v)))
     errors = []
     for kind, mode, aid, route, p in entries:

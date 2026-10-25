@@ -930,6 +930,11 @@ def _run(state, started):
     rank = kind_rank(routes)
     live_kinds = Registry(routes).live_kinds
     findings, unmatched, gaps, scans, absences = classify(rows, catalog, routes)
+    # DROPPED IS COUNTED AND SAID, not only sent in telemetry. A row whose kind no route
+    # declares can never match, and a kind missing from a catalog is how every
+    # browser-extension row once vanished without a trace (SPEC.md 6.1).
+    dropped = (len(rows) - sum(len(h) for h in findings.values()) - len(unmatched)
+               - len(gaps) - len(scans) - len(absences))
     # ONE clock reading for the whole report. time.time() used to be called three times
     # per scan row inside a comprehension, so two rows in one payload could straddle a
     # second boundary and date themselves differently from the same scan.
@@ -977,6 +982,7 @@ def _run(state, started):
             # wrong claim -- 686 rows on the reference Mac. A missing key makes a
             # consumer ask for it instead of believing it.
             **({"unmatched": unmatched} if args.show_unmatched else {}),
+            **({"dropped": dropped} if dropped else {}),
             # `gaps` is not subject to that argument and is never hidden behind a flag.
             # It is not a computed absence but a positive report that a branch could not
             # look, and a consumer that treats findings as complete while a gap is open
@@ -1097,6 +1103,9 @@ def _run(state, started):
         print(f"\nUnmatched ({len(unmatched)} rows no signature claimed):")
         for row in unmatched:
             print(f"    {row['kind']:7} {row.get('id','')}")
+    if dropped:
+        print(f"\nDropped: {dropped} row(s) of a kind no route declares. They cannot match "
+              f"anything; the catalog does not register their kind.")
 
     # Exit 0 either way. Finding nothing is a valid answer, not an error.
 

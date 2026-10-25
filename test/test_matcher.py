@@ -1390,6 +1390,9 @@ check("an exact value equal to another agent's on a different route of the same 
 check("...and distinct exact values on those routes pass",
       _oe([{"id": "a", "bundle_ids": ["com.example.agent"]},
            {"id": "b", "npm": ["example-agent"]}], _reg) == [])
+check("a path that claims another agent's pipx or uv directory is refused",
+      bool(_oe([{"id": "a", "binaries": ["~/.local/share/uv/"]},
+                {"id": "b", "pypi": ["agent-chat"]}], _reg)))
 _lse = _vc.live_superseded_errors
 check("a superseded value a run still observes is refused: it is current",
       bool(_lse("a", {"superseded": [{"route": "npm", "value": "x"}]},

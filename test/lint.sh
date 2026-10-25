@@ -127,6 +127,8 @@ python3 "$HERE/../tools/validate_catalog.py" || fail=1
 python3 "$HERE/../test/test_matcher.py" >/dev/null || { echo "FAIL: matcher tests"; fail=1; }
 python3 "$HERE/../test/test_telemetry.py" >/dev/null || { echo "FAIL: telemetry tests"; fail=1; }
 python3 "$HERE/../test/test_ci_scope.py" >/dev/null || { echo "FAIL: ci scope tests"; fail=1; }
+# The format's vectors and schemas. SKIPs without jsonschema; CI requires it.
+python3 "$HERE/../test/test_conformance.py" >/dev/null || { echo "FAIL: conformance"; fail=1; }
 python3 "$HERE/../tools/check_workflows.py" || fail=1
 # docs/agents.md is generated from the catalog and its coverage, exactly as osquery/dist/ is
 # generated from osquery/queries/. Gated here so a contributor sees it locally in seconds rather

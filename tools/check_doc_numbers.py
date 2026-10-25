@@ -28,7 +28,7 @@ import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DOCS = ["README.md", "CLAUDE.md", "osquery/CLAUDE.md", "CONTRIBUTING.md",
-        "docs/signature-lifecycle-v2.md", "osquery/queries/COST.md"]
+        "docs/signature-lifecycle-v2.md", "osquery/queries/COST.md", "SPEC.md"]
 EXEMPT = "<!--fixed-number-->"
 
 
