@@ -150,8 +150,9 @@ routes:
     platform: posix
     kind: ext
     match: exact
-    # Chrome Web Store ids, each read off a Web Store install. A store that re-signs, such
-    # as Edge Add-ons, issues a different id, and that id is not a chrome-extension purl.
+    # Chrome Web Store ids. A store that re-signs, such as Edge Add-ons, issues another id,
+    # which is not a chrome-extension purl; test/test_export.py holds each value to a
+    # scenario that downloads it from the Web Store's update endpoint.
     purl: chrome-extension
     osquery: {table: chrome_extensions, min_osquery: 5.10.0}
     # 32 characters from a-p: a base16 encoding of the first half of a SHA-256 over the

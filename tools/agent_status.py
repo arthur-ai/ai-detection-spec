@@ -50,6 +50,8 @@ _spec.loader.exec_module(classify_mod)
 # guard at all -- so the guard could not be tested, because a test had nowhere to put a
 # fixture that record() would accept as a scenario. test/test_matcher.py repoints this.
 SCENARIOS = ROOT / "test" / "scenarios"
+sys.path.insert(0, str(ROOT / "tools"))
+import observations as _observations  # noqa: E402
 
 ROUTES = classify_mod.load_routes()
 REGISTRY = classify_mod.Registry(ROUTES)
@@ -459,28 +461,8 @@ def ci_platforms():
 
 
 def observations(scenarios=None):
-    """Every recorded observation, keyed (agent, route, value), each carrying its
-    scenario and that scenario's platform. collect() counts coverage from these and
-    tools/export.py publishes them as proof, so those two cannot read observed.json
-    differently. tools/validate_catalog.py reads it for itself, because it must report a
-    broken routes.yaml that importing this module would crash on. `archived` holds the
-    observations of superseded values.
-
-    The scenario is the directory, as validate_catalog keys it, not the file's own field.
-    The platform comes from the scenario's expected.json when the record has none: the
-    macOS runners record without `--platform`, and the scenario declares it anyway."""
-    scenarios = SCENARIOS if scenarios is None else scenarios
-    platform_of = {p.parent.name: json.loads(p.read_text()).get("platform")
-                   for p in sorted(scenarios.glob("*/expected.json"))}
-    live, archived = collections.defaultdict(list), collections.defaultdict(list)
-    for path in sorted(scenarios.glob("*/observed.json")):
-        doc, scenario = json.loads(path.read_text()), path.parent.name
-        for bucket, key in ((live, "identifiers"), (archived, "archived")):
-            for rec in doc.get(key, []):
-                full = {**rec, "scenario": scenario,
-                        "platform": rec.get("platform") or platform_of.get(scenario)}
-                bucket[(rec["agent"], rec["route"], str(rec["value"]))].append(full)
-    return live, archived
+    """tools/observations.py's reader, over this module's SCENARIOS, which tests repoint."""
+    return _observations.read(SCENARIOS if scenarios is None else scenarios)
 
 
 def collect():

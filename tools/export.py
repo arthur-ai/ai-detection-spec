@@ -33,8 +33,9 @@ sys.path.insert(0, str(ROOT / "tools"))
 import agent_status  # noqa: E402
 from validate_catalog import BINDINGS  # noqa: E402
 
-# THE BINDING A PROOF NAMES. Every scenario collects through osquery today, and observed.json
-# records no binding. A second binding's harness must record its name, and _proof() read it.
+# THE BINDING A PROOF NAMES. observed.json records no binding, because every harness that
+# writes it runs osquery. That holds only while osquery is the one binding, so document()
+# refuses a second until observations record theirs, rather than label its proof osquery.
 BINDING = "osquery"
 
 
@@ -117,6 +118,9 @@ def document(catalog, routes, live, archived, commit=None, shas=None):
     if catalog.get("not_agents"):
         raise ValueError(f"export: not_agents {sorted(catalog['not_agents'])} has no place in "
                          f"the format; its entries would be published as agents")
+    if set(BINDINGS) != {BINDING}:
+        raise ValueError(f"export: bindings {sorted(BINDINGS)}, and observed.json does not "
+                         f"say which produced a record. Record it before publishing proof")
     out_routes = {}
     for name, r in routes["routes"].items():
         route = {k: r[k] for k in ("kind", "match", "platform")}

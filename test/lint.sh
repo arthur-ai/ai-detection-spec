@@ -96,7 +96,8 @@ python3 - "$HERE/.." <<'BOUNDARY' || fail=1
 import ast, pathlib, sys
 root = pathlib.Path(sys.argv[1])
 NEUTRAL = ["bin/classify", "tools/validate_catalog.py", "tools/agent_status.py",
-           "tools/merge_observations.py", "tools/successor_candidates.py", "tools/export.py"]
+           "tools/merge_observations.py", "tools/successor_candidates.py", "tools/export.py",
+           "tools/observations.py"]
 bad = []
 for name in NEUTRAL:
     tree = ast.parse((root / name).read_text())

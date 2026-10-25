@@ -97,6 +97,16 @@ def main():
                                                         if "purl" in routes_yaml[i["route"]] else "")]
     check("an identifier carries a purl exactly when its route declares one, of that type",
           not wrong, str(wrong[:3]))
+    # A chrome-extension purl is a Chrome Web Store coordinate. A store that re-signs, such
+    # as Edge Add-ons, issues another id for the same extension, so each value must be one a
+    # scenario downloads from the Web Store's own update endpoint.
+    setups = [p.read_text() for p in sorted((ROOT / "test" / "scenarios").glob("*/setup.sh"))]
+    cws = "clients2.google.com/service/update2/crx"
+    not_cws = [i["value"] for a in doc["agents"] for i in a["identifiers"]
+               if routes_yaml[i["route"]].get("purl") == "chrome-extension"
+               and not any(cws in s and i["value"] in s for s in setups)]
+    check("every chrome-extension value is downloaded from the Chrome Web Store by a scenario",
+          not not_cws, str(not_cws[:3]))
     pending, _ = export.agent_status._pending(export.agent_status.collect(), ["--pending-ok"])
     unproved = {(a["id"], i["route"], i["value"]) for a in doc["agents"] for i in a["identifiers"]
                 if i["status"] == "current" and not i.get("proof")}
@@ -143,6 +153,13 @@ def main():
           by["new"].get("purl") == "pkg:npm/new")
     check("a catalog with not_agents is refused, not published as agents",
           raises(export.document, {**cat, "not_agents": ["Coding agent"]}, routes, live, archived))
+    _bindings = export.BINDINGS
+    export.BINDINGS = {**_bindings, "other": {"table"}}
+    try:
+        check("a second binding stops the export until observations name theirs",
+              raises(export.document, cat, routes, live, archived))
+    finally:
+        export.BINDINGS = _bindings
 
     print("\nwhat the matcher matches, the document names")
     classify = export.agent_status.classify_mod
