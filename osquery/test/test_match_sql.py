@@ -225,7 +225,7 @@ def main():
     # --- the shipped fragment is the one under test, not a fresh render -------------
     shipped = shipped_fragment()
     check("dist/signatures.sql carries the fragment this test renders", frag in shipped,
-          "run tools/render_match.py")
+          "run osquery/tools/render_match.py")
 
     # --- the wrapper under test is the wrapper the runner builds ----------------------
     # bin/discover prints its `ev` CTE through printf, with `$` escaped, so the text is

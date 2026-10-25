@@ -282,6 +282,9 @@ $ sudo osquery/bin/discover --deep | bin/classify     # base inventory plus cont
 
 ## Running it on a fleet
 
+Paths in this section are the release layout: `bin/`, `dist/` and `catalog/` side by side. In a
+clone, `discover`, `container-scan` and `dist/` are under `osquery/`.
+
 **Do not put these queries on a synchronous reporting path** — they can hang rather than fail.
 Schedule `bin/discover --write` and read the file; the `status.txt` beside it is one line whose
 vocabulary is a contract, so a consumer can always tell a clean machine from a branch that

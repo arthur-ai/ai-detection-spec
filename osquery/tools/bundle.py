@@ -108,7 +108,7 @@ case "$(uname -s)" in
   @UNAME@) ;;
   *) echo "ai-discovery: this bundle carries dist/discovery-@PLATFORM@.sql and runs on" \
           "@UNAME@ only. Use the @OTHER@ bundle -- every release attaches one per" \
-          "platform -- or build it with tools/bundle.py --platform @OTHER@." >&2
+          "platform -- or build it with osquery/tools/bundle.py --platform @OTHER@." >&2
      exit 1 ;;
 esac
 
@@ -179,7 +179,7 @@ def payload_tar(root, platform, driver=None):
     with tarfile.open(fileobj=raw, mode="w") as tar:
         for arcname, path in sorted(members):
             if not path.is_file():
-                sys.exit(f"bundle: {path} is missing. Run tools/build.py, or check "
+                sys.exit(f"bundle: {path} is missing. Run osquery/tools/build.py, or check "
                          f"--platform: the composed artifacts are per platform and a "
                          f"rename will not come back by rebuilding the same ref.")
             info = tar.gettarinfo(str(path), arcname=arcname)
@@ -383,7 +383,7 @@ def main():
     if args.check:
         path = pathlib.Path(args.check)
         if not path.exists():
-            sys.exit(f"bundle: {path} does not exist. Run tools/bundle.py --platform "
+            sys.exit(f"bundle: {path} does not exist. Run osquery/tools/bundle.py --platform "
                      f"{args.platform}.")
         if not matches(path.read_text(), ROOT, args.platform, args.driver, args.label):
             sys.exit(f"bundle: {path} does not carry this tree. Rebuild it.")

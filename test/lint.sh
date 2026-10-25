@@ -146,8 +146,18 @@ LAZY = {"importlib": {"machinery", "util", "resources", "metadata", "abc"},
 bad = []
 # RECURSIVE, because the files this was written for moved a level down into osquery/tools/;
 # a `*/*.py` glob kept passing after they had left its reach.
-paths = [p for p in sorted(pathlib.Path(sys.argv[1]).glob("**/*.py"))
-         if ".git" not in p.parts]
+# TRACKED FILES ONLY. A recursive glob from the root also reads .claude/worktrees -- other
+# checkouts of this repo -- and any venv or test artifact, so another worktree's bug could
+# turn this lint red. Without git (a tarball), fall back to the glob minus hidden trees.
+import subprocess
+_root = pathlib.Path(sys.argv[1])
+_ls = subprocess.run(["git", "-C", str(_root), "ls-files", "*.py"],
+                     capture_output=True, text=True)
+if _ls.returncode == 0:
+    paths = [_root / p for p in sorted(_ls.stdout.split())]
+else:
+    paths = [p for p in sorted(_root.glob("**/*.py"))
+             if not any(part.startswith(".") for part in p.relative_to(_root).parts)]
 if not any(p.name == "render_match.py" for p in paths):
     print("FAIL: lazy imports: render_match.py is not among the files scanned, so the "
           "glob has lost the tree it was written for")

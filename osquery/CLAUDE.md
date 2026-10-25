@@ -144,11 +144,8 @@ unknown-file check can tell "rendered" from "nothing generates it".
   a package that has conffiles: `cowsay` has none, so its record vanishes on remove and a broken
   query looks correct.
 - **Bash 3.2** is what a managed Mac has. No `timeout(1)`, and an empty array under `set -u` is an
-  unbound-variable error: append with `+=` and expand as `${a[@]+"${a[@]}"}`. A heredoc inside
-  `$( )` is scanned for the closing paren *without* respecting its quoted delimiter, so one
-  apostrophe in a comment swallows the `)` and the file stops parsing — and `python3 - <<'X'`
-  reads the **script** from stdin, so a pipe into it is discarded in silence. `bash -n` catches
-  the first. Nothing catches the second: every assertion simply reads as failed.
+  unbound-variable error: append with `+=` and expand as `${a[@]+"${a[@]}"}`. The two heredoc
+  traps that apply to every shell script here are in the root `CLAUDE.md`.
 - **A parse failure prints `[\n\n]` too.** Fed malformed JSON, `osqueryi` writes
   `Error: malformed JSON` to stderr, exits 1, and **still prints five bytes of valid, empty
   JSON on stdout**. The kill decides, not the child — and neither does the parser. Every

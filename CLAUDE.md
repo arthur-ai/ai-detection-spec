@@ -233,6 +233,14 @@ MDM, and was wrong twice over: Chrome had never been launched, so no profile exi
 and the browser's install flow was never needed in the first place. A scenario that fails where nobody can act on it trains people to ignore a red
 suite.
 
+## Two shell traps, everywhere in this repo
+
+- **A heredoc inside `$( )` is scanned for the closing paren *without* respecting its quoted
+  delimiter**, so one apostrophe in a comment swallows the `)` and the file stops parsing.
+  `bash -n` catches it.
+- **`python3 - <<'X'` reads the *script* from stdin**, so a pipe into it is discarded in
+  silence. Nothing catches it: every assertion simply reads as failed. Pass data as arguments.
+
 ## Register
 
 State the measurement, then the consequence. Where a number is unverified, say so rather than

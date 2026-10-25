@@ -3,6 +3,9 @@
 Everything here is about deploying the queries across machines you manage. The README
 covers running them on one machine; this page is the part that only matters at fleet scale.
 
+Paths on this page are the release layout: `bin/`, `dist/` and `catalog/` side by side, as a
+deployment unpacks them. In a clone, `discover`, `container-scan` and `dist/` are under `osquery/`.
+
 ## Do not put these queries on a synchronous reporting path
 
 `docker_images` has no timeout of its own, and against a daemon that accepts the connection

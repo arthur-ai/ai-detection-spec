@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Static checks on the osquery binding: the queries, the composed and rendered artifacts, the
-# two endpoint scripts and the bundle. No VM and no osquery needed. test/lint.sh runs this file,
-# so every caller of that one still runs it.
+# two endpoint scripts and the bundle. No VM and no osquery needed. The repository's
+# test/lint.sh runs this file, so every caller of that one still runs it.
 #
 # EVERY GLOB HERE MUST MATCH SOMETHING. These checks moved from test/lint.sh when osquery/ was
 # split out, and a path left behind by a move does not fail a glob: it matches nothing, the loop
@@ -528,7 +528,7 @@ PY
 python3 - "$HERE/docker_states.sh" "$REPO/catalog/agents.yaml" <<'SUITE' || fail=1
 import re, sys
 text = open(sys.argv[1]).read()
-m = re.search(r"== \['([a-z0-9,'-]+)'\] else 0", text)
+m = re.search(r"sorted\(f\['id'\] for f in d\['findings'\]\) == \['([a-z0-9,'-]+)'\] else 0", text)
 if not m:
     print("FAIL: docker_states.sh no longer names the findings its image fixture expects in "
           "the `== ['...'] else 0` form, so nothing checks those ids against the catalog")
@@ -546,11 +546,11 @@ SUITE
 
 # bin/classify SPLITS THE PROVENANCE TOKENS browser.sql appends to `perms` back off, by name.
 # A token added to the query and not to PERMS_PROVENANCE would read as a permission.
-python3 - "$OSQ/queries/browser.sql" "$REPO/bin/classify" <<'PERMS' || fail=1
-import importlib.machinery, importlib.util, re, sys
-loader = importlib.machinery.SourceFileLoader("classify", sys.argv[2])
-spec = importlib.util.spec_from_loader("classify", loader)
-cl = importlib.util.module_from_spec(spec); loader.exec_module(cl)
+python3 - "$OSQ/queries/browser.sql" "$OSQ/tools" <<'PERMS' || fail=1
+import re, sys
+sys.path.insert(0, sys.argv[2])
+import render_match
+cl = render_match.load_classify()
 emitted = set(re.findall(r"THEN ',([^'<][^']*)'", open(sys.argv[1]).read()))
 if not emitted or emitted != set(cl.PERMS_PROVENANCE):
     print(f"FAIL: browser.sql appends {sorted(emitted)} to perms, and bin/classify's "

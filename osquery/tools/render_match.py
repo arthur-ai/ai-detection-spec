@@ -376,7 +376,7 @@ def main():
         stale = check()
         if stale:
             sys.exit(f"rendered match SQL is stale: {', '.join(stale)}. "
-                     f"Run tools/render_match.py.")
+                     f"Run {pathlib.Path(__file__).resolve().relative_to(REPO)}.")
         print(f"rendered match SQL is up to date ({len(OUTPUTS)} files)")
         return
     write()

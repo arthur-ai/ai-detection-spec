@@ -43,6 +43,7 @@ import sys
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent  # osquery/, the binding
 REPO = ROOT.parent  # the catalog and bin/classify sit at the repository root
+SELF = pathlib.Path(__file__).resolve().relative_to(REPO)  # what to type, from the root
 QUERIES, DIST = ROOT / "queries", ROOT / "dist"
 COLUMNS = ["kind", "id", "ver", "loc", "extra", "perms"]
 
@@ -325,7 +326,7 @@ def main():
                   for p in sorted(DIST.glob("*")) if p.name not in known
                   and p not in retired]
         if stale:
-            sys.exit(f"dist/ is stale: {', '.join(stale)}. Run tools/build.py.")
+            sys.exit(f"dist/ is stale: {', '.join(stale)}. Run {SELF}.")
         print(f"dist/ is up to date ({len(targets)} artifacts, "
               f"platforms: {', '.join(sorted(inline))}; "
               f"{len(rendered)} rendered files are tools/render_match.py --check's)")
@@ -350,7 +351,7 @@ def main():
         import yaml  # noqa: F401  -- the probe, not a use
     except ImportError:
         print("  NOT regenerated: dist/signatures.sql and the other rendered files need "
-              "PyYAML. Run tools/render_match.py where it is installed.")
+              "PyYAML. Run osquery/tools/render_match.py where it is installed.")
         return
     render_match.write()
 

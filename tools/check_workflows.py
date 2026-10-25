@@ -81,7 +81,7 @@ for path in sorted(root.glob("*.y*ml")):
     steps = [s for job in doc.get("jobs", {}).values() for s in job.get("steps", [])]
     for step in steps:
         run = step.get("run", "") or ""
-        for match in re.finditer(rf"(?<![\w./-])({owned}/[\w./-]*)", run):
+        for match in re.finditer(rf"(?<![\w./-])({owned}/[\w./*-]*)", run):
             ref = match.group(1).rstrip(".,;:\"'")
             # A DIRECTORY OR A GLOB MUST EXIST TOO. Both used to be skipped, so a diff over
             # `dist/` kept passing once dist/ had moved: a pathspec that matches nothing has
