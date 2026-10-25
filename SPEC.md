@@ -13,7 +13,8 @@ Existing agent standards describe agents that someone chose to register, such as
 Cards, the Open Agentic Schema Framework and the CSA Agent Registry. Others describe what an
 agent is built from, such as CycloneDX AI-BOM and SPDX AI. Neither kind answers the question an
 endpoint inventory asks: is this software on this machine? The agents an inventory most needs to
-find are the ones nobody registered.
+find are the ones nobody registered. `MAPPING.md`, which is informative, places this format beside
+those standards.
 
 This format answers that question from evidence the machine already holds: an application's
 bundle identifier, a package in a package manager's database, a browser extension's id, a

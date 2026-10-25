@@ -32,6 +32,7 @@ use them.
 | [**`SPEC.md`**](SPEC.md) | **The Open Agent Detection Format.** What a catalog of agents contains, what evidence a collector reports, and how the two are matched, so that tools written by different people give the same answer about the same machine |
 | [`schema/`](schema) | JSON Schemas for a catalog and for the evidence a collector reports |
 | [`conformance/`](conformance) | The test vectors a matcher must pass |
+| [`MAPPING.md`](MAPPING.md) | Where the format fits beside CycloneDX, package-url, OVAL, OASF and SPDX, and what does not fit |
 | [`catalog/`](catalog) | This repository's catalog: **42 agents and 113 identifiers**, each one seen on a real install in CI |
 | [`bin/classify`](bin/classify) | The reference matcher. It reads collected evidence and names the agents it proves |
 | [`osquery/`](osquery) | **The first binding:** osquery queries for macOS and Linux, and the scripts that run them on a machine. [Start here](osquery/README.md) to find the agents on yours |

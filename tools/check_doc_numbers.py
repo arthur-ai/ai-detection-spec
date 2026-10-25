@@ -28,7 +28,7 @@ import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DOCS = ["README.md", "osquery/README.md", "CLAUDE.md", "osquery/CLAUDE.md", "CONTRIBUTING.md",
-        "docs/signature-lifecycle-v2.md", "osquery/queries/COST.md", "SPEC.md"]
+        "docs/signature-lifecycle-v2.md", "osquery/queries/COST.md", "SPEC.md", "MAPPING.md"]
 EXEMPT = "<!--fixed-number-->"
 
 
@@ -154,9 +154,23 @@ def dangling_doc_links():
     return bad
 
 
+def mapping_routes():
+    """MAPPING.md's route table names exactly the routes catalog/routes.yaml declares. A route
+    added to the registry with no row there is a route whose mapping nobody wrote down."""
+    path = ROOT / "MAPPING.md"
+    if not path.exists():
+        return ["MAPPING.md: missing, so nothing maps the routes"]
+    rows = set(re.findall(r"^\| `([a-z_]+)` \|", path.read_text(), re.M))
+    routes = set(yaml.safe_load((ROOT / "catalog" / "routes.yaml").read_text())["routes"])
+    bad = [f"MAPPING.md: route `{r}` has no row in the route table" for r in sorted(routes - rows)]
+    bad += [f"MAPPING.md: the route table names `{r}`, which is not a route"
+            for r in sorted(rows - routes)]
+    return bad
+
+
 def main():
     facts = truth()
-    bad = telemetry_fields() + dangling_doc_links()
+    bad = telemetry_fields() + dangling_doc_links() + mapping_routes()
     for name in DOCS:
         path = ROOT / name
         # A MISSING FILE IS A FAILURE, not a skip: queries/COST.md moved under osquery/ and a
