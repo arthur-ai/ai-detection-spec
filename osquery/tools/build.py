@@ -249,10 +249,16 @@ def osquery_bindings(text):
     skipped: a skipped route is one this check silently stopped covering."""
     section = text.split("\nroutes:", 1)[-1]
     out, unreadable = [], []
-    blocks = list(re.finditer(r"^  ([a-z_]+):\s*$", section, re.M))
+    # EVERY KEY AT ROUTE DEPTH STARTS A ROUTE, whatever its name. A pattern of the names it
+    # expected let `vscode_extensions2:` fall into the route above it, unparsed and
+    # unchecked. A name this cannot read is reported, never stepped over.
+    blocks = list(re.finditer(r"^  ([^\s#][^:\n]*):", section, re.M))
     for i, m in enumerate(blocks):
         end = blocks[i + 1].start() if i + 1 < len(blocks) else len(section)
         block = section[m.end():end]
+        if not re.fullmatch(r"[a-z][a-z0-9_]*", m.group(1)):
+            unreadable.append(m.group(1))
+            continue
         plat = re.search(r"^    platform:\s*(\S+)", block, re.M)
         kind = re.search(r"^    kind:\s*(\S+)", block, re.M)
         bind = re.search(r"^    osquery:\s*\{table:\s*(\w+),\s*min_osquery:\s*([\d.]+)\}\s*$",

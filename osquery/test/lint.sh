@@ -575,6 +575,12 @@ cases = {
         "{table: homebrew_packages, min_osquery: 5.10.0}", "{table: brew_packages, min_osquery: 5.10.0}"),
     "a binding it cannot read": text.replace(
         "    osquery: {table: apps, min_osquery: 5.10.0}", "    osquery: {table: apps}"),
+    # A route whose name has a digit is parsed and checked, not folded into the one above.
+    "an unfed route named with a digit": text.rstrip("\n") + "\n  npm2:\n    platform: posix\n"
+        "    kind: npm\n    match: exact\n    osquery: {table: no_such_table, min_osquery: 5.10.0}\n",
+    "a route name the parser cannot read": text.rstrip("\n") + "\n  Bad-Route:\n"
+        "    platform: posix\n    kind: npm\n    match: exact\n"
+        "    osquery: {table: npm_packages, min_osquery: 5.10.0}\n",
 }
 bad = [name for name, mutated in cases.items()
        if mutated == text or not build.binding_errors(qs, mutated)]

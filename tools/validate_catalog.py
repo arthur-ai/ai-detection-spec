@@ -106,6 +106,10 @@ def validate_registry(reg):
     required = {"platform", "kind", "match"}
     optional = {"value_pattern", "retired", "values_from"}
     for name, r in (reg.get("routes") or {}).items():
+        # Lowercase, digits and underscores: the names every reader of the registry can parse.
+        if not re.fullmatch(r"[a-z][a-z0-9_]*", str(name)):
+            errors.append(f"routes.yaml: route name {name!r} must be lowercase letters, digits "
+                          f"and underscores, starting with a letter")
         if not isinstance(r, dict):
             errors.append(f"routes.yaml: {name} must be a mapping")
             continue
@@ -233,6 +237,12 @@ def claims(mode, p, q):
         return q.rstrip("/") == p.rstrip("/") or q.startswith(p if p.endswith("/") else p + "/")
     if mode == "home-dir":
         return q.rstrip("/") == p.rstrip("/")
+    # AN EXACT VALUE CLAIMS THE EQUAL ONE, on whichever route of the kind holds it. The
+    # duplicate check is keyed by route, so one agent's bundle id equal to another's npm name
+    # passed it -- and running_apps and running_npm, which borrow those values, would both
+    # claim the one `proc` row that names it.
+    if mode in ("exact", "exact-normalised"):
+        return q == p
     return False
 
 

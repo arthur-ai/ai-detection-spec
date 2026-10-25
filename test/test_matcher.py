@@ -1384,6 +1384,12 @@ check("a launchd prefix covering another agent's label is refused",
                 {"id": "b", "launchd_prefixes": ["ai.openclaw."]}], _reg)))
 check("...and within one agent it is allowed",
       _oe([{"id": "a", "launchd_prefixes": ["ai.", "ai.openclaw."]}], _reg) == [])
+check("an exact value equal to another agent's on a different route of the same kind is refused",
+      bool(_oe([{"id": "a", "bundle_ids": ["com.example.agent"]},
+                {"id": "b", "npm": ["com.example.agent"]}], _reg)))
+check("...and distinct exact values on those routes pass",
+      _oe([{"id": "a", "bundle_ids": ["com.example.agent"]},
+           {"id": "b", "npm": ["example-agent"]}], _reg) == [])
 _lse = _vc.live_superseded_errors
 check("a superseded value a run still observes is refused: it is current",
       bool(_lse("a", {"superseded": [{"route": "npm", "value": "x"}]},
