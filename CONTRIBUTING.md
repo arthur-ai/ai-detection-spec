@@ -421,6 +421,25 @@ Assertions are on **counts and specific identifiers**, never "did it parse". Eve
 in this project so far produced plausible-looking output with the wrong number of rows, and not
 one of them errored.
 
+## Adding a binding
+
+osquery is the first way to collect evidence for this catalog, not the only one. A second
+binding (an EDR's inventory, an MDM's app list, another agent) needs four things, and
+[`SPEC.md`](SPEC.md) section 8 is the normative version:
+
+- **Its fields on each route it feeds**, under its own key beside `osquery:` in
+  `catalog/routes.yaml`, declared in `tools/validate_catalog.py`'s `BINDINGS`. Then a check, like
+  the one `osquery/tools/build.py` runs, that each of those fields is true of its source.
+- **Rows that validate against [`schema/evidence.schema.json`](schema/evidence.schema.json)**,
+  of the kinds of the routes it feeds.
+- **A scan marker for every source it could not read**, so an unread source never looks like a
+  clean machine.
+- **Its own proofs.** An identifier proved by osquery is not proved for another binding, which
+  may read a different source; its scenarios have to produce the identifier through its rows.
+
+A matcher written elsewhere is held to [`conformance/vectors.json`](conformance/vectors.json),
+as `bin/classify` and the rendered SQL are.
+
 ## Versioning
 
 Releases are [semantic](https://semver.org), with repository-specific meaning:
@@ -428,6 +447,10 @@ Releases are [semantic](https://semver.org), with repository-specific meaning:
 - **major** — the six-column contract or the catalog schema changes. Consumers must change code.
 - **minor** — a new query, or new signatures. Additive and safe to take.
 - **patch** — a corrected identifier, a fixed glob, documentation.
+
+The format has a version of its own, at the top of [`SPEC.md`](SPEC.md) and in a catalog
+document's `format`, and it changes only when the normative text does. A release that moves it
+says so in its notes. `catalog/` is the authoring form and carries no `format`.
 
 Releases are cut whenever signatures change, at most weekly. What changed in each one is on the
 [Releases page](https://github.com/arthur-ai/ai-detection-spec/releases) rather than in a file

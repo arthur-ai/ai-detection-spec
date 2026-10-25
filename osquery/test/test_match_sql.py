@@ -297,6 +297,35 @@ def main():
         else:
             check(f"{kind} {ident!r} is {agent}", found == {agent}, f"got {sorted(found)}")
 
+    # --- the format's conformance vectors, through the SQL ---------------------------
+    # The same vectors the repository's conformance test holds bin/classify to (SPEC.md 9),
+    # each with its own catalog. The SQL answers which agent a row belongs to, which is what
+    # a vector's `matches` states; unmatched, dropped and the scan groups are the
+    # classifier's to report, and are held there.
+    sys.path.insert(0, str(ROOT.parent / "test"))
+    import conformance
+    for v in conformance.load():
+        vcat, vroutes = conformance.authoring_form(v["catalog"], classify.CATALOG_VERSION)
+        if v["expect"].get("error"):
+            # A refusal names the mode. Any other exception is a crash, not a refusal.
+            try:
+                R.signatures(classify, vcat, classify.Registry(vroutes))
+                check(f"vector {v['id']}: the renderer refuses it", False, "it rendered")
+            except (ValueError, SystemExit) as exc:
+                check(f"vector {v['id']}: the renderer refuses it", "unknown match mode" in
+                      str(exc), str(exc))
+            continue
+        vreg = classify.Registry(vroutes)
+        vhits = sql_hits(osqi, v["rows"], R.fragment(R.signatures(classify, vcat, vreg),
+                                                     classify.TOOL_DIR.pattern))
+        got = []
+        for r in v["rows"]:
+            key = (str(r.get("kind")), str(r.get("id", "")), str(r.get("loc", "")))
+            agents = sorted({a for a, *rest in vhits if tuple(rest) == key})
+            got.append(agents[0] if len(agents) == 1 else (agents or None))
+        check(f"vector {v['id']} ({v['section']}): the SQL gives each row its expected agent",
+              got == v["expect"]["matches"], f"got {got}")
+
     # --- the image regex, rule for rule, in osquery's regex engine ------------------
     table = [
         ("paulgauthier/aider", "paulgauthier/aider:latest", True),

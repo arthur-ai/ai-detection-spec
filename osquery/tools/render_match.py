@@ -157,7 +157,19 @@ def image_regex(repo):
     """
     hub = r"(?:(?:docker\.io|index\.docker\.io|registry-1\.docker\.io)/)?"
     lib = "" if "/" in repo else r"(?:library/)?"
-    return r"(?:^|,)" + hub + lib + re.escape(repo) + r"(?::[^/,]*)?(?:,|$)"
+    # WHITESPACE AROUND EACH TAG, because image_repo() trims it (SPEC.md 6.4.3). Without it a
+    # repository after ", " matched in the classifier and not here -- the conformance
+    # vectors found that, which nothing comparing the two on real rows had. No `@` in the
+    # tag: `repo:v1@sha256:...` is a digest reference, which the classifier does not match.
+    return (r"(?:^|,)\s*" + hub + lib + re.escape(repo)
+            + r"(?::[^/,@]*)?\s*(?:,|$)")
+
+
+def ecma(pattern):
+    """A classifier pattern in osquery's dialect. The classifier ends its patterns with `\\Z`,
+    which ECMAScript lacks; its `$` already means the end of the input. Only an unescaped
+    `\\Z` is an anchor."""
+    return re.sub(r"(?<!\\)((?:\\\\)*)\\Z", r"\1$", pattern)
 
 
 def signatures(classify, catalog, registry):
@@ -199,7 +211,7 @@ def signatures(classify, catalog, registry):
                      f"{registry.match[route]} route, which is not rendered")
         add(meta, kind_of[route], "prefix", pre)
     for pattern, route, meta in glob:
-        add(meta, kind_of[route], "path", pattern.pattern)
+        add(meta, kind_of[route], "path", ecma(pattern.pattern))
 
     rows = sorted(rows)
     if len(rows) > MAX_SIGS:
@@ -241,7 +253,7 @@ def fragment(sigs, tool_dir):
                         sql_literal(kind), sql_literal(mode), sql_literal(value),
                         str(sup)]) + ")"
         for agent, name, cls, kind, mode, value, sup in sigs)
-    td = sql_literal(tool_dir)
+    td = sql_literal(ecma(tool_dir))
     return (
         ", sig(agent, name, classification, kind, mode, value, superseded) AS (VALUES\n"
         f"  {values}),\n"

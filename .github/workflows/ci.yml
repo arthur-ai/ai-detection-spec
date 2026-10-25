@@ -107,8 +107,14 @@ jobs:
       # with a message if pyyaml is absent.
       - name: Install pyyaml
         run: pip install --quiet pyyaml
+      # The format's schemas are validated, not only published. Pinned, because a schema
+      # library that changed what it accepts would move the result with no commit here.
+      - name: Install jsonschema
+        run: pip install --quiet jsonschema==4.26.0
       - name: Static checks
         run: test/lint.sh
+      - name: The format's conformance vectors, schemas required
+        run: python3 test/test_conformance.py --require-jsonschema
 
   query-runs:
     needs: scope
@@ -312,7 +318,11 @@ jobs:
                        "native-messaging", "packages", "ports", "runtime", "vscode"):
               if need not in tokens:
                   sys.exit(f"::error::status has no token for branch {need!r}: {rest!r}")
-          ok = ("ok", "absent", "error")
+          # THE VOCABULARY IS THE FORMAT'S, read from its schema rather than listed here,
+          # so a consumer validating against schema/evidence.schema.json and this check
+          # cannot disagree about what an outcome may be (SPEC.md 5.2).
+          sys.path.insert(0, "test")
+          from conformance import scan_outcome_ok
           for k, v in tokens.items():
               if k == "rows":
                   continue
@@ -323,7 +333,7 @@ jobs:
               # `unreadable:<runtime>` was added under that rule with its producer:
               # osquery/bin/container-scan emits it when there is no Docker socket but another
               # runtime is on disk, and osquery/test/docker_states.sh produces the row.
-              if not (v in ok or v.startswith(("unhealthy:", "timeout:", "unreadable:"))):
+              if not scan_outcome_ok(v):
                   sys.exit(f"::error::unknown outcome {v!r} for {k}. Consumers branch on this "
                            f"vocabulary and it must not grow silently")
           print(f"status: {first}, {len(tokens) - 1} branches, all outcomes in vocabulary")
@@ -615,7 +625,7 @@ jobs:
           sudo -n osquery/bin/discover --cache /tmp/inv.json > /tmp/read.json
           cat /tmp/inv.status
           python3 - <<'EOF'
-          import json, sys
+          import json, re, sys
           inv = json.load(open("/tmp/inv.json"))
           read = json.load(open("/tmp/read.json"))
           if read != inv:
@@ -644,10 +654,14 @@ jobs:
           for name, r in scans.items():
               if not str(r["ver"]).isdigit() or int(r["ver"]) <= 0:
                   sys.exit(f"::error::branch {name} has no usable timestamp: {r['ver']!r}")
-          ok = ("ok", "absent", "error")
+          # THE VOCABULARY IS THE FORMAT'S, read from its schema rather than listed here,
+          # so a consumer validating against schema/evidence.schema.json and this check
+          # cannot disagree about what an outcome may be (SPEC.md 5.2).
+          sys.path.insert(0, "test")
+          from conformance import scan_outcome_ok
           for name, r in scans.items():
               v = r["extra"]
-              if not (v in ok or v.startswith(("unhealthy:", "timeout:", "unreadable:"))):
+              if not scan_outcome_ok(v):
                   sys.exit(f"::error::unknown outcome {v!r} for {name}. Consumers branch "
                            f"on this vocabulary and it must not grow silently")
           print(f"{len(inv)} rows, {len(scans)} branches, every outcome in vocabulary")

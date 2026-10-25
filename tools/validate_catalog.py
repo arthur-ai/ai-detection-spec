@@ -84,7 +84,7 @@ def archived_match(aid, rec):
 BINDINGS = {"osquery": {"table", "min_osquery"}}
 
 
-def validate_registry(reg):
+def validate_registry(reg, modes=None):
     """The registry validates itself, because everything else now trusts it.
 
     A route with no `kind` is the failure worth naming: bin/classify inverts kind ->
@@ -102,7 +102,7 @@ def validate_registry(reg):
             errors.append(f"routes.yaml: platform_groups {name!r} names {sorted(unknown)}, "
                           f"which are not platforms")
     legal_platform = platforms | set(groups)
-    modes = {"exact", "prefix", "exact-normalised", "home-dir", "home-prefix", "tool-dir"}
+    modes = load_classify().MATCH_MODES if modes is None else modes
     required = {"platform", "kind", "match"}
     optional = {"value_pattern", "retired", "values_from", "live"}
     for name, r in (reg.get("routes") or {}).items():
@@ -208,6 +208,26 @@ def borrowed_route_errors(aid, agent, reg):
     return errors
 
 
+def classification_names(doc):
+    """The catalog's classification names, from `{name, definition}` entries."""
+    return [c.get("name") if isinstance(c, dict) else c for c in doc.get("classifications") or []]
+
+
+def classification_errors(doc):
+    """Every classification is a name and a definition: a catalog someone else's tool reads
+    has to explain its own words, and a bare name was a comment nothing could check."""
+    errors, seen = [], set()
+    for c in doc.get("classifications") or []:
+        if not isinstance(c, dict) or set(c) != {"name", "definition"} \
+                or not all(isinstance(c[k], str) and c[k].strip() for k in ("name", "definition")):
+            errors.append(f"classification {c!r} must be {{name, definition}}, both non-empty")
+            continue
+        if c["name"] in seen:
+            errors.append(f"classification {c['name']!r} is declared twice")
+        seen.add(c["name"])
+    return errors
+
+
 def route_value_errors(aid, agent, reg):
     """A route's values are a non-empty list of strings, and a retired route holds none.
 
@@ -269,6 +289,13 @@ def overlap_errors(agents, reg):
             if r.get("retired"):
                 continue
             for v in agent.get(r.get("values_from", name), []) or []:
+                if r["match"] == "tool-dir":
+                    # A tool-dir value matches the DIRECTORIES pipx and uv name after it, so
+                    # it is compared as those paths: another agent's `~/.local/share/uv/`
+                    # would otherwise claim its rows unseen (SPEC.md 4.4, rule 6).
+                    for d in (f"~/.local/pipx/venvs/{v}", f"~/.local/share/uv/tools/{v}"):
+                        entries.append((r["kind"], "home-dir", agent.get("id"), name, d))
+                    continue
                 entries.append((r["kind"], r["match"], agent.get("id"), name, str(v)))
     errors = []
     for kind, mode, aid, route, p in entries:
@@ -327,7 +354,7 @@ def main():
     # ("state_dirs", "binaries", "model_stores") tuple this file used to carry -- the
     # same tuple that also sat in bin/classify and tools/agent_status.py.
     PATH_ROUTES = [n for n, r in reg["routes"].items() if r["match"].startswith("home-")]
-    known = set(doc["classifications"])
+    known = set(classification_names(doc))
 
     errors_registry = validate_registry(reg)
     classify = load_classify()
@@ -540,6 +567,7 @@ def main():
 
     errors.extend(top_level_errors(doc))
     errors.extend(version_errors(doc, classify.CATALOG_VERSION))
+    errors.extend(classification_errors(doc))
     errors.extend(overlap_errors(doc["agents"], reg))
 
     if errors:

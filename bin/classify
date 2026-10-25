@@ -26,7 +26,7 @@ DEFAULT_ROUTES = ROOT / "catalog" / "routes.yaml"
 # The catalog schema version this matcher understands. See load_catalog: a NEWER catalog
 # warns and matches what it can, because refusing would turn version skew into
 # "no agents found" -- which is the one error this repo exists to avoid.
-CATALOG_VERSION = 2
+CATALOG_VERSION = 3
 
 
 def _yaml(path):
@@ -79,6 +79,13 @@ class Registry:
         self.groups = {k: list(v) for k, v in routes.get("platform_groups", {}).items()}
         self.routes = routes["routes"]
         self.match = {n: r["match"] for n, r in self.routes.items()}
+        # AN UNKNOWN MODE STOPS HERE, on every route (SPEC.md 6.4.8). Checked per value in
+        # build_index(), it never fired on a route with no values, and any `home-` mode was
+        # read as home-prefix.
+        unknown = [f"{n} declares {m!r}" for n, m in self.match.items() if m not in MATCH_MODES]
+        if unknown:
+            raise ValueError(f"routes.yaml: unknown match mode: {'; '.join(unknown)}. This "
+                             f"matcher implements {', '.join(sorted(MATCH_MODES))}")
         self.retired = {n for n, r in self.routes.items() if r.get("retired")}
         # A route that reads ANOTHER route's catalog values. `container_images` matches the
         # same repository names as `images` and differs only in the row kind it arrives on,
@@ -158,6 +165,13 @@ class Registry:
 HOME_ROOTS = r"(?:/Users/[^/]+/|/home/[^/]+/|/root/)"
 
 
+# THE MATCH MODES. The format declares them in schema/catalog.schema.json; this is a copy,
+# because bin/classify ships without schema/. test/test_conformance.py holds the two equal,
+# tools/validate_catalog.py reads this one, and Registry refuses any other mode.
+MATCH_MODES = frozenset({"exact", "prefix", "exact-normalised", "home-dir", "home-prefix",
+                         "tool-dir"})
+
+
 def home_pattern(value, mode):
     """Compile a `~/`-rooted catalog value into a regex over real paths.
 
@@ -174,12 +188,14 @@ def home_pattern(value, mode):
                    siblings (hermes-acp, muse-bin-<version>) are not claimed: the command
                    itself is always written with them, so the agent is found anyway.
     """
+    # `\Z`, NOT `$`: Python's `$` also matches before a final newline, which neither the
+    # format nor osquery's regex_match does. osquery/tools/render_match.py writes it as `$`.
     body = re.escape(value[2:])                      # strip the leading '~/'
     if mode == "home-dir":
-        return re.compile("^" + HOME_ROOTS + body + "/?$")
+        return re.compile("^" + HOME_ROOTS + body + r"/?\Z")
     # A group rather than a lookahead: osquery/dist/signatures.sql hands this pattern to osquery's
     # regex_match, and a pattern it cannot compile aborts the whole statement.
-    return re.compile("^" + HOME_ROOTS + body + ("" if value.endswith("/") else "(?:/|$)"))
+    return re.compile("^" + HOME_ROOTS + body + ("" if value.endswith("/") else r"(?:/|\Z)"))
 
 
 def build_index(catalog, registry):
@@ -191,8 +207,8 @@ def build_index(catalog, registry):
 
     Which route matches how is now DECLARED, in catalog/routes.yaml, rather than
     written out as four route-name tuples here. A route added there is indexed here
-    without an edit -- and a route this function does not know about is a KeyError at
-    build time instead of rows that quietly match nothing.
+    without an edit -- and a mode this function does not know is refused by Registry,
+    and again here, instead of rows that quietly match nothing.
     """
     exact, prefix, glob = {}, [], []
     for agent in catalog["agents"]:
@@ -252,11 +268,11 @@ def build_index(catalog, registry):
                     # an image name is attacker-choosable in a way a bundle id is not:
                     # anyone can `docker tag` anything.
                     exact[(route, image_repo(value))] = meta
-                elif mode.startswith("home-"):
+                elif mode in ("home-dir", "home-prefix"):
                     glob.append((home_pattern(str(value), mode), route, meta))
                 else:
-                    raise KeyError(f"routes.yaml: {route} declares unknown match "
-                                   f"mode {mode!r}")
+                    raise ValueError(f"routes.yaml: unknown match mode: {route} declares "
+                                     f"{mode!r}")
     return exact, prefix, glob
 
 
@@ -344,7 +360,7 @@ def image_repos(tags):
 # /root resolves the same way. That was one of three hand copies of the same prefix; the
 # other two were this file's path globs and tools/agent_status.py's replay.
 TOOL_DIR = re.compile(
-    "^" + HOME_ROOTS + r"\.local/(?:pipx/venvs|share/uv/tools)/([^/]+)/?$")
+    "^" + HOME_ROOTS + r"\.local/(?:pipx/venvs|share/uv/tools)/([^/]+)/?\Z")
 
 
 
@@ -492,14 +508,15 @@ def classify(rows, catalog, routes=None):
     may pass a pre-loaded `routes` so a tool classifying many payloads does not re-read
     the file. Left optional so the existing two-argument call keeps working.
 
-    Returns `(findings, unmatched, gaps, scans, absences)`. `absences` is the bucket a
-    consumer is most likely to get wrong by leaving out of its row arithmetic: a
-    reconciliation that subtracts only gaps and scans reads those rows as DROPPED.
+    Returns `(findings, unmatched, gaps, scans, absences, dropped)`. `dropped` is returned
+    rather than left to the caller's arithmetic: this loop is the only place that knows a
+    row fell off it, and a reconciliation that forgets `absences` reads them as dropped.
     """
     registry = Registry(routes if routes is not None else load_routes())
     exact, prefix, glob = build_index(catalog, registry)
     kind_routes = registry.kind_routes
-    findings, unmatched, gaps, scans, absences = defaultdict(list), [], [], [], []
+    tool_kinds = {registry.routes[r]["kind"] for r in registry.bridged()}
+    findings, unmatched, gaps, scans, absences, dropped = defaultdict(list), [], [], [], [], []
 
     for row in rows:
         kind, ident, loc = row.get("kind"), row.get("id", ""), row.get("loc", "")
@@ -521,14 +538,15 @@ def classify(rows, catalog, routes=None):
             continue
 
         # A pipx/uv tool directory names its package. Try that before the path globs,
-        # which describe state directories rather than install locations.
-        tool = TOOL_DIR.match(ident) or TOOL_DIR.match(loc)
-        if tool and kind in {registry.routes[r]["kind"]
-                             for r, m in registry.match.items() if m == "tool-dir"}:
-            name = tool.group(1)
-            for route in registry.bridged():
-                if (route, name) in exact:
-                    hit = exact[(route, name)]
+        # which describe state directories rather than install locations. `id` and `loc`
+        # each yield a name (SPEC.md 6.4.6); taking only the first that parsed missed a row
+        # whose `id` named another directory.
+        if kind in tool_kinds:
+            for tool in (TOOL_DIR.match(ident), TOOL_DIR.match(loc)):
+                name = tool and tool.group(1)
+                hit = next((exact[(r, name)] for r in registry.bridged() if (r, name) in exact),
+                           None)
+                if hit:
                     break
 
         # Before the generic loop, because the identifier has to be normalised first and
@@ -564,11 +582,13 @@ def classify(rows, catalog, routes=None):
             findings[hit["id"]].append((hit, row))
         elif kind in kind_routes:
             # UNMATCHED, NOT DROPPED, and the difference is the whole reason the registry
-            # exists. A kind absent from it falls off the end of this loop and is
-            # discarded in silence -- see the note above kind_routes.
+            # exists. A kind absent from it can never match -- see the note above
+            # kind_routes -- and is returned as dropped so that it is counted and said.
             unmatched.append(row)
+        else:
+            dropped.append(row)
 
-    return findings, unmatched, gaps, scans, absences
+    return findings, unmatched, gaps, scans, absences, dropped
 
 
 # --- TELEMETRY -----------------------------------------------------------------------
@@ -921,7 +941,10 @@ def _run(state, started):
     routes = load_routes(args.routes)
     rank = kind_rank(routes)
     live_kinds = Registry(routes).live_kinds
-    findings, unmatched, gaps, scans, absences = classify(rows, catalog, routes)
+    # DROPPED IS COUNTED AND SAID, not only sent in telemetry. A row whose kind no route
+    # declares can never match, and a kind missing from a catalog is how every
+    # browser-extension row once vanished without a trace (SPEC.md 6.1).
+    findings, unmatched, gaps, scans, absences, dropped = classify(rows, catalog, routes)
     # ONE clock reading for the whole report. time.time() used to be called three times
     # per scan row inside a comprehension, so two rows in one payload could straddle a
     # second boundary and date themselves differently from the same scan.
@@ -930,7 +953,7 @@ def _run(state, started):
     stale = [(a, r) for a, r in aged if a > STALE_AFTER]
 
     state["props"].update(_measure(raw, rows, findings, unmatched, gaps, scans, absences,
-                                   aged, stale, catalog, routes, args))
+                                   dropped, aged, stale, catalog, routes, args))
     if state["check"]:
         # Before rendering, and instead of it. This mode answers "what leaves my machine",
         # and mixing the report into that answer would make it harder to read and to pipe.
@@ -969,6 +992,7 @@ def _run(state, started):
             # wrong claim -- 686 rows on the reference Mac. A missing key makes a
             # consumer ask for it instead of believing it.
             **({"unmatched": unmatched} if args.show_unmatched else {}),
+            **({"dropped": len(dropped)} if dropped else {}),
             # `gaps` is not subject to that argument and is never hidden behind a flag.
             # It is not a computed absence but a positive report that a branch could not
             # look, and a consumer that treats findings as complete while a gap is open
@@ -1045,6 +1069,11 @@ def _run(state, started):
     if gaps:
         print("  These are not findings and not an absence of them. That part of the "
               "machine was not read.\n")
+    # Up here with the gaps, for the same reason: it changes what the headline means.
+    if dropped:
+        kinds = ", ".join(sorted({str(r.get("kind")) for r in dropped}))
+        print(f"DROPPED: {len(dropped)} row(s) of a kind no route declares ({kinds}). They "
+              f"cannot match anything; the catalog does not register their kind.\n")
 
     for row in absences:
         # No substituted noun here either: `loc` is the path the branch checked, so it is
@@ -1058,8 +1087,9 @@ def _run(state, started):
         print()
 
     if not findings:
-        print("No AI agents found." if not gaps else
-              "No AI agents found in the parts that could be read.")
+        print("No AI agents found in the parts that could be read." if gaps else
+              "No AI agents found in the rows this catalog can match." if dropped else
+              "No AI agents found.")
     for aid, hits in sorted(findings.items()):
         meta = hits[0][0]
         live = "  running" if any(r.get("kind") in live_kinds for _, r in hits) else ""
@@ -1093,7 +1123,7 @@ def _run(state, started):
     # Exit 0 either way. Finding nothing is a valid answer, not an error.
 
 
-def _measure(raw, rows, findings, unmatched, gaps, scans, absences, aged, stale,
+def _measure(raw, rows, findings, unmatched, gaps, scans, absences, dropped, aged, stale,
              catalog, routes, args):
     """Counts, and nothing but counts. Every value here is a number, a bool, or a word
     from a vocabulary this file declares.
@@ -1140,8 +1170,7 @@ def _measure(raw, rows, findings, unmatched, gaps, scans, absences, aged, stale,
         # unmatched, DROPPED, invisible even under --show-unmatched. That is the bug that
         # hid every browser-extension row for months, and it was found by accident. A
         # non-zero value here on somebody's fleet is the same bug happening again.
-        "dropped_rows": max(0, len(rows) - findings_rows - len(unmatched) - len(gaps)
-                            - len(scans) - len(absences)),
+        "dropped_rows": len(dropped),
         "gap_rows": len(gaps),
         "scan_rows": len(scans),
         # Counted apart from gap_rows for the same reason they are bucketed apart: a fleet

@@ -329,6 +329,16 @@ check("...and it is not folded into an empty finding set either",
       "No AI agents found." not in classify_rows([scan_row("unreadable:podman")]),
       "uncounted containers reported as no agents is the same lie one hop later")
 
+# A DROPPED ROW HEDGES THE HEADLINE, and is said above it. A payload of a kind no route
+# declares -- the `ext` bug -- printed an unhedged "No AI agents found." first and named the
+# drop only at the foot of the report.
+_drop = [{"kind": "zzz", "id": "x", "ver": "", "loc": "", "extra": "", "perms": ""}]
+_dt = classify_rows(_drop)
+check("a dropped row does not read as a clean machine",
+      "No AI agents found." not in _dt and -1 < _dt.find("DROPPED: 1 row(s)")
+      < _dt.find("No AI agents found"), _dt)
+check("...and the JSON counts it", json.loads(classify_rows(_drop, "--json")).get("dropped") == 1)
+
 # --- home roots and anchors: the two halves of one fix -----------------------------
 #
 # There were three hand-written copies of `/Users/[^/]+/` -- this matcher's path globs,
@@ -1390,6 +1400,9 @@ check("an exact value equal to another agent's on a different route of the same 
 check("...and distinct exact values on those routes pass",
       _oe([{"id": "a", "bundle_ids": ["com.example.agent"]},
            {"id": "b", "npm": ["example-agent"]}], _reg) == [])
+check("a path that claims another agent's pipx or uv directory is refused",
+      bool(_oe([{"id": "a", "binaries": ["~/.local/share/uv/"]},
+                {"id": "b", "pypi": ["agent-chat"]}], _reg)))
 _lse = _vc.live_superseded_errors
 check("a superseded value a run still observes is refused: it is current",
       bool(_lse("a", {"superseded": [{"route": "npm", "value": "x"}]},
@@ -1413,6 +1426,14 @@ for _flag in ("live", "retired"):
           any(f".{_flag} must be true or false" in e for e in _vr({"platforms": ["darwin"], "routes": {
               "x": {"platform": "darwin", "kind": "proc", "match": "exact", _flag: "false",
                     "osquery": {"table": "processes", "min_osquery": "5.10.0"}}}})))
+_ce = _vc.classification_errors
+check("a classification is a name AND a definition: a bare name is refused",
+      bool(_ce({"classifications": ["Coding agent"]})))
+check("...and one declared twice",
+      bool(_ce({"classifications": [{"name": "A", "definition": "x"},
+                                     {"name": "A", "definition": "y"}]})))
+check("...and the real catalog's pass", _ce(_yaml3.safe_load(
+      (ROOT / "catalog" / "agents.yaml").read_text())) == [])
 check("a trailing `*` is refused: an exact route matches exactly",
       any("`*`" in e for e in _rve("probe", {"npm": ["@modelcontextprotocol/*"]}, _reg)))
 

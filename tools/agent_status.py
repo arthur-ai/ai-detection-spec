@@ -625,7 +625,8 @@ def collect():
 
     return {"observed_os": sorted(observed_os), "blind_spots": blind, "ci_unrecorded": unrecorded,
             "removed": catalog.get("removed", []),
-            "classifications": catalog["classifications"],
+            "classifications": [c["name"] for c in catalog["classifications"]],
+            "definitions": {c["name"]: c["definition"] for c in catalog["classifications"]},
             "not_agents": list(catalog.get("not_agents", ())),
             "agents": agents, "limits": limits}
 
@@ -830,7 +831,7 @@ def markdown(data):  # noqa: C901
         n = sum(len(by_class[c]) for c in classes)
         out += [f"# {group} ({n})", "", blurb, ""]
         for cls in classes:
-            out += [f"## {cls}", "",
+            out += [f"## {cls}", "", data["definitions"][cls], "",
                     # NO `evidence` COLUMN. It held "real install" for every row and could
                     # hold nothing else once the exception register went -- a column with
                     # one possible value reads as a distinction being drawn when none is.
