@@ -37,7 +37,8 @@ sudo_maybe() {
 
 need_curl() { command -v curl >/dev/null 2>&1 || need_pkgs curl ca-certificates; }
 
-# need_node [min_major]: the macOS helper's contract. Distro streams lag -- Ubuntu 24.04 and
+# need_node [min_major]: a major only, where the macOS helper also takes a full version;
+# the newest release of the major is what this installs. Distro streams lag -- Ubuntu 24.04 and
 # Debian 12 ship 18, Rocky 9's newest module is 22 -- so a minimum the distro cannot meet
 # installs nodejs.org's own build under /usr/local, which as_user's PATH already carries.
 need_node() {

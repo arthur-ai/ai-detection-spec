@@ -15,12 +15,10 @@
 # rows from the app and brew branches -- the two that 50-autonomous asserts.
 set -e
 source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest.sh"
-# 24, BECAUSE openclaw's engines floor moved out from under this scenario once already:
-# 2026.9.3 dropped the Node 22 the GitHub runners ship, and the bare `need_node` this used
-# to call only checked that npm existed. The floor is a major and openclaw's range is not
-# (see test/lib/guest.sh) -- what this buys is that the common case stops failing, not that
-# the range is now enforced here.
-need_node 24
+# 26.12.1, openclaw's own lower arm, because its engines range has moved out from under
+# this scenario twice: 2026.9.3 dropped the runners' Node 22, and 2026.10.6 refused the
+# 26.8.1 they ship now, which a major floor passed. test/lib/guest.sh has both.
+need_node 26.12.1
 npm install -g openclaw@latest --allow-scripts=openclaw \
   || npm install -g openclaw@latest \
   || { echo "FAIL: could not install openclaw from npm" >&2; exit 1; }
