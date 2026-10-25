@@ -7,7 +7,7 @@
       "value": "~/.local/bin/muse",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39682491938"
+      "run": "40165971693"
     },
     {
       "agent": "muse-code",
@@ -15,25 +15,25 @@
       "value": "~/.local/bin/muse",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39682491938"
+      "run": "40165971693"
     },
     {
       "agent": "muse-desktop",
       "route": "bundle_ids",
       "value": "com.meta.endo",
-      "agent_version": "8.0",
+      "agent_version": "9.0",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39682491938"
+      "run": "40165971693"
     },
     {
       "agent": "muse-desktop",
       "route": "bundle_ids",
       "value": "com.meta.endo",
-      "agent_version": "8.0",
+      "agent_version": "9.0",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39682491938"
+      "run": "40165971693"
     }
   ]
 }

@@ -29,55 +29,55 @@
       "agent": "claude-in-chrome",
       "route": "extension_ids",
       "value": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
-      "agent_version": "1.0.101",
+      "agent_version": "1.0.102",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39682491938"
+      "run": "40165971693"
     },
     {
       "agent": "claude-in-chrome",
       "route": "extension_ids",
       "value": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
-      "agent_version": "1.0.101",
+      "agent_version": "1.0.102",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39682491938"
+      "run": "40165971693"
     },
     {
       "agent": "harpa",
       "route": "extension_ids",
       "value": "eanggfilgoajaocelnaflolkadkeghjp",
-      "agent_version": "16.0.0",
+      "agent_version": "16.1.0",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39682491938"
+      "run": "40165971693"
     },
     {
       "agent": "harpa",
       "route": "extension_ids",
       "value": "eanggfilgoajaocelnaflolkadkeghjp",
-      "agent_version": "16.0.0",
+      "agent_version": "16.1.0",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39682491938"
+      "run": "40165971693"
     },
     {
       "agent": "merlin",
       "route": "extension_ids",
       "value": "camppjleccjaphfdbohjdohecfnoikec",
-      "agent_version": "8.3.0",
+      "agent_version": "8.3.1",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39682491938"
+      "run": "40165971693"
     },
     {
       "agent": "merlin",
       "route": "extension_ids",
       "value": "camppjleccjaphfdbohjdohecfnoikec",
-      "agent_version": "8.3.0",
+      "agent_version": "8.3.1",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39682491938"
+      "run": "40165971693"
     },
     {
       "agent": "monica",
@@ -86,7 +86,7 @@
       "agent_version": "9.0.23",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39682491938"
+      "run": "40165971693"
     },
     {
       "agent": "monica",
@@ -95,7 +95,7 @@
       "agent_version": "9.0.23",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39682491938"
+      "run": "40165971693"
     },
     {
       "agent": "sider",
@@ -104,7 +104,7 @@
       "agent_version": "5.35.3",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "39682491938"
+      "run": "40165971693"
     },
     {
       "agent": "sider",
@@ -113,7 +113,7 @@
       "agent_version": "5.35.3",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "39682491938"
+      "run": "40165971693"
     }
   ]
 }
