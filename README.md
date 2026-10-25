@@ -60,7 +60,8 @@ agents overstates what was found on a machine.
 - **To build your own collector or matcher**, implement [`SPEC.md`](SPEC.md), validate against
   [`schema/`](schema), and pass [`conformance/vectors.json`](conformance/vectors.json).
 - **To use only the data**, take `catalog/agents.yaml` and `catalog/routes.yaml`, which every
-  release attaches.
+  release attaches. They are this repository's authoring form, not a format document, so
+  `schema/` does not apply to them.
 
 ## Contributing — genuinely, please do
 

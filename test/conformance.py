@@ -3,18 +3,43 @@
 A vector carries a catalog in the format's own shape (SPEC.md section 4), evidence rows
 (section 5) and the result a conforming matcher must give (section 9). bin/classify reads this
 repository's authoring form instead -- catalog/agents.yaml and catalog/routes.yaml -- so
-authoring_form() converts. result() and compare() state a matcher's answer in the vector's
-terms, so bin/classify and the rendered SQL are held to one expectation rather than two.
+authoring_form() converts. result() runs bin/classify itself and states its answer in the
+vector's terms, so bin/classify and the rendered SQL are held to one expectation rather than
+two.
+
+scan_outcome_ok() is the format's outcome vocabulary, read from the evidence schema. CI's
+vocabulary checks and the osquery lint call it, so no copy of how to read the schema exists.
 """
 import json
+import os
 import pathlib
+import re
+import subprocess
+import sys
+import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 VECTORS = ROOT / "conformance" / "vectors.json"
+EVIDENCE_SCHEMA = ROOT / "schema" / "evidence.schema.json"
+CLASSIFY = ROOT / "bin" / "classify"
+# A member a matcher must ignore (SPEC.md 5.1), carrying each row's index into the output.
+ROW = "conformance_row"
 
 
 def load():
     return json.loads(VECTORS.read_text())["vectors"]
+
+
+def scan_outcomes():
+    """The evidence schema's outcomes: (the fixed words, the patterns)."""
+    anyof = json.loads(EVIDENCE_SCHEMA.read_text())["$defs"]["scan_outcome"]["anyOf"]
+    return (tuple(w for o in anyof for w in o.get("enum", ())),
+            tuple(o["pattern"] for o in anyof if "pattern" in o))
+
+
+def scan_outcome_ok(value):
+    words, patterns = scan_outcomes()
+    return value in words or any(re.fullmatch(p, value) for p in patterns)
 
 
 def authoring_form(doc, catalog_version):
@@ -41,33 +66,50 @@ def authoring_form(doc, catalog_version):
 
 
 def result(classify, vector):
-    """What bin/classify reports for a vector, in the vector's terms."""
+    """What `bin/classify --json` reports for a vector, in the vector's terms, plus `exit`
+    and `stderr`. JSON is YAML, so the authoring form is written as JSON."""
     catalog, routes = authoring_form(vector["catalog"], classify.CATALOG_VERSION)
-    rows = vector["rows"]
-    findings, unmatched, gaps, scans, absences = classify.classify(rows, catalog, routes)
-    index = {id(r): i for i, r in enumerate(rows)}
-    live = classify.Registry(routes).live_kinds
-    matches, out = [None] * len(rows), {}
-    for aid, hits in findings.items():
-        evidence = [index[id(r)] for _, r in hits]
+    rows = [{**r, ROW: str(i)} for i, r in enumerate(vector["rows"])]
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = pathlib.Path(tmp)
+        for name, doc in (("agents.yaml", catalog), ("routes.yaml", routes), ("rows.json", rows)):
+            (tmp / name).write_text(json.dumps(doc))
+        proc = subprocess.run(
+            [sys.executable, str(CLASSIFY), "--json", "--show-unmatched",
+             "--catalog", str(tmp / "agents.yaml"), "--routes", str(tmp / "routes.yaml"),
+             str(tmp / "rows.json")],
+            capture_output=True, text=True, env={**os.environ, "AI_DISCOVERY_TELEMETRY": "0"})
+    got = {"exit": proc.returncode, "stderr": proc.stderr}
+    if proc.returncode:
+        return got
+    out = json.loads(proc.stdout)
+
+    def idx(listed):
+        return sorted(int(r[ROW]) for r in listed)
+
+    matches, findings = [None] * len(rows), {}
+    for f in out["findings"]:
+        evidence = [int(r[ROW]) for r in f["evidence"]]
         for i in evidence:
-            matches[i] = aid
-        f = {"evidence": evidence}
-        if any(r.get("kind") in live for _, r in hits):
-            f["running"] = True
-        if any(m.get("superseded") for m, _ in hits):
-            f["superseded"] = [r.get("id") for m, r in hits if m.get("superseded")]
-            f["only_superseded"] = all(m.get("superseded") for m, _ in hits)
-        out[aid] = f
-    groups = {"ok": sorted(index[id(r)] for r in scans),
-              "absent": sorted(index[id(r)] for r in absences),
-              "gap": sorted(index[id(r)] for r in gaps)}
-    unm = sorted(index[id(r)] for r in unmatched)
-    seen = set(unm) | {i for i, a in enumerate(matches) if a} | {
-        i for g in groups.values() for i in g}
-    return {"matches": matches, "unmatched": unm,
-            "dropped": [i for i in range(len(rows)) if i not in seen],
-            "scans": groups, "findings": out}
+            matches[i] = f["id"]
+        findings[f["id"]] = {"evidence": evidence,
+                             **{k: f[k] for k in ("running", "superseded", "only_superseded")
+                                if k in f}}
+    gap, absent = idx(out.get("gaps", [])), idx(out.get("absences", []))
+    # `scans` reports each `ok` marker as {id, at}, not as the row, in input order.
+    ok = [i for i, r in enumerate(rows) if r["kind"] == "scan" and i not in gap + absent]
+    said = [(s["id"], s["at"]) for s in out.get("scans", [])]
+    if said != [(rows[i]["id"], int(rows[i]["ver"])) for i in ok]:
+        ok = [f"bin/classify reported scans {said}"]
+    unmatched = idx(out.get("unmatched", []))
+    seen = set(unmatched) | set(gap) | set(absent) | set(ok) | {
+        i for i, a in enumerate(matches) if a}
+    dropped = [i for i in range(len(rows)) if i not in seen]
+    if len(dropped) != out.get("dropped", 0):
+        dropped = [f"bin/classify counted {out.get('dropped', 0)} dropped"]
+    got.update(matches=matches, unmatched=unmatched, dropped=dropped,
+               scans={"ok": ok, "absent": absent, "gap": gap}, findings=findings)
+    return got
 
 
 def _finding(f):

@@ -329,6 +329,16 @@ check("...and it is not folded into an empty finding set either",
       "No AI agents found." not in classify_rows([scan_row("unreadable:podman")]),
       "uncounted containers reported as no agents is the same lie one hop later")
 
+# A DROPPED ROW HEDGES THE HEADLINE, and is said above it. A payload of a kind no route
+# declares -- the `ext` bug -- printed an unhedged "No AI agents found." first and named the
+# drop only at the foot of the report.
+_drop = [{"kind": "zzz", "id": "x", "ver": "", "loc": "", "extra": "", "perms": ""}]
+_dt = classify_rows(_drop)
+check("a dropped row does not read as a clean machine",
+      "No AI agents found." not in _dt and -1 < _dt.find("DROPPED: 1 row(s)")
+      < _dt.find("No AI agents found"), _dt)
+check("...and the JSON counts it", json.loads(classify_rows(_drop, "--json")).get("dropped") == 1)
+
 # --- home roots and anchors: the two halves of one fix -----------------------------
 #
 # There were three hand-written copies of `/Users/[^/]+/` -- this matcher's path globs,

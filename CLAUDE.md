@@ -11,8 +11,9 @@ belongs to whoever wraps these artifacts, not here.
 change to what matching means is one change in four places that move together: the section of
 `SPEC.md`, the schema, the vectors, and both matchers (`bin/classify` and the rendered SQL).
 The vectors are the contract; when a matcher and a vector disagree, the vector is right until
-`SPEC.md` says otherwise. The match modes and the scan outcomes are declared in the schemas, and
-the code and CI read them there.
+`SPEC.md` says otherwise. The match modes and the scan outcomes are declared in the schemas. CI
+and the osquery lint read the outcomes there; `bin/classify` ships without `schema/`, so it keeps
+a copy of the modes, and `test/test_conformance.py` holds the copy equal.
 
 **The catalog and the matcher never read `osquery/`.** `bin/classify`, `catalog/` and the tools
 that maintain them work on evidence rows from any binding. The binding reads them, the scenario
@@ -31,12 +32,12 @@ repo has shipped was a wrong answer that looked like a right one:
   check is necessary and **not sufficient**; that state is `wedge` in `osquery/test/lib/fake_docker.py`.
 - `$HOME` unguarded under `set -u` crashed the socket probe, which reported `containers=absent`
   on a Mac with a healthy daemon — a plausible answer manufactured by a crash.
-- A `kind` absent from `KIND_ROUTES` in `bin/classify` is **dropped, not unmatched** — invisible
+- A `kind` no route in `catalog/routes.yaml` declares is **dropped, not unmatched** — invisible
   even under `--show-unmatched`. `ext` sat like that from the beginning; Claude was still
   reported via its native-messaging bridge, so nothing looked wrong.
 
 So: every failure carries a reason. That is what `kind=scan` marker rows are for, and their
-vocabulary — `ok`, `absent`, `unreadable:<runtime>`, `unhealthy:<code>`, `timeout:<n>`,
+vocabulary — `ok`, `absent`, `unreadable:<runtime>`, `unhealthy:<reason>`, `timeout:<n>`,
 `error`, `no-cache` — is a contract, not a log format.
 
 **`unreadable:<runtime>` is the newest term.** `absent` means “no Docker socket at the paths

@@ -298,22 +298,24 @@ def main():
             check(f"{kind} {ident!r} is {agent}", found == {agent}, f"got {sorted(found)}")
 
     # --- the format's conformance vectors, through the SQL ---------------------------
-    # The same vectors test/test_conformance.py holds bin/classify to (SPEC.md 9), each
-    # with its own catalog. The SQL answers which agent a row belongs to, which is what a
-    # vector's `matches` states; unmatched, dropped and the scan groups are the
+    # The same vectors the repository's conformance test holds bin/classify to (SPEC.md 9),
+    # each with its own catalog. The SQL answers which agent a row belongs to, which is what
+    # a vector's `matches` states; unmatched, dropped and the scan groups are the
     # classifier's to report, and are held there.
     sys.path.insert(0, str(ROOT.parent / "test"))
     import conformance
     for v in conformance.load():
         vcat, vroutes = conformance.authoring_form(v["catalog"], classify.CATALOG_VERSION)
-        vreg = classify.Registry(vroutes)
         if v["expect"].get("error"):
+            # A refusal names the mode. Any other exception is a crash, not a refusal.
             try:
-                R.signatures(classify, vcat, vreg)
+                R.signatures(classify, vcat, classify.Registry(vroutes))
                 check(f"vector {v['id']}: the renderer refuses it", False, "it rendered")
-            except (KeyError, SystemExit):
-                check(f"vector {v['id']}: the renderer refuses it", True)
+            except (ValueError, SystemExit) as exc:
+                check(f"vector {v['id']}: the renderer refuses it", "unknown match mode" in
+                      str(exc), str(exc))
             continue
+        vreg = classify.Registry(vroutes)
         vhits = sql_hits(osqi, v["rows"], R.fragment(R.signatures(classify, vcat, vreg),
                                                      classify.TOOL_DIR.pattern))
         got = []

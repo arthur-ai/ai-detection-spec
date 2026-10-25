@@ -221,8 +221,9 @@ They **never**:
 This tool also **does nothing to the machine**. No blocking, no remediation, and no network
 call from anything that runs on the endpoint. It reports; you decide.
 
-`bin/classify`, which runs off the endpoint, is the one part that talks to the network: one
-anonymous usage event per run, counts only — never a path, a hostname or an agent identifier.
+`bin/classify` is the one part that talks to the network, wherever it runs: the quickstart
+pipes into it on the scanned machine for brevity, and a fleet runs it off the endpoint. It sends
+one anonymous usage event per run, counts only — never a path, a hostname or an agent identifier.
 `--telemetry-check` prints exactly what would be sent, `AI_DISCOVERY_TELEMETRY=0` turns it
 off, and [`docs/telemetry.md`](../docs/telemetry.md) lists every field.
 

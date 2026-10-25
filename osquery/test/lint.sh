@@ -544,6 +544,66 @@ if missing:
 print(f"docker_states: ok, the findings it expects ({', '.join(named)}) are catalog ids")
 SUITE
 
+# EVERY OUTCOME THIS BINDING WRITES IS ONE THE FORMAT ALLOWS. The evidence schema once took
+# `unhealthy:` with three digits while runtime-linux.sql wrote `unhealthy:no-units`, on a host
+# CI never is: a bus socket and no units. So the outcomes are read off the source -- each
+# `marker` and `json_row scan` call, its shell expansions replaced by the values they can
+# hold, and each SQL literal shaped like an outcome -- and held to schema/evidence.schema.json.
+python3 - "$OSQ" "$REPO" <<'OUTCOMES' || fail=1
+import itertools, pathlib, re, sys
+osq, repo = map(pathlib.Path, sys.argv[1:])
+sys.path.insert(0, str(repo / "test"))
+from conformance import scan_outcome_ok, scan_outcomes
+
+def code(path):
+    return "\n".join(l for l in path.read_text().splitlines()
+                     if not l.lstrip().startswith(("#", "--")))
+
+scripts = {n: code(osq / "bin" / n) for n in ("discover", "container-scan")}
+# What each expansion can hold. One with no entry fails below until it has one.
+EXAMPLES = {"$RUNTIME_NAME": re.findall(r"_runtime_seen\s+([a-z0-9-]+)", scripts["container-scan"]),
+            "${DOCKER_CODE:-000}": ["000", "503"], "${SCAN_TIMEOUT}": ["6"]}
+ARG = r'("[^"]*"|[^\s"]+)'
+found = []                                   # (where, outcome as written)
+for name, text in scripts.items():
+    for m in re.finditer(r"(?m)(?:^\s*|\$\(\s*)marker\s+" + ARG, text):
+        found.append((f"bin/{name}", m.group(1).strip('"')))
+    for m in re.finditer(r"\$\(\s*json_row scan\s+" + r"\s+".join([ARG] * 4), text):
+        found.append((f"bin/{name}", m.group(4).strip('"')))
+words, patterns = scan_outcomes()
+prefixes = [re.match(r"\^([a-z-]+):", p).group(1) for p in patterns]
+literal = re.compile(r"'((?:%s)|(?:%s):[^']*)'" % ("|".join(map(re.escape, words)),
+                                                    "|".join(map(re.escape, prefixes))))
+sources = {**{f"bin/{n}": t for n, t in scripts.items()},
+           **{f"queries/{q.name}": code(q) for q in sorted((osq / "queries").glob("*.sql"))}}
+for where, text in sources.items():
+    found += [(where, m.group(1)) for m in literal.finditer(text)]
+
+bad, checked = [], set()
+for where, written in found:
+    exps = re.findall(r"\$\{[^}]*\}|\$[A-Za-z_][A-Za-z0-9_]*|\$[0-9]", written)
+    if any(re.fullmatch(r"\$[0-9]", e) for e in exps):
+        continue                             # marker() itself; its callers are read above
+    missing = [e for e in exps if not EXAMPLES.get(e)]
+    if missing:
+        bad.append(f"{where}: {written!r} -- no example values for {missing}; add them here")
+        continue
+    for combo in itertools.product(*(EXAMPLES[e] for e in exps)):
+        value = written
+        for e, v in zip(exps, combo):
+            value = value.replace(e, v)
+        checked.add(value)
+        if not scan_outcome_ok(value):
+            bad.append(f"{where}: writes {value!r} (as {written!r})")
+for where in ("bin/discover", "bin/container-scan", "queries/runtime-linux.sql"):
+    if not any(w == where for w, _ in found):
+        bad.append(f"{where}: no outcome found, so this check reads nothing there")
+if bad:
+    print("FAIL: scan outcomes the format does not allow (SPEC.md 5.2):\n  " + "\n  ".join(bad))
+    sys.exit(1)
+print(f"outcomes: ok, {', '.join(sorted(checked))}")
+OUTCOMES
+
 # bin/classify SPLITS THE PROVENANCE TOKENS browser.sql appends to `perms` back off, by name.
 # A token added to the query and not to PERMS_PROVENANCE would read as a permission.
 python3 - "$OSQ/queries/browser.sql" "$OSQ/tools" <<'PERMS' || fail=1
@@ -607,7 +667,14 @@ BINDING
 # lets this file stay runnable on a runner with no osquery; ci.yml's runtime jobs run it
 # with --require-osqueryi.
 python3 "$OSQ/tools/render_match.py" --check || fail=1
-python3 "$HERE/test_match_sql.py" >/dev/null || { echo "FAIL: match-SQL tests"; fail=1; }
+# SKIPs without osqueryi, and the SKIP is printed: discarded, it read as a pass.
+if _out=$(python3 "$HERE/test_match_sql.py" 2>&1); then
+  printf '%s\n' "$_out" | grep '^SKIP' || true
+else
+  echo "FAIL: match-SQL tests"
+  { printf '%s\n' "$_out" | grep -E '^ *FAIL' || printf '%s\n' "$_out" | tail -5; } | sed 's/^/      /' || true
+  fail=1
+fi
 python3 "$OSQ/tools/check_no_catalog.py" || fail=1
 
 # --- the one-file bundle -----------------------------------------------------------------

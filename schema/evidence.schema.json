@@ -32,7 +32,7 @@
       "anyOf": [
         {"enum": ["ok", "absent", "error", "no-cache"]},
         {"type": "string", "pattern": "^unreadable:[a-z0-9-]+$"},
-        {"type": "string", "pattern": "^unhealthy:[0-9]{3}$"},
+        {"type": "string", "pattern": "^unhealthy:[a-z0-9-]+$"},
         {"type": "string", "pattern": "^timeout:[0-9]+$"}
       ]
     }

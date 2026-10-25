@@ -5,7 +5,9 @@ each other.
 What is held here, and why each one:
   * every vector's catalog and rows validate against the schemas, and an `error` vector's
     catalog does not -- so the schemas are exercised, not only published;
-  * bin/classify gives each vector's expected result, and stops on an `error` vector;
+  * bin/classify, run as a command, gives each vector's expected result, and on an `error`
+    vector exits non-zero naming the mode it refused -- an exception from anywhere else in
+    the harness is a crash, and it is not counted as a refusal;
   * every match mode the schema declares has a vector with a row that must match and one
     that must not -- a mode with only positive cases passes a matcher that matches anything;
   * every vector's section is a heading in SPEC.md, so a citation cannot point at nothing;
@@ -81,20 +83,21 @@ def main():
         check(f"{v['id']}: its rows validate", not rows_errors, "; ".join(rows_errors[:2]))
 
     print("\nbin/classify, against the vectors")
+    modes = set(catalog_schema["$defs"]["match_mode"]["enum"])
     for v in vectors:
+        got = conformance.result(classify, v)
         if v["expect"].get("error"):
-            try:
-                conformance.result(classify, v)
-                check(f"{v['id']}: stops with an error", False, "it returned a result")
-            except Exception as exc:
-                check(f"{v['id']}: stops with an error ({type(exc).__name__})", True)
+            unknown = sorted({r["match"] for r in v["catalog"]["routes"].values()} - modes)
+            check(f"{v['id']}: stops with an error naming {unknown}",
+                  got["exit"] != 0 and all(repr(m) in got["stderr"] for m in unknown),
+                  f"exit {got['exit']}: {got['stderr'].strip()[-300:]}")
             continue
-        problems = conformance.compare(conformance.result(classify, v), v["expect"])
+        problems = conformance.compare(got, v["expect"]) if got["exit"] == 0 else [
+            f"exit {got['exit']}: {got['stderr'].strip()[-300:]}"]
         check(f"{v['id']} ({v['section']}): {v['description']}", not problems,
               "; ".join(problems))
 
     print("\nwhat the vectors cover")
-    modes = set(catalog_schema["$defs"]["match_mode"]["enum"])
     for mode in sorted(modes):
         mine = [v for v in vectors if v.get("mode") == mode]
         pos = any(m for v in mine for m in v["expect"]["matches"])

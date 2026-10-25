@@ -448,9 +448,9 @@ Releases are [semantic](https://semver.org), with repository-specific meaning:
 - **minor** — a new query, or new signatures. Additive and safe to take.
 - **patch** — a corrected identifier, a fixed glob, documentation.
 
-The format has a version of its own, at the top of [`SPEC.md`](SPEC.md) and in every
-catalog's `format`, and it changes only when the normative text does. A release that
-moves it says so in its notes.
+The format has a version of its own, at the top of [`SPEC.md`](SPEC.md) and in a catalog
+document's `format`, and it changes only when the normative text does. A release that moves it
+says so in its notes. `catalog/` is the authoring form and carries no `format`.
 
 Releases are cut whenever signatures change, at most weekly. What changed in each one is on the
 [Releases page](https://github.com/arthur-ai/ai-detection-spec/releases) rather than in a file

@@ -106,8 +106,9 @@ of the names.
 ### 4.4 Agents and identifiers
 
 An agent is `{id, name, classification, platforms, identifiers}`. `id` is lowercase, with
-hyphens. `platforms` lists the platforms the agent can be found on. `identifiers` is a non-empty
-list of `{route, value, status}`, with the optional members described in §7.
+hyphens, and unique in the catalog. `platforms` lists the platforms the agent can be found on.
+`identifiers` is a non-empty list of `{route, value, status}`, with the optional members
+described in §7.
 
 A conforming catalog MUST meet all of these:
 
@@ -156,7 +157,7 @@ unix seconds. `loc` MAY say where the source was looked for. `extra` is the outc
 | `error` | reading the source failed |
 | `no-cache` | a cached payload was asked for and none existed |
 | `unreadable:<runtime>` | the source exists in a form the binding does not read, named |
-| `unhealthy:<code>` | the source answered with a failure status |
+| `unhealthy:<reason>` | the source answered, but not with its contents. `<reason>` says why, such as an HTTP status |
 | `timeout:<seconds>` | reading was stopped after the given bound |
 
 1. **A binding MUST NOT report a source it could not read as a source with nothing in it.** When
@@ -201,7 +202,8 @@ An identifier matched this way keeps the status it has on `R`.
 
 ### 6.4 Match modes
 
-Every comparison is case-sensitive.
+Every comparison is case-sensitive and covers the whole value: a value that ends in a line
+break is not the value without it.
 
 #### 6.4.1 `exact`
 
@@ -226,7 +228,8 @@ reference:
 4. If what remains is `library/` followed by a name with no further `/`, remove `library/`.
 
 A catalog writes these identifiers already normalised (§4.4). This version does not define
-digest references (`@sha256:…`), so they do not match.
+digest references (`@sha256:…`), so an item that carries one, with or without a tag, does
+not match.
 
 #### 6.4.4 `home-dir`
 
@@ -244,9 +247,9 @@ match `~/.local/bin/tool-helper`.
 #### 6.4.6 `tool-dir`
 
 For packages installed by pipx or uv, which give each tool a directory named after its
-distribution. A row of the route's kind whose `id` or `loc` is `H` + `.local/pipx/venvs/<name>`
-or `H` + `.local/share/uv/tools/<name>`, optionally followed by `/`, yields `<name>`. The route
-matches when `<name>` equals one of its identifiers.
+distribution. In a row of the route's kind, each of `id` and `loc` that is
+`H` + `.local/pipx/venvs/<name>` or `H` + `.local/share/uv/tools/<name>`, optionally followed
+by `/`, yields `<name>`. The route matches when either name equals one of its identifiers.
 
 #### 6.4.7 Home roots
 
@@ -263,8 +266,8 @@ Skipping the route would match nothing, silently.
 
 For each row that is not a scan marker:
 
-1. If the row's kind is the kind of a `tool-dir` route and its `id` or `loc` is a tool directory
-   (§6.4.6), its name is looked up on the `tool-dir` routes. A match ends the search.
+1. If the row's kind is the kind of a `tool-dir` route, the names its `id` and `loc` yield
+   (§6.4.6) are looked up on the `tool-dir` routes, `id`'s first. A match ends the search.
 2. Otherwise, the row is tried on each `exact-normalised` route of its kind.
 3. Otherwise, it is tried on each remaining route of its kind, in the catalog's route order. For
    each route, the `exact` identifiers are tried first, then `prefix`, then `home-dir` and
@@ -398,4 +401,6 @@ The `format` member carries the major and minor version. This document is versio
 - A clarification that changes no requirement increases the patch version.
 
 A consumer MUST reject a document whose major version it does not support. While the major
-version is 0, a minor version may also contain breaking changes.
+version is 0, a minor version may also contain breaking changes, so a consumer MUST also
+reject a minor version it does not support. A rejection is an error the consumer reports,
+never a catalog with no agents.
