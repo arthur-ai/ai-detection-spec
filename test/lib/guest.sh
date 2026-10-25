@@ -66,7 +66,7 @@ need_brew() {
   eval "$(/opt/homebrew/bin/brew shellenv)"
 }
 
-# need_node [min_major]
+# need_node [min]   min: a major (24) or a full version (26.12.1)
 #
 # WITH NO ARGUMENT THIS IS PRESENCE-ONLY, which is what it has always been and what four
 # of its five callers want. That default is deliberate: a scenario that just needs `npm`
@@ -88,21 +88,28 @@ need_brew() {
 # formula links into the prefix the failing install already named in its own error, so the
 # detection surface stays the one the green runs measured.
 #
-# A MAJOR FLOOR CANNOT EXPRESS openclaw's range and this does not pretend to: `<25`
-# excludes the 25 line outright, and the floor says nothing about patch levels either.
-# Homebrew's node is 26.8.2 as of 2026-09-10 and satisfies the `>=26.1.0` arm. If it ever
-# lands on a major or patch openclaw refuses, openclaw's preinstall names the version and
-# the reason and setup.sh exits 1 -- loud, which is the property being defended here, not
-# a guarantee that the floor alone is sufficient.
+# A FULL VERSION IS ACCEPTED, because a major floor let the same failure through again.
+# openclaw 2026.10.6, published 2026-10-22, moved to `>=24.22.1 <25 || >=26.12.1`; the
+# runner's preinstalled 26.8.1 met `need_node 24` and not the range, so nothing upgraded
+# and the preinstall refused. Homebrew's node is 26.12.1 as of 2026-10-24. The comparison
+# is field by field, in awk so it reads the same under zsh and bash. It still cannot say
+# `<25`; openclaw's preinstall names the version and exits 1, which keeps that case loud.
+version_at_least() {  # version_at_least HAVE MIN: dotted numeric, missing fields are 0
+  awk -v a="$1" -v b="$2" 'BEGIN { n = split(a, x, "."); m = split(b, y, ".")
+    for (i = 1; i <= (n > m ? n : m); i++) {
+      if (x[i] + 0 > y[i] + 0) exit 0; if (x[i] + 0 < y[i] + 0) exit 1 }
+    exit 0 }'
+}
+
 need_node() {
   local min=${1:-0} have=''
   if command -v npm >/dev/null 2>&1; then
     # `node -v | sed` and not `node -v` alone: with no node on PATH the pipeline is still
     # sed's exit status, so this yields an empty string rather than tripping `set -e` in
     # the caller before the check below can say what was wrong.
-    have=$(node -v 2>/dev/null | sed 's/^v//; s/\..*//')
-    if [ "$min" -eq 0 ]; then return 0; fi
-    if [ -n "$have" ] && [ "$have" -ge "$min" ]; then return 0; fi
+    have=$(node -v 2>/dev/null | sed 's/^v//')
+    if [ "$min" = 0 ]; then return 0; fi
+    if [ -n "$have" ] && version_at_least "$have" "$min"; then return 0; fi
     echo "--- node ${have:-unknown} is below the $min this scenario needs; upgrading"
   fi
   need_brew || return 1
@@ -115,9 +122,9 @@ need_node() {
   # owns /opt/homebrew/bin/node, and the new node has to take that symlink from it.
   brew link --overwrite node >/dev/null 2>&1 || true
   hash -r 2>/dev/null || true
-  have=$(node -v 2>/dev/null | sed 's/^v//; s/\..*//')
-  if [ -z "$have" ] || [ "$have" -lt "$min" ]; then
-    echo "FAIL: need node major >= $min, have ${have:-none} after installing Homebrew node" >&2
+  have=$(node -v 2>/dev/null | sed 's/^v//')
+  if [ -z "$have" ] || ! version_at_least "$have" "$min"; then
+    echo "FAIL: need node >= $min, have ${have:-none} after installing Homebrew node" >&2
     return 1
   fi
   node -v | sed 's/^/  node /'
