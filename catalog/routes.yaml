@@ -17,11 +17,10 @@
 # EVERY FIELD IS READ. Deliberately. catalog/agents.yaml carried `version: 1` for its
 # whole life and nothing ever read it, which is how a schema grows fields that disagree
 # with reality because nothing can fail. So this file carries no field that no code
-# checks. Two that a coordinate-conscious reader will miss are absent for exactly that
-# reason and are recorded here instead of half-added:
+# checks. Two fields a coordinate-conscious reader looks for, and where each stands:
 #
-#   purl:    present now, on four routes -- see FIELDS. Absent where the value alone does
-#            not determine the coordinate: purl-spec's `brew` cannot tell a cask from a
+#   purl:    on the routes whose value alone is the coordinate, read by tools/export.py --
+#            see FIELDS. Absent elsewhere: purl-spec's `brew` cannot tell a cask from a
 #            formula and `codex` ships as both; `deb` and `rpm` require the distribution
 #            as a namespace, and Cursor's packages come from Cursor's own repository;
 #            `chocolatey` and JetBrains plugins are not registered types. A wrong
@@ -151,6 +150,8 @@ routes:
     platform: posix
     kind: ext
     match: exact
+    # Chrome Web Store ids, each read off a Web Store install. A store that re-signs, such
+    # as Edge Add-ons, issues a different id, and that id is not a chrome-extension purl.
     purl: chrome-extension
     osquery: {table: chrome_extensions, min_osquery: 5.10.0}
     # 32 characters from a-p: a base16 encoding of the first half of a SHA-256 over the

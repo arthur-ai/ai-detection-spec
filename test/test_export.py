@@ -4,8 +4,13 @@
 What is held here:
   * each package-url builder against purl-spec's own rules and examples, and a type with no
     builder is an error rather than a missing member;
-  * the real export is strict -- every current identifier proved by a run -- validates
-    against schema/catalog.schema.json, and is the same bytes twice;
+  * the real export validates against schema/catalog.schema.json, is the same bytes twice,
+    publishes every binding a route declares, and gives an identifier a purl exactly when
+    its route declares one;
+  * every current identifier the export cannot prove is one tools/agent_status.py calls
+    pending. Not --strict: a pull request that adds a value has no run to prove it until
+    collect runs on main, and a gate red on every correct signature PR is the trap
+    _pending() exists to avoid. release.yml runs --strict;
   * a superseded identifier carries its record and its archived proof, a current one with
     no proof is what --strict refuses, and an observation without a run id proves nothing;
   * every identifier bin/classify finds on the fixtures is an identifier the export
@@ -15,8 +20,6 @@ Schema validation needs jsonschema. Without it that part SKIPs loudly; CI passes
 --require-jsonschema.
 """
 import datetime
-import importlib.machinery
-import importlib.util
 import json
 import os
 import pathlib
@@ -27,6 +30,8 @@ import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
+sys.path.insert(0, str(ROOT / "test"))
+import conformance  # noqa: E402
 import export  # noqa: E402
 
 os.environ.setdefault("AI_DISCOVERY_TELEMETRY", "0")
@@ -67,30 +72,44 @@ def main():
           raises(export.purl, "vscode-extension", "noperiod"))
 
     print("\nthe real export")
-    run = [sys.executable, str(ROOT / "tools" / "export.py"), "--strict", "--commit", "test"]
+    run = [sys.executable, str(ROOT / "tools" / "export.py"), "--commit", "test"]
     first = subprocess.run(run, capture_output=True, text=True)
-    check("--strict passes: every current identifier has a proof with a run id",
-          first.returncode == 0, first.stderr.strip()[-300:])
+    if first.returncode:
+        # Every check below reads the document; without one they would fail for this reason
+        # and report another.
+        check("the export runs", False, first.stderr.strip()[-300:])
+        return 1
     second = subprocess.run(run, capture_output=True, text=True)
     check("two runs produce the same bytes", first.stdout == second.stdout)
-    doc = json.loads(first.stdout or "{}")
+    doc = json.loads(first.stdout)
     catalog = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
-    n_yaml = sum(len(a.get(r, []) or []) for a in catalog["agents"]
-                 for r in yaml.safe_load((ROOT / "catalog" / "routes.yaml").read_text())["routes"])
-    n_doc = sum(len(a["identifiers"]) for a in doc.get("agents", []))
+    routes_yaml = yaml.safe_load((ROOT / "catalog" / "routes.yaml").read_text())["routes"]
+    n_yaml = sum(len(a.get(r, []) or []) for a in catalog["agents"] for r in routes_yaml)
+    n_doc = sum(len(a["identifiers"]) for a in doc["agents"])
     check("it publishes every identifier the catalog carries", n_doc == n_yaml,
           f"{n_doc} published, {n_yaml} in the catalog")
+    unbound = [n for n, r in doc["routes"].items()
+               if set(r["bindings"]) != set(routes_yaml[n]) & set(export.BINDINGS)]
+    check("each route publishes every binding it declares", not unbound, str(unbound[:3]))
+    wrong = [f"{a['id']}: {i['route']} {i['value']!r}" for a in doc["agents"]
+             for i in a["identifiers"]
+             if i.get("purl", "").partition("/")[0] != (f"pkg:{routes_yaml[i['route']]['purl']}"
+                                                        if "purl" in routes_yaml[i["route"]] else "")]
+    check("an identifier carries a purl exactly when its route declares one, of that type",
+          not wrong, str(wrong[:3]))
+    pending, _ = export.agent_status._pending(export.agent_status.collect(), ["--pending-ok"])
+    unproved = {(a["id"], i["route"], i["value"]) for a in doc["agents"] for i in a["identifiers"]
+                if i["status"] == "current" and not i.get("proof")}
+    check("every identifier --strict would refuse awaits a CI run, and none is simply unproved",
+          unproved <= pending, str(sorted(unproved - pending)[:3]))
     try:
-        import jsonschema
+        import jsonschema  # noqa: F401
     except ImportError:
-        jsonschema = None
         if "--require-jsonschema" in sys.argv:
             sys.exit("FAIL: --require-jsonschema and jsonschema is not installed")
         print("  SKIP  schema validation: jsonschema is not installed")
-    if jsonschema:
-        schema = json.loads((ROOT / "schema" / "catalog.schema.json").read_text())
-        errors = [f"{e.json_path}: {e.message}"
-                  for e in jsonschema.Draft202012Validator(schema).iter_errors(doc)]
+    else:
+        errors = conformance.schema_errors(doc, "catalog")
         check("it validates against schema/catalog.schema.json", not errors, "; ".join(errors[:2]))
 
     print("\nstatus and proof")
@@ -122,13 +141,12 @@ def main():
           export.unproved(d) == ["a: npm 'bare'"], str(export.unproved(d)))
     check("each identifier on a purl route carries its package URL",
           by["new"].get("purl") == "pkg:npm/new")
+    check("a catalog with not_agents is refused, not published as agents",
+          raises(export.document, {**cat, "not_agents": ["Coding agent"]}, routes, live, archived))
 
     print("\nwhat the matcher matches, the document names")
-    loader = importlib.machinery.SourceFileLoader("classify", str(ROOT / "bin" / "classify"))
-    spec = importlib.util.spec_from_loader("classify", loader)
-    classify = importlib.util.module_from_spec(spec)
-    loader.exec_module(classify)
-    published = {(a["id"], i["route"], i["value"]) for a in doc.get("agents", [])
+    classify = export.agent_status.classify_mod
+    published = {(a["id"], i["route"], i["value"]) for a in doc["agents"]
                  for i in a["identifiers"]}
     real_catalog = classify.load_catalog(ROOT / "catalog" / "agents.yaml")
     real_routes = classify.load_routes()

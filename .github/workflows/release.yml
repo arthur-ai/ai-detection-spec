@@ -97,11 +97,11 @@ jobs:
       - name: Validate the exported catalog
         run: |
           python3 - <<'EOF'
-          import json, sys, jsonschema
-          schema = json.load(open("schema/catalog.schema.json"))
+          import json, sys
+          sys.path.insert(0, "test")
+          from conformance import schema_errors
           doc = json.load(open("artifacts/catalog.json"))
-          errors = [f"{e.json_path}: {e.message}"
-                    for e in jsonschema.Draft202012Validator(schema).iter_errors(doc)]
+          errors = schema_errors(doc, "catalog")
           if errors:
               sys.exit("::error::artifacts/catalog.json does not validate against "
                        "schema/catalog.schema.json:\n  " + "\n  ".join(errors[:10]))

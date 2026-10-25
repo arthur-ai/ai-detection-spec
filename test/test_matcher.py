@@ -364,6 +364,21 @@ def _ids(rows):
         input=json.dumps(rows), capture_output=True, text=True, check=True).stdout)
     return {f["id"] for f in r["findings"]}
 
+# `matches` NAMES THE IDENTIFIER BEHIND EACH EVIDENCE ROW, in evidence order and on the route
+# that holds it: a container row is credited to `images`, whose values container_images
+# borrows, and a uv directory to `pypi`.
+_mf = classify_json([{"kind": k, "id": i, "ver": "", "loc": i if k == "file" else "",
+                      "extra": "", "perms": ""}
+                     for k, i in (("container", "paulgauthier/aider:latest"), ("brew", "aider"),
+                                  ("file", "/home/dana/.local/share/uv/tools/aider-chat/"),
+                                  ("file", "/home/dana/.aider"))])["findings"]
+check("--json names the identifier behind each evidence row, on the route that holds it",
+      [(f["id"], f.get("matches")) for f in _mf] == [("aider", [
+          {"route": "images", "value": "paulgauthier/aider"},
+          {"route": "homebrew", "value": "aider"},
+          {"route": "pypi", "value": "aider-chat"},
+          {"route": "state_dirs", "value": "~/.aider"}])], json.dumps(_mf)[:400])
+
 # THE NEAR MISS. `~/.claude` was front-anchored only, so it also matched `.claudefoo` --
 # and that is not hypothetical: `/home/%/.%/` on a real Linux box returns `.claude/` and
 # `.claudefoo/` side by side. `home-dir` anchors both ends.

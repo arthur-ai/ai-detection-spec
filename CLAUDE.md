@@ -188,8 +188,8 @@ interpreter is one operator's problem rather than a fleet-wide condition.
 vocabulary used to live in five hardcoded lists that had to agree — `validate_catalog`'s
 `ROUTES`, `classify`'s `KIND_ROUTES`, `agent_status`'s `EXACT_KINDS`/`GLOB_ROUTES`/`ALL_ROUTES`,
 and `lint.sh`'s `KINDS` — and `ext` was missing from one of them from the beginning. All four
-derive from the file now. It carries **no field nothing reads**: `purl` and version-semantics
-were both left out for that reason, and its header says so.
+derive from the file now. It carries **no field nothing reads**: `purl` arrived with its reader,
+`tools/export.py`, and version-semantics stays out for that reason; its header says why.
 
 ## Testing
 

@@ -10,7 +10,9 @@ it -- the part no other catalog of agents carries.
 
 BUILT AT RELEASE, NEVER COMMITTED. The proof changes every time a scenario run records, and a
 committed copy would go stale on the next collect commit with nothing to regenerate it.
-release.yml runs this with --strict and attaches the result.
+release.yml runs this with --strict and attaches the result. A pull request cannot pass
+--strict when it adds a value, because the run that proves it happens on main;
+test/test_export.py holds the unproved values to the ones tools/agent_status.py calls pending.
 
 --strict fails when a current identifier has no proof with a run id. SPEC.md 7.2 requires one
 in a catalog distributed for others to use, and an observation without a run id cannot be
@@ -29,9 +31,10 @@ import yaml
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 import agent_status  # noqa: E402
+from validate_catalog import BINDINGS  # noqa: E402
 
-# Every scenario collects through the osquery binding today. A second binding's observations
-# will carry their own name; until one exists there is nothing to read it from.
+# THE BINDING A PROOF NAMES. Every scenario collects through osquery today, and observed.json
+# records no binding. A second binding's harness must record its name, and _proof() read it.
 BINDING = "osquery"
 
 
@@ -108,13 +111,19 @@ def _proofs(recs):
 
 def document(catalog, routes, live, archived, commit=None, shas=None):
     """The format's catalog document. Pure: everything it reads is an argument."""
+    # `not_agents` names classifications whose entries are NOT agents. The format has no
+    # place for them (SPEC.md 3), and publishing them under `agents` is the overstatement
+    # this catalog exists to avoid. Refused rather than filtered: the scope is a decision.
+    if catalog.get("not_agents"):
+        raise ValueError(f"export: not_agents {sorted(catalog['not_agents'])} has no place in "
+                         f"the format; its entries would be published as agents")
     out_routes = {}
     for name, r in routes["routes"].items():
         route = {k: r[k] for k in ("kind", "match", "platform")}
         for key in ("values_from", "live", "retired", "value_pattern", "purl"):
             if key in r:
                 route[key] = r[key]
-        route["bindings"] = {BINDING: dict(r[BINDING])}
+        route["bindings"] = {b: dict(r[b]) for b in sorted(BINDINGS) if b in r}
         out_routes[name] = route
 
     agents = []

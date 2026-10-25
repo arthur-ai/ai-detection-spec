@@ -460,10 +460,13 @@ def ci_platforms():
 
 def observations(scenarios=None):
     """Every recorded observation, keyed (agent, route, value), each carrying its
-    scenario and that scenario's platform. ONE READER: collect() counts coverage from
-    these and tools/export.py publishes them as proof, so the two cannot read
-    observed.json differently. `archived` holds the observations of superseded values.
+    scenario and that scenario's platform. collect() counts coverage from these and
+    tools/export.py publishes them as proof, so those two cannot read observed.json
+    differently. tools/validate_catalog.py reads it for itself, because it must report a
+    broken routes.yaml that importing this module would crash on. `archived` holds the
+    observations of superseded values.
 
+    The scenario is the directory, as validate_catalog keys it, not the file's own field.
     The platform comes from the scenario's expected.json when the record has none: the
     macOS runners record without `--platform`, and the scenario declares it anyway."""
     scenarios = SCENARIOS if scenarios is None else scenarios
@@ -471,11 +474,11 @@ def observations(scenarios=None):
                    for p in sorted(scenarios.glob("*/expected.json"))}
     live, archived = collections.defaultdict(list), collections.defaultdict(list)
     for path in sorted(scenarios.glob("*/observed.json")):
-        doc = json.loads(path.read_text())
+        doc, scenario = json.loads(path.read_text()), path.parent.name
         for bucket, key in ((live, "identifiers"), (archived, "archived")):
             for rec in doc.get(key, []):
-                full = {**rec, "scenario": doc["scenario"],
-                        "platform": rec.get("platform") or platform_of.get(doc["scenario"])}
+                full = {**rec, "scenario": scenario,
+                        "platform": rec.get("platform") or platform_of.get(scenario)}
                 bucket[(rec["agent"], rec["route"], str(rec["value"]))].append(full)
     return live, archived
 
