@@ -134,14 +134,18 @@ def dangling_doc_links():
             text = path.read_text()
         except (UnicodeDecodeError, OSError):
             continue
-        # A citation may carry the binding's prefix or a relative one, and resolves from the
-        # repository root, from the citing file's directory, or -- for a file inside
-        # osquery/, whose code names paths from there -- from osquery/. Unanchored, the
-        # pattern dropped the `osquery/` prefix and looked in the wrong place.
+        # THE WHOLE PATH IS THE CITATION. A match that may start partway into a path checks a
+        # suffix: `missing/osquery/docs/<name>.md` was checked as `osquery/docs/<name>.md`,
+        # which exists, and passed. So a match starts only where a path token starts -- never
+        # after a path character, and never after `:`, which keeps a URL from being read as a
+        # repository citation at all.
+        #
+        # It resolves from the repository root, from the citing file's directory, or -- for
+        # a file inside osquery/, whose code names paths from there -- from osquery/.
         bases = [ROOT, path.parent]
         if path.relative_to(ROOT).parts[0] == "osquery":
             bases.append(ROOT / "osquery")
-        for m in re.finditer(r"(?<![\w.-])(?:\.\./|\./|osquery/)*docs/[\w.-]+\.(?:md|yaml)", text):
+        for m in re.finditer(r"(?<![\w./:-])(?:[\w.-]+/)*docs/[\w.-]+\.(?:md|yaml)", text):
             if not any((base / m.group(0)).exists() for base in bases):
                 n = text[:m.start()].count("\n") + 1
                 bad.append(f"{path.relative_to(ROOT)}:{n}: cites {m.group(0)}, which does "
