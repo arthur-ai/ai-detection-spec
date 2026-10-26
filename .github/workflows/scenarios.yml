@@ -215,9 +215,8 @@ jobs:
           curl --retry 3 --retry-all-errors --retry-delay 5 -fsSL -o /tmp/osquery.pkg \
             "https://pkg.osquery.io/darwin/osquery-${OSQUERY_VERSION}.pkg"
           sudo installer -pkg /tmp/osquery.pkg -target /
-      # bin/classify reads the catalog, and assert.sh now runs it: since D20 the query
-      # enumerates and "did we find OpenClaw" is answered by the classifier, not by a
-      # row count.
+      # bin/classify reads the catalog, and assert.sh runs it: the query enumerates, so
+      # "did we find OpenClaw" is answered by the matcher, not by a row count.
       - name: Install pyyaml
         run: pip3 install --quiet --break-system-packages pyyaml || pip3 install --quiet pyyaml
 

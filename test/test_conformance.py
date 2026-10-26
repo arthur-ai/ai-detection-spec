@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
-"""bin/classify against the format's conformance vectors, and the format's files against
+"""bin/classify against the spec's conformance vectors, and the spec's files against
 each other.
 
 What is held here, and why each one:
   * every vector's catalog and rows validate against the schemas, and an `error` vector's
-    catalog does not -- so the schemas are exercised, not only published;
+    catalog does not -- so the schemas are exercised, not only published -- unless the
+    refusal is one only a matcher can make (MATCHER_ONLY);
   * bin/classify, run as a command, gives each vector's expected result, and on an `error`
-    vector exits non-zero naming the mode it refused -- an exception from anywhere else in
-    the harness is a crash, and it is not counted as a refusal;
+    vector exits non-zero naming what the vector says it refuses -- a mode, or a version --
+    so a crash for any other reason is not counted as a refusal;
   * every match mode the schema declares has a vector with a row that must match and one
     that must not -- a mode with only positive cases passes a matcher that matches anything;
   * every vector's section is a heading in SPEC.md, so a citation cannot point at nothing;
   * bin/classify's MATCH_MODES equals the schema's list: the set is written in both, and two
     copies that are not checked are the `ext` bug;
   * the evidence fixtures validate against the evidence schema, so the rows this repository
-    produces are rows the format describes;
-  * SPEC.md, schema/ and conformance/ name no implementation path. The format may not come
+    produces are rows the spec describes;
+  * SPEC.md, schema/ and conformance/ name no implementation path. The spec may not come
     to depend on this repository's code.
 
 The rendered SQL is held to the same vectors in osquery/test/test_match_sql.py.
@@ -34,8 +35,10 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "test"))
 import conformance  # noqa: E402
 
-os.environ.setdefault("AI_DISCOVERY_TELEMETRY", "0")
+os.environ.setdefault("AI_DETECTION_SPEC_TELEMETRY", "0")
 failures = []
+# Refusals the schema cannot express, because route names are the catalog's own (SPEC.md 6).
+MATCHER_ONLY = {"6"}
 
 
 def check(label, condition, detail=""):
@@ -75,7 +78,10 @@ def main():
     print("\nthe vectors, against the schemas")
     for v in vectors:
         errors = [e.message for e in catalog_v.iter_errors(v["catalog"])]
-        if v["expect"].get("error"):
+        if v["expect"].get("error") and v["section"] in MATCHER_ONLY:
+            check(f"{v['id']}: its catalog validates, so the refusal is the matcher's own",
+                  not errors, "; ".join(errors[:2]))
+        elif v["expect"].get("error"):
             check(f"{v['id']}: its catalog is refused by the schema", bool(errors))
         else:
             check(f"{v['id']}: its catalog validates", not errors, "; ".join(errors[:2]))
@@ -87,9 +93,9 @@ def main():
     for v in vectors:
         got = conformance.result(classify, v)
         if v["expect"].get("error"):
-            unknown = sorted({r["match"] for r in v["catalog"]["routes"].values()} - modes)
-            check(f"{v['id']}: stops with an error naming {unknown}",
-                  got["exit"] != 0 and all(repr(m) in got["stderr"] for m in unknown),
+            refused = v["expect"]["error"]
+            check(f"{v['id']} ({v['section']}): stops with an error naming {refused!r}",
+                  got["exit"] != 0 and refused in got["stderr"],
                   f"exit {got['exit']}: {got['stderr'].strip()[-300:]}")
             continue
         problems = conformance.compare(got, v["expect"]) if got["exit"] == 0 else [
@@ -116,7 +122,7 @@ def main():
         errors = [e.message for e in evidence_v.iter_errors(json.loads(path.read_text()))]
         check(f"{path.name} validates", not errors, "; ".join(errors[:2]))
 
-    print("\nthe format names no implementation path")
+    print("\nthe spec names no implementation path")
     bad = re.compile(r"(?<![\w./-])(catalog|bin|tools|test|osquery)/")
     for path in [ROOT / "SPEC.md", *sorted((ROOT / "schema").glob("*")),
                  *sorted((ROOT / "conformance").glob("*"))]:

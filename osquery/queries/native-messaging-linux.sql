@@ -5,49 +5,32 @@
 -- cost: fast
 -- platform: linux
 --
--- THE PATHS ARE READ OFF A REAL CHROME INSTALL, not off Chrome's documentation, and two
--- of them would have been wrong from a reasonable guess:
+-- THE PATHS ARE READ OFF A REAL CHROME INSTALL, and two differ from a reasonable guess:
 --
---   * THE CASING DIFFERS BETWEEN SCOPES. The per-user directory is `NativeMessagingHosts`
---     and the system-wide one is `native-messaging-hosts`. osquery's LIKE is
---     case-sensitive, so one pattern cannot serve both and a single spelling would
---     silently return half the answer.
---   * THE USER DIRECTORY SITS AT THE USER-DATA-DIR LEVEL, beside Default/ rather than
---     inside it. A real `google-chrome --user-data-dir=~/.config/google-chrome` run
---     created ~/.config/google-chrome/NativeMessagingHosts/ and no such directory under
---     Default/.
+--   * THE CASING DIFFERS BY SCOPE: `NativeMessagingHosts` per user, `native-messaging-hosts`
+--     system-wide. LIKE is case-sensitive here, so one spelling returns half the answer.
+--   * THE USER DIRECTORY SITS BESIDE Default/, at the user-data-dir level, not inside it.
 --
--- Chrome did NOT create /etc/opt/chrome on that install -- the system scope is for
--- administrator-placed manifests -- so that branch is looking for something a fleet
--- deploys rather than something the browser makes. That is the branch an MDM-pushed
--- bridge would land in, which is the reason to keep it.
+-- Chrome creates nothing under /etc/opt/chrome. That scope holds what an administrator or
+-- an MDM places, which is why it is searched.
 --
--- Emits the six-column contract: kind, id, ver, loc, extra, perms.
--- Branches within this file are joined with UNION ALL, and the build joins files
--- the same way. See CONTRIBUTING.md before changing the column list.
-
--- ENUMERATE, DO NOT MATCH (D20). No bridge name appears below.
+-- Six columns: kind, id, ver, loc, extra, perms. See CONTRIBUTING.md before changing them.
 --
--- One % per path component, and the browser directory is exactly one component --
--- google-chrome, chromium, opera. Unlike macOS there is no 'Application Support' level
--- to step over, so there is no two-% variant to get wrong here.
+-- ENUMERATE, DO NOT MATCH: no bridge name appears below (tools/check_no_catalog.py).
 --
--- No exclusion. The stock macOS iCloud Passwords bridge has no Linux equivalent: nothing
--- in a Linux base install ships a native-messaging manifest, verified on a clean Ubuntu
--- 24.04 container where all three branches returned nothing until one was planted.
+-- The browser directory is one path component, so one % per component suffices. No
+-- exclusion: a clean Ubuntu 24.04 ships no native-messaging manifest.
 SELECT 'nmh' AS kind, filename AS id, '' AS ver, path AS loc, '' AS extra, '' AS perms
   FROM file
   WHERE path LIKE '/home/%/.config/%/NativeMessagingHosts/%.json'
      OR path LIKE '/root/.config/%/NativeMessagingHosts/%.json'
 UNION ALL
--- Firefox uses a lower-case directory in the user scope as well, and it is not under
--- .config at all.
+-- Firefox: lower-case in the user scope too, and not under .config.
 SELECT 'nmh', filename, '', path, '', '' FROM file
   WHERE path LIKE '/home/%/.mozilla/native-messaging-hosts/%.json'
      OR path LIKE '/root/.mozilla/native-messaging-hosts/%.json'
 UNION ALL
--- The system scope: /etc/opt/chrome/... for Chrome, /etc/chromium/... for Chromium, and
--- /usr/lib/mozilla/... for Firefox. Two patterns because the depth differs by one.
+-- The system scope: /etc/opt/chrome, /etc/chromium and /usr/lib/mozilla, at two depths.
 SELECT 'nmh', filename, '', path, '', '' FROM file
   WHERE path LIKE '/etc/%/native-messaging-hosts/%.json'
      OR path LIKE '/etc/opt/%/native-messaging-hosts/%.json'

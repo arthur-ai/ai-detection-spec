@@ -8,7 +8,7 @@
     dist/fleet-policies.yml   one Fleet policy per agent per platform, passing when absent
 
 WHY A SECOND OUTPUT EXISTS. The enumeration queries carry no agent name, and matching
-happens off the machine in bin/classify -- which is right for a collector and useless
+happens off the machine in bin/classify -- which is right for a pipeline that keeps the evidence and useless
 for a Jamf Extension Attribute, a Fleet policy, or anyone with osqueryi and a question.
 An Extension Attribute is one printed value a Smart Group matches on; a packed JSON
 blob is not that. So the same catalog is rendered a second way, for readers that can
@@ -38,7 +38,7 @@ Needs PyYAML, like every tool that reads the catalog. tools/build.py does not, s
 learns these file names and leaves the checking to `python3 tools/render_match.py --check`.
 """
 import hashlib
-import importlib.machinery      # NOT implied by importlib.util; see test/lint.sh's check.
+import importlib.machinery      # NOT implied by importlib.util; see the root test/lint.sh's check.
 import importlib.util
 import pathlib
 import re
@@ -270,10 +270,9 @@ def fragment(sigs, tool_dir):
         "    ELSE 0 END)\n")
 
 
-# The version is ONE OF THOSE SEEN: max() over strings is alphabetical. Container rows are
-# excluded because their `ver` is the container state, not a version.
+# The version is ONE OF THOSE SEEN: max() over strings is alphabetical.
 AGENTS_SELECT = ("SELECT agent, name, classification,\n"
-                 "       max(CASE WHEN kind = 'container' THEN '' ELSE ver END) AS ver,\n"
+                 "       max(ver) AS ver,\n"
                  "       count(*) AS rows,\n"
                  "       min(superseded) AS only_superseded\n"
                  "  FROM hit GROUP BY agent ORDER BY name;\n")

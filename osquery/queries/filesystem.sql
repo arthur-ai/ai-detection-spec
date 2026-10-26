@@ -5,73 +5,37 @@
 -- cost: fast
 -- platform: darwin
 --
--- Emits the six-column contract: kind, id, ver, loc, extra, perms.
--- Branches within this file are joined with UNION ALL, and the build joins files
--- the same way. See CONTRIBUTING.md before changing the column list.
-
--- ENUMERATE, DO NOT MATCH (D20). No agent name appears in any glob below.
+-- Six columns: kind, id, ver, loc, extra, perms. See CONTRIBUTING.md before changing them.
 --
--- `file` is the one table that cannot simply be selected from: it has no rows until a
--- path pattern constrains it. So enumeration here means globbing the LOCATIONS where a
--- user-installed tool lands, and letting the collector decide what the names mean. The
--- shape of a path is not a catalog. 'Anything directly under ~/.local/bin' names no
--- product, while '~/.local/bin/claude' names one.
+-- ENUMERATE, DO NOT MATCH: no agent name appears in any glob below
+-- (tools/check_no_catalog.py). `file` has no rows until a path pattern constrains it, so
+-- this globs the LOCATIONS a user-installed tool lands in: '~/.local/bin/%' names no
+-- product, '~/.local/bin/claude' would.
 
--- CLI shims. Was pinned to a single filename, now every entry, so an agent nobody has
--- catalogued yet still arrives.
+-- CLI shims, every entry, so an agent nobody has catalogued still arrives.
 SELECT 'file' AS kind, path AS id, '' AS ver, path AS loc, '' AS extra, '' AS perms
   FROM file
   WHERE path LIKE '/Users/%/.local/bin/%'
 UNION ALL
--- STATE DIRECTORIES, the most install-route-independent signal available: a cask, an npm
--- global, `curl install.sh | bash` and a source checkout all converge on the same dotdir
--- the first time the agent runs. Package-manager branches see only the route that was
--- used, and see nothing at all for a source build.
+-- STATE DIRECTORIES, the signal least tied to an install route: a cask, an npm global, a
+-- curl installer and a source checkout all create the same dotdir on first run. Every
+-- top-level dotdir, so a new agent's is evidence on the first scan.
 --
--- THE TRAILING SLASH IS LOAD-BEARING. osquery translates LIKE into its glob engine, where
--- a directory must be addressed with a trailing slash:
---     path LIKE '/Users/%/.claude'   -> 0 rows, no error
---     path LIKE '/Users/%/.claude/'  -> the directory
--- Same silent-zero shape as the JOIN and the one-% glob. Do not "tidy" the slash away.
---
--- Every top-level dotdir now, not four named ones. 47 on a loaded reference Mac, which is
--- affordable, and it means a new agent's state directory is evidence on the first scan
--- rather than after a fleet redeploy.
---
--- `.` AND `..` COME BACK FROM THIS GLOB SHAPE. Measured on a reference Mac: 4 of the 47
--- dotdir rows were /Users/x/./ and /Users/x/../, which can never match anything and
--- arrive as unmatched rows a reader has to dismiss by hand. Found while writing the Linux
--- twin of this branch and fixed in both, so the two files do not differ for a reason
--- nobody could explain.
+-- THE TRAILING SLASH IS LOAD-BEARING: osquery's glob addresses a directory only with one,
+-- and '/Users/%/.claude' returns 0 rows with no error. `.` and `..` come back from this
+-- shape and can never match, so they are excluded.
 SELECT 'file', path, '', path, '', '' FROM file
   WHERE path LIKE '/Users/%/.%/'
     AND path NOT LIKE '%/./'
     AND path NOT LIKE '%/../'
 UNION ALL
--- PYTHON-PACKAGED AGENTS. python_packages is deliberately absent from this query (15.6s,
--- no WHERE push-down), which would leave pipx, uv and pip --user installs invisible. That
--- is not a small corner: aider, litellm, crewai, langgraph, open-interpreter and most MCP
--- servers ship on PyPI first and some ONLY there.
---
--- The design justified dropping python_packages as contributing "zero Tier A matches",
--- but that was measured on a machine with none of them installed -- absence of evidence
--- read as evidence of absence.
---
--- So glob the INSTALL LOCATIONS instead of querying the slow table. Both managers give
--- each tool its own directory named for the package, which is precise, bounded and free.
--- These globs were already product-free and are unchanged.
+-- PYTHON-PACKAGED AGENTS. python_packages is too slow to ship (queries/COST.md), and
+-- several agents ship on PyPI only, so this globs pipx's and uv's tool directories, each
+-- named for its package. bin/classify's tool-dir match reads the name back.
 SELECT 'file', path, '', path, '', '' FROM file
   WHERE path LIKE '/Users/%/.local/pipx/venvs/%/'
      OR path LIKE '/Users/%/.local/share/uv/tools/%/'
--- KNOWN GAP, deliberately not covered: packages executed via `npx`/`bunx` and never
--- installed. They land in a content-addressed cache, /Users/x/.npm/_npx/<hash>/
--- node_modules/<pkg>, where the invoked package is indistinguishable BY PATH from its
--- transitive dependencies. Measured on the reference Mac: globbing that cache generically
--- returns 1938 rows, and the scoped-only variant returns 123 which are almost entirely
--- @aws-sdk, @babel and @nodelib. The old branch avoided this only by naming two packages
--- outright, which is the practice this file exists to remove.
---
--- An agent run through npx still creates its state dotdir on first run and is caught by
--- the branch above. That reasoning is UNVERIFIED -- it has not been exercised against a
--- real npx-launched agent -- so it is recorded here as a gap rather than a mitigation.
--- Scenario 55-openclaw-npm is where it would be proven.
+-- KNOWN GAP: a package run through `npx`/`bunx` and never installed. Its cache,
+-- ~/.npm/_npx/<hash>/node_modules/<pkg>, cannot tell the invoked package from its
+-- dependencies by path (1938 rows on a reference Mac). Such an agent may still be caught
+-- by its state dotdir on first run, but that is unverified, so it stays a gap.

@@ -5,37 +5,29 @@
 -- cost: fast
 -- platform: posix
 --
--- LIVENESS. Every other posix branch reports presence. A `proc` row says the package is
--- RUNNING now, which the retired `ports` route was never able to say on its own: a port
--- is only attributable when the process holding it already names the agent.
+-- LIVENESS: a `proc` row says the agent is running now, where every other posix branch
+-- reports presence.
 --
--- `cmdline` IS NEVER EMITTED. It can carry --api-key or a session token, so only a
--- package name extracted from it leaves the machine, and only when the pattern matches.
--- `loc` is the executable's path.
+-- `cmdline` IS NEVER EMITTED. It can carry --api-key or a session token, so only a package
+-- name extracted from it leaves the machine. `loc` is the executable's path.
 --
--- Emits the six-column contract: kind, id, ver, loc, extra, perms.
-
--- ENUMERATE, DO NOT MATCH (D20). No package name appears below.
+-- Six columns: kind, id, ver, loc, extra, perms. See CONTRIBUTING.md before changing them.
 --
--- TWO SHAPES, AND ONLY TWO. A native binary shipped inside a package runs from its
--- node_modules path. A JS entry point runs under node, bun or deno with the script as an
--- argument. A shell whose command line merely mentions a node_modules path is NOT that
--- package running, and an unrestricted cmdline match reported exactly that on the machine
--- this was written on.
+-- ENUMERATE, DO NOT MATCH: no package name appears below (tools/check_no_catalog.py).
 --
--- THE RUNTIME IS READ OFF THE EXECUTABLE, NOT `name`. Node renames its processes:
--- OpenClaw's gateway reports `openclaw-gateway` and its workers `MainThread`, with path
--- /usr/bin/node and a worker script under node_modules/openclaw. Read off a running
--- gateway in an Ubuntu 24.04 container on 2026-10-07.
+-- TWO SHAPES, AND ONLY TWO: a native binary running from a node_modules path, or node, bun
+-- or deno running a script under one. A shell whose command line merely mentions a
+-- node_modules path is not that package running.
+--
+-- THE RUNTIME IS READ OFF THE EXECUTABLE, NOT `name`, because node renames its processes:
+-- OpenClaw's gateway reports `openclaw-gateway` and its workers `MainThread`.
 --
 -- WHEN `path` IS EMPTY, argv[0] STANDS IN. Reading another user's executable link needs
--- ptrace rights, which a non-root reader and root in a default Docker container both lack:
--- the same gateway, run as an ordinary user, came back with path ''. Only argv[0] is taken
--- from the command line for this, and it decides nothing beyond "is this a runtime".
+-- ptrace rights, which a non-root reader and root in a default container lack. argv[0]
+-- decides only "is this a runtime".
 --
--- THE NAME IS npm's CHARACTER SET, so `node_modules/.bin/<shim>`, which is how npx runs
--- things, matches nothing: a shim name is not a package name. The same class is why this
--- query's own text cannot match itself when it is passed on a command line.
+-- THE NAME IS npm's CHARACTER SET, so a `node_modules/.bin/<shim>` (how npx runs things)
+-- matches nothing, and neither does this query's own text on a command line.
 SELECT 'proc' AS kind,
        regex_match(exe || ' ' || cmdline,
                    'node_modules/((?:@[A-Za-z0-9][A-Za-z0-9._-]*/)?[A-Za-z0-9][A-Za-z0-9._-]*)', 1) AS id,
@@ -54,14 +46,10 @@ SELECT 'proc' AS kind,
   -- DISTINCT, because lint and tools/build.py find a branch's kind as `SELECT '<kind>'`.
   GROUP BY id, loc
 UNION ALL
--- RUNNING FROM A HOME DIRECTORY, by executable path. Claude Code's native install runs from
--- ~/.local/share/claude/versions/<version>, not from the ~/.local/bin/claude link the
--- `binaries` route names, so the process_paths route carries its own value. Read off a
--- running `claude mcp serve` on 2026-10-07.
---
--- `path` ONLY, with no argv[0] stand-in: where the path is unreadable, argv[0] is the
--- launcher a user typed, which no process_paths value names. GROUP BY folds the sessions
--- of one binary into one row.
+-- RUNNING FROM A HOME DIRECTORY, by executable path: Claude Code's native install runs from
+-- ~/.local/share/claude/versions/<version>, not the ~/.local/bin/claude link `binaries`
+-- names, so process_paths carries its own value. `path` only: an unreadable path leaves
+-- argv[0], the launcher a user typed, which no value names.
 SELECT 'proc', path, '', path, '', ''
   FROM processes
   WHERE path LIKE '/Users/%/%' OR path LIKE '/home/%/%' OR path LIKE '/root/%'

@@ -1,17 +1,11 @@
 #!/usr/bin/env bash
 # Compares actual osquery output against a scenario's golden counts.
-# Counts, not "did it parse" — every defect found so far returned plausible-looking
-# output with the wrong number of rows, and none of them errored.
+# Counts, not "did it parse": every defect found so far returned plausible output with the
+# wrong number of rows, and none of them errored.
 #
-# Since D20 the query enumerates and holds no catalog, so these counts changed meaning.
-# They used to assert "the query matched exactly these named things", and the ZEROS were
-# the load-bearing half: a zero caught a glob that over-matched. Enumeration makes
-# on-device over-matching impossible — the query selects nothing in particular — so most
-# zeros became floors, and the over-matching risk moved to the collector.
-#
-# assert_classified is where that risk is now caught. Counts prove the ENUMERATION still
-# works branch by branch; classification proves the catalog still resolves it to the right
-# agent, and `forbid` proves it resolves to nothing else.
+# The query enumerates and holds no catalog, so a count proves only that each BRANCH still
+# returns rows, and most counts are floors. Whether the rows resolve to the right agent is
+# assert_classified's question, and `forbid` proves they resolve to nothing else.
 set -euo pipefail
 
 # A TEST RUN IS NOT A USE, and bin/classify sends one usage event per run. `CI` already
@@ -19,7 +13,7 @@ set -euo pipefail
 # nothing, and a maintainer's own machine has no CI set at all -- so the suite would post
 # an event for every fixture it classifies and the field data would be mostly us. Set
 # explicitly rather than relied upon: see docs/telemetry.md.
-export AI_DISCOVERY_TELEMETRY=0
+export AI_DETECTION_SPEC_TELEMETRY=0
 
 assert_counts() {
   local actual_json="$1" expected_json="$2"
@@ -92,10 +86,8 @@ PY
 
 # Run the reference classifier over enumerated evidence and check what it concludes.
 #
-# This is the assertion that replaced the golden zeros. Before D20 a scenario could prove
-# correctness by counting rows, because the query only returned rows it had matched. Now
-# the query returns everything and the question "did we find OpenClaw" is answered one
-# layer later, so the test has to ask there.
+# The query returns everything, so "did we find OpenClaw" is answered here, by the matcher,
+# and not by a row count.
 #
 # `forbid` is the over-matching guard: naming an agent that must NOT appear is the only
 # way to catch a signature that is too broad, and a too-broad signature is now the most

@@ -1,90 +1,44 @@
-# The route registry: the one place a detection route is declared.
+# The route registry: every route the catalog uses, declared once.
 #
-# WHY THIS FILE EXISTS. The route vocabulary used to live in five hardcoded lists that
-# had to agree -- tools/validate_catalog.py's ROUTES, bin/classify's KIND_ROUTES,
-# tools/agent_status.py's EXACT_KINDS/GLOB_ROUTES/ALL_ROUTES, and test/lint.sh's KINDS --
-# plus a sixth copy of the path-route tuple ("state_dirs", "binaries", "model_stores")
-# repeated in three files. Drift between them is THE recurring bug class here: `ext` was
-# missing from KIND_ROUTES from the beginning, so every browser-extension row was
-# DROPPED rather than unmatched -- invisible even under --show-unmatched, for months,
-# while the row counts stayed right. Adding a route is now one edit, in this file.
+# bin/classify, tools/validate_catalog.py, tools/agent_status.py and test/lint.sh derive
+# their route lists from this file, and osquery/tools/build.py checks its bindings, so
+# adding a route is one edit here. Five hand-kept lists used to have to agree, and `ext` was
+# missing from one: every browser-extension row was dropped, invisible even under
+# --show-unmatched.
 #
-# WHAT A ROUTE IS. A way an agent's identity reaches us: a package name, a bundle id, a
-# path shape. The endpoint enumerates and holds no catalog; matching happens off the
-# machine in bin/classify against catalog/agents.yaml. A route is the join between the
-# two, and every field below has a consumer -- see EVERY FIELD IS READ.
+# This is the authoring form of a catalog document's `routes` (SPEC.md 4.3), and
+# tools/export.py writes it into one. `osquery:` on a route is the document's
+# `bindings.osquery` (SPEC.md 8.1); a second binding would be a second key beside it.
 #
-# EVERY FIELD IS READ. Deliberately. catalog/agents.yaml carried `version: 1` for its
-# whole life and nothing ever read it, which is how a schema grows fields that disagree
-# with reality because nothing can fail. So this file carries no field that no code
-# checks. Two fields a coordinate-conscious reader looks for, and where each stands:
-#
-#   purl:    on the routes whose value alone is the coordinate, read by tools/export.py --
-#            see FIELDS. Absent elsewhere: purl-spec's `brew` cannot tell a cask from a
-#            formula and `codex` ships as both; `deb` and `rpm` require the distribution
-#            as a namespace, and Cursor's packages come from Cursor's own repository;
-#            `chocolatey` and JetBrains plugins are not registered types. A wrong
-#            coordinate lands inside someone else's SBOM pipeline, where nobody here can
-#            see it.
-#   version: what a row's `ver` column MEANS. Not a route field: the query that emits a
-#            kind fixes it, so bin/classify declares it per kind (VERSION_KINDS, beside
-#            PATH_KINDS) and a custom registry cannot get it wrong.
-#            `osquery` below is present because osquery/tools/build.py checks every
-#            binding against the query frontmatter.
+# EVERY FIELD IS READ. A field no code checks can disagree with reality without anything
+# failing, as agents.yaml's unread `version: 1` once did.
 #
 # FIELDS
-#   platform      darwin | linux | windows | posix   (posix == darwin AND linux)
-#   kind          the row kind that carries this route, from the six-column contract
-#   match         how a catalog value is compared to a row -- see MATCH MODES
-#   osquery       the route's BINDING to osquery: {table, min_osquery}, the table the
-#                 evidence comes from and the floor it needs. osquery/tools/build.py
-#                 asserts that on each platform the route covers, some query emitting its
-#                 kind declares that table in `-- tables:` and at least that floor in
-#                 `-- min-osquery:`, so a route nothing can feed fails the build instead of
-#                 quietly matching nothing. It used to say lint checked this; nothing did.
-#                 Every route needs a binding. A second binding is a second key beside
-#                 this one, and the rest of the route does not change
-#   value_pattern optional regex every catalog value on this route must fullmatch
-#   retired       optional. The route no longer identifies anything, but rows of its
-#                 kind are still collected and MUST stay registered -- see `ports`
-#   purl          optional. The package-url type of this route's values, when a value alone
-#                 determines the coordinate. tools/export.py reads it and fails on a type it
-#                 cannot build; test/test_export.py holds each builder to purl-spec's rules
-#   live          optional. Rows of this route say the agent is RUNNING, not only
-#                 installed; bin/classify marks a finding with one `running`. Every other
-#                 route reports presence
-#   values_from   optional. Index ANOTHER route's catalog values instead of a key of this
-#                 route's own name. For a route that matches the same identifiers through
-#                 a different row kind -- `container_images` reads `images:`, because a
-#                 running container and a pulled image name the same repository. Read by
-#                 bin/classify's build_index; deliberately NOT by tools/agent_status.py,
-#                 so an identifier reachable two ways is still counted once
-#
-# MATCH MODES
-#   exact             the value equals the row's id
-#   prefix            the value is a front-anchored prefix of the row's id
-#   exact-normalised  `images` only: the row's id is a tag LIST, each normalised to a
-#                     repository first. bin/classify's image_repo() owns the four rules
-#   home-dir          a `~/`-rooted DIRECTORY, anchored at both ends. `~/.claude` must
-#                     match `.../.claude` and `.../.claude/` and must NOT match
-#                     `.../.claudefoo` -- it did, for as long as the glob was
-#                     front-anchored only
-#   home-prefix       a `~/`-rooted path and anything under it, never a name that starts
-#                     with it: `~/.local/bin/claude` must not match `claude-monitor`. A
-#                     value ending in `/` claims everything under it
-#   tool-dir          reached through bin/classify's TOOL_DIR bridge rather than the
-#                     generic loop: pipx and uv name each tool's directory after the
-#                     PACKAGE, so a path row can yield a package name. Excluded from the
-#                     generic per-kind list, which is what stops a PyPI-only signature
-#                     claiming an npm package of the same name -- npm's `mcp` is
-#                     Mintlify's, and it was reported as the MCP SDK until that split
-# The platform vocabulary. A value outside it is a typo, and `macos` used to build clean
-# and yield a pack query osqueryd silently never scheduled.
+#   platform      darwin | linux | windows | posix (darwin and linux)
+#   kind          the evidence row kind that carries the route (SPEC.md 5.1)
+#   match         how a value is compared with a row; SPEC.md 6.4 defines each mode
+#   osquery       {table, min_osquery}: the osquery table the evidence comes from, and the
+#                 lowest version that provides it. osquery/tools/build.py fails when no
+#                 query on a platform the route covers declares both
+#   value_pattern optional. A regex every value on the route must match in full
+#   retired       optional. The route identifies nothing, but its kind is still collected
+#                 and stays registered (SPEC.md 6.1) -- see `ports`
+#   live          optional. A row of this route says the agent is running (SPEC.md 6.6)
+#   values_from   optional. Match another route's values instead of its own (SPEC.md 6.3).
+#                 tools/agent_status.py ignores it, so an identifier reachable two ways is
+#                 counted once
+#   purl          optional. The package-url type of the route's values, where a value alone
+#                 is the coordinate; tools/export.py reads it. Absent on purpose elsewhere:
+#                 purl's `brew` cannot tell a cask from a formula, `deb` and `rpm` need the
+#                 distribution as a namespace, and JetBrains plugins have no type. A wrong
+#                 coordinate lands in someone else's SBOM pipeline, where nobody here sees it.
+
+# A platform outside this list is a typo: `macos` once built clean and gave a pack query
+# osqueryd never scheduled.
 platforms: [darwin, linux, windows]
 
-# `posix` is one word for darwin AND linux, and it is osqueryd's own word for it in the
-# pack format -- so a query's `-- platform:` and a route's `platform:` are drawn from one
-# vocabulary rather than two that have to be translated.
+# osqueryd's own word for darwin and linux, so a query's `-- platform:` and a route's
+# `platform:` share one vocabulary.
 platform_groups:
   posix: [darwin, linux]
 

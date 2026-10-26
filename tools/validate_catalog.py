@@ -71,7 +71,7 @@ def archived_match(aid, rec):
 #
 # The gate below is unconditional now. `untested:`, the identifier-level version of the
 # same idea, went with it and was equally empty. What replaces them is a stricter question,
-# not another register -- see docs/signature-lifecycle-v2.md: an identifier that WAS proved
+# not another register -- see docs/signature-lifecycle.md: an identifier that WAS proved
 # and can no longer be is superseded and carries the observation that proved it; one that
 # was never proved is not a signature.
 
@@ -170,7 +170,7 @@ def validate_registry(reg, modes=None):
 # `unverified:`, the register it replaced, was not: a block of guesses written under it
 # passed, and nothing reads it. These are the keys some tool reads; anything else is a
 # record no code can disagree with.
-TOP_LEVEL = {"version", "agents", "removed", "classifications", "not_agents"}
+TOP_LEVEL = {"version", "agents", "removed", "classifications"}
 
 
 def top_level_errors(doc):
@@ -250,12 +250,12 @@ def route_value_errors(aid, agent, reg):
     return errors
 
 
-def image_errors(aid, agent, image_repo):
-    """An `images` value is written as bin/classify normalises it. Two spellings of one
-    repository -- `docker.io/x/y` and `x/y` -- pass every other check, collide after
-    normalising, and the index keeps whichever agent comes last."""
-    return [f"{aid}: images {v!r} normalises to {image_repo(str(v))!r}; write that"
-            for v in agent.get("images", []) if image_repo(str(v)) != str(v)]
+def image_errors(aid, agent, image_repo, routes):
+    """A value on an `exact-normalised` route is written normalised (SPEC.md 4.4 rule 5).
+    Two spellings of one repository -- `docker.io/x/y` and `x/y` -- pass every other check,
+    collide after normalising, and the index keeps whichever agent comes last."""
+    return [f"{aid}: {r} {v!r} normalises to {image_repo(str(v))!r}; write that"
+            for r in routes for v in agent.get(r, []) if image_repo(str(v)) != str(v)]
 
 
 def claims(mode, p, q):
@@ -326,9 +326,8 @@ def live_superseded_errors(aid, agent, live):
 
 
 def version_errors(doc, catalog_version):
-    """This catalog and this matcher ship together, so they agree on the version exactly.
-    bin/classify only warns on a newer catalog, which is right for a consumer pairing a
-    new catalog with an old matcher and wrong for the tree that writes both."""
+    """This catalog and this matcher ship together, so they agree on the version exactly;
+    bin/classify refuses any other."""
     if doc.get("version") != catalog_version:
         return [f"catalog version is {doc.get('version')!r} and bin/classify reads version "
                 f"{catalog_version}; bump them together"]
@@ -348,20 +347,16 @@ def main():
     # ("state_dirs", "binaries", "model_stores") tuple this file used to carry -- the
     # same tuple that also sat in bin/classify and tools/agent_status.py.
     PATH_ROUTES = [n for n, r in reg["routes"].items() if r["match"].startswith("home-")]
+    # The routes that hold image values, by mode rather than by the name `images`.
+    IMAGE_ROUTES = [n for n, r in reg["routes"].items()
+                    if r["match"] == "exact-normalised" and not r.get("values_from")]
     known = set(classification_names(doc))
 
     errors_registry = validate_registry(reg)
     classify = load_classify()
     live = live_observations(ROOT)
 
-    # not_agents names classifications, so a typo here would silently count an agent as a
-    # supporting tool or the reverse -- a wrong headline number with nothing to notice it.
-    unknown_na = set(doc.get("not_agents", ())) - known
-    errors = []
-    if unknown_na:
-        errors.append(f"not_agents names {sorted(unknown_na)}, which are not "
-                      f"classifications")
-    errors.extend(errors_registry)
+    errors = list(errors_registry)
     seen_ids, seen_route_values = set(), {}
 
     for agent in doc["agents"]:
@@ -381,7 +376,7 @@ def main():
             errors.append(f"{aid}: unknown field(s) {sorted(unknown)}")
         errors.extend(borrowed_route_errors(aid, agent, reg))
         errors.extend(route_value_errors(aid, agent, reg))
-        errors.extend(image_errors(aid, agent, classify.image_repo))
+        errors.extend(image_errors(aid, agent, classify.image_repo, IMAGE_ROUTES))
         errors.extend(live_superseded_errors(aid, agent, live))
 
         routes = ROUTES & set(agent)
@@ -407,13 +402,13 @@ def main():
         # catalog would normalise to `ollama/ollama` on the row side and never match, and
         # it would fail silently -- the agent simply stops being found. Rejected here
         # rather than discovered on a fleet.
-        for value in agent.get("images", []):
+        for route, value in ((r, v) for r in IMAGE_ROUTES for v in agent.get(r, [])):
             tail = str(value).rsplit("/", 1)[-1]
             if ":" in tail:
-                errors.append(f"{aid}: images {value!r} carries a tag. Use the repository "
+                errors.append(f"{aid}: {route} {value!r} carries a tag. Use the repository "
                               f"alone; the matcher strips the tag from the row side.")
             if str(value) != str(value).lower():
-                errors.append(f"{aid}: images {value!r} must be lowercase; a registry "
+                errors.append(f"{aid}: {route} {value!r} must be lowercase; a registry "
                               f"rejects uppercase in a repository name.")
 
         # A SUPERSEDED RECORD MUST BE BACKED BY AN ARCHIVED OBSERVATION. This replaces a
@@ -569,14 +564,7 @@ def main():
         for e in errors:
             print(f"  {e}")
         sys.exit(1)
-    # `not_agents` is empty now that the scope is agents only. The machinery stays,
-    # because the argument that produced it will be had again: something detectable and
-    # AI-adjacent will be proposed, and the question will be whether it ACTS on anyone's
-    # behalf. Print the split only when there is one.
-    na = set(doc.get("not_agents", ()))
-    n_tools = sum(1 for a in doc["agents"] if a.get("classification") in na)
-    split = f" ({len(doc['agents']) - n_tools} agents, {n_tools} not)" if n_tools else ""
-    print(f"catalog: ok, {len(doc['agents'])} agents{split}, "
+    print(f"catalog: ok, {len(doc['agents'])} agents, "
           f"{len(seen_route_values)} identifiers, scenario references resolve")
     # No exception count, because there is no longer a way to be an exception. Every agent
     # above passed the unconditional gate, so the number could only ever have been the

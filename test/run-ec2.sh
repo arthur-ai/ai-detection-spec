@@ -264,10 +264,10 @@ cat > "$GUEST" <<'GUEST'
 #!/bin/bash
 # Written by test/run-ec2.sh and run on the guest. Not for running by hand.
 set -uo pipefail
-export AI_DISCOVERY_TELEMETRY=0
+export AI_DETECTION_SPEC_TELEMETRY=0
 V="$1"; MODE="$2"; SC="$3"; CREDITS="${4:-default}"; DRAIN="${5:-0}"
-REPO=/opt/ai-discovery
-OUT=/tmp/ai-discovery-out
+REPO=/opt/ai-detection-spec
+OUT=/tmp/ai-detection-spec-out
 log() { printf '%s\n' "$*" | tee -a "$OUT/facts.txt"; }
 ms() { echo $(( ($(date +%s%N) - $1) / 1000000 )); }
 imds() {
@@ -400,7 +400,7 @@ ssm_user_session() {
 # One instance, one scenario. Returns the guest's verdict: 0 pass, 3 skip, anything else fail.
 run_vm() {
   local fam="$1" sc="$2" mode="$3" param="$4" type="$5" vm id ami root rc i out st drain=0
-  vm="ai-discovery-$fam-${sc%%-*}-$$"
+  vm="ai-detection-spec-$fam-${sc%%-*}-$$"
   out="$ART/$fam${EC2_CREDITS:+-$EC2_CREDITS}/$sc"; rm -rf "$out"; mkdir -p "$out"
   [ "$mode" = facts ] && drain="$EC2_DRAIN_MINUTES"
   ami="$(aws ssm get-parameter --name "$param" --query Parameter.Value --output text 2>"$out/create.err")" \
@@ -456,18 +456,18 @@ run_vm() {
   fi
 
   # stderr is kept and shown on failure: a WARN with no reason is one nobody can act on.
-  ec2_get "$id" /tmp/ai-discovery-out "$out/" >/dev/null 2>"$out/fetch.err" \
+  ec2_get "$id" /tmp/ai-detection-spec-out "$out/" >/dev/null 2>"$out/fetch.err" \
     || { echo "WARN: could not fetch the guest's output; guest.log is all there is:"
          sed 's/^/    /' "$out/fetch.err"; }
   cleanup
 
   # RECORD FROM THE HOST, against the fetched payload, with the guest's own os and arch.
   # Only on a pass: a failed run's matches are not evidence of anything.
-  if [ "$rc" = 0 ] && [ -s "$out/ai-discovery-out/payload.json" ]; then
+  if [ "$rc" = 0 ] && [ -s "$out/ai-detection-spec-out/payload.json" ]; then
     local gos garch
-    gos="$(sed -n 1p "$out/ai-discovery-out/meta")"; garch="$(sed -n 2p "$out/ai-discovery-out/meta")"
+    gos="$(sed -n 1p "$out/ai-detection-spec-out/meta")"; garch="$(sed -n 2p "$out/ai-detection-spec-out/meta")"
     if lock; then
-      python3 "$ROOT/tools/agent_status.py" --record "$out/ai-discovery-out/payload.json" \
+      python3 "$ROOT/tools/agent_status.py" --record "$out/ai-detection-spec-out/payload.json" \
         "$HERE/scenarios/$sc" --platform linux --os "$gos" --arch "$garch" || rc=1
       unlock
     else
@@ -495,7 +495,7 @@ EOF
   done
   echo
   echo "run-ec2: $fam: $pass passed, $fail failed, $skip skipped." \
-       "Facts: $ART/$fam${EC2_CREDITS:+-$EC2_CREDITS}/${scenarios[0]}/ai-discovery-out/facts.txt"
+       "Facts: $ART/$fam${EC2_CREDITS:+-$EC2_CREDITS}/${scenarios[0]}/ai-detection-spec-out/facts.txt"
   [ "$fail" = 0 ]
 }
 

@@ -36,7 +36,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent  # osquery/, the binding
 FIXTURES = ROOT.parent / "test" / "fixtures"  # the matcher's, at the repository root
 sys.path.insert(0, str(ROOT / "tools"))
 import render_match as R  # noqa: E402
-os.environ.setdefault("AI_DISCOVERY_TELEMETRY", "0")
+os.environ.setdefault("AI_DETECTION_SPEC_TELEMETRY", "0")
 
 failures = []
 
@@ -297,7 +297,7 @@ def main():
         else:
             check(f"{kind} {ident!r} is {agent}", found == {agent}, f"got {sorted(found)}")
 
-    # --- the format's conformance vectors, through the SQL ---------------------------
+    # --- the spec's conformance vectors, through the SQL ---------------------------
     # The same vectors the repository's conformance test holds bin/classify to (SPEC.md 9),
     # each with its own catalog. The SQL answers which agent a row belongs to, which is what
     # a vector's `matches` states; unmatched, dropped and the scan groups are the
@@ -305,16 +305,17 @@ def main():
     sys.path.insert(0, str(ROOT.parent / "test"))
     import conformance
     for v in conformance.load():
-        vcat, vroutes = conformance.authoring_form(v["catalog"], classify.CATALOG_VERSION)
         if v["expect"].get("error"):
-            # A refusal names the mode. Any other exception is a crash, not a refusal.
+            # A refusal names what the vector refuses. Any other exception is a crash.
             try:
+                vcat, vroutes = conformance.authoring_form(classify, v["catalog"])
                 R.signatures(classify, vcat, classify.Registry(vroutes))
                 check(f"vector {v['id']}: the renderer refuses it", False, "it rendered")
             except (ValueError, SystemExit) as exc:
-                check(f"vector {v['id']}: the renderer refuses it", "unknown match mode" in
-                      str(exc), str(exc))
+                check(f"vector {v['id']}: the renderer refuses it",
+                      v["expect"]["error"] in str(exc), str(exc))
             continue
+        vcat, vroutes = conformance.authoring_form(classify, v["catalog"])
         vreg = classify.Registry(vroutes)
         vhits = sql_hits(osqi, v["rows"], R.fragment(R.signatures(classify, vcat, vreg),
                                                      classify.TOOL_DIR.pattern))

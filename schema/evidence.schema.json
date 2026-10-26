@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:ai-detection-spec:schema:evidence:0.1",
-  "title": "Open Agent Detection Format: evidence",
+  "title": "ai-detection-spec: evidence",
   "description": "What a binding reports: an array of evidence rows. SPEC.md section 5.",
   "type": "array",
   "items": {"$ref": "#/$defs/row"},
@@ -28,7 +28,7 @@
       }
     },
     "scan_outcome": {
-      "description": "SPEC.md 5.2. Closed in this version: adding an outcome is a change to the format.",
+      "description": "SPEC.md 5.2. Closed in this version: adding an outcome is a change to the spec.",
       "anyOf": [
         {"enum": ["ok", "absent", "error", "no-cache"]},
         {"type": "string", "pattern": "^unreadable:[a-z0-9-]+$"},

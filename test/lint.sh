@@ -14,7 +14,7 @@ fail=0
 # nothing, and a maintainer's own machine has no CI set at all -- so the suite would post
 # an event for every fixture it classifies and the field data would be mostly us. Set
 # explicitly rather than relied upon: see docs/telemetry.md.
-export AI_DISCOVERY_TELEMETRY=0
+export AI_DETECTION_SPEC_TELEMETRY=0
 
 # THE CHECKER IS CHOSEN BY THE SHEBANG, not by one rule for every scenario.
 #
@@ -128,7 +128,7 @@ python3 "$HERE/../tools/validate_catalog.py" || fail=1
 python3 "$HERE/../test/test_matcher.py" >/dev/null || { echo "FAIL: matcher tests"; fail=1; }
 python3 "$HERE/../test/test_telemetry.py" >/dev/null || { echo "FAIL: telemetry tests"; fail=1; }
 python3 "$HERE/../test/test_ci_scope.py" >/dev/null || { echo "FAIL: ci scope tests"; fail=1; }
-# The format's vectors and schemas, and the export. Each SKIPs without jsonschema, and the SKIP
+# The spec's vectors and schemas, and the export. Each SKIPs without jsonschema, and the SKIP
 # is printed: discarded, it read as a pass. CI requires jsonschema.
 schema_test() {  # schema_test <label> <script>
   local out

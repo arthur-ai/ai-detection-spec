@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write the catalog as an Open Agent Detection Format document (SPEC.md section 4).
+"""Write the catalog as an ai-detection-spec catalog document (SPEC.md section 4).
 
     tools/export.py [--strict] [--commit SHA] [--out PATH]
 
@@ -112,13 +112,7 @@ def _proofs(recs):
 
 
 def document(catalog, routes, live, archived, commit=None, shas=None):
-    """The format's catalog document. Pure: everything it reads is an argument."""
-    # `not_agents` names classifications whose entries are NOT agents. The format has no
-    # place for them (SPEC.md 3), and publishing them under `agents` is the overstatement
-    # this catalog exists to avoid. Refused rather than filtered: the scope is a decision.
-    if catalog.get("not_agents"):
-        raise ValueError(f"export: not_agents {sorted(catalog['not_agents'])} has no place in "
-                         f"the format; its entries would be published as agents")
+    """The spec's catalog document. Pure: everything it reads is an argument."""
     if set(BINDINGS) != {BINDING}:
         raise ValueError(f"export: bindings {sorted(BINDINGS)}, and observed.json does not "
                          f"say which produced a record. Record it before publishing proof")

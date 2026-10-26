@@ -396,10 +396,10 @@ check("osquery/dist/discovery-linux.sql runs exactly the Linux scenarios",
 DEEP = {n for n in _LISTED if _expected(n).get("deep")}
 check("the deep artifact runs the deep scenarios, the only ones that run osquery/bin/discover",
       bool(DEEP) and scenarios(["osquery/dist/discovery-deep.sql"]) == DEEP, str(sorted(DEEP)))
-check("so does the pack", scenarios(["osquery/dist/ai-discovery.conf"]) == DEEP)
+check("so does the pack", scenarios(["osquery/dist/ai-detection-spec.conf"]) == DEEP)
 # What a darwin query edit actually touches, so the platform rule is seen to save something.
 _dq = scenarios(["osquery/queries/runtime.sql", "osquery/dist/discovery-darwin.sql", "osquery/dist/agents-darwin.sql",
-                 "osquery/dist/ai-discovery.conf"])
+                 "osquery/dist/ai-detection-spec.conf"])
 check("a darwin query PR, with its generated files, runs no Linux scenario but the deep one",
       _dq == DARWIN | DEEP, str(sorted(_dq - DARWIN)))
 # A scenario whose own facts cannot be read is run by every rule that consults them.

@@ -44,5 +44,5 @@ the plugin's directory.
 
 **Have you added a scenario?**
 
-A signature needs a passing scenario under `test/scenarios/`. If you have not written one, say
-so and open the issue anyway; a maintainer can help.
+An identifier needs a passing scenario under `test/scenarios/`. If you have not written one,
+say so and open the issue anyway; a maintainer can help.

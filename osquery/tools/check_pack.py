@@ -40,7 +40,7 @@ PLATFORM = {"Darwin": "darwin", "Linux": "linux"}.get(_platform.system())
 if PLATFORM is None:
     sys.exit(f"check_pack: unsupported platform {_platform.system()}")
 
-pack = json.loads((ROOT / "dist" / "ai-discovery.conf").read_text())
+pack = json.loads((ROOT / "dist" / "ai-detection-spec.conf").read_text())
 COLUMNS = ["kind", "id", "ver", "loc", "extra", "perms"]
 failed, total_rows = False, 0
 

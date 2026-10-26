@@ -21,7 +21,7 @@
     ],
     "forbid": []
   },
-  "why": "daemon and port were both IN lists before D20 -- three label prefixes and four port numbers. Now launchd enumerates every non-Apple job (937 down to 47 on a reference Mac, and the exclusion is the platform vendor, not a catalog) and listening_ports returns every real listener. An inference server on an uncatalogued port is exactly the shadow-AI case the old IN list could not see.",
+  "why": "launchd enumerates every non-Apple job (937 down to 47 on a reference Mac; the exclusion is the platform vendor, not a catalog), and the gateway LaunchAgent is what finds OpenClaw here. The listener on 18789 is asserted as raw evidence only: the `ports` route is retired, because a listening port names an agent only when the process holding it already does.",
   "must_contain": [
     "ai.openclaw.gateway",
     "18789"

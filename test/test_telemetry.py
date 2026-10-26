@@ -77,14 +77,14 @@ def env(home, **over):
     e = dict(os.environ)
     e.pop("CI", None)
     # SET ON, NOT MERELY INHERITED. test/lint.sh and tools/gates.sh export
-    # AI_DISCOVERY_TELEMETRY=0 so that running the suite is not itself reported -- and
+    # AI_DETECTION_SPEC_TELEMETRY=0 so that running the suite is not itself reported -- and
     # this file inherited that, so every assertion about what gets sent passed against an
     # endpoint that received nothing. The suite was green and vacuous under lint and
     # honest when run by hand, which is the worst of the two possible ways round.
-    e["AI_DISCOVERY_TELEMETRY"] = "1"
+    e["AI_DETECTION_SPEC_TELEMETRY"] = "1"
     e["XDG_CONFIG_HOME"] = str(home)
-    e["AI_DISCOVERY_AMPLITUDE_KEY"] = "test-ingest-key"
-    e["AI_DISCOVERY_AMPLITUDE_URL"] = f"http://127.0.0.1:{DEAD}/2/httpapi"
+    e["AI_DETECTION_SPEC_AMPLITUDE_KEY"] = "test-ingest-key"
+    e["AI_DETECTION_SPEC_AMPLITUDE_URL"] = f"http://127.0.0.1:{DEAD}/2/httpapi"
     e.update(over)
     return e
 
@@ -119,7 +119,7 @@ KNOWN = FIXTURES / "known-agents.json"
 
 # --- the baseline: what the operator sees when nothing is sent ----------------------
 home_off = TMP / "home-off"
-off, _ = run(KNOWN, env(home_off, AI_DISCOVERY_TELEMETRY="0"))
+off, _ = run(KNOWN, env(home_off, AI_DETECTION_SPEC_TELEMETRY="0"))
 BASE_OUT, BASE_RC = off.stdout, off.returncode
 check("a run with telemetry off still classifies", BASE_RC == 0 and "aider" in BASE_OUT,
       f"rc={BASE_RC}")
@@ -130,7 +130,7 @@ for state in ("ok", "throttle", "toobig", "garbage", "hang"):
     proc_srv, port, cap = serve(state)
     try:
         home = TMP / f"home-{state}"
-        got, elapsed = run(KNOWN, env(home, AI_DISCOVERY_AMPLITUDE_URL=
+        got, elapsed = run(KNOWN, env(home, AI_DETECTION_SPEC_AMPLITUDE_URL=
                                       f"http://127.0.0.1:{port}/2/httpapi"))
         check(f"{state}: the report is byte-identical to a run that sent nothing",
               got.stdout == BASE_OUT,
@@ -161,7 +161,7 @@ try:
         [sys.executable, str(CLASSIFY), str(KNOWN)], stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL, text=True,
         env=env(TMP / "home-flush",
-                AI_DISCOVERY_AMPLITUDE_URL=f"http://127.0.0.1:{port}/2/httpapi"))
+                AI_DETECTION_SPEC_AMPLITUDE_URL=f"http://127.0.0.1:{port}/2/httpapi"))
     first_line = piped.stdout.readline()
     first_byte = time.time() - started
     piped.wait(timeout=30)
@@ -180,13 +180,13 @@ check("refuse: a missing endpoint costs neither the report nor the exit code",
 check("refuse: and it does not stall", elapsed < 10, f"took {elapsed:.1f}s")
 
 # --- off means off -------------------------------------------------------------------
-for label, over in (("AI_DISCOVERY_TELEMETRY=0", {"AI_DISCOVERY_TELEMETRY": "0"}),
-                    ("AI_DISCOVERY_TELEMETRY=off", {"AI_DISCOVERY_TELEMETRY": "off"}),
+for label, over in (("AI_DETECTION_SPEC_TELEMETRY=0", {"AI_DETECTION_SPEC_TELEMETRY": "0"}),
+                    ("AI_DETECTION_SPEC_TELEMETRY=off", {"AI_DETECTION_SPEC_TELEMETRY": "off"}),
                     ("CI is set", {"CI": "true"})):
     proc_srv, port, cap = serve("ok")
     try:
         home = TMP / f"home-off-{abs(hash(label))}"
-        got, _ = run(KNOWN, env(home, AI_DISCOVERY_AMPLITUDE_URL=
+        got, _ = run(KNOWN, env(home, AI_DETECTION_SPEC_AMPLITUDE_URL=
                                 f"http://127.0.0.1:{port}/2/httpapi", **over))
         check(f"{label}: nothing is sent", captured(cap) == [],
               f"{len(captured(cap))} requests reached the endpoint")
@@ -194,7 +194,7 @@ for label, over in (("AI_DISCOVERY_TELEMETRY=0", {"AI_DISCOVERY_TELEMETRY": "0"}
         proc_srv.kill()
 
 # NO KEY AT ALL, which is a fork that stripped the constant rather than an env var. This
-# used to sit in the loop above as AI_DISCOVERY_AMPLITUDE_KEY="", and it passed for exactly
+# used to sit in the loop above as AI_DETECTION_SPEC_AMPLITUDE_KEY="", and it passed for exactly
 # as long as the shipped constant was ALSO empty -- an empty env var falls back to the
 # constant, which is the correct behaviour and made the assertion test nothing. It only
 # came apart when a real key was baked in. So the state is arranged properly now: a copy of
@@ -208,8 +208,8 @@ try:
                     "--routes", str(ROOT / "catalog" / "routes.yaml")]
     subprocess.run([sys.executable, str(stripped), str(KNOWN), *catalog_args],
                    capture_output=True, text=True,
-                   env=env(TMP / "home-nokey", AI_DISCOVERY_AMPLITUDE_KEY="",
-                           AI_DISCOVERY_AMPLITUDE_URL=
+                   env=env(TMP / "home-nokey", AI_DETECTION_SPEC_AMPLITUDE_KEY="",
+                           AI_DETECTION_SPEC_AMPLITUDE_URL=
                            f"http://127.0.0.1:{port}/2/httpapi"))
 finally:
     proc_srv.kill()
@@ -232,9 +232,9 @@ check("the compiled-in key is an INGEST key -- lowercase hex, never a secret key
 proc_srv, port, cap_ok = serve("ok")
 try:
     home_ok = TMP / "home-ok-fields"
-    first, _ = run(KNOWN, env(home_ok, AI_DISCOVERY_AMPLITUDE_URL=
+    first, _ = run(KNOWN, env(home_ok, AI_DETECTION_SPEC_AMPLITUDE_URL=
                               f"http://127.0.0.1:{port}/2/httpapi"))
-    second, _ = run(KNOWN, env(home_ok, AI_DISCOVERY_AMPLITUDE_URL=
+    second, _ = run(KNOWN, env(home_ok, AI_DETECTION_SPEC_AMPLITUDE_URL=
                                f"http://127.0.0.1:{port}/2/httpapi"))
 finally:
     proc_srv.kill()
@@ -250,7 +250,7 @@ check("every property is one docs/telemetry.md declares",
 # the guard is the same, and it is the reason a field cannot arrive here because an author
 # found it interesting. Adding one means editing this literal, which is the point.
 AGREED = {
-    "catalog_sha", "catalog_schema_version", "catalog_agents", "catalog_skew",
+    "catalog_sha", "catalog_schema_version", "catalog_agents",
     "classify_sha",
     "rows_total", "findings_agents", "findings_rows", "unmatched_rows", "dropped_rows",
     "payload_bytes", "payload_packed_bytes",
@@ -323,7 +323,7 @@ check("the envelope carries an id, the IP, a timestamp, a dedupe token and the O
       f"envelope is {sorted(event)}")
 check("the device id is random, persisted, and not a machine identifier",
       len(event.get("device_id", "")) == 32 and
-      (home_ok / "ai-discovery" / "install-id").exists())
+      (home_ok / "ai-detection-spec" / "install-id").exists())
 check("the same install reports the same id on its second run",
       len({e["events"][0]["device_id"] for e in captured(cap_ok)}) == 1)
 check("the first run says so on stderr, and the second does not",
@@ -339,7 +339,7 @@ check("...and the notice never touches stdout, which --json callers parse",
 ref = json.loads(subprocess.run(
     [sys.executable, str(CLASSIFY), str(KNOWN), "--json", "--show-unmatched"],
     capture_output=True, text=True,
-    env=env(TMP / "home-ref", AI_DISCOVERY_TELEMETRY="0")).stdout)
+    env=env(TMP / "home-ref", AI_DETECTION_SPEC_TELEMETRY="0")).stdout)
 check("the counts are the ones the report itself shows",
       props.get("findings_agents") == len(ref["findings"])
       and props.get("rows_total") == len(json.loads(KNOWN.read_text()))
@@ -397,10 +397,17 @@ gapful.write_text(json.dumps([
 proc_srv, port, cap_gap = serve("ok")
 try:
     run(gapful, env(TMP / "home-gaps",
-                    AI_DISCOVERY_AMPLITUDE_URL=f"http://127.0.0.1:{port}/2/httpapi"))
+                    AI_DETECTION_SPEC_AMPLITUDE_URL=f"http://127.0.0.1:{port}/2/httpapi"))
 finally:
     proc_srv.kill()
 gp = props_of(cap_gap)
+sys.path.insert(0, str(ROOT / "test"))
+import conformance  # noqa: E402
+_words, _patterns = conformance.scan_outcomes()
+_heads = {w for w in _words if w != "ok"} | {p.lstrip("^").split(":")[0] for p in _patterns}
+check("GAP_REASONS is the evidence schema's outcomes other than ok",
+      set(classify_mod.GAP_REASONS) == _heads,
+      f"classify {sorted(classify_mod.GAP_REASONS)}, schema {sorted(_heads)}")
 check("every gap reason a scan row can carry arrives normalised",
       gp.get("gap_reasons") == "absent,error,no-cache,other,timeout,unhealthy,unreadable",
       f"{gp.get('gap_reasons')!r}")
@@ -429,9 +436,9 @@ broken.write_text("{ this is not json, and the error message will name this file
 proc_srv, port, cap_crash = serve("ok")
 try:
     home_crash = TMP / "home-crash"
-    crashed, _ = run(broken, env(home_crash, AI_DISCOVERY_AMPLITUDE_URL=
+    crashed, _ = run(broken, env(home_crash, AI_DETECTION_SPEC_AMPLITUDE_URL=
                                  f"http://127.0.0.1:{port}/2/httpapi"))
-    plain, _ = run(broken, env(TMP / "home-crash-off", AI_DISCOVERY_TELEMETRY="0"))
+    plain, _ = run(broken, env(TMP / "home-crash-off", AI_DETECTION_SPEC_TELEMETRY="0"))
 finally:
     proc_srv.kill()
 check("a crash still exits non-zero and still prints its traceback",
@@ -457,7 +464,7 @@ check("the exception MESSAGE is never sent -- messages carry paths",
 missing = TMP / "no-such-payload-a1b2c3.json"
 proc_srv, port, cap_missing = serve("ok")
 try:
-    gone, _ = run(missing, env(TMP / "home-missing", AI_DISCOVERY_AMPLITUDE_URL=
+    gone, _ = run(missing, env(TMP / "home-missing", AI_DETECTION_SPEC_AMPLITUDE_URL=
                                f"http://127.0.0.1:{port}/2/httpapi"))
 finally:
     proc_srv.kill()
@@ -471,6 +478,23 @@ check("...and the path it could not find is NOT in the event",
       and str(TMP) not in cap_missing.read_text(),
       "FileNotFoundError's message IS the path; sending it sends the home directory")
 
+# A REFUSED CATALOG IS COUNTED AS ONE, by its own phase, so version skew in the field stays
+# visible now that it is refused rather than warned about.
+newer = TMP / "catalog-v99.yaml"
+newer.write_text((ROOT / "catalog" / "agents.yaml").read_text()
+                 .replace("\nversion: 3\n", "\nversion: 99\n"))
+proc_srv, port, cap_skew = serve("ok")
+try:
+    skewed, _ = run(KNOWN, env(TMP / "home-skew", AI_DETECTION_SPEC_AMPLITUDE_URL=
+                               f"http://127.0.0.1:{port}/2/httpapi"), "--catalog", str(newer))
+finally:
+    proc_srv.kill()
+sp = props_of(cap_skew)
+check("a refused catalog exits non-zero and is reported in the `catalog` phase",
+      skewed.returncode != 0 and sp.get("error_type") == "SystemExit"
+      and sp.get("phase") == "catalog",
+      f"rc={skewed.returncode} {sp.get('error_type')} in {sp.get('phase')}")
+
 # --- the diagnostic ------------------------------------------------------------------
 shown = subprocess.run([sys.executable, str(CLASSIFY), str(KNOWN), "--telemetry-check"],
                        capture_output=True, text=True, env=env(TMP / "home-check"))
@@ -479,7 +503,7 @@ check("--telemetry-check prints the event and sends nothing",
       doc["event"]["event_properties"].keys() and captured(cap_ok),
       "the event must be printable, or the README's 'do not take it on trust' is a slogan")
 check("...and it does not create the install id it is describing",
-      not (TMP / "home-check" / "ai-discovery" / "install-id").exists(),
+      not (TMP / "home-check" / "ai-detection-spec" / "install-id").exists(),
       "a diagnostic with a side effect gives a different answer the second time")
 check("...and it says WHY a run would not send, rather than only that it would not",
       json.loads(subprocess.run(

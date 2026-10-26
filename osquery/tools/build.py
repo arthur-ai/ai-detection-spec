@@ -1,40 +1,23 @@
 #!/usr/bin/env python3
-"""Compose queries/*.sql into the two artifacts in dist/.
+"""Compose queries/*.sql into the artifacts in dist/.
 
-Authoring happens in one file per domain; shipping happens as one query. That split
-exists for a measured reason: osqueryi costs about 0.47s to start, so running the
-branches as separate processes costs roughly 29% more wall clock, and a synchronous
-reporting path has a budget to respect. Composing at build time keeps the runtime shape
-unchanged while letting the source be readable.
+    dist/discovery-darwin.sql      every macOS `fast`/`slow` query, joined with UNION ALL
+    dist/discovery-linux.sql       the same for Linux -- a DIFFERENT set of tables
+    dist/discovery-deep.sql        every `expensive` query, joined the same way
+    dist/ai-detection-spec.conf    an osquery pack, one named query per file
 
-    dist/discovery-darwin.sql  every macOS `fast`/`slow` query, joined with UNION ALL
-    dist/discovery-linux.sql   the same for Linux -- a DIFFERENT set of tables, not a subset
-    dist/discovery-deep.sql    every `expensive` query, joined the same way
-    dist/ai-discovery.conf     an osquery pack, one named query per file
+One file per domain to author, one query to ship: osqueryi costs about 0.47s to start, and a
+synchronous reporting path has a budget. One composed artifact per platform, because the
+tables are disjoint and a Linux artifact on macOS returns "[\n\n]" with exit 1.
 
-Four more files in dist/ are RENDERED from the catalog rather than composed from queries/,
-by tools/render_match.py: the signature fragment, the per-platform match queries and the
-Fleet policies. That tool needs PyYAML and this one must not, so main() runs it when it can
-and otherwise says what is left to do; `render_match.py --check` is its own gate.
+`expensive` queries can block forever, and the only bound is a kill on a process, so they
+are composed apart for bin/container-scan to run. Inline, a kill would return a full-looking
+inventory that exits 0 with the container half silently missing (queries/COST.md).
 
-ONE COMPOSED ARTIFACT PER PLATFORM, because one file cannot span two: the tables are
-disjoint, so a Linux artifact on macOS dies on the first table and returns "[\n\n]" --
-valid, empty, plausible JSON -- with exit 1. A query declares `-- platform: darwin`,
-`linux` or `posix`, and `posix` lands in both.
+Four more files in dist/ are rendered from the catalog by tools/render_match.py, which needs
+PyYAML; this tool must not, so main() runs it when it can and says so when it cannot.
 
-`expensive` queries are excluded from discovery.sql and composed into discovery-deep.sql
-instead. THE SPLIT IS THE WHOLE POINT AND IT IS NOT COSMETIC: an expensive query is one
-that can block forever -- `docker_images` against a daemon that accepts and never answers
-does not return at all -- and the only bound available is a wall-clock kill on the osqueryi
-process. There is no osquery flag for it (checked on 5.23.1: --docker_socket is the only
-docker flag, --alarm_timeout is shutdown-only, --schedule_timeout is osqueryd's schedule).
-A kill is per PROCESS, and what that costs with the branch inline is not what you would
-guess -- queries/containers.sql records the measurement. Short version: the composed file
-cannot bound itself, and bounding it from outside returns a full-looking inventory that
-exits 0 while silently omitting the container half. bin/discover --deep runs the two
-artifacts as two processes and unions the rows.
-
-No dependencies. Run: python3 tools/build.py [--check]
+No dependencies. Run: python3 osquery/tools/build.py [--check]
 """
 import json
 import pathlib
@@ -366,7 +349,7 @@ def main():
             inline.setdefault(plat, []).append(part)
 
     conf = json.dumps({"queries": pack}, indent=2, sort_keys=True) + "\n"
-    targets = {DIST / "ai-discovery.conf": conf}
+    targets = {DIST / "ai-detection-spec.conf": conf}
     for plat, parts in sorted(inline.items()):
         targets[DIST / f"discovery-{plat}.sql"] = compose(BANNER.format(
             columns=", ".join(COLUMNS)) + PLATFORM_NOTE.format(platform=plat), parts)
@@ -410,8 +393,8 @@ def main():
                   for p in sorted(DIST.glob("*")) if p.name not in known
                   and p not in retired]
         if stale:
-            sys.exit(f"dist/ is stale: {', '.join(stale)}. Run {SELF}.")
-        print(f"dist/ is up to date ({len(targets)} artifacts, "
+            sys.exit(f"osquery/dist/ is stale: {', '.join(stale)}. Run {SELF}.")
+        print(f"osquery/dist/ is up to date ({len(targets)} artifacts, "
               f"platforms: {', '.join(sorted(inline))}; "
               f"{len(rendered)} rendered files are osquery/tools/render_match.py --check's)")
         return

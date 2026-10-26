@@ -122,7 +122,7 @@ rm -f /tmp/o.deb /tmp/o.rpm
 # image in CI -- so it runs once here and the result is committed as the image every
 # scenario starts from. Tagged with this shell's pid so two runs on one machine do not
 # share a tag, and removed on exit; the next run rebuilds it from the base image.
-prepped="ai-discovery-prep:$(printf '%s' "$LINUX_IMAGE" | tr '/:' '__')-$$"
+prepped="ai-detection-spec-prep:$(printf '%s' "$LINUX_IMAGE" | tr '/:' '__')-$$"
 # LINUX_DOCKER_ARGS is a list of flags, split on purpose.
 # shellcheck disable=SC2086
 cid="$(docker create $LINUX_DOCKER_ARGS "$LINUX_IMAGE" bash -c "$prep")" \

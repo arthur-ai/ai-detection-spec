@@ -5,104 +5,55 @@
 -- cost: fast
 -- platform: posix
 --
--- POSIX, AND THE NATIVE-MESSAGING BRANCHES MOVED OUT to queries/native-messaging.sql and
--- queries/native-messaging-linux.sql. chrome_extensions is cross-platform and needs no
--- per-OS knowledge at all -- osquery carries the profile directories itself, and its
--- Linux list (osquery/tables/applications/chrome/utils.cpp) covers .config/google-chrome,
--- .config/chromium, Brave, Opera, Vivaldi, Yandex AND snap/chromium/common/chromium. The
--- native-messaging branches are the opposite: nothing but hardcoded per-OS paths.
+-- chrome_extensions carries every Chromium browser's profile directories itself, on both
+-- platforms (osquery's tables/applications/chrome/utils.cpp). It validates a profile by its
+-- Preferences file, so a hand-built fixture returns nothing, and 75-linux-browser installs a
+-- real browser for that reason.
 --
--- VERIFIED ON A REAL LINUX PROFILE, because three hand-built ones returned nothing:
--- osquery validates a profile by reading its Preferences file, and a fixture that merely
--- looks right does not pass. A real `google-chrome --headless=new --user-data-dir` profile
--- returned a row at once, with browser_type 'chrome' and the same permissions format
--- macOS gives. That is why 75-linux-browser installs a real browser rather than planting
--- a directory tree.
+-- Six columns: kind, id, ver, loc, extra, perms. See CONTRIBUTING.md before changing them.
 --
--- Emits the six-column contract: kind, id, ver, loc, extra, perms.
--- Branches within this file are joined with UNION ALL, and the build joins files
--- the same way. See CONTRIBUTING.md before changing the column list.
-
--- CROSS JOIN is mandatory. A plain JOIN ... USING (uid) returns ZERO rows silently:
--- osquery needs the uid constraint pushed into user-scoped tables.
+-- CROSS JOIN, because a plain JOIN on a user-scoped table returns zero rows (CLAUDE.md,
+-- Traps). This file is the home of the uid list that vscode, jetbrains and packages reuse.
 --
--- THE UID LIST COMES FROM DISK AS WELL AS FROM `users`, because on Linux `users` is not
--- the list of users. Since osquery 5.13.1 (osquery/osquery#8342) the unconstrained Linux
--- table reads /etc/passwd directly, so that an LDAP site does not pay a directory query
--- per scan -- and every account an NSS module supplies is absent from it: GCE OS Login,
--- SSSD, LDAP, Active Directory through realmd. Joined to that list, this branch skipped
--- exactly the users a server has and returned the shape a clean machine does. Read off
--- osquery/tables/system/linux/users.cpp at 5.23.1, and test/run-gce.sh is what shows it
--- on an OS Login VM.
+-- THE UIDS COME FROM DISK AS WELL AS FROM `users`. Since osquery 5.13.1 (osquery/osquery#8342)
+-- an unconstrained Linux `users` reads /etc/passwd only, so an account an NSS module
+-- supplies -- GCE OS Login, SSSD, LDAP, AD through realmd -- is absent, and this branch
+-- returned a clean machine's shape for exactly the users a server has (test/run-gce.sh shows
+-- it). A lookup by uid does reach NSS, so the owners of the home directories on disk are
+-- supplied. Gap left: an NSS-only account with its home outside /home, /root and /Users
+-- (docs/blind-spots.yaml).
 --
--- Constrained by ONE uid the table does fall through to NSS (usersFromContext retries
--- with include_remote=1), so the fix is to supply the uids rather than ask for them: the
--- owner of every home directory on disk. That is the set of accounts that have logged in,
--- which is the set that can own a browser profile. UNION rather than replacement keeps a
--- user whose home is elsewhere. An NSS-only account with a home outside /home, /root and
--- /Users is the gap left, and docs/blind-spots.yaml carries it. Both platforms' roots are
--- globbed because this file is posix: /home on macOS is an empty autofs map (0 rows,
--- 0.37s for the whole statement) and /Users does not exist on Linux. Measured 2026-10-04
--- on a reference Mac: 81 ext rows from either list, so nothing moves where `users` was
--- already complete.
+-- `permissions`, NOT `permissions_json`, which serialises an array as an object with
+-- repeated empty keys -- {"":"tabs","":"cookies"} -- that a strict parser collapses.
 --
--- `permissions`, NOT `permissions_json`. Verified against osquery 5.23.1 in 40-browser:
--- permissions_json serialises a JSON ARRAY as an object with repeated empty keys --
---   {"":"tabs","":"cookies","":"nativeMessaging"}
--- which is not round-trippable and would silently collapse to one key in any strict
--- parser. The flat `permissions` column is comma-separated and correct.
+-- manifest_json DOES NOT SHIP: on a 98-extension Mac it took the payload from 2.3 KB to
+-- 87 KB, past the 30KB EA budget (a convention, in the root CLAUDE.md). Under MV3
+-- '<all_urls>' lives in host_permissions, which only manifest_json carries, so the flag is
+-- computed here and only its result ships. It is a substring match and over-selects (a
+-- description mentioning the string matches), which is the right bias: a false positive
+-- costs a triage row, a false negative hides an extension reading every page.
 --
--- manifest_json deliberately does not ship. It is the one column that would blow the
--- 30KB EA budget: a developer Mac carries ~95 extensions with multi-KB manifests each.
---
--- '<all_urls>' is the "reads every authenticated page" signal, and under MV3 it lives in
--- host_permissions - a manifest key osquery models in NO column except manifest_json.
--- Shipping manifest_json to recover it is not affordable. Measured on a reference Mac
--- with 98 extension rows:
---
---     permissions only ............  2.26 KB EA payload
---     + manifest_json .............  86.57 KB   - 2.9x OVER the 30KB budget
---     + all_urls flag below .......  2.29 KB   - 38x cheaper, same signal
---
--- So the flag is computed HERE, in SQL, and only its result travels. 30 bytes for the
--- whole fleet-visible signal. The provenance tokens below were measured the same way on
--- 2026-10-07, on a Mac with 90 rows, 46 of them unreferenced: 2.21 KB before, 2.30 after.
---
--- This is a substring match over the raw manifest, so it is deliberately imprecise: it
--- cannot distinguish host_permissions from optional_host_permissions, and an extension
--- merely mentioning the string in a description would match. That is the correct bias
--- under D17 - the endpoint over-selects, the collector classifies. A false positive
--- costs one triage row, a false negative hides an extension reading every page.
--- PROVENANCE, appended after the flag above so every existing substring still holds. One
--- CASE, so the two tokens cannot both appear:
+-- `extra` IS THE BROWSER, then at most one provenance token. Provenance is not a capability,
+-- so it stays out of `perms`, which holds permissions and the flag only (SPEC.md 5.1):
 --
 --   unreferenced         on disk and absent from the profile's Preferences, so Chrome
 --                        will not load it: a leftover, or a directory planted by hand
 --   sideloaded:<sha256>  registered, and not from the Web Store. The hash is osquery's
---                        manifest_hash, carried only here because a sideloaded build need
---                        not carry a key, and without one its id is empty
+--                        manifest_hash, because a sideloaded build need not carry a key,
+--                        and without one its id is empty
 --
--- `!= 'true'` and not `= 'false'`: osquery passes the stored string through, so a store
--- install reads 'true', an unpacked one 'false', and a missing setting ''. A store row
--- carries neither token. `from_webstore` must stay lowercase: lint splits the column
--- list on the first upper-case FROM.
---
--- ALIASED, and every branch's first arm must be. A UNION ALL takes its column NAMES from
--- the first arm only, so an unaliased first arm inherits whatever precedes it -- which is
--- whatever sorts before it in a composed artifact, and NOTHING standalone. Run
--- standalone unaliased, osquery named the columns 'ext', identifier, browser_type and
--- "permissions || CASE WHEN manifest_json LIKE ...", and dist/ai-discovery.conf shipped
--- that: the pack's browser query returned 74 rows that no consumer of the six-column
--- contract could read. tools/check_pack.py counted the rows and passed it, and test/lint.sh
--- checked the column COUNT and passed it. Both now check the names.
+-- `!= 'true'`, not `= 'false'`: a store install reads 'true', an unpacked one 'false', a
+-- missing setting ''. `from_webstore` stays lowercase because lint splits the column list
+-- on the first upper-case FROM. Aliased, as every first arm must be (CLAUDE.md, Traps).
 SELECT 'ext' AS kind, identifier AS id, version AS ver, profile_path AS loc,
-       browser_type AS extra,
-       permissions
-         || CASE WHEN manifest_json LIKE '%<all_urls>%' THEN ',<all_urls>' ELSE '' END
+       browser_type
          || CASE WHEN referenced = 0 THEN ',unreferenced'
                  WHEN from_webstore != 'true'
                    THEN ',sideloaded:' || IFNULL(manifest_hash, '')
                  ELSE '' END
+         AS extra,
+       permissions
+         || CASE WHEN manifest_json LIKE '%<all_urls>%' THEN ',<all_urls>' ELSE '' END
          AS perms
   FROM (SELECT uid FROM users
         UNION

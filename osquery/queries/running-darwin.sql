@@ -5,24 +5,20 @@
 -- cost: fast
 -- platform: darwin
 --
--- LIVENESS, for the agents that ship as an .app. The id is the bundle id from the
--- bundle's own Info.plist, so the running_apps route reads the same catalog values as
--- bundle_ids and a running app needs no second signature.
+-- LIVENESS for agents that ship as an .app. The id comes from the bundle's own Info.plist,
+-- so the running_apps route reads bundle_ids' values and needs none of its own.
 --
--- NOT A JOIN ON `apps`. osquery regenerates that table for every outer row and it takes
--- no path constraint: measured 2026-10-07 with 414 apps and 913 processes, a LIKE join did
--- not finish in 120s and an equality join took 42s. `plist` does take a path, so this
--- reads one Info.plist per running bundle, 0.3s on the same machine.
+-- NOT A JOIN ON `apps`: osquery regenerates that table per outer row and takes no path
+-- constraint, so a join did not finish in 120s on a 414-app Mac. `plist` takes a path.
 --
--- Emits the six-column contract: kind, id, ver, loc, extra, perms.
-
--- ENUMERATE, DO NOT MATCH (D20). No bundle id appears below.
+-- Six columns: kind, id, ver, loc, extra, perms. See CONTRIBUTING.md before changing them.
 --
--- THE OUTERMOST BUNDLE, through instr() on the first '.app/'. A helper lives inside its
--- host, at <app>/Contents/Frameworks/<X> Helper.app, and carries an id of its own that no
--- catalog value names. Taking the outermost bundle folds every helper into its host, and
--- the inner DISTINCT folds the host's processes into one row. The outer SELECT carries no
--- DISTINCT because lint and tools/build.py find a branch's kind as `SELECT '<kind>'`.
+-- ENUMERATE, DO NOT MATCH: no bundle id appears below (tools/check_no_catalog.py).
+--
+-- THE OUTERMOST BUNDLE, through instr() on the first '.app/': a helper inside its host
+-- (<app>/Contents/Frameworks/<X> Helper.app) has an id no catalog value names, so it folds
+-- into its host, and the inner DISTINCT folds the host's processes into one row. No outer
+-- DISTINCT, because lint and tools/build.py find a branch's kind as `SELECT '<kind>'`.
 SELECT 'proc' AS kind, pl.value AS id, '' AS ver, x.app AS loc, '' AS extra, '' AS perms
   FROM (SELECT DISTINCT substr(path, 1, instr(path, '.app/') + 3) AS app
           FROM processes WHERE path LIKE '%.app/Contents/MacOS/%') x

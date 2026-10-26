@@ -1,6 +1,6 @@
 ---
 name: Detection gap
-about: A tool the queries know about but fail to find
+about: An agent the catalog knows but the scan fails to find
 labels: bug
 ---
 

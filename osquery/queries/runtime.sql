@@ -5,28 +5,16 @@
 -- cost: fast
 -- platform: darwin
 --
--- THE LISTENING-PORT BRANCH MOVED OUT to queries/ports.sql, which is `posix`. It was
--- always portable -- listening_ports and processes exist on every platform -- and leaving
--- it here would have meant a second copy in the Linux file. launchd is what is
--- macOS-only: it is in osquery's specs/darwin, and its Linux counterpart is a different
--- table with different columns and a different failure mode, so that lives in
--- queries/runtime-linux.sql rather than in a widened version of this.
+-- darwin only: launchd is in osquery's specs/darwin. Linux's counterpart is
+-- queries/runtime-linux.sql, and listening ports are queries/ports.sql.
 --
--- Emits the six-column contract: kind, id, ver, loc, extra, perms.
--- Branches within this file are joined with UNION ALL, and the build joins files
--- the same way. See CONTRIBUTING.md before changing the column list.
-
--- ENUMERATE, DO NOT MATCH (D20). No product label and no port number appears below.
+-- Six columns: kind, id, ver, loc, extra, perms. See CONTRIBUTING.md before changing them.
 --
--- The exclusion is the PLATFORM VENDOR, not a catalog: it drops Apple's own jobs, the
--- same move as excluding the stock iCloud Passwords bridge in browser.sql. Measured on
--- a reference Mac: 937 launchd jobs total, 47 once com.apple.% is dropped. Enumerating
--- all 937 would spend the entire EA budget describing macOS to itself.
+-- ENUMERATE, DO NOT MATCH: no label appears below (tools/check_no_catalog.py).
 --
--- An unrecognised job running unattended is the point of this branch, so the surviving
--- set is deliberately every third party, not an AI shortlist. The old version matched
--- three label prefixes and would have missed any agent that had not been catalogued yet
--- -- which is the whole category this product exists to find.
+-- The exclusion is the PLATFORM VENDOR, not a catalog: dropping com.apple.% takes a
+-- reference Mac from 937 jobs to 47. Every third-party job ships, because an unrecognised
+-- one running unattended is what this branch is for.
 SELECT 'daemon' AS kind, label AS id, '' AS ver, path AS loc, '' AS extra, '' AS perms
   FROM launchd
   WHERE label NOT LIKE 'com.apple.%'

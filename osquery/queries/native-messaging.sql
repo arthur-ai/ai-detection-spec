@@ -5,23 +5,16 @@
 -- cost: fast
 -- platform: darwin
 --
--- SPLIT OUT OF browser.sql, which is `posix` now. The VALUE these branches report is a
--- portable filename -- com.anthropic.claude_browser_extension.json is the same string on
--- every OS, which is why the catalog route is `posix`. The DIRECTORIES are not portable
--- in any part, so they are a file per platform: this one, and
--- queries/native-messaging-linux.sql.
+-- The filename is portable, so the route is posix. The directories are not, so there is a
+-- file per platform: this one and queries/native-messaging-linux.sql.
 --
--- Emits the six-column contract: kind, id, ver, loc, extra, perms.
--- Branches within this file are joined with UNION ALL, and the build joins files
--- the same way. See CONTRIBUTING.md before changing the column list.
-
--- A single % matches ONE path component. 'Application Support/Google/Chrome/...' is TWO,
--- so the one-% form silently missed com.anthropic.claude_browser_extension.json.
--- Excluded by name, not by a 'com.apple.%' prefix. Stock macOS ships this iCloud Passwords
--- bridge in BOTH /Library/Google/Chrome and /Library/.../Mozilla, so every Mac in the fleet
--- reported two phantom native-messaging findings. Caught by the 00-baseline control, which
--- exists for precisely this. A prefix exclusion would be wider than the evidence supports and
--- would swallow any future first-party Apple Intelligence bridge, which we do want to see.
+-- Six columns: kind, id, ver, loc, extra, perms. See CONTRIBUTING.md before changing them.
+--
+-- A single % matches ONE path component, and 'Application Support/Google/Chrome/...' is two,
+-- hence the second arm.
+-- The stock iCloud Passwords bridge is excluded BY NAME: every Mac ships it in two places,
+-- and the 00-baseline control caught it as two phantom findings. A com.apple.% prefix would
+-- also swallow a future first-party Apple bridge, which we do want to see.
 SELECT 'nmh' AS kind, filename AS id, '' AS ver, path AS loc,
        '' AS extra, '' AS perms
   FROM file
