@@ -40,21 +40,30 @@ for label, g in (("ids", lambda e: {e["id"]}), ("keys", set),
     print(f"{label:10}", sorted(set(f(o,g)) - set(f(n,g))), "gone")
 EOF
 $ art() { { git show "$1:osquery/dist/discovery-$2.sql" 2>/dev/null \
-              || git show "$1:dist/discovery-$2.sql"; } | grep -vE '^[[:space:]]*(--|$)'; }
+              || git show "$1:dist/discovery-$2.sql"; } | python3 -c 'import sys
+sys.path.insert(0, "osquery/tools"); from build import flatten
+print(flatten(sys.stdin.read()).replace(" UNION ALL ", "\nUNION ALL "))'; }
 $ for p in darwin linux deep; do
     diff <(art <prev-tag> $p | grep -oE "SELECT '[a-z]+'" | sort -u) \
          <(art HEAD $p | grep -oE "SELECT '[a-z]+'" | sort -u) && echo "$p: same kinds"
     diff <(art <prev-tag> $p) <(art HEAD $p) && echo "$p: same SQL, comments aside"
   done
-$ envs() { git grep -hoE '\$\{[A-Z][A-Z0-9_]+:-|environ(\.get)?[[(]"[A-Z][A-Z0-9_]+"|_env_off\("[A-Z][A-Z0-9_]+"' \
-             "$1" -- bin osquery/bin | grep -oE '[A-Z][A-Z0-9_]{2,}' | sort -u; }
+$ envs() { git grep -hoE '\$\{[A-Z][A-Z0-9_]*:?[-+=?]|(environ\.get\(|environ\[|getenv\(|_env_off\()"[A-Z][A-Z0-9_]*"' \
+             "$1" -- bin osquery/bin | grep -oE '[A-Z][A-Z0-9_]*' | sort -u; }
 $ diff <(envs <prev-tag>) <(envs HEAD)    # environment variables the shipped scripts read
 ```
 
 **Diff all three artifacts**: two are per platform and name disjoint tables, and `deep` alone
-carries the container kinds, so diffing one hides the others. **Read every line the SQL diff
+carries the container kinds, so diffing one hides the others. `art` strips comments with
+`build.py`'s own `flatten`, which is quote-aware, so neither a comment nor a reindent reads as
+a change, and prints one line per `UNION ALL` branch. **Read every branch the SQL diff
 prints**: a column can change meaning with every kind and key intact, as when a token moved
 from `perms` to `extra`, and that is the six-column contract breaking.
+
+`envs` is complete because both scripts run under `set -u`: an environment read must be a
+guarded expansion, and it takes every guard form. `SUDO_USER` is read only as `:+`, which a
+`:-`-only pattern missed. It also lists a few of the scripts' own guarded variables, which
+cancel in a diff.
 
 `agents.yaml`'s `version:` is the authoring form's, not the release's, and `bin/classify`
 refuses any other, so a move is a break: a classifier from one release will not read the
