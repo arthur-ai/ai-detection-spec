@@ -84,11 +84,11 @@ jobs:
           python3 osquery/tools/bundle.py --platform darwin --label "$TAG"
           python3 osquery/tools/bundle.py --platform linux  --label "$TAG"
 
-      # THE CATALOG IN THE FORMAT'S OWN DOCUMENT, for a tool that is not this repository's
+      # THE CATALOG AS THE SPEC DEFINES IT, for a tool that is not this repository's
       # classifier: every identifier with its status, its package URL and the runs that
       # proved it. Built here and never committed, because its proof changes with every
       # collect. --strict refuses a release with a current identifier no run has proved.
-      - name: Export the catalog as an Open Agent Detection Format document
+      - name: Export the catalog as an ai-detection-spec catalog document
         run: python3 tools/export.py --strict --commit "$GITHUB_SHA" --out artifacts/catalog.json
 
       # THE FILE ATTACHED IS THE FILE VALIDATED. CI validates the exporter's output on every
@@ -150,9 +150,10 @@ jobs:
         run: |
           gh release upload "$TAG" \
             osquery/dist/discovery-darwin.sql osquery/dist/discovery-linux.sql \
-            osquery/dist/discovery-deep.sql osquery/dist/ai-discovery.conf \
+            osquery/dist/discovery-deep.sql osquery/dist/ai-detection-spec.conf \
             osquery/dist/signatures.sql osquery/dist/agents-darwin.sql osquery/dist/agents-linux.sql \
             osquery/dist/fleet-policies.yml \
             osquery/bin/discover osquery/bin/container-scan bin/classify \
             catalog/agents.yaml catalog/routes.yaml artifacts/catalog.json \
-            artifacts/ai-discovery-darwin.sh artifacts/ai-discovery-linux.sh --clobber
+            schema/catalog.schema.json schema/evidence.schema.json \
+            artifacts/ai-detection-spec-darwin.sh artifacts/ai-detection-spec-linux.sh --clobber

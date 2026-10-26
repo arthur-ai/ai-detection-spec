@@ -22,7 +22,7 @@ set -uo pipefail
 # nothing, and a maintainer's own machine has no CI set at all -- so the suite would post
 # an event for every fixture it classifies and the field data would be mostly us. Set
 # explicitly rather than relied upon: see docs/telemetry.md.
-export AI_DISCOVERY_TELEMETRY=0
+export AI_DETECTION_SPEC_TELEMETRY=0
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$HERE/.."          # osquery/, the binding
 REPO="$ROOT/.."          # bin/classify and the catalog
@@ -385,7 +385,7 @@ echo "  inlining the branch costs the whole inventory, which is why the split ex
 # and what this whole suite's 120s watchdog caught -- now WAITS FOREVER.
 #
 # That is still an argument for the split, and a stronger one. The old failure lied
-# quietly; the new one hangs the collector. bin/container-scan survives both because
+# quietly; the new one hangs the caller. bin/container-scan survives both because
 # run_bounded escalates to SIGKILL on a deadline -- which was written as a belt-and-braces
 # measure against a process "not obliged to honour" SIGTERM and is now LOAD-BEARING.
 # Simplifying that escalation away would leave an unkillable osqueryi on every wedged Mac.
@@ -621,6 +621,18 @@ check "exit 1 leaves the cache alone" \
       "a verdict it did not earn replaced one it did"
 stop_fake
 
+echo "  a run that never happened still says so on stdout"
+# Exit 1 printed nothing, so --deep joined the base rows with no containers row at all: a
+# branch that could not run, invisible to a consumer that keeps only stdout.
+nr_out="$("$ROOT/bin/container-scan" --scan-timeout notanumber 2>/dev/null)"; nr_rc=$?
+check "exit 1 prints a containers=error marker" \
+      "$([ "$nr_rc" = 1 ] && printf '%s' "$nr_out" | grep -q '"id":"containers".*"extra":"error"' && echo 1 || echo 0)" \
+      "rc=$nr_rc got: $nr_out"
+nr_deep="$("$ROOT/bin/discover" --deep --scan-timeout 0 2>/dev/null)"
+check "--deep carries it when container-scan cannot run" \
+      "$(printf '%s' "$nr_deep" | grep -q '"extra":"error","id":"containers"' && echo 1 || echo 0)" \
+      "no containers row in the --deep payload"
+
 # What bin/classify DOES with a scan row -- provenance, staleness, per-outcome wording --
 # is pure Python and lives in test/test_matcher.py, which needs no daemon and runs on every
 # push. This file's job is the daemon states that PRODUCE those rows.
@@ -659,7 +671,7 @@ echo "  the cache is replaced by rename, not written in place"
 # A torn read is a race and a race is a bad test. The inode is a deterministic proxy for the
 # same property: mv gives a new one, an in-place write keeps it. Mutation testing found this
 # entirely unprotected, and a half-written cache is exactly the truncated JSON that reads to
-# a collector as a Mac reporting nothing.
+# a consumer as a Mac reporting nothing.
 CACHE="$(mktemp "${TMPDIR:-/tmp}/cache.XXXXXX")"
 start_fake healthy
 "$ROOT/bin/container-scan" --socket "$SOCK" --cache "$CACHE" >/dev/null 2>&1
@@ -702,7 +714,7 @@ stop_fake
 
 echo "  a marker row survives a socket path that is trying to break it"
 # THE REASON marker() WAS AN INTERPRETER. A socket path is input, and a quote in one emits
-# malformed JSON -- which a collector reads as "this machine reported nothing", the exact
+# malformed JSON -- which a consumer reads as "this machine reported nothing", the exact
 # outcome the row exists to prevent. The objection was never printf, it was un-escaped
 # interpolation, so this pins the escaper against every byte JSON cares about at once:
 # apostrophe, double quote, backslash, newline, tab, and UTF-8 that must survive untouched.
@@ -725,7 +737,7 @@ echo "  the row that says the writer never ran does not need the writer's interp
 # prints an install prompt on stderr and exits 1 with EMPTY STDOUT. docs/deployment.md said
 # that state surfaces as `no-cache`. It did not -- the no-cache marker was itself built with
 # python3, so the one row whose whole job is to say the writer never ran was built by the
-# interpreter that stopped the writer, and printed nothing. A collector that records stdout
+# interpreter that stopped the writer, and printed nothing. A consumer that records stdout
 # and discards the status reads nothing as a machine with nothing on it.
 #
 # THE STUB LEAVES A BREADCRUMB, so this asserts python was NEVER CALLED rather than that the
@@ -966,8 +978,8 @@ echo "  every branch's SQL arrives byte for byte as the pack holds it"
 # osqueryi joined to its branch name by a tab, so this reads the pack independently and
 # compares every byte.
 . "$ROOT/bin/container-scan"
-pack_branches "$OSQI" "$ROOT/dist/ai-discovery.conf" "$PLATFORM" > "$JSONTMP/packlines" 2>/dev/null
-pack_verdict="$(python3 - "$ROOT/dist/ai-discovery.conf" "$JSONTMP/packlines" "$PLATFORM" <<'PACKCHECK'
+pack_branches "$OSQI" "$ROOT/dist/ai-detection-spec.conf" "$PLATFORM" > "$JSONTMP/packlines" 2>/dev/null
+pack_verdict="$(python3 - "$ROOT/dist/ai-detection-spec.conf" "$JSONTMP/packlines" "$PLATFORM" <<'PACKCHECK'
 import json, sys
 pack = json.load(open(sys.argv[1]))["queries"]
 want = {n: q["query"] for n, q in pack.items()
@@ -1079,7 +1091,7 @@ echo "  one broken branch costs one branch"
 # else. One python call computes every verdict and prints them as shell-readable lines --
 # five separate inline snippets was fragile and, in this shell, silently produced nothing.
 PACKDIR="$(mktemp -d "${TMPDIR:-/tmp}/pack.XXXXXX")"
-python3 - "$ROOT/dist/ai-discovery.conf" "$PACKDIR/pack.conf" <<'MKPACK'
+python3 - "$ROOT/dist/ai-detection-spec.conf" "$PACKDIR/pack.conf" <<'MKPACK'
 import json, platform, sys
 full = json.load(open(sys.argv[1]))
 # THE BORROWED BRANCHES MUST BE THIS PLATFORM'S, or bin/discover filters every one of them

@@ -5,35 +5,16 @@
 -- cost: fast
 -- platform: posix
 --
--- SPLIT OUT OF runtime.sql, unchanged, because it is portable and its macOS neighbour is
--- not. listening_ports and processes are cross-platform.
+-- RAW EVIDENCE, NOT A SIGNATURE. The `ports` route is retired (catalog/agents.yaml's header
+-- says why), so these rows produce no findings. They still ship, because an unrecognised
+-- process listening unattended is worth a reader's time, and the kind stays registered in
+-- catalog/routes.yaml so they arrive unmatched rather than dropped.
 --
--- A PORT IS NOT A SIGNATURE and these rows are not expected to produce findings. The
--- `ports` route is RETIRED -- catalog/agents.yaml's header has the measurement -- because
--- a port only ever matched once the process holding it already named the agent, which
--- makes it a second opinion from the same witness. The rows still ship as raw evidence:
--- an unrecognised process listening unattended is a question worth a reader's time even
--- when nothing can name it.
+-- Six columns: kind, id, ver, loc, extra, perms. See CONTRIBUTING.md before changing them.
 --
--- The kind stays REGISTERED in catalog/routes.yaml for that reason. A kind absent from
--- the registry is dropped by bin/classify rather than reported unmatched, so retiring the
--- route by deleting it would have made these rows invisible instead of unclaimed -- the
--- `ext` bug, on purpose.
---
--- Emits the six-column contract: kind, id, ver, loc, extra, perms.
--- Branches within this file are joined with UNION ALL, and the build joins files
--- the same way. See CONTRIBUTING.md before changing the column list.
-
--- Previously an IN list of four inference ports. A local model server on any other port
--- was invisible, and picking the port list on the device means a new runtime is missed
--- until every Mac is redeployed.
---
--- `port > 0` is structural, not selective: listening_ports rows with port 0 are unix
--- domain sockets and non-listening entries, 176 rows down to 34 on the reference Mac.
--- The bind address travels in `extra`, because 0.0.0.0 is a sharply higher-risk finding
--- than loopback and only the collector can weigh that.
--- ALIASED: this is a file's first arm now, and a UNION ALL takes its column names
--- from the first arm alone.
+-- `port > 0` is structural: port 0 rows are unix sockets and non-listening entries. The bind
+-- address ships in `extra`, because 0.0.0.0 is a sharper finding than loopback and only the
+-- reader can weigh that. Aliased, as every first arm must be (CLAUDE.md, Traps).
 SELECT 'port' AS kind, CAST(lp.port AS TEXT) AS id, '' AS ver, p.path AS loc,
        lp.address AS extra, '' AS perms
   FROM listening_ports lp JOIN processes p USING (pid)

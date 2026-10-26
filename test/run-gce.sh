@@ -165,10 +165,10 @@ cat > "$GUEST" <<'GUEST'
 #!/bin/bash
 # Written by test/run-gce.sh and run on the guest. Not for running by hand.
 set -uo pipefail
-export AI_DISCOVERY_TELEMETRY=0
+export AI_DETECTION_SPEC_TELEMETRY=0
 V="$1"; MODE="$2"; SC="$3"
-REPO=/opt/ai-discovery
-OUT=/tmp/ai-discovery-out
+REPO=/opt/ai-detection-spec
+OUT=/tmp/ai-detection-spec-out
 sudo rm -rf "$REPO" "$OUT"; sudo mkdir -p "$REPO"; mkdir -p "$OUT"
 sudo tar -C "$REPO" -xzf /tmp/tree.tgz
 # Belt and braces for the AppleDouble files the host side already suppresses.
@@ -257,17 +257,17 @@ if ! grep -q "^$(id -un):" /etc/passwd && command -v google-chrome >/dev/null 2>
   mkdir -p "$ext"
   printf '%s\n' '{"name":"Fixture agent extension, OS Login user","version":"1.0.0","manifest_version":3,"permissions":["tabs"],"host_permissions":["<all_urls>"]}' > "$ext/manifest.json"
   log "ext rows under $HOME through the users table alone: $(sudo osqueryi --line "select count(*) as n from users cross join chrome_extensions using (uid) where profile_path like '$HOME/%'" 2>/dev/null | awk '{print $NF}')"
-  # ASSERTED, NOT LOGGED. The fixture's own fields -- browser_type chrome, version 1.0.0,
-  # the two permissions, `unreferenced` because it was planted -- under the login account's
-  # home, in the artifact that ships.
+  # ASSERTED, NOT LOGGED. The fixture's own fields -- chrome, `unreferenced` because it was
+  # planted, version 1.0.0, the two permissions -- under the login account's home, in the
+  # artifact that ships.
   # A probe that only prints a count is one a reader can skim past at zero.
   probe=$(sudo osqueryi --json < osquery/dist/discovery-linux.sql 2>/dev/null \
     | python3 -c "
 import json, sys
 home = sys.argv[1]
 rows = [r for r in json.load(sys.stdin) if r['kind'] == 'ext' and r['loc'].startswith(home)]
-fix = [r for r in rows if r['extra'] == 'chrome' and r['ver'] == '1.0.0'
-       and 'tabs' in r['perms'] and '<all_urls>,unreferenced' in r['perms']]
+fix = [r for r in rows if r['extra'] == 'chrome,unreferenced' and r['ver'] == '1.0.0'
+       and 'tabs' in r['perms'] and r['perms'].endswith('<all_urls>')]
 print(len(rows), len(fix))" "$HOME")
   log "ext rows under $HOME in the shipped artifact: ${probe%% *}, of which the fixture: ${probe##* }"
   if [ "${probe##* }" -ge 1 ] 2>/dev/null; then
@@ -285,7 +285,7 @@ GUEST
 # One VM, one scenario. Returns the guest's verdict: 0 pass, 3 skip, anything else fail.
 run_vm() {
   local fam="$1" sc="$2" mode="$3" proj="$4" imgfam="$5" vm rc i out
-  vm="ai-discovery-$fam-${sc%%-*}-$$"
+  vm="ai-detection-spec-$fam-${sc%%-*}-$$"
   out="$ART/$fam/$sc"; rm -rf "$out"; mkdir -p "$out"
   echo
   echo "=============== $fam / $sc: $vm ($GCE_MACHINE, $imgfam) in $GCE_ZONE"
@@ -315,17 +315,17 @@ run_vm() {
   rc=${PIPESTATUS[0]}
 
   # stderr is kept and shown on failure: a WARN with no reason is one nobody can act on.
-  gce_get "$vm" /tmp/ai-discovery-out "$out/" >/dev/null 2>"$out/fetch.err" \
+  gce_get "$vm" /tmp/ai-detection-spec-out "$out/" >/dev/null 2>"$out/fetch.err" \
     || { echo "WARN: could not fetch the guest's output; guest.log is all there is:"
          sed 's/^/    /' "$out/fetch.err"; }
   cleanup
 
   # RECORD FROM THE HOST, against the fetched payload, with the guest's own os and arch.
   # Only on a pass: a failed run's matches are not evidence of anything.
-  if [ "$rc" = 0 ] && [ -s "$out/ai-discovery-out/payload.json" ]; then
+  if [ "$rc" = 0 ] && [ -s "$out/ai-detection-spec-out/payload.json" ]; then
     local gos garch
-    gos="$(sed -n 1p "$out/ai-discovery-out/meta")"; garch="$(sed -n 2p "$out/ai-discovery-out/meta")"
-    python3 "$ROOT/tools/agent_status.py" --record "$out/ai-discovery-out/payload.json" \
+    gos="$(sed -n 1p "$out/ai-detection-spec-out/meta")"; garch="$(sed -n 2p "$out/ai-detection-spec-out/meta")"
+    python3 "$ROOT/tools/agent_status.py" --record "$out/ai-detection-spec-out/payload.json" \
       "$HERE/scenarios/$sc" --platform linux --os "$gos" --arch "$garch" || rc=1
   fi
   return "$rc"
@@ -348,7 +348,7 @@ EOF
   done
   echo
   echo "run-gce: $fam: $pass passed, $fail failed, $skip skipped." \
-       "Facts: $ART/$fam/${scenarios[0]}/ai-discovery-out/facts.txt"
+       "Facts: $ART/$fam/${scenarios[0]}/ai-detection-spec-out/facts.txt"
   [ "$fail" = 0 ]
 }
 

@@ -10,13 +10,13 @@ agents claim, a stale `osquery/dist/` or `docs/agents.md`, a scenario in no CI m
 for what they cannot see — whether it is an agent, whether every route is covered, whether each
 value came off a real install, and whether the scenario can tell a match from a lookalike.
 
-The rules live in `CONTRIBUTING.md` (**Adding a signature**, **The catalog**), the header of
+The rules live in `CONTRIBUTING.md` (**Adding an agent or an identifier**), the header of
 `catalog/agents.yaml`, and the comment on each route in `catalog/routes.yaml`. Read those;
 this is the order to apply them in.
 
 ## 1. Decide it is an agent
 
-The test is whether it **acts on the user's behalf** — `CLAUDE.md` under *The scope is agents*.
+The test is whether it **acts on the user's behalf**: `SPEC.md` §3.
 
 - **Check it has not been decided already.** `removed:` and the `CONSIDERED AND NEVER ADDED`
   block beneath it in `catalog/agents.yaml` both carry reasons. Do not re-litigate either
@@ -43,21 +43,21 @@ container image. A signature written for one route is blind to a fleet that used
 - **Map each route to `catalog/routes.yaml`** and read that route's comment: it says which column
   the value is compared to and, where one has happened, the trap that cost an identifier
   (`vscode_extensions` is `name`, never `publisher_id`; `jetbrains_plugins` is the directory,
-  not the plugin.xml id).
-  The catalog header lists which routes are darwin-only, linux-only or both; `platforms:` must
-  agree.
+  not the plugin.xml id). Each route's `platform:` is there too, and the agent's `platforms:`
+  must agree.
 - **Not identifiers**: a generic name (Cursor writes `~/.local/bin/agent`, Grok
   `~/.grok/bin/agent`), a listening port, a package a third party publishes for the vendor's
   tool (npm `hermes-agent`). Leave them out and say why in the entry's comment, as `hermes`
   does.
 - **No route reaches it** (a snap, an AppImage with no `.desktop` file): it goes in
   `docs/blind-spots.yaml`, not the catalog. A new route is a bigger change than this skill —
-  `routes.yaml` plus a query — so read the `routes.yaml` header and `CLAUDE.md`'s *Traps* first.
+  `routes.yaml` plus a query — so read the `routes.yaml` header and `osquery/CLAUDE.md`'s
+  *Traps* first.
 
 ## 3. Read each value off a real install
 
-Never from vendor docs, Homebrew metadata or a store listing. `bot.molt.mac` came from
-OpenClaw's own Homebrew metadata and matched nothing; npm `aider` is a static-site component.
+Never from vendor docs, Homebrew metadata or a store listing: the README's `bot.molt.mac` story
+is why.
 
 - The scenario in step 4 is the install. Read the value off its payload, or off `osqueryi` on a
   machine that has it, using the table the route names.
@@ -89,8 +89,8 @@ What makes the scenario prove the identifier rather than the agent:
   agent there, `must_find` passes with the new value wrong. 84's `why` says this outright.
 - **`classified.forbid` every agent the new rows could be mistaken for**, and the converse:
   85 forbids `cline` because `roo-cline` contains its id, and 78 forbids `claude-code` while
-  installing Cline. `test/lib/assert.sh` reads the other keys (`must_contain`, `forbid_rows`,
-  `forbid_evidence`).
+  installing Cline. `test/lib/assert.sh` reads the other keys (`must_contain`, `require_rows`,
+  `forbid_rows`, `forbid_evidence`).
 - **Add a lookalike to `test/test_matcher.py`** and assert it is declined, where one exists — a
   generic sibling binary, an id another id contains.
 - **Break it once.** Remove the value from the catalog and confirm the matcher check or the
@@ -104,13 +104,13 @@ Mechanics:
   helpers already do. Running out should `WARN` and continue, so the assertion names which agent is
   missing, or `exit 1` when nothing after it can run.
 - `exit 3` is SKIP, for an environment that cannot host the scenario — a missing package
-  family or architecture, never a failed download. Be slow to conclude even that: this repo
-  said the Claude extension could not be installed without MDM, and was wrong.
+  family or architecture, never a failed download. Be slow to conclude even that (`CLAUDE.md`,
+  *Testing*).
 - **A new scenario goes in `.github/workflows/scenarios.yml`.** macOS goes in the `scenario`
   job, which runs it on both macOS labels. Linux goes in `scenario-linux` (Ubuntu) and
-  `scenario-linux-container` (Debian, Rocky, Fedora); one that needs a package family exits 3
-  on the others, as 74 does off apt, and 77 is left out of the Ubuntu job because Ubuntu never
-  has rpm. `tools/check_workflows.py` fails until it is listed.
+  `scenario-linux-container` (Debian, Rocky, Fedora, Amazon Linux); one that needs a package
+  family exits 3 on the others, as 74 does off apt, and 77 is left out of the Ubuntu job
+  because Ubuntu never has rpm. `tools/check_workflows.py` fails until it is listed.
 - Run it: `test/run-linux.sh <name>` (Docker; `LINUX_IMAGE=quay.io/rockylinux/rockylinux:9`
   for the rpm family) or `test/run.sh <name>` (Tart). Both write `observed.json` on a pass.
   **Commit it** — `collect` only commits on `main`, so without it `docs/agents.md` reports the
@@ -153,4 +153,4 @@ The body is what `.claude/skills/release` writes the notes from, so it says:
   `validate_catalog.py` refuses all three, along with any other key no tool reads.
 - Don't delete a removed entry's fixture rows. Invert the assertion to *must not match*.
 - Don't write a count into a comment, a scenario header or `expected.json`'s prose. Nothing keeps
-  it current, which is why `f22087d` dropped them from the scenario headers.
+  it current.

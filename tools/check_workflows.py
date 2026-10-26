@@ -355,14 +355,14 @@ if _docs.exists():
 # was the one number nothing derived.
 _NUMWORDS = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
              "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13,
-             "fourteen": 14, "fifteen": 15, "sixteen": 16}
+             "fourteen": 14, "fifteen": 15, "sixteen": 16, "seventeen": 17, "eighteen": 18}
 # root is .github/workflows, so the repo root is two up. This read root.parent and the
 # block skipped itself in silence -- the shape it exists to catch, found by mutating the
 # count and watching the gate stay green.
 #
 # TWO FILES STATE THE LIST NOW, AND NEITHER MAY BE THE STALE ONE. README grew a section
 # telling a reader which of the attached files they actually need, after four of the eleven
-# -- discovery-deep.sql, ai-discovery.conf and both bundles -- turned out to be named
+# -- discovery-deep.sql, ai-detection-spec.conf and both bundles -- turned out to be named
 # nowhere in it. That section's count is the same claim as the skill's and goes stale the
 # same way, and check_doc_numbers.py gates only `agents`, `identifiers`, `scenarios` and
 # `blind spots`, so "assets" was outside every gate in the tree. Same phrasing, same
@@ -381,7 +381,7 @@ if _rel.exists():
             if "gh release upload" in str(_step.get("run", "")):
                 _run = str(_step["run"])
     # Basenames, because a claimant names what lands on the release page and the workflow names
-    # where each file came from -- artifacts/ai-discovery-darwin.sh uploads as its own name.
+    # where each file came from -- artifacts/ai-detection-spec-darwin.sh uploads as its own name.
     _uploaded = {t.rsplit("/", 1)[-1]
                  for t in re.findall(r"[\w./-]+\.(?:sql|conf|yaml|yml|sh|json)\b", _run)}
     _uploaded |= {t.rsplit("/", 1)[-1] for t in re.findall(r"\bbin/[\w-]+", _run)}

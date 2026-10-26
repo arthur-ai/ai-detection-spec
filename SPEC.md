@@ -1,11 +1,19 @@
-# Open Agent Detection Format
+# ai-detection-spec
 
-Version 0.1.0. Draft.
+Version 0.1.0. Draft. Published at https://github.com/arthur-ai/ai-detection-spec under the
+Apache License 2.0.
 
-The Open Agent Detection Format describes how to tell whether an AI agent is installed or
+ai-detection-spec is an open specification for telling whether an AI agent is installed or
 running on a computer. It defines what a catalog of agents contains, what evidence a collector
 reports, and how a matcher pairs the two. Its goal is that a catalog, a collector and a matcher
 written by different people give the same answer about the same machine.
+
+**It is written to be adopted.** Anyone may implement any part of it, in any tool and any
+language, and the parts are independent: a catalog from one source, a collector from another
+and a matcher from a third interoperate when each conforms (§9). Conformance is defined by
+this document, its schemas and its conformance vectors, never by an implementation, including
+the one published beside it. Proposals to change it are welcome; §10 says how a change is
+versioned.
 
 ## 1. Introduction
 
@@ -15,9 +23,9 @@ agent is built from, such as CycloneDX AI-BOM and SPDX AI. Neither kind answers 
 endpoint inventory asks: is this software on this machine? The agents an inventory most needs to
 find are the ones nobody registered.
 
-This format answers that question from evidence the machine already holds: an application's
-bundle identifier, a package in a package manager's database, a browser extension's id, a
-directory an agent creates when it first runs. A catalog lists those identifiers for each agent
+This specification answers that question from evidence the machine already holds: an
+application's bundle identifier, a package in a package manager's database, a browser
+extension's id, a directory an agent creates when it first runs. A catalog lists those identifiers for each agent
 and says how each one is matched. A collector, called a binding, reports what it found as rows.
 A matcher pairs the rows with the catalog.
 
@@ -141,7 +149,7 @@ A binding reports a JSON array of objects that validates against
 | `kind` | REQUIRED. What sort of thing was observed, matching some route's `kind` |
 | `id` | REQUIRED. The identifier, in the form that route compares |
 | `loc` | Where it lives, usually a path |
-| `ver` | Its version, where the source records one |
+| `ver` | Its version, where the source records one, and empty otherwise. A scan marker's is a time (§5.2) |
 | `extra` | Kind-specific detail |
 | `perms` | Kind-specific capabilities, such as a browser extension's permissions |
 
@@ -171,7 +179,7 @@ unix seconds. `loc` MAY say where the source was looked for. `extra` is the outc
    kind. A source that is present and that it did not read is `unreadable:<runtime>`. Declining
    to look and finding nothing MUST NOT share a word.
 4. The vocabulary above is closed in this version. `schema/evidence.schema.json` declares it, and
-   adding an outcome is a change to the format (§10).
+   adding an outcome is a change to the specification (§10).
 5. A binding does not judge staleness. A reader computes a marker's age from `ver` and applies
    its own threshold.
 
@@ -179,6 +187,10 @@ unix seconds. `loc` MAY say where the source was looked for. `extra` is the outc
 
 A matcher takes a catalog and a list of evidence rows. It reports findings, unmatched rows,
 dropped rows, and the scan markers sorted into three groups (§6.7).
+
+A matcher MUST reject a catalog with an identifier on a route it cannot index: one the
+catalog does not declare, one with `values_from`, or a retired one (§4.4, rules 1 and 2).
+Such an identifier would match nothing, and say nothing.
 
 ### 6.1 Rows and kinds
 
@@ -386,13 +398,17 @@ The binding named `osquery` declares two fields on each route:
 - **A binding conforms** when its output validates against `schema/evidence.schema.json` and it
   meets §8.
 
+Conformance is claimed per role and per version: *an ai-detection-spec 0.1 matcher*. A catalog
+states its version in `format`.
+
 Each vector names the section it tests. It carries a catalog, a list of rows and the expected
 result:
 
 - which agent each row belongs to, if any;
 - which rows are unmatched or dropped;
 - how the scan markers are grouped;
-- the `running` and `superseded` members of the findings.
+- the `running` and `superseded` members of the findings;
+- or, for a catalog a matcher must refuse (§6.4.8, §10), `error`: what the refusal names.
 
 Every match mode has at least one row that must match and one that must not.
 

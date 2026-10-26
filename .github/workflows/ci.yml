@@ -107,13 +107,13 @@ jobs:
       # with a message if pyyaml is absent.
       - name: Install pyyaml
         run: pip install --quiet pyyaml
-      # The format's schemas are validated, not only published. Pinned, because a schema
+      # The spec's schemas are validated, not only published. Pinned, because a schema
       # library that changed what it accepts would move the result with no commit here.
       - name: Install jsonschema
         run: pip install --quiet jsonschema==4.26.0
       - name: Static checks
         run: test/lint.sh
-      - name: The format's conformance vectors and the exported catalog, schemas required
+      - name: The spec's conformance vectors and the exported catalog, schemas required
         run: |
           python3 test/test_conformance.py --require-jsonschema
           python3 test/test_export.py --require-jsonschema
@@ -220,7 +220,7 @@ jobs:
           import json, sys
           base = json.load(open("/tmp/base.json"))
           deep = json.load(open("/tmp/deep.json"))
-          gaps = [r for r in deep if r["kind"] == "scan"]
+          markers = [r for r in deep if r["kind"] == "scan"]
           if not base:
               sys.exit("::error::osquery/bin/discover returned no rows at all")
           # THE SIX-COLUMN CONTRACT, CHECKED WHERE IT CAN STILL BE BROKEN. These rows come
@@ -237,10 +237,10 @@ jobs:
                        "The base inventory must survive a failed container scan.")
           # No Docker on a hosted runner, so the scan cannot succeed -- and a missing
           # marker would mean a wedged daemon reports as a Mac with no containers.
-          if not gaps:
+          if not markers:
               sys.exit("::error::--deep found no Docker and said nothing about it. "
                        "Expected one kind=scan marker row.")
-          print(f"{len(base)} base rows, {len(deep)} with --deep, gap: {gaps[0]['extra']}")
+          print(f"{len(base)} base rows, {len(deep)} with --deep, marker: {markers[0]['extra']}")
           EOF
 
       # The recommended deployment: a scheduled writer, and a reader that only cats a file.
@@ -267,7 +267,7 @@ jobs:
           # neighbours, so darwin runs ten. A floor that trails the real number stops
           # being a per-branch check and becomes a check that at least six of them
           # reported -- which is exactly the attribution this row exists to give.
-          pack = json.load(open("osquery/dist/ai-discovery.conf"))["queries"]
+          pack = json.load(open("osquery/dist/ai-detection-spec.conf"))["queries"]
           want = {n for n, q in pack.items()
                   if q.get("platform") in ("darwin", "posix", "all")}
           if set(scans) != want:
@@ -320,7 +320,7 @@ jobs:
                        "native-messaging", "packages", "ports", "runtime", "vscode"):
               if need not in tokens:
                   sys.exit(f"::error::status has no token for branch {need!r}: {rest!r}")
-          # THE VOCABULARY IS THE FORMAT'S, read from its schema rather than listed here,
+          # THE VOCABULARY IS THE SPEC'S, read from its schema rather than listed here,
           # so a consumer validating against schema/evidence.schema.json and this check
           # cannot disagree about what an outcome may be (SPEC.md 5.2).
           sys.path.insert(0, "test")
@@ -357,16 +357,16 @@ jobs:
           # reproduce it: it only bites if you replicate the cd, which is the part that
           # looks like scenery.
           repo="$PWD"
-          python3 "$repo/osquery/tools/bundle.py" --platform darwin --out /tmp/bundle/ai-discovery.sh
+          python3 "$repo/osquery/tools/bundle.py" --platform darwin --out /tmp/bundle/ai-detection-spec.sh
           cd /
-          sudo -n env OSQI=/usr/local/bin/osqueryi /tmp/bundle/ai-discovery.sh \
+          sudo -n env OSQI=/usr/local/bin/osqueryi /tmp/bundle/ai-detection-spec.sh \
             --write /tmp/bundle-inv.json --status /tmp/bundle.status > /dev/null
           cat /tmp/bundle.status
           # --names THROUGH THE BUNDLE, which is how an Extension Attribute calls it. The
           # bundle carries osquery/dist/signatures.sql for this and nothing else checks that it
           # does: lint compares the payload to the same tuple that lists it, so dropping
           # the file passes lint. Here it prints nothing and exits 1.
-          sudo -n env OSQI=/usr/local/bin/osqueryi /tmp/bundle/ai-discovery.sh \
+          sudo -n env OSQI=/usr/local/bin/osqueryi /tmp/bundle/ai-detection-spec.sh \
             --names --cache /tmp/bundle-inv.json > /tmp/bundle.names
           cat /tmp/bundle.names
           grep -q "; " /tmp/bundle.names && grep -q "rows=" /tmp/bundle.names \
@@ -394,18 +394,18 @@ jobs:
           # to a private temp directory and removed from an EXIT trap. One copy left
           # behind per run is how a scheduled deployment fills a volume -- months later,
           # and looking like anything but this script.
-          left="$(ls -d /tmp/ai-discovery.* /var/tmp/ai-discovery.* 2>/dev/null || true)"
+          left="$(ls -d /tmp/ai-detection-spec.* /var/tmp/ai-detection-spec.* 2>/dev/null || true)"
           [ -z "$left" ] || { echo "::error::the bundle left its payload behind: $left"; exit 1; }
           echo "no extracted payload left on disk"
 
           # --driver IS WHAT A CONSUMER BUILDS ON, AND IT SHIPPED WITH NO TEST. The hook
-          # hands a driver the extracted tree in AI_DISCOVERY_ROOT, passes the arguments
+          # hands a driver the extracted tree in AI_DETECTION_SPEC_ROOT, passes the arguments
           # through, and lets it own the exit status. All three are asserted here because a
           # repo downstream now makes its entire deployable out of this, and a hook that
           # quietly stopped passing one of them would surface there rather than here.
           cat > /tmp/drv.sh <<'DRV'
           #!/bin/bash
-          [ -x "$AI_DISCOVERY_ROOT/bin/discover" ] \
+          [ -x "$AI_DETECTION_SPEC_ROOT/bin/discover" ] \
             || { echo "::error::the driver got no runner beside it"; exit 1; }
           [ "${1:-}" = passed-through ] \
             || { echo "::error::arguments did not reach the driver: $*"; exit 1; }
@@ -612,13 +612,13 @@ jobs:
           if len(deep) < len(base):
               sys.exit(f"::error::--deep lost rows: {len(base)} base, {len(deep)} deep. "
                        "The base inventory must survive a failed container scan.")
-          gaps = [r for r in deep if r["kind"] == "scan"]
-          if not gaps:
+          markers = [r for r in deep if r["kind"] == "scan"]
+          if not markers:
               sys.exit("::error::--deep found no Docker and said nothing about it.")
           # An ubuntu runner HAS a docker socket, unlike a hosted macOS one -- so this
           # asserts a marker exists and not that it reports absent.
           print(f"{len(base)} base rows, {len(deep)} with --deep, "
-                f"markers: {sorted((r['id'], r['extra']) for r in gaps)}")
+                f"markers: {sorted((r['id'], r['extra']) for r in markers)}")
           EOF
 
       - name: The cache pattern, and the Linux status vocabulary
@@ -636,7 +636,7 @@ jobs:
           # those six by name, so here it would assert only that the assertion is right.
 
           scans = {r["id"]: r for r in inv if r["kind"] == "scan"}
-          pack = json.load(open("osquery/dist/ai-discovery.conf"))["queries"]
+          pack = json.load(open("osquery/dist/ai-detection-spec.conf"))["queries"]
           want = {n for n, q in pack.items()
                   if q.get("platform") in ("linux", "posix", "all")}
           # ONE MARKER PER BRANCH, PLUS `systemd`. osquery/queries/runtime-linux.sql emits a
@@ -656,7 +656,7 @@ jobs:
           for name, r in scans.items():
               if not str(r["ver"]).isdigit() or int(r["ver"]) <= 0:
                   sys.exit(f"::error::branch {name} has no usable timestamp: {r['ver']!r}")
-          # THE VOCABULARY IS THE FORMAT'S, read from its schema rather than listed here,
+          # THE VOCABULARY IS THE SPEC'S, read from its schema rather than listed here,
           # so a consumer validating against schema/evidence.schema.json and this check
           # cannot disagree about what an outcome may be (SPEC.md 5.2).
           sys.path.insert(0, "test")
@@ -692,13 +692,13 @@ jobs:
           # reproduce it: it only bites if you replicate the cd, which is the part that
           # looks like scenery.
           repo="$PWD"
-          python3 "$repo/osquery/tools/bundle.py" --platform linux --out /tmp/bundle/ai-discovery.sh
+          python3 "$repo/osquery/tools/bundle.py" --platform linux --out /tmp/bundle/ai-detection-spec.sh
           cd /
-          sudo -n /tmp/bundle/ai-discovery.sh \
+          sudo -n /tmp/bundle/ai-detection-spec.sh \
             --write /tmp/bundle-inv.json --status /tmp/bundle.status > /dev/null
           cat /tmp/bundle.status
           # --names through the bundle; see the macOS job for why this is the gate.
-          sudo -n /tmp/bundle/ai-discovery.sh --names --cache /tmp/bundle-inv.json > /tmp/bundle.names
+          sudo -n /tmp/bundle/ai-detection-spec.sh --names --cache /tmp/bundle-inv.json > /tmp/bundle.names
           cat /tmp/bundle.names
           grep -q "; " /tmp/bundle.names && grep -q "rows=" /tmp/bundle.names \
             || { echo "::error::--names through the bundle printed no names line"; exit 1; }
@@ -725,18 +725,18 @@ jobs:
           # to a private temp directory and removed from an EXIT trap. One copy left
           # behind per run is how a scheduled deployment fills a volume -- months later,
           # and looking like anything but this script.
-          left="$(ls -d /tmp/ai-discovery.* /var/tmp/ai-discovery.* 2>/dev/null || true)"
+          left="$(ls -d /tmp/ai-detection-spec.* /var/tmp/ai-detection-spec.* 2>/dev/null || true)"
           [ -z "$left" ] || { echo "::error::the bundle left its payload behind: $left"; exit 1; }
           echo "no extracted payload left on disk"
 
           # --driver IS WHAT A CONSUMER BUILDS ON, AND IT SHIPPED WITH NO TEST. The hook
-          # hands a driver the extracted tree in AI_DISCOVERY_ROOT, passes the arguments
+          # hands a driver the extracted tree in AI_DETECTION_SPEC_ROOT, passes the arguments
           # through, and lets it own the exit status. All three are asserted here because a
           # repo downstream now makes its entire deployable out of this, and a hook that
           # quietly stopped passing one of them would surface there rather than here.
           cat > /tmp/drv.sh <<'DRV'
           #!/bin/bash
-          [ -x "$AI_DISCOVERY_ROOT/bin/discover" ] \
+          [ -x "$AI_DETECTION_SPEC_ROOT/bin/discover" ] \
             || { echo "::error::the driver got no runner beside it"; exit 1; }
           [ "${1:-}" = passed-through ] \
             || { echo "::error::arguments did not reach the driver: $*"; exit 1; }

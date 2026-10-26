@@ -133,7 +133,7 @@ RENDERED = {"osquery/dist/signatures.sql": None,
 COMPOSED = {"osquery/dist/discovery-darwin.sql": "darwin", "osquery/dist/discovery-linux.sql": "linux"}
 # Read only by osquery/bin/discover, which only a `deep: true` scenario runs. It reads the pack only
 # under --write today; the deep scenarios are the bound, not that flag.
-DEEP_ONLY = {"osquery/dist/discovery-deep.sql", "osquery/dist/ai-discovery.conf"}
+DEEP_ONLY = {"osquery/dist/discovery-deep.sql", "osquery/dist/ai-detection-spec.conf"}
 
 EVERY = None  # a selection of every scenario, which an empty set must never be mistaken for
 

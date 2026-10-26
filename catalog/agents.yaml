@@ -1,143 +1,47 @@
-# Detection catalog for AI agents.
+# The catalog: every agent, and every identifier it is recognised by. This is the authoring
+# form; tools/export.py writes it as a catalog document (SPEC.md section 4).
 #
-# EVERY ROUTE IS DECLARED IN catalog/routes.yaml, which says what it matches, how, and on
-# WHICH PLATFORM. Read that file before adding a route here -- and adding one there is the
-# whole edit, because the matcher, the validator, the coverage report and lint all derive
-# from it. It used to mean editing tools/validate_catalog.py's ROUTES and bin/classify's
-# KIND_ROUTES by hand, and `ext` was missing from one of them for months: the rows were
-# DROPPED rather than unmatched, invisible even under --show-unmatched.
+# Routes are declared in catalog/routes.yaml: what each matches, how, and on which platform.
+# Adding a route there is the whole edit, because the matcher, the validator, the coverage
+# report and lint all derive from it. `platforms:` on each agent is required and checked
+# against its routes; a platform no route can match on belongs in docs/blind-spots.yaml.
 #
-# WHICH ROUTES ARE PLATFORM-SPECIFIC MATTERS WHEN YOU ADD AN AGENT:
+# One entry per agent, carrying EVERY route it ships through: a single agent often arrives as
+# a Homebrew cask, an npm global and a curl installer, and each lands somewhere different.
 #
-#   darwin only   bundle_ids, homebrew, launchd_prefixes, running_apps
-#   linux only    deb_packages, rpm_packages, desktop_ids, systemd_prefixes
-#   both          npm, pypi, extension_ids, native_messaging_hosts, vscode_extensions,
-#                 jetbrains_plugins, images, state_dirs, binaries, model_stores, running_npm,
-#                 process_paths
+# Identifiers are FACTS read off real installs, never vendor documentation, and a value no CI
+# run produced fails tools/validate_catalog.py. CONTRIBUTING.md has the workflow.
 #
-# `platforms:` on each agent is REQUIRED and is checked against those: declaring
-# `deb_packages` without `linux` is a copy-paste error, and claiming a platform no route
-# can match on is a gap that belongs in docs/blind-spots.yaml rather than here.
+# `images` holds container image repositories, compared as SPEC.md 6.4.3 normalises them. An
+# image name is chosen by whoever tagged it, so it is weaker evidence than an identifier a
+# vendor controls; CONTRIBUTING.md has the rules for adding one. Each value's comment records
+# the docker_images row it was read off.
 #
-# Windows has no routes at all. routes.yaml can express one; none is defined.
+# `classification` describes DEPLOYMENT SHAPE, not risk or quality.
 #
-# One entry per tool, carrying EVERY route it ships through. A single agent commonly
-# arrives as a Homebrew cask, an npm global and a curl installer that wraps npm, and
-# each lands somewhere different. A fleet that standardised on one route is invisible
-# to a signature written for another.
+# A LISTENING PORT IS NOT AN IDENTIFIER. A port only matched when the process holding it
+# already named the agent, so `ports` is retired (catalog/routes.yaml says why it stays
+# registered). Measured: OpenClaw's gateway was started, its listener collected, and the row
+# read /opt/homebrew/Cellar/node/26.8.1/bin/node, which names no agent. What a port could say,
+# that an agent is RUNNING, the `proc` routes say directly.
 #
-# Identifiers are FACTS read off real installs, never taken from vendor documentation.
-# We shipped `bot.molt.mac` for OpenClaw once, straight from the vendor's own Homebrew
-# metadata, and it matched nothing on any Mac. See CONTRIBUTING.md.
+# AN OLD IDENTIFIER IS KEPT, marked by a `superseded:` record the tooling writes from the run
+# that last produced it. docs/signature-lifecycle.md has the workflow.
 #
-# `images` is a container image REPOSITORY, matched exactly against a normalised
-# docker_images tag: no `docker.io/` prefix and no `library/` on Docker Hub, the registry
-# host present everywhere else. bin/classify's image_repo() does the normalising and
-# records the four rules it was read off. Two things about this route are worth knowing
-# before adding to it:
-#
-#   * An image name is CHOSEN BY WHOEVER TAGGED IT. `docker tag alpine ollama/ollama`
-#     produces a finding, and nothing can tell it from the real image. Every other route
-#     here names something a vendor controls; this one does not.
-#   * A local build is shaped exactly like a Docker Hub library image, so a one-segment
-#     value such as `ollama` would claim anybody's `ollama:latest` build. Prefer the
-#     two-segment published name.
-#
-# Every `images` value here was read off a real docker_images row, and the comment beside
-# each one records the row. Two of them needed a detour: Docker Hub pulls are blocked
-# daemon-side on the machine this was verified on, so the layers were fetched from the
-# registry directly and side-loaded as an OCI archive. CONTRIBUTING.md has the method. A
-# registry manifest alone would have been weaker -- authoritative about the NAME, silent
-# about how a row renders it -- and the detour was cheaper than that compromise.
-#
-# `classification` describes DEPLOYMENT SHAPE, not risk or quality. Whether an agent is
-# acceptable is the reader's judgement about their fleet, not ours about a vendor.
-#
-# A LISTENING PORT IS NOT AN IDENTIFIER, and the `ports` route is retired. It looked like
-# one -- 18789 is OpenClaw's gateway -- and it cannot be, for a reason the code already
-# encoded in two places before anyone said it out loud:
-#
-#   * bin/classify refused a port unless the process holding it NAMED the agent (a
-#     `_corroborates` guard, gone now that a retired route carries no values). That guard
-#     was right: it stopped 8080-held-by-java reading as llama.cpp. But it meant the port
-#     only ever fired when something else had ALREADY identified the agent, so it added no
-#     identifying power -- a second opinion from the same witness.
-#   * validate_catalog.py exempts ports from the duplicate-identifier check, because
-#     "8080 is legitimately shared". A value that two agents may both claim is not an
-#     identifier; that exemption was the admission.
-#
-# Measured, rather than argued: the gateway was started for real, the listener opened, the
-# row was collected, and the classifier declined it -- because OpenClaw runs under node and
-# the row reads /opt/homebrew/Cellar/node/26.8.1/bin/node. It has never produced a finding
-# in any run.
-#
-# What a port CAN tell you is that an agent is RUNNING rather than merely installed. That is
-# liveness, not identity, and it is now built as that and named as that: kind `proc`, from
-# osquery/queries/running.sql and osquery/queries/running-darwin.sql, through routes that read
-# the `bundle_ids` and `npm` values below. bin/classify marks a finding with one `running`.
+# pipx and uv tool directories are not catalogued: the `pypi` route reads the package name
+# from them (SPEC.md 6.4.6). npx and bunx caches are not read at all; osquery/queries/
+# filesystem.sql records that gap.
 
-# AN OLD IDENTIFIER IS KEPT, AND KEEPING IT COSTS EVIDENCE. Machines on an earlier release
-# still report it, so removing one blinds the fleet to those machines -- but "an earlier
-# release reported it" is a claim, and the `retired:` list it used to be written in
-# exempted a value from the coverage gate on nothing but a person's say-so.
-#
-# So `superseded:` carries the observation instead: which run produced it, which scenario,
-# and at what version. The tooling writes the record when a run stops reproducing an
-# identifier; nobody types one. See docs/signature-lifecycle-v2.md.
-
-# Four kinds of query literal are deliberately NOT catalog entries, because they are
-# structural rather than tool-specific:
-#
-#   ~/.local/pipx/venvs/%/          enumerate every pipx tool, not a named one
-#   ~/.local/share/uv/tools/%/      likewise for uv
-#   ~/.npm/_npx/%/node_modules/X/   the npx cache path is derived from the npm name,
-#                                   so `npm: [openclaw]` already implies it
-#
-# A matcher expands those; the catalog does not repeat them.
-
-# 3: `classifications` became {name, definition}, so the catalog defines its own words.
-# 2: `platforms:` is required on every agent, and the route vocabulary moved to
-# catalog/routes.yaml. This field sat here unread for the whole
-# life of the file -- a version nothing could disagree with -- and bin/classify validates
-# it now: a catalog NEWER than the matcher understands warns on stderr and matches what it
-# can, because refusing would turn version skew into "no agents found", which is the one
-# error this repo exists to avoid.
+# The authoring form's version, which ships and moves with bin/classify; bin/classify refuses
+# any other, as it refuses an unsupported `format` in a catalog document (SPEC.md 10).
+# 3: `classifications` became {name, definition}. 2: `platforms:` became required, and the
+# route vocabulary moved to catalog/routes.yaml.
 version: 3
 
-# THIS CATALOG DETECTS AGENTS. Two entries were REMOVED for failing that test, and the
-# reason is recorded here because the temptation to re-add them is obvious -- both show up
-# in an AI inventory and both were easy to detect:
-#
-#   mcp-sdk   the Model Context Protocol SDK is a LIBRARY an agent is built with. Agent
-#             tooling, not an agent. Detecting it says a developer imported a protocol.
-#   litellm   an LLM gateway an agent calls THROUGH. Detecting it says traffic may be
-#             proxied, not that anything is acting on a user's behalf.
-#
-# Neither acts on anyone's behalf, and counting them among "agents found on this Mac"
-# overstates the finding -- the kind of confident overstatement this repo exists to avoid.
-# Their rows are kept in the FIXTURES as negative controls: test/test_matcher.py asserts
-# they arrive and are declined, which is the only way to tell "correctly not an agent" from
-# "route quietly broken".
-#
-#   ollama, lm-studio, jan, llama-cpp
-#             MODEL RUNNERS. They serve language models; an agent is what drives one.
-#             Removed when the scope was tightened to agents only. They are the strongest
-#             candidates to come back if that scope ever widens, and the `model` query
-#             branch went with them -- nothing consumed its rows.
-#   docker    Docker Desktop is INSTRUMENTATION, not a finding. What we detect inside a
-#             container is the agent IMAGE -- ollama/ollama, ghcr.io/ggml-org/llama.cpp,
-#             paulgauthier/aider -- and the runtime is how we look, not what we are looking
-#             for. Whether Docker is present is already answered, and answered better, by
-#             the kind=scan marker row: `ok`, `absent`, `unhealthy:<code>`, `timeout:<n>`
-#             distinguish "no Docker" from "Docker wedged", which a bundle id cannot.
-#
-# WHAT WAS REMOVED, AND WHAT IT ACTUALLY IS. As data, because three places were describing
-# this list in prose -- CLAUDE.md, CONTRIBUTING.md and the generated report -- and a fourth,
-# README, was still using `ollama` as an example of a name the SQL never matches on, which
-# reads to a newcomer as though it were still detected.
-#
-# tools/agent_status.py renders the table from here, and tools/check_doc_numbers.py fails if
-# README names any of these: the front page should describe what the catalog HAS.
+# REMOVED FOR FAILING SPEC.md 3, with the reason, because the temptation to re-add each is
+# obvious: all were easy to detect and belong in some AI inventory. Their rows stay in the
+# fixtures as negative controls, asserted declined. tools/agent_status.py renders this list,
+# and tools/check_doc_numbers.py fails if a README names one of them.
 removed:
   - id: mcp-sdk
     what_it_is: a library an agent is **built with**
@@ -216,11 +120,9 @@ agents:
   # across the profiles that carry it, which is what makes it worth matching on.
   #
   # Two further ids circulate for Anthropic-related extensions and are DELIBERATELY ABSENT:
-  # neither id was confirmed, so neither is a fact. Note this is a claim about the IDS, not
-  # about testability -- 45-claude-extension verifies an id by fetching the Web Store's
-  # signed CRX and deriving the id from its manifest key, so a confirmed id could be
-  # verified in minutes. See docs/signature-lifecycle-v2.md: a catalog may carry a guess, but
-  # it may not hide one.
+  # neither was confirmed. That is about the IDS, not testability: 45-claude-extension
+  # derives an id from the Web Store's signed CRX, so a confirmed one could be verified in
+  # minutes.
   - id: claude-in-chrome
     name: Claude in Chrome
     classification: Browser agent

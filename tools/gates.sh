@@ -14,7 +14,7 @@ fail=0
 # nothing, and a maintainer's own machine has no CI set at all -- so the suite would post
 # an event for every fixture it classifies and the field data would be mostly us. Set
 # explicitly rather than relied upon: see docs/telemetry.md.
-export AI_DISCOVERY_TELEMETRY=0
+export AI_DETECTION_SPEC_TELEMETRY=0
 run() {
   local out rc
   out=$("$@" 2>&1); rc=$?

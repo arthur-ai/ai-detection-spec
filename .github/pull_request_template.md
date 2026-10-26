@@ -6,9 +6,9 @@
 
 - [ ] `test/lint.sh` passes
 - [ ] Every query branch emits the six columns in order
-- [ ] **A signature change comes with a test scenario**, and the identifier was read off a real
+- [ ] **A new or changed identifier comes with a test scenario**, and was read off a real
       install rather than taken from vendor documentation
-- [ ] Old identifiers kept as aliases rather than replaced
+- [ ] An identifier the vendor changed is kept beside the new one, not replaced
 - [ ] If this touches a daemon or socket, it was tested **stopped and mid-startup**, not only
       healthy
 

@@ -2,9 +2,9 @@
 # Compare query output against a scenario's expectations.
 # Usage: test/assert.sh <actual.json> <expected.json>
 #
-# Three layers. D20 split the question in two: the query enumerates, so counts can only
-# prove that each BRANCH still returns rows; whether the evidence resolves to the right
-# agent is a question for the classifier, and `classified` asks it there. The third holds
+# Three layers. The query enumerates, so counts can only prove that each BRANCH still
+# returns rows; whether the evidence resolves to the right agent is the matcher's question,
+# and `classified` asks it there. The third holds
 # the rendered match SQL -- the catalog as the endpoint runs it -- to the classifier's
 # answer on the same rows, and runs osquery/dist/agents-<platform>.sql live.
 set -euo pipefail

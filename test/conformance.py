@@ -1,17 +1,18 @@
 """The conformance vectors, read once and put in the terms each matcher takes.
 
-A vector carries a catalog in the format's own shape (SPEC.md section 4), evidence rows
-(section 5) and the result a conforming matcher must give (section 9). bin/classify reads this
-repository's authoring form instead -- catalog/agents.yaml and catalog/routes.yaml -- so
-authoring_form() converts. result() runs bin/classify itself and states its answer in the
-vector's terms, so bin/classify and the rendered SQL are held to one expectation rather than
-two.
+A vector carries a catalog document (SPEC.md section 4), evidence rows (section 5) and the
+result a conforming matcher must give (section 9). result() hands bin/classify the document
+as it stands and states its answer in the vector's terms, so bin/classify and the rendered
+SQL are held to one expectation rather than two. authoring_form() is bin/classify's own
+reading of a document, for the SQL renderer, which works in the authoring form.
 
-scan_outcome_ok() is the format's outcome vocabulary, read from the evidence schema. CI's
+scan_outcome_ok() is the spec's outcome vocabulary, read from the evidence schema. CI's
 vocabulary checks and the osquery lint call it, so no copy of how to read the schema exists.
 schema_errors() is the one validation of a document against a schema, for the export's test
 and for the file release.yml attaches.
 """
+import importlib.machinery
+import importlib.util
 import json
 import os
 import pathlib
@@ -45,51 +46,34 @@ def scan_outcome_ok(value):
 
 
 def schema_errors(doc, name):
-    """Where `doc` fails schema/<name>.schema.json, as `path: message`. Needs jsonschema, a
-    test-only dependency, so it is imported here rather than at the top."""
-    import jsonschema
-    schema = json.loads((ROOT / "schema" / f"{name}.schema.json").read_text())
-    return [f"{e.json_path}: {e.message}"
-            for e in jsonschema.Draft202012Validator(schema).iter_errors(doc)]
+    """Where `doc` fails schema/<name>.schema.json: bin/classify's own check, so the document
+    release.yml attaches is validated exactly as the matcher will validate it."""
+    loader = importlib.machinery.SourceFileLoader("classify", str(CLASSIFY))
+    spec = importlib.util.spec_from_loader("classify", loader)
+    classify = importlib.util.module_from_spec(spec)
+    loader.exec_module(classify)
+    return classify.schema_errors(doc, ROOT / "schema" / f"{name}.schema.json")
 
 
-def authoring_form(doc, catalog_version):
-    """A format catalog as the two documents bin/classify reads."""
-    routes = {"platforms": list(doc["platforms"]),
-              "platform_groups": dict(doc["platform_groups"]),
-              "routes": {name: {k: v for k, v in r.items() if k != "bindings"}
-                         for name, r in doc["routes"].items()}}
-    agents = []
-    for a in doc["agents"]:
-        entry = {k: a[k] for k in ("id", "name", "classification", "platforms")}
-        superseded = []
-        for ident in a["identifiers"]:
-            entry.setdefault(ident["route"], []).append(ident["value"])
-            if ident["status"] == "superseded":
-                superseded.append({"route": ident["route"], "value": ident["value"],
-                                   **ident["superseded"]})
-        if superseded:
-            entry["superseded"] = superseded
-        agents.append(entry)
-    catalog = {"version": catalog_version, "classifications": doc["classifications"],
-               "agents": agents}
-    return catalog, routes
+def authoring_form(classify, doc):
+    """A catalog document as the catalog and route registry bin/classify works in, read by
+    bin/classify itself so that no second reading of a document exists. Without the JSON
+    Schema step, which result() exercises: the SQL tests run where jsonschema may not be."""
+    return classify.from_document(doc, schema=None)
 
 
 def result(classify, vector):
     """What `bin/classify --json` reports for a vector, in the vector's terms, plus `exit`
-    and `stderr`. JSON is YAML, so the authoring form is written as JSON."""
-    catalog, routes = authoring_form(vector["catalog"], classify.CATALOG_VERSION)
+    and `stderr`."""
     rows = [{**r, ROW: str(i)} for i, r in enumerate(vector["rows"])]
     with tempfile.TemporaryDirectory() as tmp:
         tmp = pathlib.Path(tmp)
-        for name, doc in (("agents.yaml", catalog), ("routes.yaml", routes), ("rows.json", rows)):
+        for name, doc in (("catalog.json", vector["catalog"]), ("rows.json", rows)):
             (tmp / name).write_text(json.dumps(doc))
         proc = subprocess.run(
             [sys.executable, str(CLASSIFY), "--json", "--show-unmatched",
-             "--catalog", str(tmp / "agents.yaml"), "--routes", str(tmp / "routes.yaml"),
-             str(tmp / "rows.json")],
-            capture_output=True, text=True, env={**os.environ, "AI_DISCOVERY_TELEMETRY": "0"})
+             "--catalog", str(tmp / "catalog.json"), str(tmp / "rows.json")],
+            capture_output=True, text=True, env={**os.environ, "AI_DETECTION_SPEC_TELEMETRY": "0"})
     got = {"exit": proc.returncode, "stderr": proc.stderr}
     if proc.returncode:
         return got
@@ -119,7 +103,7 @@ def result(classify, vector):
     if len(dropped) != out.get("dropped", 0):
         dropped = [f"bin/classify counted {out.get('dropped', 0)} dropped"]
     got.update(matches=matches, unmatched=unmatched, dropped=dropped,
-               scans={"ok": ok, "absent": absent, "gap": gap}, findings=findings)
+               scans=ok, absences=absent, gaps=gap, findings=findings)
     return got
 
 
@@ -129,7 +113,8 @@ def _finding(f):
             "only_superseded": f.get("only_superseded", False)}
 
 
-def compare(got, expect, keys=("matches", "unmatched", "dropped", "scans", "findings")):
+def compare(got, expect,
+            keys=("matches", "unmatched", "dropped", "scans", "absences", "gaps", "findings")):
     """Where a matcher's result differs from a vector's expectation, as short strings.
     Only the members the vector states are compared, and only those in `keys`."""
     problems = []

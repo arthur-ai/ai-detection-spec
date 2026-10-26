@@ -6,18 +6,20 @@
 Every file is one line of the form `<names>; <status>`. `<names>` is `none` or a comma
 list. `<status>` is the status.txt line, so it is held to that contract: `ok` or
 `degraded`, an ISO timestamp, `rows=N`, then `branch=outcome` tokens drawn from the
-kind=scan vocabulary. With --status-file, the FIRST file's status half must equal that
-file byte for byte -- one statement produces both, and this is what proves it.
+spec's scan outcomes, read from the evidence schema by test/conformance.py rather than
+copied here. With --status-file, the FIRST file's status half must equal that file byte for
+byte -- one statement produces both, and this is what proves it.
 
-Lives here rather than inline in ci.yml so the macOS and Linux jobs run the same text, and
-so the vocabulary is written once beside the check that reads it.
+Lives here rather than inline in ci.yml so the macOS and Linux jobs run the same text.
 """
 import argparse
+import pathlib
 import re
 import sys
 
-OUTCOMES = ("ok", "absent", "error")
-OUTCOME_PREFIXES = ("unhealthy:", "timeout:", "unreadable:")
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[2] / "test"))
+from conformance import scan_outcome_ok  # noqa: E402
+
 STAMP = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z")
 
 
@@ -40,7 +42,7 @@ def check(path):
     if right.endswith(" "):
         return f"{path}: status half has a trailing space: {right!r}"
     for k, v in (p.split("=", 1) for p in rest.split()[1:] if "=" in p):
-        if not (v in OUTCOMES or v.startswith(OUTCOME_PREFIXES)):
+        if not scan_outcome_ok(v):
             return f"{path}: unknown outcome {v!r} for {k}; the vocabulary must not grow silently"
     return None
 

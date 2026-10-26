@@ -11,7 +11,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 OSQ="$(cd "$HERE/.." && pwd)"        # osquery/, the binding
 REPO="$(cd "$OSQ/.." && pwd)"        # the catalog, bin/classify and the scenarios
 fail=0
-export AI_DISCOVERY_TELEMETRY=0      # see test/lint.sh
+export AI_DETECTION_SPEC_TELEMETRY=0      # see the root test/lint.sh
 
 need() {  # need <description> <path>... : every path must exist
   local what="$1"; shift
@@ -381,7 +381,7 @@ NAMES
 # ERROR. These two scripts run on managed Macs where /usr/bin/python3 is a STUB -- no Command
 # Line Tools, so it prints an install prompt on stderr and exits 1 with empty stdout. That
 # took the no-cache marker with it: the one row whose whole job is to say the writer never
-# ran was built by the interpreter that stopped the writer, so a collector saw nothing, and
+# ran was built by the interpreter that stopped the writer, so a consumer saw nothing, and
 # nothing reads as a machine with nothing on it. docs/deployment.md has the history.
 #
 # `python` rather than `python3`, and no path anchor, so `/usr/bin/python3` and `env python`
@@ -428,7 +428,7 @@ done
 # once a recon has run.
 #
 # FILTERING DOWNSTREAM IS TOO LATE, which is why the gate is here and not in bin/classify.
-# The six-column contract is written ON the endpoint: by the time a collector could drop
+# The six-column contract is written ON the endpoint: by the time a consumer could drop
 # the column, the row has already left the machine. The column must never be selected.
 #
 # NOTHING ELSE CATCHES IT, and that was measured rather than assumed. Injecting
@@ -507,7 +507,7 @@ PY
 # record, so `SELECT 'app'\nAS kind FROM apps;` becomes a branch named `AS kind FROM apps;`
 # and a truncated `apps`. Both are rejected anyway: the tab is only harmless while qtext is
 # the last field, and a third column would make today's safe case tomorrow's silent one.
-python3 - "$OSQ/dist/ai-discovery.conf" <<'PY' || fail=1
+python3 - "$OSQ/dist/ai-detection-spec.conf" <<'PY' || fail=1
 import json, sys
 pack = json.load(open(sys.argv[1]))["queries"]
 bad = [n for n, q in pack.items() if "\t" in q["query"] or "\n" in q["query"]]
@@ -544,7 +544,7 @@ if missing:
 print(f"docker_states: ok, the findings it expects ({', '.join(named)}) are catalog ids")
 SUITE
 
-# EVERY OUTCOME THIS BINDING WRITES IS ONE THE FORMAT ALLOWS. The evidence schema once took
+# EVERY OUTCOME THIS BINDING WRITES IS ONE THE SPEC ALLOWS. The evidence schema once took
 # `unhealthy:` with three digits while runtime-linux.sql wrote `unhealthy:no-units`, on a host
 # CI never is: a bus socket and no units. So the outcomes are read off the source -- each
 # `marker` and `json_row scan` call, its shell expansions replaced by the values they can
@@ -599,25 +599,25 @@ for where in ("bin/discover", "bin/container-scan", "queries/runtime-linux.sql")
     if not any(w == where for w, _ in found):
         bad.append(f"{where}: no outcome found, so this check reads nothing there")
 if bad:
-    print("FAIL: scan outcomes the format does not allow (SPEC.md 5.2):\n  " + "\n  ".join(bad))
+    print("FAIL: scan outcomes the spec does not allow (SPEC.md 5.2):\n  " + "\n  ".join(bad))
     sys.exit(1)
 print(f"outcomes: ok, {', '.join(sorted(checked))}")
 OUTCOMES
 
-# bin/classify SPLITS THE PROVENANCE TOKENS browser.sql appends to `perms` back off, by name.
-# A token added to the query and not to PERMS_PROVENANCE would read as a permission.
-python3 - "$OSQ/queries/browser.sql" "$OSQ/tools" <<'PERMS' || fail=1
+# bin/classify READS THE PROVENANCE TOKENS browser.sql appends to `extra`, by name. A token
+# added to the query and not to PROVENANCE would go unreported.
+python3 - "$OSQ/queries/browser.sql" "$OSQ/tools" <<'PROV' || fail=1
 import re, sys
 sys.path.insert(0, sys.argv[2])
 import render_match
 cl = render_match.load_classify()
 emitted = set(re.findall(r"THEN ',([^'<][^']*)'", open(sys.argv[1]).read()))
-if not emitted or emitted != set(cl.PERMS_PROVENANCE):
-    print(f"FAIL: browser.sql appends {sorted(emitted)} to perms, and bin/classify's "
-          f"PERMS_PROVENANCE names {sorted(cl.PERMS_PROVENANCE)}")
+if not emitted or emitted != set(cl.PROVENANCE):
+    print(f"FAIL: browser.sql appends {sorted(emitted)} to extra, and bin/classify's "
+          f"PROVENANCE names {sorted(cl.PROVENANCE)}")
     sys.exit(1)
-print(f"perms provenance: ok, browser.sql and bin/classify agree on {sorted(emitted)}")
-PERMS
+print(f"extension provenance: ok, browser.sql and bin/classify agree on {sorted(emitted)}")
+PROV
 
 python3 "$OSQ/tools/build.py" --check || fail=1
 # THE BINDING CHECK REFUSES WHAT IT EXISTS TO REFUSE. build.py runs it on the real registry
@@ -786,8 +786,8 @@ _wrapped = B.build(root, "darwin", driver=str(_drv), label="lint")
 
 if B.read_member(_wrapped, "driver") != _drv.read_bytes():
     bad.append("--driver did not put the driver in the payload byte for byte")
-if "AI_DISCOVERY_ROOT" not in _wrapped:
-    bad.append("a --driver bundle does not set AI_DISCOVERY_ROOT, which is the whole "
+if "AI_DETECTION_SPEC_ROOT" not in _wrapped:
+    bad.append("a --driver bundle does not set AI_DETECTION_SPEC_ROOT, which is the whole "
                "interface the driver is handed")
 # CHECK MUST BE DRIVER-SENSITIVE. Comparing only the wrapper would pass a bundle carrying
 # somebody else's driver, which is the one substitution this hook makes possible.

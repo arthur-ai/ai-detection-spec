@@ -3,7 +3,7 @@
 #
 # This is the largest single blind spot the query had. python_packages is deliberately
 # excluded for performance (15.6s, no push-down), and the design justified that with
-# "zero Tier A matches" -- but that was measured on a machine with none of these
+# "zero matches" -- but that was measured on a machine with none of these
 # installed. aider, litellm, crewai, langgraph, open-interpreter and most MCP servers
 # ship on PyPI, and several ship ONLY there.
 #

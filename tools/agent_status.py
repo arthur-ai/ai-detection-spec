@@ -11,8 +11,8 @@ found it. That is the only evidence that survives an identifier taken from a ven
 own metadata, which is the failure this catalog was built around.
 
 A hand-written fixture proves the MATCHER and credits no coverage, because nothing on a
-row says whether a machine ever produced it. Only test/fixtures/captured/ can, and it
-holds rows from a named CI run. An identifier with neither is named rather than hidden.
+row says whether a machine ever produced it. Only a scenario's observed.json, recorded
+from a named CI run, can. An identifier with neither is named rather than hidden.
 """
 import collections
 import datetime
@@ -62,6 +62,13 @@ ALL_ROUTES = list(ROUTES["routes"])
 # old name and it under-described itself -- launchd_prefixes is a prefix, not a glob.
 ROUTE_LEVEL_ONLY = {n for n, m in REGISTRY.match.items()
                     if m == "prefix" or m.startswith("home-")}
+# Routes whose values are compared normalised (SPEC.md 6.4.3), so a row credits the value
+# through image_repo(). By mode, not by the name `images`: `container_images` shares it.
+NORMALISED = {n for n, m in REGISTRY.match.items() if m == "exact-normalised"}
+
+
+def _key(route, value):
+    return classify_mod.image_repo(value) if route in NORMALISED else value
 
 
 def replay(paths, catalog):
@@ -177,7 +184,7 @@ def record(artifact, scenario_dir, os_version="", arch="", platform="", run_id="
 
     test/artifacts/ is gitignored and per-machine, so the raw output cannot back a
     committed document. This is the compact, reviewable residue of a run -- the
-    observations layer of docs/signature-lifecycle-v2.md, at its smallest useful size.
+    observations layer of docs/signature-lifecycle.md, at its smallest useful size.
 
     `run_id` IS THE FIELD THAT MAKES PROOF OUTLIVE THE RUN. Without it an observation
     from a CI runner cannot be told from one a maintainer produced on their own Mac, and
@@ -200,8 +207,7 @@ def record(artifact, scenario_dir, os_version="", arch="", platform="", run_id="
                 if route in ROUTE_LEVEL_ONLY:
                     proven = (route, value) in values[aid]
                 else:
-                    key = classify_mod.image_repo(value) if route == "images" else value
-                    proven = (route, key) in values[aid]
+                    proven = (route, _key(route, value)) in values[aid]
                 if proven:
                     rec = {"agent": aid, "route": route, "value": value}
                     # Version, OS and arch: an identifier is a fact about ONE build on ONE
@@ -209,9 +215,8 @@ def record(artifact, scenario_dir, os_version="", arch="", platform="", run_id="
                     # current release still emits it. Only recorded where the row actually
                     # carries a version -- a path glob names no version, and inventing one
                     # would be worse than leaving it out.
-                    ver = seen_ver.get((aid, route, value)) or seen_ver.get(
-                        (aid, route,
-                         classify_mod.image_repo(value) if route == "images" else value))
+                    ver = (seen_ver.get((aid, route, value))
+                           or seen_ver.get((aid, route, _key(route, value))))
                     if ver:
                         rec["agent_version"] = ver
                     # PLATFORM BESIDE os, NOT INSTEAD OF IT. `os` holds "14.8.7" or
@@ -546,33 +551,13 @@ def collect():
                 value = str(value)
                 scens = sorted(seen_in.get((aid, route, value), ()))
                 ci_scens = [s for s in scens if s in in_ci]
-                # A fixture IS a CI test: ci.yml runs test/lint.sh, which runs
-                # test_matcher.py, on every pull request. It is a weaker CLAIM than a real
-                # install and a stronger CADENCE -- those are different axes and the report
-                # keeps them apart.
-                # A RETIRED ALIAS IS NOT A GAP. Nothing installs it any more, so no
-                # scenario can ever cover it, and a fixture is the only evidence that
-                # exists rather than a lesser one. Counting it as a shortfall would make
-                # the report demand something impossible -- and, worse, invite someone to
-                # "fix" it by deleting the alias, which is the one thing that would break
-                # detection on the machines it exists for.
-                # COVERAGE WINS OVER THE ALIAS LABEL. `retired` says an identifier comes
-                # from an earlier release, not that it cannot be tested -- and
-                # 56-openclaw-retired-names disproved that by installing clawdbot and
-                # moltbot for real. Checking `retired` first excluded them from the
-                # denominator while a scenario was proving them, which understated the
-                # coverage and mislabelled the evidence.
-                # THE ORDER IS THE MEANING. Real-install evidence outranks everything;
-                # a retired alias comes next because nothing can install it any more.
-                #
-                # `no-ci-platform` sits below both and above every "we tried and it did
-                # not appear" state, because it is not a failure to observe -- it is the
-                # absence of a runner. Naming it separately is what stops it becoming an
-                # excuse for the states beneath it, and the two defences against that are
-                # written into --gate and into the per-platform breakdown the report
-                # always prints: an embarrassing zero is on the generated front page, and
-                # the gate FAILS the instant that platform joins the CI matrix with
-                # identifiers still uncovered.
+                # THE ORDER IS THE MEANING. A real install outranks everything, a superseded
+                # label included: 56-openclaw-retired-names installs superseded names for
+                # real. A superseded identifier comes next. Nothing installs it now, and
+                # counting it as a shortfall would invite deleting it, which breaks
+                # detection on exactly the machines it exists for. `no-ci-platform` is the
+                # absence of a runner rather than a failure to observe, and --gate fails
+                # the moment that platform joins CI with identifiers still uncovered.
                 if ci_scens:
                     state = "ci-install"
                 elif (route, str(value)) in superseded_of.get(aid, ()):
@@ -636,7 +621,6 @@ def collect():
             "removed": catalog.get("removed", []),
             "classifications": [c["name"] for c in catalog["classifications"]],
             "definitions": {c["name"]: c["definition"] for c in catalog["classifications"]},
-            "not_agents": list(catalog.get("not_agents", ())),
             "agents": agents, "limits": limits}
 
 
@@ -677,22 +661,12 @@ BADGE = re.compile(r"(identifiers_covered_by_a_CI_test-)(\d+)(%2F)(\d+)(-)([0-9A
 def badge_for(data):
     """The one place the coverage numbers are computed. Every badge uses it.
 
-    A RETIRED ALIAS IS OUT OF BOTH HALVES. Nothing installs it any more, so no CI test can
-    cover it -- counting it in the numerator would claim a test that does not exist, and
-    counting it only in the denominator would cap the figure below complete for a reason
-    nobody can act on. It is excluded, and the report says how many were excluded.
-
-    Two badges disagreed before this existed: README read 40/40 by counting aliases as
-    covered, and the report read 38/40 by counting them only in the denominator. Both were
-    drawn from the same data and neither was right.
+    SUPERSEDED AND NO-CI-PLATFORM IDENTIFIERS ARE OUT OF BOTH HALVES. No CI test can cover
+    either: in the numerator they would claim a test that does not exist, and in the
+    denominator alone they would cap the figure for a reason nobody can act on. The report
+    names them instead.
     """
     ids = [i for a in data["agents"] for i in a["identifiers"]]
-    # A NO-CI-PLATFORM IDENTIFIER IS OUT OF BOTH HALVES, for the same reason a retired
-    # alias is: no test can cover it, so counting it in the numerator would claim one that
-    # does not exist, and counting it only in the denominator would cap the figure below
-    # complete for a reason nobody can act on. It is counted and named in the breakdown
-    # instead: the identifier table below names every route and the platforms it was
-    # observed on, which is a fact someone can act on rather than a score to read.
     n = sum(1 for i in ids if i["state"] not in ("superseded", "no-ci-platform"))
     covered = sum(1 for i in ids if i["state"] == "ci-install")
     # Green only at complete. Anything less is amber -- a badge that reads green at 90%
@@ -717,8 +691,6 @@ def markdown(data):  # noqa: C901
     agents = data["agents"]
     n_ident = sum(len(a["identifiers"]) for a in agents)
     n_scen = sum(1 for a in agents if a["scenarios"])
-    na = set(data.get("not_agents", ()))
-    n_tools = sum(1 for a in agents if a["classification"] in na)
     n_st = lambda s: sum(1 for a in agents for i in a["identifiers"] if i["state"] == s)
     n_ci = n_st("ci-install")
 
@@ -774,9 +746,6 @@ def markdown(data):  # noqa: C901
           " here. An agent with no test that installs it cannot be added to the catalog at"
           " all; the build rejects it.",
         "",
-        # Only describe a split when there IS one. Without one this restated the badges.
-        (f"{len(agents)} entries carrying {n_ident} identifiers &mdash; "
-         f"**{len(agents) - n_tools} agents** and **{n_tools} not**." if n_tools else None),
         "## 🧪 Why a real install is the bar",
         "",
         "`bot.molt.mac` came off OpenClaw's own Homebrew metadata and matched nothing on any",
@@ -825,20 +794,10 @@ def markdown(data):  # noqa: C901
     for a in agents:
         by_class.setdefault(a["classification"], []).append(a)
 
-    for group, want_agent, blurb in (
-            ("Agents", True,
-             "Software that acts on the user's behalf. This is what the catalog is for."),
-            ("Model runners", False,
-             "**Not agents, and not language models either.** These serve models on the "
-             "machine; an agent is what drives one. Counted separately so the agent number "
-             "means what it says. The *models* they hold are a different thing again and "
-             "appear as `kind=model` rows from the `model_stores` route.")):
-        classes = [c for c in data["classifications"]
-                   if c in by_class and (c not in na) == want_agent]
-        if not classes:
-            continue
-        n = sum(len(by_class[c]) for c in classes)
-        out += [f"# {group} ({n})", "", blurb, ""]
+    classes = [c for c in data["classifications"] if c in by_class]
+    if classes:
+        out += [f"# Agents ({len(agents)})", "",
+                "Software that acts on the user's behalf. This is what the catalog is for.", ""]
         for cls in classes:
             out += [f"## {cls}", "", data["definitions"][cls], "",
                     # NO `evidence` COLUMN. It held "real install" for every row and could
@@ -1141,10 +1100,10 @@ def main():
         # The same numbers as every badge, from badge_for, so the gate cannot say "all 40"
         # while the page beside it says 38/38.
         covered, n, _ = badge_for(data)
-        aliases = sum(1 for a in data["agents"] for i in a["identifiers"]
-                      if i["state"] == "superseded")
+        superseded = sum(1 for a in data["agents"] for i in a["identifiers"]
+                         if i["state"] == "superseded")
         print(f"catalog-gate: ok, {covered}/{n} identifiers are covered by a CI test"
-              + (f", {aliases} superseded excluded" if aliases else "")
+              + (f", {superseded} superseded excluded" if superseded else "")
               + (f", {len(PENDING_KEYS)} pending" if PENDING_KEYS else ""))
         if PENDING_MSGS:
             _pending_note(PENDING_MSGS, "--reported" in sys.argv)
@@ -1199,22 +1158,13 @@ def main():
     agents = data["agents"]
     n_ident = sum(len(a["identifiers"]) for a in agents)
     n_scen = sum(1 for a in agents if a["scenarios"])
-    na = set(data.get("not_agents", ()))
-    n_tools = sum(1 for a in agents if a["classification"] in na)
-
     by_class = collections.defaultdict(list)
     for a in agents:
         by_class[a["classification"]].append(a)
 
-    # Two top-level groups, not one list with a tag. A container runtime listed among
-    # agents reads as an agent however it is labelled, and the count that matters to
-    # someone asking "what AI is on this Mac" is the agent count.
-    for group, want_agent in (("AGENTS", True), ("NOT AGENTS", False)):
-        classes = [c for c in data["classifications"]
-                   if c in by_class and (c not in na) == want_agent]
-        if not classes:
-            continue
-        print(f"\n{'=' * 62}\n{group}\n{'=' * 62}")
+    classes = [c for c in data["classifications"] if c in by_class]
+    if classes:
+        print(f"\n{'=' * 62}\nAGENTS\n{'=' * 62}")
         for cls in classes:
             print(f"\n  {cls}")
             for a in sorted(by_class[cls], key=lambda x: x["id"]):
@@ -1223,8 +1173,7 @@ def main():
                 for i in a["identifiers"]:
                     print(f"        {STATE_LABEL[i['state']]:<17} {i['route']}: {i['value']}")
 
-    print(f"\n{len(agents)} entries: {len(agents) - n_tools} agents and {n_tools} "
-          f"supporting tools. {n_ident} identifiers.")
+    print(f"\n{len(agents)} agents, {n_ident} identifiers.")
     print("  every one backed by a real install, or validate_catalog would have failed")
     n = lambda s: sum(1 for a in agents for i in a["identifiers"] if i["state"] == s)
     covered = n("ci-install")

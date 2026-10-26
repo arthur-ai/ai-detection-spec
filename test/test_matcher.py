@@ -15,7 +15,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 FIXTURES = ROOT / "test" / "fixtures"
 # Every classify below runs as a subprocess and inherits this. A test run is not a use;
 # test/test_telemetry.py is the file that exercises the sending path deliberately.
-os.environ.setdefault("AI_DISCOVERY_TELEMETRY", "0")
+os.environ.setdefault("AI_DETECTION_SPEC_TELEMETRY", "0")
 failures = []
 
 
@@ -73,10 +73,9 @@ check("an MCP SDK install is NOT an agent finding",
 
 # --- PyPI agents installed through pipx or uv -----------------------------------
 # The endpoint cannot query python_packages (15.6s, no WHERE push-down), so it globs
-# the tool directories instead and those rows arrive as kind 'file'. Before D20 nothing
-# checked what the classifier did with them, and the answer was nothing: aider installs
-# as 'aider-chat' under uv while its state_dir is ~/.aider, so evidence and signature
-# never met. 25-python-agents asserted row counts, which were correct the whole time.
+# the tool directories instead and those rows arrive as kind 'file'. aider installs as
+# 'aider-chat' under uv while its state_dir is ~/.aider, so evidence and identifier once
+# never met -- while 25-python-agents' row counts stayed correct the whole time.
 check("a uv tool directory resolves by package name (aider-chat -> aider)",
       "aider" in found,
       "the tool dir names the package, which is the only identifier in the path")
@@ -623,13 +622,9 @@ check("an unclaimed process is unmatched, not dropped",
       "a kind absent from the registry is DROPPED, not unmatched -- the `ext` bug")
 
 
-# --- version skew: warn and match, never refuse ------------------------------------
-#
-# catalog/agents.yaml carried `version:` unread for its whole life, so nothing could ever
-# disagree with it. It is checked now, and the BEHAVIOUR is the assertion: a downloaded
-# bin/classify meeting a newer catalog must warn on stderr and match what it recognises.
-# Refusing would turn version skew into "no agents found" -- which reads downstream as a
-# clean fleet, and is the one error this repo exists to avoid.
+# --- version skew: refused, never matched in part (SPEC.md 10) ----------------------
+# The refusal is an error with a reason and no report, which is distinguishable from a
+# clean machine; a partial match is not.
 import tempfile as _tf3, yaml as _yaml3
 
 _cat = _yaml3.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
@@ -641,21 +636,15 @@ _rows_j = json.dumps(_deb("cursor"))
 _proc = subprocess.run(
     [sys.executable, str(ROOT / "bin" / "classify"), "--json", "--catalog", _newer],
     input=_rows_j, capture_output=True, text=True)
-check("a newer catalog still produces findings",
-      _proc.returncode == 0
-      and {f["id"] for f in json.loads(_proc.stdout)["findings"]} == {"cursor"},
-      f"rc={_proc.returncode} err={_proc.stderr.strip()[:120]}")
-check("...and says so on stderr rather than silently",
-      "version 99" in _proc.stderr and "matcher understands" in _proc.stderr,
-      f"got {_proc.stderr.strip()[:160]!r}")
-
-# The current catalog must NOT warn, or the warning is noise everyone learns to ignore.
+check("a catalog version this matcher does not read is refused, with no report",
+      _proc.returncode != 0 and not _proc.stdout.strip() and "version 99" in _proc.stderr,
+      f"rc={_proc.returncode} out={_proc.stdout.strip()[:80]!r} err={_proc.stderr.strip()[:120]}")
 _proc2 = subprocess.run(
     [sys.executable, str(ROOT / "bin" / "classify"), "--json"],
     input=_rows_j, capture_output=True, text=True)
-check("the shipped catalog produces no version warning",
-      "matcher understands" not in _proc2.stderr,
-      f"got {_proc2.stderr.strip()[:160]!r}")
+check("...and the shipped catalog is read",
+      _proc2.returncode == 0 and "version" not in _proc2.stderr,
+      f"rc={_proc2.returncode} err={_proc2.stderr.strip()[:160]!r}")
 
 
 # --- the coverage recorder must credit the route that actually matched ------------
@@ -769,6 +758,8 @@ check("the live catalog's top-level keys are all ones a tool reads",
 check("a top-level unverified: block is refused",
       any("['unverified']" in e for e in _tle({"agents": [], "unverified": [{"value": "x"}]})),
       "it passed the validator before, and nothing reads it")
+check("a not_agents: list is refused: a catalog lists agents and nothing else (SPEC.md 3)",
+      any("['not_agents']" in e for e in _tle({"agents": [], "not_agents": ["Model runner"]})))
 _empty = _tle({"agents": [], "untested": None})
 check("an EMPTY untested: is refused too, once, by its own message",
       len(_empty) == 1 and "`untested:`" in _empty[0], f"got {_empty}")
@@ -1207,8 +1198,8 @@ check("an identifier observed only without a run id is not covered by CI",
 # read off a real daemon (Docker 28.4.0 / osquery 5.23.1, 2026-09-11) rather than invented.
 
 
-def _container(image, state="running", command="", cid="c0ffee"):
-    return {"kind": "container", "id": image, "ver": state, "loc": cid,
+def _container(image, command="", cid="c0ffee"):
+    return {"kind": "container", "id": image, "ver": "", "loc": cid,
             "extra": command, "perms": ""}
 
 
@@ -1363,45 +1354,41 @@ check("the updater bundled inside it claims nothing",
       "org.sparkle-project.Sparkle.Updater" in _u,
       "Sparkle ships inside Muse.app; a nested bundle is not a second agent")
 
-# --- provenance in `perms` is not a permission ---------------------------------------
-# A consumer that splits `perms` on commas lists `sideloaded:<sha256>` as a permission.
-# split_perms() is the one place the tokens are named, so it is held to the SQL that emits
-# them: a token added to browser.sql and not here would read as a permission downstream.
+# --- an extension's provenance is read from `extra`, after the browser ---------------
 _cspec = _ilu.spec_from_loader("classify",
     _ilm.SourceFileLoader("classify", str(ROOT / "bin" / "classify")))
 _cl = _ilu.module_from_spec(_cspec)
 _cspec.loader.exec_module(_cl)
 
-check("split_perms keeps permissions and the <all_urls> flag",
-      _cl.split_perms("tabs,storage,<all_urls>") == (("tabs", "storage", "<all_urls>"), ""))
-check("...and splits off `unreferenced`",
-      _cl.split_perms("tabs,unreferenced") == (("tabs",), "unreferenced"))
-check("...but only `unreferenced` whole: a permission that merely begins with it stays one",
-      _cl.split_perms("tabs,unreferenced-extra") == (("tabs", "unreferenced-extra"), ""))
-check("...and `sideloaded:` with its hash",
-      _cl.split_perms("tabs,<all_urls>,sideloaded:ab12") == (("tabs", "<all_urls>"), "sideloaded:ab12"))
-check("...including when there is no permission before it",
-      _cl.split_perms(",unreferenced") == ((), "unreferenced"))
-check("...and an empty or missing `perms` is no permissions and no provenance",
-      _cl.split_perms("") == ((), "") and _cl.split_perms(None) == ((), ""))
 
-# That PERMS_PROVENANCE names exactly the tokens the osquery binding's browser.sql appends is
-# checked in osquery/test/lint.sh: the binding reads the matcher, and not the other way round.
+def _x(extra, kind="ext"):
+    return {"kind": kind, "id": "x", "extra": extra}
+
+
+check("provenance reads `unreferenced` after the browser",
+      _cl.provenance(_x("chrome,unreferenced")) == "unreferenced")
+check("...and `sideloaded:` with its hash",
+      _cl.provenance(_x("brave,sideloaded:ab12")) == "sideloaded:ab12")
+check("...only whole: a token that merely begins with `unreferenced` is not one",
+      _cl.provenance(_x("chrome,unreferenced-extra")) == "")
+check("...never the browser itself, and nothing from an empty or missing `extra`",
+      _cl.provenance(_x("chrome")) == "" and _cl.provenance(_x("")) == ""
+      and _cl.provenance({"kind": "ext"}) == "")
+check("...and only on an ext row",
+      _cl.provenance(_x("x,unreferenced", kind="container")) == "")
+
+# That PROVENANCE names exactly the tokens the osquery binding's browser.sql emits is checked
+# in osquery/test/lint.sh: the binding reads the matcher, and not the other way round.
 
 _ext = {"kind": "ext", "id": "fcoeoabgfenejglbffodgkkbkcdhcgfn", "ver": "1.0.94",
         "loc": "/Users/x/Library/Application Support/Google/Chrome/Default",
-        "extra": "chrome", "perms": "tabs,unreferenced"}
+        "extra": "chrome,unreferenced", "perms": "tabs"}
 with _tf2.NamedTemporaryFile("w", suffix=".json", delete=False) as _fh5:
     json.dump([_ext], _fh5)
 _ptxt = subprocess.run([sys.executable, str(ROOT / "bin" / "classify"), _fh5.name],
                        capture_output=True, text=True, check=True).stdout
 check("the text report marks an unreferenced extension on its row",
       "fcoeoabgfenejglbffodgkkbkcdhcgfn  1.0.94   <- unreferenced" in _ptxt, _ptxt)
-# osquery's own spelling: chrome_extensions.permissions is joined with ", ", and
-# browser.sql's tokens follow with "," -- read off a real Chrome profile, osquery 5.23.1.
-check("split_perms strips the space osquery puts after each comma",
-      _cl.split_perms("background, contextMenus, storage,<all_urls>,sideloaded:ab12")
-      == (("background", "contextMenus", "storage", "<all_urls>"), "sideloaded:ab12"))
 
 # --- a value under a route that borrows another's is never read ----------------------
 _reg = _vc.load_routes()
@@ -1426,9 +1413,9 @@ check("a retired route may carry no values",
 _ie = _vc.image_errors
 check("an images value must be written as the matcher normalises it",
       any("normalises" in e for e in _ie("probe", {"images": ["docker.io/paulgauthier/aider"]},
-                                         _cl.image_repo)))
+                                         _cl.image_repo, ["images"])))
 check("...and the normalised form passes",
-      _ie("probe", {"images": ["paulgauthier/aider"]}, _cl.image_repo) == [])
+      _ie("probe", {"images": ["paulgauthier/aider"]}, _cl.image_repo, ["images"]) == [])
 _oe = _vc.overlap_errors
 check("a home-prefix value that claims another agent's path is refused",
       bool(_oe([{"id": "a", "binaries": ["~/.local/bin/kiro"]},
@@ -1502,8 +1489,8 @@ check("the tool-dir bridge names the tool-dir routes and no npm route",
 _rank = _cl.kind_rank(_cl.load_routes())
 
 
-def _r(kind, ident, ver="", loc="", perms=""):
-    return {"kind": kind, "id": ident, "ver": ver, "loc": loc, "extra": "", "perms": perms}
+def _r(kind, ident, ver="", loc="", extra=""):
+    return {"kind": kind, "id": ident, "ver": ver, "loc": loc, "extra": extra, "perms": ""}
 
 
 _claude_deb = [_r("file", "/home/u/.claude/", loc="/home/u/.claude/"),
@@ -1525,8 +1512,8 @@ _native = [_r("proc", "/home/u/.local/share/claude/versions/2.1.292",
 check("...and when neither carries a version and `proc` is declared ahead of `file`",
       _cl.primary(_native, _rank) == 1 and _rank["proc"] < _rank["file"], str(_rank))
 _profile = "/Users/x/Library/Application Support/Google/Chrome/Default"
-_exts = [_r("ext", "fcoeoabgfenejglbffodgkkbkcdhcgfn", "1.0.90", _profile, "tabs,unreferenced"),
-         _r("ext", "fcoeoabgfenejglbffodgkkbkcdhcgfn", "1.0.94", _profile, "tabs")]
+_exts = [_r("ext", "fcoeoabgfenejglbffodgkkbkcdhcgfn", "1.0.90", _profile, "chrome,unreferenced"),
+         _r("ext", "fcoeoabgfenejglbffodgkkbkcdhcgfn", "1.0.94", _profile, "chrome")]
 check("a loaded extension speaks before a leftover version directory",
       _cl.primary(_exts, _rank) == 1)
 _brew = _r("brew", "claude", "1.2.3", "/opt/homebrew/Caskroom/claude")
@@ -1537,7 +1524,7 @@ check("the KIND decides: a bundle that declares no version still speaks before i
       str(_cl.describe([_brew, _app], _rank)))
 check("...and between two install records, kind_rank: the bundle id before the cask",
       _cl.primary([_brew, dict(_app, ver="1.2.3")], _rank) == 1 and _rank["app"] < _rank["brew"])
-_loaded_blank = _r("ext", "fcoeoabgfenejglbffodgkkbkcdhcgfn", "", _profile, "tabs")
+_loaded_blank = _r("ext", "fcoeoabgfenejglbffodgkkbkcdhcgfn", "", _profile, "chrome")
 check("a loaded copy speaks before a leftover even when only the leftover has a version",
       _cl.primary([_exts[0], _loaded_blank], _rank) == 1)
 _old_new = [_r("app", "com.clawdbot.mac", "2026.1.1", "/Applications/Clawdbot.app"),
@@ -1547,13 +1534,11 @@ check("a current identifier speaks before one the vendor replaced",
       and _cl.primary(_old_new, _rank) == 0)
 check("...but a replaced identifier still speaks when it is the only install record",
       _cl.primary([_r("file", "/Users/u/.openclaw/"), _old_new[0]], _rank, [False, True]) == 1)
-check("a container's state is never reported as a version",
-      "version" not in _cl.describe([_r("container", "x/y:1", "running", "abc123")], _rank))
 check("ties keep evidence order",
       _cl.primary([_r("file", "/home/u/.a/"), _r("file", "/home/u/.b/")], _rank) == 0)
-check("every kind that carries a version or a path is a registered kind",
-      (_cl.VERSION_KINDS | _cl.PATH_KINDS) <= set(_rank),
-      str(sorted((_cl.VERSION_KINDS | _cl.PATH_KINDS) - set(_rank))))
+check("every kind that is an install record or carries a path is a registered kind",
+      (_cl.INSTALL_KINDS | _cl.PATH_KINDS) <= set(_rank),
+      str(sorted((_cl.INSTALL_KINDS | _cl.PATH_KINDS) - set(_rank))))
 with _tf2.NamedTemporaryFile("w", suffix=".json", delete=False) as _fh6:
     json.dump(_claude_deb, _fh6)
 _pj = json.loads(subprocess.run(

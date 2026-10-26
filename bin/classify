@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
-"""Turn osquery output into findings, using catalog/agents.yaml.
+"""Match evidence rows against a catalog and name the agents they prove (SPEC.md 6).
 
     osqueryi --json < osquery/dist/discovery-darwin.sql | bin/classify
     osquery/bin/discover --deep | bin/classify
+    bin/classify --catalog catalog.json rows.json
 
-This is the reference implementation of matching. It is deliberately small and meant
-to be read: if you want to know what a signature means, this is the answer, and any
-other implementation that disagrees with it is wrong.
+The reference matcher for ai-detection-spec. It reads evidence rows from any binding, and a
+catalog in either form: a catalog document (SPEC.md 4), such as the catalog.json a release
+attaches, or this repository's authoring form, catalog/agents.yaml beside
+catalog/routes.yaml. It is small so that it can be read, and it is not the definition of
+matching: where it disagrees with conformance/vectors.json, it is wrong.
 
-Standard library only, except PyYAML for the catalog.
+Standard library only, except PyYAML for the authoring form and jsonschema for a catalog
+document, which is validated before it is read.
 """
 import argparse
 import json
@@ -22,10 +26,12 @@ from collections import defaultdict
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 DEFAULT_CATALOG = ROOT / "catalog" / "agents.yaml"
 DEFAULT_ROUTES = ROOT / "catalog" / "routes.yaml"
+CATALOG_SCHEMA = ROOT / "schema" / "catalog.schema.json"
 
-# The catalog schema version this matcher understands. See load_catalog: a NEWER catalog
-# warns and matches what it can, because refusing would turn version skew into
-# "no agents found" -- which is the one error this repo exists to avoid.
+# WHAT THIS MATCHER READS. A catalog document names its version in `format`, the authoring
+# form in `version`, and either one this matcher does not read is refused (SPEC.md 10): an
+# error the operator sees, never a catalog matched in part.
+FORMATS = frozenset({"ai-detection-spec/0.1"})
 CATALOG_VERSION = 3
 
 
@@ -44,20 +50,104 @@ def _yaml(path):
     return yaml.safe_load(pathlib.Path(path).read_text())
 
 
-def load_catalog(path):
-    doc = _yaml(path)
-    # THE DORMANT FIELD, NOW LOAD-BEARING. catalog/agents.yaml has carried `version` since
-    # the beginning and nothing read it, so nothing could disagree with it. A downloaded
-    # bin/classify can meet a newer catalog than it knows; warn and match what is
-    # recognisable rather than refusing, because a refusal reads downstream as a clean
-    # fleet. Unknown per-agent fields are already rejected by tools/validate_catalog.py,
-    # so the risk here is a route this matcher has no registry entry for -- which arrives
-    # as unmatched rows, not as silence.
-    version = doc.get("version")
-    if isinstance(version, int) and version > CATALOG_VERSION:
-        print(f"classify: catalog is version {version}; this matcher understands "
-              f"{CATALOG_VERSION}. Matching what it can -- newer routes will read as "
-              f"unmatched rows rather than findings.", file=sys.stderr)
+def read_catalog(path, routes_path=DEFAULT_ROUTES):
+    """The catalog and its route registry, from either form a catalog takes.
+
+    TOLD APART BY `format`, and it has to be. Read as the authoring form, a catalog document's
+    agents carry no route keys, so every row came back unmatched and the report said "No AI
+    agents found" -- this repository's own catalog.json, read as a clean machine.
+
+    JSON is parsed without PyYAML, so a catalog document needs only jsonschema.
+    """
+    try:
+        doc = json.loads(pathlib.Path(path).read_text())
+    except ValueError:
+        doc = _yaml(path)
+    if isinstance(doc, dict) and "format" in doc:
+        return from_document(doc, path)
+    return load_catalog(path, doc), load_routes(routes_path)
+
+
+def from_document(doc, where="the catalog", schema=CATALOG_SCHEMA):
+    """A catalog document (SPEC.md 4) as the catalog and route registry this file works in.
+
+    REFUSED, NEVER READ IN PART: a `format` this matcher does not support (SPEC.md 10), a
+    document the schema rejects (SPEC.md 4), and an identifier it could not index (SPEC.md
+    6). Each would otherwise match less than the catalog says, and say nothing. `schema=None`
+    skips only the JSON Schema step, for the rendered-SQL tests, which run without jsonschema.
+    """
+    fmt = doc.get("format") if isinstance(doc, dict) else None
+    if fmt not in FORMATS:
+        sys.exit(f"classify: {where} is format {fmt!r}, and this matcher reads "
+                 f"{', '.join(sorted(FORMATS))}. Refusing it rather than matching nothing "
+                 f"(SPEC.md 10).")
+    if schema is not None:
+        errors = schema_errors(doc, schema)
+        if errors:
+            sys.exit(f"classify: {where} does not validate against {schema} (SPEC.md 4):\n  "
+                     + "\n  ".join(errors[:5]))
+    try:
+        routes = {"platforms": list(doc["platforms"]),
+                  "platform_groups": dict(doc["platform_groups"]),
+                  "routes": {name: {k: v for k, v in r.items() if k != "bindings"}
+                             for name, r in doc["routes"].items()}}
+        agents = []
+        for a in doc["agents"]:
+            entry = {k: a[k] for k in ("id", "name", "classification", "platforms")}
+            superseded = []
+            for ident in a["identifiers"]:
+                entry.setdefault(ident["route"], []).append(ident["value"])
+                if ident["status"] == "superseded":
+                    superseded.append({"route": ident["route"], "value": ident["value"],
+                                       **ident["superseded"]})
+            if superseded:
+                entry["superseded"] = superseded
+            agents.append(entry)
+        # No `version`: that is the authoring form's, and `format` was checked above.
+        catalog = {"classifications": doc["classifications"], "agents": agents}
+        own = {n for n, r in routes["routes"].items()
+               if not r.get("values_from") and not r.get("retired")}
+        stray = sorted({f"{a['id']} on {i['route']!r}" for a in doc["agents"]
+                        for i in a["identifiers"] if i["route"] not in own})
+    except (KeyError, TypeError, AttributeError) as exc:
+        sys.exit(f"classify: {where} says {fmt!r} and is not a catalog document: "
+                 f"{type(exc).__name__} {exc}")
+    if stray:
+        sys.exit(f"classify: {where} puts identifiers where no route indexes them -- an "
+                 f"undeclared, borrowing or retired route (SPEC.md 4.4 rules 1 and 2): "
+                 f"{', '.join(stray)}")
+    return catalog, routes
+
+
+def schema_errors(doc, schema):
+    """Where `doc` fails the JSON Schema at `schema`, as `path: message`."""
+    try:
+        import jsonschema
+    except ImportError:
+        sys.exit("classify: a catalog document is validated before it is read (SPEC.md 4), "
+                 "and that needs jsonschema: pip install jsonschema")
+    try:
+        loaded = json.loads(pathlib.Path(schema).read_text())
+    except OSError:
+        sys.exit(f"classify: a catalog document is validated against {schema}, which is "
+                 f"missing. A release attaches catalog.schema.json: put it in schema/, "
+                 f"beside bin/.")
+    return [f"{'/'.join(map(str, e.absolute_path)) or '(document)'}: {e.message}"
+            for e in jsonschema.Draft202012Validator(loaded).iter_errors(doc)]
+
+
+def load_catalog(path, doc=None):
+    """The authoring form, catalog/agents.yaml. A catalog document goes through
+    read_catalog(), and is refused here rather than read as a catalog with no agents."""
+    doc = _yaml(path) if doc is None else doc
+    if isinstance(doc, dict) and "format" in doc:
+        sys.exit(f"classify: {path} is a catalog document ({doc['format']!r}); read it with "
+                 f"read_catalog(), which takes its routes from it")
+    version = doc.get("version") if isinstance(doc, dict) else None
+    if version != CATALOG_VERSION:
+        sys.exit(f"classify: {path} is catalog version {version!r}, and this matcher reads "
+                 f"{CATALOG_VERSION}. Refusing it rather than matching it in part (SPEC.md "
+                 f"10); use the bin/classify released with it.")
     return doc
 
 
@@ -157,7 +247,7 @@ class Registry:
 # of itself and reported the rest as unmatched.
 #
 # One alternation rather than one pattern per platform, because path routes are compared
-# against every candidate row -- docs/signature-lifecycle-v2.md's scaling note -- so a
+# against every candidate row -- docs/signature-lifecycle.md's scaling note -- so a
 # per-platform list would multiply the glob count by three for no gain.
 #
 # /root gets its own alternative: root's home is not under /home, and a `[^/]+`
@@ -165,7 +255,7 @@ class Registry:
 HOME_ROOTS = r"(?:/Users/[^/]+/|/home/[^/]+/|/root/)"
 
 
-# THE MATCH MODES. The format declares them in schema/catalog.schema.json; this is a copy,
+# THE MATCH MODES. The spec declares them in schema/catalog.schema.json; this is a copy,
 # because bin/classify ships without schema/. test/test_conformance.py holds the two equal,
 # tools/validate_catalog.py reads this one, and Registry refuses any other mode.
 MATCH_MODES = frozenset({"exact", "prefix", "exact-normalised", "home-dir", "home-prefix",
@@ -367,52 +457,36 @@ TOOL_DIR = re.compile(
 
 
 
-# A row that says a branch could not look, rather than what it found. osquery/bin/container-scan
-# emits one when the Docker daemon is absent, not serving, or wedged past the wall clock.
+# A scan marker (SPEC.md 5.2): a row about a source rather than about what it holds. No route
+# declares this kind, so it is handled before the route loop or it would be DROPPED -- the
+# row that exists to stop a wedged daemon reading as an empty machine, swallowed by the
+# matcher one hop after surviving the scan.
+SCAN_KIND = "scan"
+# AN EXTENSION ROW'S `extra` IS ITS BROWSER, then at most one provenance token: `unreferenced`
+# (on disk, never loaded) or `sideloaded:<sha256>` (registered, not from the Web Store). A
+# token ending in `:` carries a value. osquery/test/lint.sh holds these to the tokens the
+# osquery binding emits.
+PROVENANCE = ("unreferenced", "sideloaded:")
+
+
+def provenance(row):
+    """An `ext` row's provenance token, or ''."""
+    if row.get("kind") != "ext":
+        return ""
+    tail = (row.get("extra") or "").split(",")[1:]
+    token = tail[-1].strip() if tail else ""
+    return token if any(token.startswith(t) if t.endswith(":") else token == t
+                        for t in PROVENANCE) else ""
+
+
+# Two presentation choices for primary() and describe(), not matching rules. `ver` needs no
+# table: it is a version wherever it is set (SPEC.md 5.1).
 #
-# IT HAS TO BE HANDLED EXPLICITLY OR IT DISAPPEARS. A kind outside KIND_ROUTES is dropped
-# at the foot of the loop below -- not unmatched, DROPPED, invisible even under
-# --show-unmatched, because `elif kind in KIND_ROUTES` is the only thing that collects
-# anything. So the row built specifically to stop a wedged daemon reading as an empty
-# machine would have been swallowed by the classifier one hop after surviving the scan.
-GAP_KIND = "scan"
-# `perms` ENDS WITH AT MOST ONE PROVENANCE TOKEN, after the permissions and the `<all_urls>`
-# flag: `unreferenced` (on disk, never loaded) or `sideloaded:<sha256>` (registered, not from
-# the Web Store). osquery/queries/browser.sql appends it; neither is a permission, so a consumer listing
-# permissions splits with split_perms() rather than naming the tokens itself. A token ending
-# in `:` carries a value and matches as a prefix; any other matches whole, so a permission
-# that merely begins with one stays a permission. test/test_matcher.py holds these to the
-# tokens browser.sql emits.
-PERMS_PROVENANCE = ("unreferenced", "sideloaded:")
-
-
-def _is_provenance(part):
-    return any(part.startswith(t) if t.endswith(":") else part == t
-               for t in PERMS_PROVENANCE)
-
-
-def split_perms(perms):
-    """A row's `perms` as (permissions, provenance): a tuple of declared capabilities, and
-    the provenance token browser.sql appended, or ''."""
-    # osquery joins `permissions` with ", " and browser.sql appends its tokens with ",", so
-    # each part is stripped: a leading space would make " storage" a different permission.
-    parts = [p.strip() for p in (perms or "").split(",") if p.strip()]
-    if parts and _is_provenance(parts[-1]):
-        return tuple(parts[:-1]), parts[-1]
-    return tuple(parts), ""
-
-
-# WHAT `ver` AND `loc` HOLD, PER KIND, read off the SELECT that emits each one. Declared here
-# rather than in catalog/routes.yaml because the query fixes them and a catalog cannot. Listed
-# as the kinds that DO carry each meaning, so a kind added later carries neither until
-# someone reads its query.
-#
-#   ver  a version on these. `container` holds the container's STATE there ("running"),
-#        and every other kind leaves it empty.
-#   loc  a path on this machine on these. `image` holds a digest, `container` an id, `deb`
-#        and `rpm` nothing, and `proc` the app, the agent binary or the node interpreter
-#        running it, depending on which query emitted the row.
-VERSION_KINDS = frozenset({"app", "brew", "deb", "ext", "jbplugin", "npm", "rpm", "vscodeext"})
+#   INSTALL_KINDS  read from an install record -- a package database, a bundle, a manifest
+#   PATH_KINDS     `loc` is where the agent is installed. Not `proc`, whose `loc` may be the
+#                  interpreter running it, nor `image`, `container` or `ilabel`, whose `loc`
+#                  is an id
+INSTALL_KINDS = frozenset({"app", "brew", "deb", "ext", "jbplugin", "npm", "rpm", "vscodeext"})
 PATH_KINDS = frozenset({"app", "brew", "daemon", "desktop", "ext", "file", "jbplugin", "nmh",
                         "npm", "port", "unit", "vscodeext"})
 
@@ -443,7 +517,7 @@ def primary(rows, rank, superseded=None, live=None):
       loaded before unreferenced  a browser profile keeps old version directories, and the
                                   first row is often one of them
       an install record next      a row of a kind read from a package database, a bundle
-                                  or a manifest (VERSION_KINDS), whether or not this one's
+                                  or a manifest (INSTALL_KINDS), whether or not this one's
                                   version could be read. `deb claude-code` speaks before
                                   `~/.claude/`, which appears on first run; and a bundle id
                                   stays ahead of its Homebrew cask when the bundle declares
@@ -464,8 +538,8 @@ def primary(rows, rank, superseded=None, live=None):
         row = rows[i]
         kind = row.get("kind")
         return (kind in live,
-                split_perms(row.get("perms"))[1] == "unreferenced",
-                kind not in VERSION_KINDS,
+                provenance(row) == "unreferenced",
+                kind not in INSTALL_KINDS,
                 bool(flags[i]),
                 rank.get(kind, len(rank)),
                 i)
@@ -473,12 +547,12 @@ def primary(rows, rank, superseded=None, live=None):
 
 
 def describe(rows, rank, superseded=None, live=None):
-    """`primary`, plus that row's `version` and `path` where its kind carries one. Omitted
-    rather than emitted empty: an empty version reads as a known blank, not as none."""
+    """`primary`, plus that row's `version`, and its `path` where its kind carries one.
+    Omitted rather than emitted empty: an empty version reads as a known blank, not as none."""
     i = primary(rows, rank, superseded, live)
     row = rows[i]
     out = {"primary": i}
-    if row.get("kind") in VERSION_KINDS and row.get("ver"):
+    if row.get("ver"):
         out["version"] = row["ver"]
     if row.get("kind") in PATH_KINDS and row.get("loc"):
         out["path"] = row["loc"]
@@ -525,7 +599,7 @@ def classify(rows, catalog, routes=None):
         kind, ident, loc = row.get("kind"), row.get("id", ""), row.get("loc", "")
         hit = None
 
-        if kind == GAP_KIND:
+        if kind == SCAN_KIND:
             # A dated success is provenance, not a gap. Splitting them here is what lets
             # `cat`-ing a cache file produce the same reading as a live scan.
             # Three buckets, not two: ran (`scans`), read and found nothing there
@@ -640,7 +714,7 @@ TELEMETRY_TIMEOUT = 2.0
 # tools/check_doc_numbers.py, so the published list cannot drift from the sent one -- the
 # five-hardcoded-lists-that-had-to-agree bug, pre-empted this time.
 EVENT_FIELDS = (
-    "catalog_sha", "catalog_schema_version", "catalog_agents", "catalog_skew",
+    "catalog_sha", "catalog_schema_version", "catalog_agents",
     "classify_sha",
     "rows_total", "findings_agents", "findings_rows", "unmatched_rows", "dropped_rows",
     "payload_bytes", "payload_packed_bytes",
@@ -656,7 +730,8 @@ EVENT_FIELDS = (
 # not produce. A collector merging many hosts, or a hand-edited file, can put any string
 # in either field, and forwarding it verbatim would turn an analytics property into a
 # channel for arbitrary text out of a machine we are supposed to be describing in counts.
-# Anything unrecognised becomes "other" -- which is itself a finding worth seeing.
+# Anything unrecognised becomes "other" -- which is itself a finding worth seeing. These are
+# the schema's outcomes other than `ok`, by head; test/test_telemetry.py holds the copy equal.
 GAP_REASONS = ("absent", "no-cache", "error", "unhealthy", "timeout", "unreadable")
 OTHER = "other"
 
@@ -666,7 +741,7 @@ def _env_off(name):
 
 
 def _amplitude_key():
-    return os.environ.get("AI_DISCOVERY_AMPLITUDE_KEY", "").strip() or AMPLITUDE_KEY
+    return os.environ.get("AI_DETECTION_SPEC_AMPLITUDE_KEY", "").strip() or AMPLITUDE_KEY
 
 
 def _telemetry_off():
@@ -677,8 +752,8 @@ def _telemetry_off():
     two apart is the distinction this entire repo is built around. --telemetry-check
     prints it.
     """
-    if _env_off("AI_DISCOVERY_TELEMETRY"):
-        return "AI_DISCOVERY_TELEMETRY is set to off"
+    if _env_off("AI_DETECTION_SPEC_TELEMETRY"):
+        return "AI_DETECTION_SPEC_TELEMETRY is set to off"
     if os.environ.get("CI"):
         # Otherwise every gate, scenario and pull request lands in the same dataset as the
         # field, and the field is the only part that cannot be measured another way. CI is
@@ -709,7 +784,7 @@ def _install_id(create=True):
 
     base = os.environ.get("XDG_CONFIG_HOME") or os.path.join(os.path.expanduser("~"),
                                                              ".config")
-    path = pathlib.Path(base) / "ai-discovery" / "install-id"
+    path = pathlib.Path(base) / "ai-detection-spec" / "install-id"
     try:
         existing = path.read_text().strip()
         if len(existing) >= 5:
@@ -856,7 +931,7 @@ def telemetry_send(event):
 
     body = json.dumps({"api_key": _amplitude_key(), "events": [event]}).encode()
     req = urllib.request.Request(
-        os.environ.get("AI_DISCOVERY_AMPLITUDE_URL") or AMPLITUDE_URL,
+        os.environ.get("AI_DETECTION_SPEC_AMPLITUDE_URL") or AMPLITUDE_URL,
         data=body, headers={"Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=TELEMETRY_TIMEOUT) as resp:
@@ -875,7 +950,7 @@ def telemetry_finish(state, started, event_type):
     if state.get("check"):
         # Diagnostic mode: print what WOULD go, say whether it would, send nothing.
         json.dump({"would_send": off is None, "reason": off,
-                   "endpoint": os.environ.get("AI_DISCOVERY_AMPLITUDE_URL") or AMPLITUDE_URL,
+                   "endpoint": os.environ.get("AI_DETECTION_SPEC_AMPLITUDE_URL") or AMPLITUDE_URL,
                    "event": event}, sys.stdout, indent=2, sort_keys=True)
         print()
         return
@@ -884,7 +959,7 @@ def telemetry_finish(state, started, event_type):
         # --json callers pipe into a parser, which is a broken run caused by a courtesy.
         print("classify: sending one anonymous usage event per run to Amplitude -- counts, "
               "not identifiers. `bin/classify --telemetry-check` prints exactly what is "
-              "sent; AI_DISCOVERY_TELEMETRY=0 turns it off. See docs/telemetry.md.",
+              "sent; AI_DETECTION_SPEC_TELEMETRY=0 turns it off. See docs/telemetry.md.",
               file=sys.stderr)
     # AFTER the answer is on its way, so a stalled network cannot delay the bytes the
     # caller is actually waiting for.
@@ -922,10 +997,13 @@ def main():
 def _run(state, started):
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("input", nargs="?", help="osquery JSON; omit to read stdin")
-    ap.add_argument("--catalog", default=DEFAULT_CATALOG)
+    ap.add_argument("input", nargs="?",
+                    help="a JSON array of evidence rows (SPEC.md 5); omit to read stdin")
+    ap.add_argument("--catalog", default=DEFAULT_CATALOG,
+                    help="a catalog document, or the authoring form (catalog/agents.yaml)")
     ap.add_argument("--routes", default=DEFAULT_ROUTES,
-                    help="the route registry (catalog/routes.yaml)")
+                    help="the authoring form's route registry (catalog/routes.yaml); a "
+                         "catalog document carries its own")
     ap.add_argument("--json", action="store_true", help="machine-readable output")
     ap.add_argument("--show-unmatched", action="store_true",
                     help="also list rows no signature claimed")
@@ -939,9 +1017,10 @@ def _run(state, started):
     raw = pathlib.Path(args.input).read_text() if args.input else sys.stdin.read()
     rows = json.loads(raw)
 
+    # Its own phase, so a refused catalog is counted as one rather than as a crash anywhere.
+    state["phase"] = "catalog"
+    catalog, routes = read_catalog(args.catalog, args.routes)
     state["phase"] = "classify"
-    catalog = load_catalog(args.catalog)
-    routes = load_routes(args.routes)
     rank = kind_rank(routes)
     live_kinds = Registry(routes).live_kinds
     # DROPPED IS COUNTED AND SAID, not only sent in telemetry. A row whose kind no route
@@ -1107,7 +1186,7 @@ def _run(state, started):
             old = "   <- earlier release" if hit.get("superseded") else ""
             # An unreferenced extension is on disk and never loaded, so it is said beside the
             # row rather than left to read like an installed one.
-            prov = split_perms(row.get("perms"))[1]
+            prov = provenance(row)
             prov = f"   <- {prov.split(':')[0]}" if prov else ""
             print(f"    {row['kind']:7} {row.get('id','')}{ver}{old}{prov}")
             if detail and detail != row.get("id"):
@@ -1134,7 +1213,7 @@ def _measure(raw, rows, findings, unmatched, gaps, scans, absences, dropped, age
     from a vocabulary this file declares.
     """
     kind_platforms = _kind_platforms(routes)
-    known = set(kind_platforms) | {GAP_KIND}
+    known = set(kind_platforms) | {SCAN_KIND}
     counts = defaultdict(int)
     for row in rows:
         kind = row.get("kind")
@@ -1159,10 +1238,6 @@ def _measure(raw, rows, findings, unmatched, gaps, scans, absences, dropped, age
         "catalog_sha": _sha(args.catalog),
         "catalog_schema_version": catalog.get("version"),
         "catalog_agents": len(catalog.get("agents") or []),
-        # The condition load_catalog already warns about on stderr. Counting it says how
-        # often a downloaded classifier is older than the catalog beside it.
-        "catalog_skew": isinstance(catalog.get("version"), int)
-                        and catalog["version"] > CATALOG_VERSION,
         "classify_sha": _sha(__file__),
         "rows_total": len(rows),
         "findings_agents": len(findings),

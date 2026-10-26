@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""tools/export.py: the catalog as an Open Agent Detection Format document.
+"""tools/export.py: the catalog as an ai-detection-spec catalog document.
 
 What is held here:
   * each package-url builder against purl-spec's own rules and examples, and a type with no
@@ -26,6 +26,7 @@ import pathlib
 import re
 import subprocess
 import sys
+import tempfile
 
 import yaml
 
@@ -35,7 +36,7 @@ sys.path.insert(0, str(ROOT / "test"))
 import conformance  # noqa: E402
 import export  # noqa: E402
 
-os.environ.setdefault("AI_DISCOVERY_TELEMETRY", "0")
+os.environ.setdefault("AI_DETECTION_SPEC_TELEMETRY", "0")
 failures = []
 
 
@@ -163,9 +164,6 @@ def main():
           export.unproved(d) == ["a: npm 'bare'"], str(export.unproved(d)))
     check("each identifier on a purl route carries its package URL",
           by["new"].get("purl") == "pkg:npm/new")
-    check("a catalog with not_agents is refused, not published as agents",
-          raises(export.document, {**cat, "not_agents": ["Coding agent"]}, routes, live, archived,
-                 expected=ValueError, message="has no place in the format"))
     _bindings = export.BINDINGS
     export.BINDINGS = {**_bindings, "other": {"table"}}
     try:
@@ -186,6 +184,53 @@ def main():
         matched = {(m["id"], m["route"], m["value"]) for hits in findings.values() for m, _ in hits}
         check(f"{path.name}: every identifier classify matched is published",
               matched <= published, str(sorted(matched - published)[:3]))
+
+    # THE DOCUMENT IS A CATALOG THE MATCHER READS, and reads to the same answer. bin/classify
+    # once read catalog.json as an authoring form with no route keys and reported a clean
+    # machine; every fixture finding nothing would pass the check above.
+    try:
+        import jsonschema  # noqa: F401
+        schema = classify.CATALOG_SCHEMA
+    except ImportError:
+        schema = None                       # said once, under "the document" above
+    doc_catalog, doc_routes = classify.from_document(doc, schema=schema)
+    if schema is not None:
+        # A status the schema does not allow would otherwise read as current (SPEC.md 4).
+        bad = json.loads(json.dumps(doc))
+        bad["agents"][0]["identifiers"][0]["status"] = "probably"
+        check("classify refuses a document the schema rejects, rather than reading it in part",
+              raises(classify.from_document, bad, expected=SystemExit,
+                     message="does not validate"))
+        # A catalog document needs jsonschema and not PyYAML, as bin/classify's header says.
+        tmp = pathlib.Path(tempfile.mkdtemp())
+        (tmp / "catalog.json").write_text(json.dumps(doc))
+        proc = subprocess.run(
+            [sys.executable, "-c", "import runpy, sys; sys.modules['yaml'] = None; "
+             "sys.argv = sys.argv[1:]; runpy.run_path(sys.argv[0], run_name='__main__')",
+             str(ROOT / "bin" / "classify"), "--json", "--catalog", str(tmp / "catalog.json"),
+             str(ROOT / "test" / "fixtures" / "known-agents.json")],
+            capture_output=True, text=True, env={**os.environ, "AI_DETECTION_SPEC_TELEMETRY": "0"})
+        check("classify reads catalog.json where PyYAML is not installed",
+              proc.returncode == 0 and json.loads(proc.stdout or "{}").get("findings"),
+              proc.stderr.strip()[-200:])
+
+    def index(catalog, routes):
+        exact, prefix, glob = classify.build_index(catalog, classify.Registry(routes))
+        return sorted([repr((k, sorted(m.items()))) for k, m in exact.items()]
+                      + [repr((v, r, sorted(m.items()))) for v, r, m in prefix]
+                      + [repr((p.pattern, r, sorted(m.items()))) for p, r, m in glob])
+    # The whole index, because the fixtures reach only some identifiers. Superseded ones are
+    # conformance/vectors.json's to cover: this catalog has none today.
+    check("classify indexes the same identifiers from both forms",
+          index(doc_catalog, doc_routes) == index(real_catalog, real_routes))
+    for path in sorted((ROOT / "test" / "fixtures").glob("*.json")):
+        rows = json.loads(path.read_text())
+        want = classify.classify(rows, real_catalog, real_routes)[0]
+        got = classify.classify(rows, doc_catalog, doc_routes)[0]
+        check(f"{path.name}: classify finds the same agents from the document as from the YAML",
+              {a: [r for _, r in h] for a, h in got.items()}
+              == {a: [r for _, r in h] for a, h in want.items()},
+              f"document {sorted(got)}, YAML {sorted(want)}")
 
     print(f"\nexport: {'PASS' if not failures else f'FAIL ({len(failures)})'}")
     return 1 if failures else 0

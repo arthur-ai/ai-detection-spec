@@ -11,14 +11,7 @@ deciding whether to take the upgrade.
 
 ## 1. Pick the version
 
-Rules are in `CONTRIBUTING.md` under **Versioning**. Read the diff, not the commit subjects.
-
-| bump | trigger |
-|---|---|
-| **major** | the six-column contract or `catalog/agents.yaml`'s schema changed. Consumers must change code |
-| **minor** | a new query, or new signatures. Additive |
-| **patch** | a corrected identifier, a fixed glob, documentation |
-
+The rules are in `CONTRIBUTING.md` under **Versioning**. Read the diff, not the commit subjects.
 A changed catalog *value* is a patch; a changed *key* is major. **On `0.x` the major rule
 over-fires**: pre-1.0 a break conventionally rides the minor. Say which convention you followed,
 and lead with the breaks either way.
@@ -59,6 +52,17 @@ $ for p in darwin linux; do
 the platform you are not sitting on. `agents.yaml`'s `version:` key does not track the release;
 diff the keys.
 
+**Check the spec separately.** It has its own version (`SPEC.md`'s header and a catalog
+document's `format`), which moves only when the normative text does:
+
+```console
+$ git diff --stat <prev-tag>..HEAD -- SPEC.md schema/ conformance/
+```
+
+A change there that alters an existing result, or removes or renames a member, is a breaking
+spec change (SPEC.md §10), and a breaking change for every implementer, not only this repo's
+users.
+
 ## 2. Verify before you tag
 
 `release.yml` re-runs the static gates on publish, but learning that from a failed workflow means
@@ -83,7 +87,7 @@ non-zero. Three of its failures reach the notes directly:
 | `agent_status.py --check` | `docs/agents.md` is stale, and that is where the notes' coverage figures come from |
 
 The last three commands need osquery or sudo, so they sit outside it. Run them: several things
-ship and they are not the same query (`CLAUDE.md` has the table).
+ship and they are not the same query (`osquery/CLAUDE.md` has the table).
 
 ### One machine verifies one platform
 
@@ -202,7 +206,10 @@ $ git log <prev-tag>..HEAD --format='%H%n%B%n---'
 
 State the change, then its consequence for someone running this on a fleet. Cover what applies:
 
-- **Breaking changes first**, with the migration.
+- **Breaking changes first**, with the migration. A renamed file, flag or environment variable
+  is one, and a renamed opt-out is the worst kind: the old setting stops working in silence.
+- **The spec**, if `SPEC.md`, `schema/` or `conformance/` changed: whether the version moved,
+  and what an implementer of a catalog, binding or matcher must change.
 - **What consumers deploy** — whether the six-column contract or the row kinds moved, and which
   artifact a new query landed in. An `expensive` one is pack-only and never reaches the composed file.
 - **What the deployer must do** that the repo cannot. The standing case: `osquery/bin/container-scan` is
@@ -302,17 +309,18 @@ $ gh run list --workflow=release.yml --limit=1
 $ gh release view v<X.Y.Z> --json assets --jq '[.assets[].name]'
 ```
 
-**Sixteen assets**, and a missing one is a broken release: `discovery-darwin.sql`,
-`discovery-linux.sql`, `discovery-deep.sql`, `ai-discovery.conf`, `signatures.sql`,
+**Eighteen assets**, and a missing one is a broken release: `discovery-darwin.sql`,
+`discovery-linux.sql`, `discovery-deep.sql`, `ai-detection-spec.conf`, `signatures.sql`,
 `agents-darwin.sql`, `agents-linux.sql`, `fleet-policies.yml`, `discover`, `container-scan`,
-`classify`, `agents.yaml`, `routes.yaml`, `catalog.json`, `ai-discovery-darwin.sh`,
-`ai-discovery-linux.sh`.
+`classify`, `agents.yaml`, `routes.yaml`, `catalog.json`, `catalog.schema.json`,
+`evidence.schema.json`, `ai-detection-spec-darwin.sh`, `ai-detection-spec-linux.sh`.
 `tools/check_workflows.py` holds this list to `release.yml`'s upload step.
 
 The notes must say two things about layout, because the scripts resolve each other by relative
-path: ship `bin/`, `dist/` and `catalog/` **side by side** — loose in one folder, `bin/discover`
-will not find its artifact — and `classify` needs both catalog files beside it. The two
-`ai-discovery-*.sh` bundles are that layout packed into one file; they carry no catalog and no
+path: ship `bin/`, `dist/`, `catalog/` and `schema/` **side by side** — loose in one folder,
+`bin/discover` will not find its artifact — and `classify` needs both catalog files beside it,
+or `catalog.json` and `schema/catalog.schema.json`. The two
+`ai-detection-spec-*.sh` bundles are that layout packed into one file; they carry no catalog and no
 classifier. Deployment glue for a particular MDM is not released from here.
 
 ## Don'ts

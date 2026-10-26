@@ -1,8 +1,7 @@
-# What these queries CANNOT see. The canonical list, and the only copy: docs/limits.md
-# renders it and README points at that, so a reader meets these once.
-#
-# These are properties of the platform and the osquery tables. No amount of test coverage
-# moves them, which is why they are stated rather than left to be discovered.
+# What the osquery binding CANNOT see: properties of the platform and of osquery's tables,
+# which no amount of test coverage moves. The only copy; tools/agent_status.py renders it into
+# docs/limits.md, and osquery/README.md points there. A gap belonging to one query is in that
+# query's header instead.
 blind_spots:
   - spot: "Anything inside a VM, a Codespace or a cloud dev box"
     why: "The scanner sees the machine it runs on. Containers are the exception and only partly: `--deep` reads images, running containers and their vendor labels, so an agent IN a container is now visible from outside it"
@@ -19,7 +18,7 @@ blind_spots:
   - spot: "Snap and Flatpak packages"
     why: "osquery has no `snap_packages` or `flatpak_packages` table at any version, checked against the source at 5.10.0 and 5.23.1. A snap- or flatpak-installed agent is invisible on every package route"
   - spot: "Alpine Linux, and apk packages anywhere"
-    why: "Two walls, and either alone would do. osquery has no `apk_packages` table at any version: absent from the published schemas for 4.5.0, 5.0.1 and 5.23.1, and `SELECT count(*) FROM apk_packages` answers `no such table` on Ubuntu 24.04 and Fedora 41 at 5.23.1. And osquery ships no musl build: its 5.23.1 Linux tarball, the only non-deb, non-rpm artifact, fails to load on alpine:3.22 even with gcompat and libstdc++ installed (`Error relocating osqueryd: __res_init: symbol not found`, then argz_*, canonicalize_file_name and nine more). Measured 2026-10-20. So an Alpine host cannot run the collector, and an agent installed from an apk repository -- Claude Code publishes one -- is invisible on every route, not only the package ones"
+    why: "Two walls. osquery has no `apk_packages` table at any version (absent from the schemas for 4.5.0, 5.0.1 and 5.23.1). And it ships no musl build: the 5.23.1 Linux tarball fails to load on alpine:3.22 even with gcompat and libstdc++ (`Error relocating osqueryd: __res_init: symbol not found`), measured 2026-10-20. So an Alpine host cannot run the binding at all, and an agent installed from an apk repository, as Claude Code publishes, is invisible on every route"
   - spot: "AppImage and tarball installs on Linux"
     why: "Neither leaves a package record, and Cursor's primary Linux download is an AppImage. Only `desktop_ids` can see one, and only if the install writes a `.desktop` entry"
   - spot: "A binary installed under /usr/local/bin"
@@ -31,7 +30,7 @@ blind_spots:
   - spot: "A systemd unit the running manager has not loaded"
     why: "`systemd_units` lists loaded units, not unit files on disk -- unlike macOS's `launchd`. So a unit installed but never started is invisible, and so is anything under `systemctl --user`, which reads a different bus"
   - spot: "Windows, entirely"
-    why: "No queries, no routes, no runner. It is a parallel PowerShell implementation rather than a port: `bin/` is bash and every scenario is a shell script"
+    why: "No queries, no routes, no runner. It would be a parallel PowerShell binding rather than a port: `osquery/bin/` is bash and every scenario is a shell script"
   - spot: "Which filesystem roots an MCP server exposes"
     why: "Requires parsing arbitrary JSON config; osquery has no table for it"
   - spot: "Outbound destinations by hostname"
@@ -45,7 +44,7 @@ blind_spots:
   - spot: "The identity of a sideloaded extension"
     why: "osquery derives `identifier` from the manifest `key`, which unpacked and sideloaded extensions do not carry, so they report an empty one. A Web Store CRX does carry it. The row is not anonymous: it carries `unreferenced` when Chrome would not load it, or `sideloaded:` and the manifest's SHA-256 when it would, so a sideload is found by hash rather than by id"
   - spot: "GitHub Copilot inside VS Code"
-    why: "Copilot Chat now ships BUILT IN: VS Code's own bundle carries `GitHub.copilot-chat` 0.64.1 among its 97 built-in extensions, and `vscode_extensions` reports only the user extension directories -- a run with 97 built-ins present returned 2 rows, both user-installed. The marketplace `github.copilot` cannot be installed over it either, because it pins `github.copilot-chat` 0.48.1 and VS Code refuses to downgrade a built-in, so no scenario can produce the identifier. Measured on VS Code stable, 2026-09-05. The route therefore cannot identify Copilot at all, which is why no signature is carried rather than one that would match every VS Code install -- `copilot-cli` is the Copilot this catalog can prove, through npm, Homebrew and the JetBrains plugin. Detecting the built-in would report the EDITOR, not a fleet's choice of agent"
+    why: "Copilot Chat ships BUILT IN (`GitHub.copilot-chat` 0.64.1 in VS Code stable's bundle, measured 2026-09-05), and `vscode_extensions` reads only the user extension directories. The marketplace `github.copilot` cannot be installed over it, because it pins an older `copilot-chat` and VS Code refuses to downgrade a built-in, so no scenario can produce the identifier. Detecting the built-in would report the editor, not a fleet's choice of agent. `copilot-cli` is the Copilot this catalog proves, through npm, Homebrew and the JetBrains plugin"
   - spot: "VS Code extensions on osquery below 5.11.0"
     why: "`vscode_extensions` arrived in 5.11.0, above this repo's 5.10.0 floor, so `osquery/queries/vscode.sql` declares its own minimum and returns nothing on an older endpoint. The `vscode_edition` column that tells VS Code from Cursor and Windsurf came in 5.15.0"
   - spot: "JetBrains plugins on osquery below 5.18.0"

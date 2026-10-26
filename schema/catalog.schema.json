@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "urn:ai-detection-spec:schema:catalog:0.1",
-  "title": "Open Agent Detection Format: catalog",
+  "title": "ai-detection-spec: catalog",
   "description": "A catalog of AI agents and how to recognise them on an endpoint. SPEC.md section 4.",
   "type": "object",
   "required": ["format", "platforms", "platform_groups", "classifications", "routes", "agents"],

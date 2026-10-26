@@ -20,13 +20,15 @@
       "openclaw"
     ]
   },
-  "why": "browser.sql already enumerated before D20 and is unchanged by it. must_contain still carries the permission strings because those are raw evidence the collector needs, not catalog matches: '<all_urls>' is computed in SQL because recovering it from manifest_json costs 86.57 KB against a 30 KB budget, versus 30 bytes for the flag. The planted extension is on disk and absent from Preferences, so Chrome would never load it, and the row says so with `unreferenced`.",
+  "why": "browser.sql enumerates every extension and names none. must_contain carries permission strings as raw evidence, not catalog matches: '<all_urls>' is computed in SQL because recovering it from manifest_json costs 86.57 KB against a 30 KB budget, versus 30 bytes for the flag. The planted extension is on disk and absent from Preferences, so Chrome would never load it, and the row's `extra` says so with `unreferenced`.",
   "must_contain": [
     "nativeMessaging",
     "NativeMessagingHosts",
     "cookies",
-    "scripting",
-    "<all_urls>,unreferenced"
+    "scripting"
+  ],
+  "require_rows": [
+    {"kind": "ext", "extra": ",unreferenced", "perms": ["scripting", "<all_urls>"]}
   ],
   "known_gaps": [
     "The planted extension is unreferenced by construction, so the sideloaded token is exercised only by 45-claude-extension."

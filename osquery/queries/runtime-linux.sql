@@ -5,93 +5,43 @@
 -- cost: slow
 -- platform: linux
 --
--- systemd_units FAILS SOFT, AND THAT IS THE WHOLE REASON THIS FILE HAS TWO BRANCHES.
+-- systemd_units FAILS SOFT, AND THAT IS WHY THIS FILE HAS TWO BRANCHES. With no reachable
+-- system bus it logs to stderr ("Failed to connect to the system dbus"), contributes zero
+-- rows, and the statement exits 0 with every other row intact. Nothing downstream reads
+-- stderr, so a container or a locked-down host would report "no agent units" in the shape a
+-- clean host does. The marker below tells them apart.
 --
--- With no reachable system bus the table logs to stderr, contributes ZERO rows, and the
--- statement still exits 0 and returns every other row in the artifact. Measured in a
--- container: 0 units, exit 0, 131 rows from the other branches, and this on stderr --
+-- Six columns: kind, id, ver, loc, extra, perms. See CONTRIBUTING.md before changing them.
 --
---     E systemd_units.cpp:38] Failed to generate the systemd unit list: Failed to
---     connect to the system dbus: ... No such file or directory
+-- ENUMERATE, DO NOT MATCH: no unit name appears below (tools/check_no_catalog.py).
 --
--- Nothing downstream reads stderr. So a container, a chroot, a minimal image or a host
--- where osquery cannot reach the bus reports "no agent units" in EXACTLY the shape a
--- clean host does -- an empty result indistinguishable from a clean machine, which is the
--- one error this repo exists to avoid. The marker below is the difference between them.
+-- NO VENDOR EXCLUSION, which is a gap rather than a decision: distro units have no
+-- structural mark like macOS's com.apple.%, and `fragment_path` cannot serve, because a
+-- vendor's own .deb writes to /usr/lib/systemd/system as the distro does. So it enumerates
+-- every loaded unit, and `slow` is measured, not declared: the per-unit D-Bus round trips
+-- vary more than fourfold between shared-core VMs (queries/COST.md).
 --
--- Emits the six-column contract: kind, id, ver, loc, extra, perms.
--- Branches within this file are joined with UNION ALL, and the build joins files
--- the same way. See CONTRIBUTING.md before changing the column list.
-
--- ENUMERATE, DO NOT MATCH (D20). No unit name appears below.
+-- `unit_file_state` ships in `extra` -- enabled, masked, static -- because a masked unit is
+-- a different finding from a running one, and only the reader can weigh that.
 --
--- NO VENDOR EXCLUSION, and that is a gap rather than a decision. macOS drops
--- `com.apple.%` -- 937 launchd jobs down to 47 -- because Apple's own jobs are named
--- after the platform vendor. Linux has no equivalent: the distro's units are named
--- `sshd.service` and `cron.service` with nothing structural to key on. `fragment_path`
--- IS the honest discriminator -- /etc/systemd/system is where locally-installed units
--- land, /usr/lib/systemd/system is where a package puts them -- but a vendor's own .deb
--- also writes to /usr/lib, so filtering on it would drop exactly the packaged agent this
--- branch is for.
---
--- SO IT ENUMERATES EVERYTHING, AND `slow` IS MEASURED RATHER THAN DECLARED.
--- tools/measure.py on e2-small Compute Engine VMs, 2026-10-04, best of three --
---
---     debian-12      241 units   0.78s
---     ubuntu-24.04   449 units   1.18s, and 1.60s on a second VM
---     rocky-9.8      258 units   1.23s, and 5.54s on a second VM
---
--- The per-unit D-Bus round trips are what this pays for, and on a shared-core shape the
--- same query on the same image varied more than fourfold between two VMs in one
--- afternoon. It was `fast` on the strength of the Ubuntu runner alone, and that band
--- failed the gate on the first RHEL host it met. The composed artifact still carries it
--- -- `slow` is composed, only `expensive` is split out -- so nothing shipped changes.
--- What changes is that the band tells the truth. queries/COST.md has the figures.
---
--- `unit_file_state` ships in `extra` -- enabled, masked, static -- because an installed
--- but masked unit is a materially different finding from a running one, and only the
--- collector can weigh that.
---
--- IT REPORTS LOADED UNITS, NOT UNIT FILES, and that is not the same thing as macOS.
--- `launchd` reads the plist FILES on disk, so an inert job that has never been loaded is
--- visible there. systemd_units asks the running manager for its loaded units, so a unit
--- file nobody has loaded does not exist as far as this table is concerned. Measured on a
--- GitHub runner: a unit written to /etc/systemd/system and daemon-reloaded did NOT appear
--- among the 477 rows returned, and appeared once it was started.
---
--- The detection consequence is the interesting half: AN AGENT THAT INSTALLED A UNIT AND
--- HAS NEVER RUN IS INVISIBLE ON THIS ROUTE. Its state directory is what would find it,
--- which is one more reason the path routes carry more weight than this one.
--- docs/blind-spots.yaml records it.
+-- IT REPORTS LOADED UNITS, NOT UNIT FILES, unlike launchd: a unit written and
+-- daemon-reloaded did not appear until started. So AN AGENT THAT INSTALLED A UNIT AND HAS
+-- NEVER RUN IS INVISIBLE HERE. Its state directory is what finds it
+-- (docs/blind-spots.yaml).
 SELECT 'unit' AS kind, id AS id, '' AS ver, fragment_path AS loc,
        unit_file_state AS extra, '' AS perms
   FROM systemd_units
 UNION ALL
--- THE MARKER, in the vocabulary bin/classify already understands: `ok` is provenance and
--- anything else becomes a gap the reader is told about rather than a silence.
+-- THE MARKER, a scan row in the spec's outcome vocabulary, reasoned from the UNIT COUNT:
+-- a bus socket with nothing serving it still fails systemd_units, so presence alone would
+-- report `ok` against a dead bus (Docker's `wedge` again).
 --
--- SOCKET PRESENCE ALONE IS NOT ENOUGH, and finding that out is what shaped this. Checking
--- only for the bus socket reports `ok` against a socket that exists but has nothing
--- serving it -- reproduced by binding one and watching systemd_units still fail with
--- `Connection refused ... NoServer`. That is precisely the Docker `wedge` state this repo
--- already documents: a health check is necessary and not sufficient.
+--     units > 0            -> ok                  the rows above are real
+--     no bus socket        -> absent              nothing to read
+--     socket, but 0 units  -> unhealthy:no-units  no real systemd host has none
 --
--- So the marker reasons from the UNIT COUNT first, which is the only evidence that
--- actually proves the bus was read:
---
---     units > 0            -> ok         we read the list, so the rows above are real
---     no bus socket        -> absent     nothing to read from, and we know why
---     socket, but 0 units  -> unhealthy  the socket is there and the list came back
---                                        empty, which no real systemd host does
---
--- A host with systemd genuinely has hundreds of units, so zero-with-a-socket is a failure
--- and never a clean machine. Computed entirely in SQL: no runner change, and it travels
--- with a cached payload the same way the container marker does.
---
--- THE SUBQUERIES ARE IN THE FROM CLAUSE, NOT THE COLUMN LIST, and that is deliberate:
--- test/lint.sh reads a branch's columns as the text between SELECT and the first FROM, so
--- a subquery in the column list would truncate the count and the contract check would
--- pass a five-column arm.
+-- The subqueries sit in FROM, not the column list, because test/lint.sh reads a branch's
+-- columns as the text between SELECT and the first FROM.
 SELECT 'scan' AS kind, 'systemd' AS id, CAST(t.unix_time AS TEXT) AS ver,
        '/run/dbus/system_bus_socket' AS loc,
        CASE WHEN u.n > 0 THEN 'ok'

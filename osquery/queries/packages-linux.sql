@@ -5,60 +5,25 @@
 -- cost: fast
 -- platform: linux
 --
--- ONE FILE FOR BOTH PACKAGE FAMILIES, and that is measured rather than assumed. The
--- obvious worry is that naming deb_packages on Fedora, or rpm_packages on Debian, makes
--- the whole composed artifact fail -- osquery given a table that does not exist returns
--- "[\n\n]" and exits 1, which is what `SELECT * FROM snap_packages` does on every Linux
--- box because THAT table genuinely does not exist at any osquery version.
+-- ONE FILE FOR BOTH FAMILIES, measured: both tables are registered everywhere and return no
+-- rows off their own family, exit 0 (osquery 5.23.1, Ubuntu 24.04 and Fedora 41). A table
+-- that does not exist at all, such as snap_packages, would fail the whole artifact.
 --
--- It does not happen: both tables are REGISTERED on both families and simply return no
--- rows off their own. Verified on osquery 5.23.1 --
+-- Six columns: kind, id, ver, loc, extra, perms. See CONTRIBUTING.md before changing them.
 --
---     Ubuntu 24.04   deb_packages 128 rows   rpm_packages 0 rows   exit 0, no stderr
---     Fedora 41      deb_packages 0 rows     rpm_packages 133 rows exit 0, no stderr
+-- ENUMERATE, DO NOT MATCH: no package name appears below (tools/check_no_catalog.py).
 --
--- so dist/discovery-linux.sql is one artifact for every Linux endpoint rather than one
--- per package manager. Recorded here because the next person will reasonably assume the
--- opposite.
+-- THE STATUS PREDICATE IS NOT OPTIONAL. dpkg keeps a removed-but-not-purged package as
+-- `deinstall ok config-files`, version attached, so without it an uninstalled agent reads
+-- as installed. `%ok installed` keeps `hold ok installed`, which is installed. Testing it
+-- needs a package with conffiles: one without vanishes on remove and a broken query passes
+-- (74-linux-dpkg-removed).
 --
--- Emits the six-column contract: kind, id, ver, loc, extra, perms.
--- Branches within this file are joined with UNION ALL, and the build joins files
--- the same way. See CONTRIBUTING.md before changing the column list.
-
--- ENUMERATE, DO NOT MATCH (D20). No package name appears below.
---
--- THE STATUS PREDICATE IS NOT OPTIONAL AND IT IS NOT TIDYING. dpkg keeps a record of a
--- package that was REMOVED BUT NOT PURGED, and osquery reports it with the version still
--- attached. Verified against a real `apt-get remove` without --purge:
---
---     {"name":"nano","status":"deinstall ok config-files","version":"7.2-2ubuntu0.2"}
---
--- Without the filter an agent someone uninstalled reads as an installed one -- a wrong
--- answer wearing a right one's face, which is the failure this repo is organised around.
---
--- `%ok installed` rather than `= 'install ok installed'`: a package held at a version
--- reads `hold ok installed` and is genuinely installed. The two states that must NOT
--- pass are `deinstall ok config-files` and `purge ok not-installed`, and neither has a
--- space before "installed" to match on. Counts on a real box: 163 rows, 161 kept, which
--- is exactly what /var/lib/dpkg/status reports.
---
--- A FIRST ATTEMPT AT THIS TEST PROVED NOTHING and is worth recording: it used `cowsay`,
--- which carries no conffiles, so dpkg dropped the record entirely on remove and the
--- unfiltered query looked correct. The test only works with a package that has
--- configuration to retain. 74-linux-dpkg-removed uses one.
---
--- `arch` ships in `extra` so the collector can tell an amd64 install from an arm64 one
--- without a second query. A bundle id carries no such thing.
+-- `arch` ships in `extra`, so a reader can tell an amd64 install from an arm64 one.
 SELECT 'deb' AS kind, name AS id, version AS ver, '' AS loc, arch AS extra, '' AS perms
   FROM deb_packages
   WHERE status LIKE '%ok installed'
 UNION ALL
--- rpm_packages has no status column and needs no equivalent filter: the rpm database
--- holds installed packages only, with no remove-but-retain state to confuse.
---
--- `vendor` ships in `extra`, and it is the ONLY route on any platform that hands us a
--- vendor string from the artifact itself -- 'Fedora Project' for the distro's own
--- packages, the publisher's name for a third party. Everywhere else vendor has to be
--- inferred from an identifier, which is how `com.todesktop.230313mzl4w4u92` reads as a
--- ToDesktop product rather than a Cursor one.
+-- rpm's database holds installed packages only, so it needs no status filter. `vendor`
+-- ships in `extra`: the one route whose artifact names its own publisher.
 SELECT 'rpm', name, version, '', vendor, '' FROM rpm_packages

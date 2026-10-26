@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Fail if a catalog-shaped literal reappears in the queries (D20).
+"""Fail if a catalog-shaped literal reappears in the queries.
 
-The queries enumerate; the collector classifies. That boundary is easy to state and
+The queries enumerate; the matcher classifies. That boundary is easy to state and
 easy to erode: the tempting fix for a noisy result is always one more `AND name NOT
 IN (...)`, and each one silently moves catalog matching back onto the device, where
 being wrong means every Mac stays wrong until it is redeployed.
@@ -31,7 +31,7 @@ import sys
 #   * IT CHANGES NO MATCHING DECISION. The agents are still in catalog/agents.yaml, under
 #     `image_labels:`, and the endpoint still enumerates every image's source label whether
 #     or not anything claims it -- the unmatched ones reach the reader as unmatched. A
-#     wrong catalog entry is still fixed off the machine, which is the whole of D20.
+#     wrong catalog entry is still fixed off the machine, which is the whole point of enumerating.
 #   * The alternative is emitting EVERY label key: measured 2026-09-11, that is 30 rows for
 #     one langflow image, and it would put `title=wolfi-base` and `ref.name=ubuntu` --
 #     values inherited from base images -- in front of a matcher as if they identified
@@ -93,7 +93,7 @@ def main():
     # EVERY artifact in dist/, discovered rather than named, MINUS the rendered set by
     # name. The rendered match files are the catalog written out as SQL on purpose; this
     # rule is about the enumeration, which must stay free of it. A hardcoded filename
-    # would have quietly stopped checking the moment the name changed -- leaving the D20
+    # would have quietly stopped checking the moment the name changed -- leaving the
     # rule enforced on the source and not on what ships.
     targets = (sorted((root / "queries").glob("*.sql"))
                + [p for p in sorted((root / "dist").glob("*"))
@@ -103,14 +103,14 @@ def main():
         if not path.exists():
             continue
         for lineno, lit, why in offenders(path):
-            rel = path.relative_to(root)
+            rel = path.relative_to(root.parent)
             print(f"FAIL: {rel}:{lineno} matches on '{lit}' -- {why}.")
             failed = True
     if failed:
         print()
-        print("The queries enumerate; the collector classifies (D20). Matching on a product")
+        print("The queries enumerate; the matcher classifies. Matching on a product")
         print("identifier here means a wrong entry stays wrong on every Mac until it rescans.")
-        print("Move the identifier to catalog/agents.yaml, which the collector reads.")
+        print("Move the identifier to catalog/agents.yaml, which the matcher reads.")
         return 1
     # THE INVERSE, for the rendered files: each must carry identifiers, because one that
     # carries none is a signature table nobody rendered -- the same silence as a route
@@ -119,9 +119,9 @@ def main():
     for name in sorted(rendered):
         path = root / "dist" / name
         if path.exists() and not any(offenders(path)):
-            print(f"FAIL: dist/{name} is a rendered match file and names no product. "
-                  f"Either the render produced no signatures or the file is not what "
-                  f"tools/render_match.py writes.")
+            print(f"FAIL: osquery/dist/{name} is a rendered match file and names no "
+                  f"product. Either the render produced no signatures or the file is not "
+                  f"what osquery/tools/render_match.py writes.")
             failed = True
     if failed:
         return 1
