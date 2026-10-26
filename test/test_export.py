@@ -45,11 +45,13 @@ def check(label, condition, detail=""):
         failures.append(label)
 
 
-def raises(fn, *args):
+def raises(fn, *args, expected, message):
+    """Does fn(*args) raise `expected` with `message` in it? Any other exception is a crash,
+    and it is not counted as the refusal under test."""
     try:
         fn(*args)
-    except Exception:
-        return True
+    except expected as exc:
+        return message in str(exc)
     return False
 
 
@@ -68,9 +70,11 @@ def main():
         got = export.purl(ptype, value)
         check(f"{ptype} {value!r} -> {want}", got == want, f"got {got}")
     check("a type with no builder is an error, not a missing member",
-          raises(export.purl, "brew", "openclaw"))
+          raises(export.purl, "brew", "openclaw", expected=KeyError,
+                 message="no package-url builder"))
     check("a VS Code value that is not publisher.name is an error",
-          raises(export.purl, "vscode-extension", "noperiod"))
+          raises(export.purl, "vscode-extension", "noperiod", expected=ValueError,
+                 message="is not publisher.name"))
 
     print("\nthe real export")
     run = [sys.executable, str(ROOT / "tools" / "export.py"), "--commit", "test"]
@@ -94,9 +98,9 @@ def main():
     check("each route publishes every binding it declares", not unbound, str(unbound[:3]))
     wrong = [f"{a['id']}: {i['route']} {i['value']!r}" for a in doc["agents"]
              for i in a["identifiers"]
-             if i.get("purl", "").partition("/")[0] != (f"pkg:{routes_yaml[i['route']]['purl']}"
-                                                        if "purl" in routes_yaml[i["route"]] else "")]
-    check("an identifier carries a purl exactly when its route declares one, of that type",
+             if i.get("purl") != (export.purl(routes_yaml[i["route"]]["purl"], i["value"])
+                                  if "purl" in routes_yaml[i["route"]] else None)]
+    check("an identifier carries a purl exactly when its route declares one: the builder's",
           not wrong, str(wrong[:3]))
     # A chrome-extension purl is a Chrome Web Store coordinate. A store that re-signs, such
     # as Edge Add-ons, issues another id for the same extension, so each value must come from
@@ -160,12 +164,14 @@ def main():
     check("each identifier on a purl route carries its package URL",
           by["new"].get("purl") == "pkg:npm/new")
     check("a catalog with not_agents is refused, not published as agents",
-          raises(export.document, {**cat, "not_agents": ["Coding agent"]}, routes, live, archived))
+          raises(export.document, {**cat, "not_agents": ["Coding agent"]}, routes, live, archived,
+                 expected=ValueError, message="has no place in the format"))
     _bindings = export.BINDINGS
     export.BINDINGS = {**_bindings, "other": {"table"}}
     try:
         check("a second binding stops the export until observations name theirs",
-              raises(export.document, cat, routes, live, archived))
+              raises(export.document, cat, routes, live, archived, expected=ValueError,
+                     message="does not say which produced a record"))
     finally:
         export.BINDINGS = _bindings
 

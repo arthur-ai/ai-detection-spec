@@ -31,6 +31,7 @@ import yaml
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 import agent_status  # noqa: E402
+from observations import provable  # noqa: E402
 from validate_catalog import BINDINGS  # noqa: E402
 
 # THE BINDING A PROOF NAMES. observed.json records no binding, because every harness that
@@ -99,7 +100,7 @@ def _proof(rec):
 def _proofs(recs):
     seen, out = set(), []
     for rec in recs:
-        if not rec.get("run") or not rec.get("platform"):
+        if not provable(rec):
             continue
         p = _proof(rec)
         key = json.dumps(p, sort_keys=True)

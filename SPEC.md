@@ -109,8 +109,7 @@ of the names.
 An agent is `{id, name, classification, platforms, identifiers}`. `id` is lowercase, with
 hyphens, and unique in the catalog. `platforms` lists the platforms the agent can be found on.
 `identifiers` is a non-empty list of `{route, value, status}`, with the optional members
-described in §7. An identifier on a route that declares `purl` carries `purl`: the package
-URL that identifier names, with no version.
+described in §7.
 
 A conforming catalog MUST meet all of these:
 
@@ -126,6 +125,9 @@ A conforming catalog MUST meet all of these:
    containment: a `prefix` value that another agent's value starts with, or a `home-prefix`
    value that another agent's path sits under. Because of this rule, the order in which a
    matcher tries identifiers (§6.5) can never decide which agent a row belongs to.
+7. An identifier on a route that declares `purl` carries `purl`: the package URL of that
+   type that the identifier names, with no version. One on any other route carries none.
+   Route names are the catalog's own, so the schema cannot check this.
 
 ## 5. Evidence
 

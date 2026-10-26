@@ -493,7 +493,10 @@ def collect():
     # one a pull request would catch.
     seen_in = collections.defaultdict(set)      # (agent, route, value) -> {scenario}
     observed_os = set()
-    for key, recs in observations()[0].items():
+    # Only observations tools/export.py could publish as proof; see observations.provable().
+    live = {k: [r for r in recs if _observations.provable(r)]
+            for k, recs in observations()[0].items()}
+    for key, recs in live.items():
         for rec in recs:
             seen_in[key].add(rec["scenario"])
             if rec.get("os"):
@@ -519,7 +522,7 @@ def collect():
     # the count is pessimistic until each has run once. Absence of an observation is not
     # absence of a test, and reporting the total without saying which scenarios are
     # missing would present a floor as a measurement.
-    recorded = {p.parent.name for p in SCENARIOS.glob("*/observed.json")}
+    recorded = {r["scenario"] for recs in live.values() for r in recs}
     unrecorded = sorted(in_ci - recorded)
 
     agents = []

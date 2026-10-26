@@ -12,6 +12,13 @@ import pathlib
 SCENARIOS = pathlib.Path(__file__).resolve().parent.parent / "test" / "scenarios"
 
 
+def provable(rec):
+    """Can this observation be published as proof (SPEC.md 7.2)? It needs the run that
+    produced it and the platform it ran on. A local `--record` names no run. Coverage counts
+    only these too, so an identifier is never covered by CI and refused by --strict."""
+    return bool(rec.get("run") and rec.get("platform"))
+
+
 def read(scenarios=SCENARIOS):
     """(live, archived): every observation keyed (agent, route, value), each carrying its
     scenario and that scenario's platform. `archived` holds the observations of superseded
