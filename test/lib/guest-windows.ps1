@@ -10,6 +10,10 @@
 # EVERY setup.ps1 ENDS IN AN EXPLICIT `exit`. Run with -File, a script that falls off its
 # end exits 0 whatever its last command did.
 #
+# PATH IS GIT BASH'S. The workflow runs setup.ps1 from Git Bash, whose PATH puts MSYS's GNU
+# tools ahead of Windows' own: `tar.exe` found GNU tar, which cannot read a zip. Call a
+# Windows tool that has an MSYS namesake by its path under $env:SystemRoot.
+#
 # A HELPER THAT RETURNS A VERDICT PRINTS WITH Write-Host. Whatever reaches the pipeline joins
 # the return value, and a warning line beside $false is a non-empty array, which `if` reads
 # as success.
@@ -117,19 +121,4 @@ function Invoke-AsUser([System.Management.Automation.PSCredential]$Cred, [string
 function Exit-Skip([string]$Why) {
   Write-Host "SKIP: $Why"
   exit 3
-}
-
-# `--os` and `--arch` for tools/agent_status.py --record. The build, not the UBR: a monthly
-# cumulative update would otherwise split one OS into twelve. The arch is the machine's, read
-# where emulation cannot rename it, in uname's spelling.
-function Get-ScenarioOs {
-  $cv = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion'
-  $edition = if ($cv.InstallationType -eq 'Server') { 'server' } else { 'client' }
-  $caption = (Get-CimInstance Win32_OperatingSystem).Caption
-  $release = if ($caption -match '(20\d\d|10|11)\b') { $Matches[1] } else { 'unknown' }
-  $native = (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment').PROCESSOR_ARCHITECTURE
-  $arch = @{ AMD64 = 'x86_64'; ARM64 = 'arm64' }[$native]
-  if (-not $arch) { $arch = $native.ToLower() }
-  Write-Output "WIN_OS=windows-$edition-$release-$($cv.CurrentBuild)"
-  Write-Output "WIN_ARCH=$arch"
 }

@@ -43,6 +43,11 @@ side by side. What keeps the rendered files honest:
 - `regex_match` returns NULL on a miss, an invalid pattern aborts the statement, and `LIKE` is
   case-insensitive, so the join is a `CASE`, every regex is compiled before it is written,
   and a prefix is `substr`.
+- **On Windows `^` and `$` match at every line break** (osquery's regex there is MSVC's
+  `std::regex`, measured on windows-2025). So the end is `(?![\s\S])`, and the start is checked
+  as `instr(x, regex_match(x, p, 0)) = 1`: the leftmost match begins at the start exactly when
+  instr() finds it there. The conformance vectors' line-break rows hold both, on every
+  platform's osqueryi.
 - A new signature reaches the rendered files only when they are redeployed. The payload
   re-matches without that. The bundle carries `signatures.sql` for `--names` and nothing
   else that names an agent.

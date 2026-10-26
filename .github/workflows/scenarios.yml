@@ -540,13 +540,25 @@ jobs:
           out="$(cygpath -u "$RUNNER_TEMP")/out.json"
           "$OSQI" --json < osquery/dist/discovery-windows.sql > "$out"
           test/assert.sh "$out" test/scenarios/${{ matrix.scenario }}/expected.json
+      # --os is the edition, release and build, not the monthly update revision, which would
+      # split one OS into twelve records a year. --arch is the machine's, read where x64
+      # emulation cannot rename it, in uname's spelling. Here rather than in
+      # test/lib/guest-windows.ps1, which only setup scripts may reach (tools/ci_scope.py).
+      - name: Which Windows this is
+        if: steps.provision.outputs.runnable == 'true'
+        shell: powershell
+        run: |
+          $cv = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion'
+          $edition = if ($cv.InstallationType -eq 'Server') { 'server' } else { 'client' }
+          $release = if ((Get-CimInstance Win32_OperatingSystem).Caption -match '(20\d\d|10|11)\b') { $Matches[1] } else { 'unknown' }
+          $native = (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment').PROCESSOR_ARCHITECTURE
+          $arch = @{ AMD64 = 'x86_64'; ARM64 = 'arm64' }[$native]
+          if (-not $arch) { $arch = $native.ToLower() }
+          "WIN_OS=windows-$edition-$release-$($cv.CurrentBuild)", "WIN_ARCH=$arch" |
+            Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
       - name: Record which identifiers this run matched
         if: steps.provision.outputs.runnable == 'true'
         run: |
-          # --os is the edition, release and build, not the monthly update revision, which
-          # would split one OS into twelve records a year; --arch is the machine's, in
-          # uname's spelling. Both from test/lib/guest-windows.ps1's Get-ScenarioOs.
-          eval "$(powershell.exe -NoProfile -Command '. test/lib/guest-windows.ps1; Get-ScenarioOs' | tr -d '\r')"
           python3 tools/agent_status.py --record "$(cygpath -u "$RUNNER_TEMP")/out.json" \
             test/scenarios/${{ matrix.scenario }} \
             --platform windows --os "$WIN_OS" --arch "$WIN_ARCH" --run-id "${{ github.run_id }}"

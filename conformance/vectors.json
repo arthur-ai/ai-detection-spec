@@ -294,11 +294,12 @@
           "id": "C:\\Users\\u\\.versions\\agentx",
           "loc": "C:\\Users\\u\\.versions\\agentx"
         },
-        {"kind": "file", "id": "/home/u/.local/bin\\tool", "loc": "/home/u/.local/bin\\tool"}
+        {"kind": "file", "id": "/home/u/.local/bin\\tool", "loc": "/home/u/.local/bin\\tool"},
+        {"kind": "file", "id": "x\n/home/u/.local/bin/tool", "loc": "x\n/home/u/.local/bin/tool"}
       ],
       "expect": {
-        "matches": ["a", "a", null, "b", null, null, "a", "a", null, "b", null, null],
-        "unmatched": [2, 4, 5, 8, 10, 11],
+        "matches": ["a", "a", null, "b", null, null, "a", "a", null, "b", null, null, null],
+        "unmatched": [2, 4, 5, 8, 10, 11, 12],
         "dropped": [],
         "findings": {"a": {"evidence": [0, 1, 6, 7]}, "b": {"evidence": [3, 9]}}
       }
@@ -424,12 +425,17 @@
           "kind": "file",
           "id": "C:\\Users\\u\\AppData\\Roaming\\uv\\agent-chat\\",
           "loc": "C:\\Users\\u\\AppData\\Roaming\\uv\\agent-chat\\"
+        },
+        {
+          "kind": "file",
+          "id": "x\n/home/u/.local/pipx/venvs/agent-chat/",
+          "loc": "x\n/home/u/.local/pipx/venvs/agent-chat/"
         }
       ],
       "expect": {
         "matches": ["a", "a", null, null, null, "a", null, "a", null, null, null, "a", "a", null,
-                    null],
-        "unmatched": [2, 3, 4, 6, 8, 9, 10, 13, 14],
+                    null, null],
+        "unmatched": [2, 3, 4, 6, 8, 9, 10, 13, 14, 15],
         "dropped": [],
         "findings": {"a": {"evidence": [0, 1, 5, 7, 11, 12]}}
       }
@@ -482,11 +488,14 @@
         {"kind": "file", "id": "C:\\users\\u\\.agent", "loc": "C:\\users\\u\\.agent"},
         {"kind": "file", "id": "C:\\ProgramData\\.agent", "loc": "C:\\ProgramData\\.agent"},
         {"kind": "file", "id": "CD:\\Users\\u\\.agent", "loc": "CD:\\Users\\u\\.agent"},
-        {"kind": "file", "id": "/home/u\\.agent", "loc": "/home/u\\.agent"}
+        {"kind": "file", "id": "/home/u\\.agent", "loc": "/home/u\\.agent"},
+        {"kind": "file", "id": "x\n/home/u/.agent", "loc": "x\n/home/u/.agent"},
+        {"kind": "file", "id": "x\nC:\\Users\\u\\.agent", "loc": "x\nC:\\Users\\u\\.agent"}
       ],
       "expect": {
-        "matches": ["a", "a", "a", null, null, "a", "a", "a", "a", null, null, null, null, null, null],
-        "unmatched": [3, 4, 9, 10, 11, 12, 13, 14],
+        "matches": ["a", "a", "a", null, null, "a", "a", "a", "a", null, null, null, null, null, null,
+                    null, null],
+        "unmatched": [3, 4, 9, 10, 11, 12, 13, 14, 15, 16],
         "dropped": [],
         "findings": {"a": {"evidence": [0, 1, 2, 5, 6, 7, 8]}}
       }

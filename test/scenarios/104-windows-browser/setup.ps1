@@ -19,7 +19,9 @@ $index = 'https://googlechromelabs.github.io/chrome-for-testing/last-known-good-
 try { $url = ((Invoke-RestMethod $index).channels.Stable.downloads.chrome | Where-Object { $_.platform -eq 'win64' }).url }
 catch { Write-Host "FAIL: the Chrome for Testing index did not answer: $_"; exit 1 }
 if (-not (Get-Download $url (Join-Path $dl 'cft.zip'))) { exit 1 }
-& tar.exe -xf (Join-Path $dl 'cft.zip') -C $dl
+# Windows' own tar, by path: run from the workflow's Git Bash, PATH finds MSYS's GNU tar
+# first, which cannot read a zip.
+& (Join-Path $env:SystemRoot 'System32\tar.exe') -xf (Join-Path $dl 'cft.zip') -C $dl
 $chrome = Join-Path $dl 'chrome-win64\chrome.exe'
 if (-not (Test-Path $chrome)) { Write-Host "FAIL: no Chrome for Testing at $chrome"; exit 1 }
 

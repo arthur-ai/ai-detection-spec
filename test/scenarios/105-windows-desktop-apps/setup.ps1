@@ -26,12 +26,24 @@ try {
   if (Get-Download $ws $windsurf) { [void](Install-Exe 'Windsurf' $windsurf $InnoSilent) }
 } catch { Write-Host "WARN: Windsurf's update endpoint did not answer: $_" }
 
+$exe = Join-Path $env:LOCALAPPDATA 'Programs\cursor\Cursor.exe'
+if (Test-Path $exe) { Start-Process $exe }
+# THE BRIDGE IS WRITTEN SOME TIME AFTER LAUNCH, so this waits for it rather than for a fixed
+# interval: 30 seconds was enough in one run and not in the next.
+$bridge = 'HKCU:\Software\Google\Chrome\NativeMessagingHosts\com.anthropic.claude_browser_extension'
 $pkg = Get-AppxPackage Claude -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($pkg) {
   $app = (Get-AppxPackageManifest $pkg).Package.Applications.Application.Id | Select-Object -First 1
   Start-Process explorer.exe -ArgumentList "shell:AppsFolder\$($pkg.PackageFamilyName)!$app"
+  foreach ($i in 1..60) {
+    if (Test-Path $bridge) { break }
+    Start-Sleep -Seconds 2
+  }
+  if (Test-Path $bridge) { Write-Host "Claude Desktop registered its bridge after about $(2 * $i)s" }
+  else {
+    Write-Host 'WARN: Claude Desktop registered no bridge in 120s. Its processes:'
+    Get-Process claude -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "      $($_.Path)" }
+  }
 }
-$exe = Join-Path $env:LOCALAPPDATA 'Programs\cursor\Cursor.exe'
-if (Test-Path $exe) { Start-Process $exe }
-Start-Sleep -Seconds 30
+Start-Sleep -Seconds 10
 exit 0
