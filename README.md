@@ -78,6 +78,11 @@ one you need.
 If something in the spec stops you adopting it, [open an
 issue](https://github.com/arthur-ai/ai-detection-spec/issues): that is a defect in the spec.
 
+## Used by
+
+- [Arthur Platform](https://www.arthur.ai/)
+- [Deckard](https://github.com/arthur-ai/arthur-deckard)
+
 ## Contributing — genuinely, please do
 
 New AI tools appear weekly and identifiers change underneath you, so **a correction is worth as
