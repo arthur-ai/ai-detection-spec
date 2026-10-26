@@ -379,10 +379,10 @@ hit AS (SELECT s.agent, s.name, s.classification, s.superseded,
     WHEN 'path'     THEN regex_match(e.id, s.value, 0) IS NOT NULL
                       OR regex_match(e.loc, s.value, 0) IS NOT NULL
     WHEN 'image'    THEN regex_match(e.id, s.value, 0) IS NOT NULL
-    WHEN 'tool-dir' THEN regex_match(e.id, '^(?:/Users/[^/]+/|/home/[^/]+/|/root/)(?:\.local/pipx/venvs/|\.local/share/uv/tools/)([^/]+)/?$', 1) = s.value
-                      OR regex_match(e.id, '^[A-Za-z]:[\\/]Users[\\/][^\\/]+[\\/](?:\.local[\\/]pipx[\\/]venvs[\\/]|\.local[\\/]share[\\/]uv[\\/]tools[\\/])([^\\/]+)[\\/]?$', 1) = s.value
-                      OR regex_match(e.loc, '^(?:/Users/[^/]+/|/home/[^/]+/|/root/)(?:\.local/pipx/venvs/|\.local/share/uv/tools/)([^/]+)/?$', 1) = s.value
-                      OR regex_match(e.loc, '^[A-Za-z]:[\\/]Users[\\/][^\\/]+[\\/](?:\.local[\\/]pipx[\\/]venvs[\\/]|\.local[\\/]share[\\/]uv[\\/]tools[\\/])([^\\/]+)[\\/]?$', 1) = s.value
+    WHEN 'tool-dir' THEN regex_match(e.id, '^(?:/Users/[^/]+/|/home/[^/]+/|/root/)(?:\.local/pipx/venvs/|\.local/share/uv/tools/|AppData/Local/pipx/pipx/venvs/|AppData/Roaming/uv/tools/)([^/]+)/?$', 1) = s.value
+                      OR regex_match(e.id, '^[A-Za-z]:[\\/]Users[\\/][^\\/]+[\\/](?:\.local[\\/]pipx[\\/]venvs[\\/]|\.local[\\/]share[\\/]uv[\\/]tools[\\/]|AppData[\\/]Local[\\/]pipx[\\/]pipx[\\/]venvs[\\/]|AppData[\\/]Roaming[\\/]uv[\\/]tools[\\/])([^\\/]+)[\\/]?$', 1) = s.value
+                      OR regex_match(e.loc, '^(?:/Users/[^/]+/|/home/[^/]+/|/root/)(?:\.local/pipx/venvs/|\.local/share/uv/tools/|AppData/Local/pipx/pipx/venvs/|AppData/Roaming/uv/tools/)([^/]+)/?$', 1) = s.value
+                      OR regex_match(e.loc, '^[A-Za-z]:[\\/]Users[\\/][^\\/]+[\\/](?:\.local[\\/]pipx[\\/]venvs[\\/]|\.local[\\/]share[\\/]uv[\\/]tools[\\/]|AppData[\\/]Local[\\/]pipx[\\/]pipx[\\/]venvs[\\/]|AppData[\\/]Roaming[\\/]uv[\\/]tools[\\/])([^\\/]+)[\\/]?$', 1) = s.value
     ELSE 0 END)
 SELECT agent, name, classification,
        max(ver) AS ver,

@@ -265,10 +265,12 @@ match `~/.local/bin/tool-helper`.
 #### 6.4.6 `tool-dir`
 
 For packages installed by pipx or uv, which give each tool a directory named after its
-distribution. In a row of the route's kind, each of `id` and `loc` that is
-`H` + `.local/pipx/venvs/<name>` or `H` + `.local/share/uv/tools/<name>`, optionally followed
-by `/`, yields `<name>`: one or more characters other than a separator of `H`'s root. The route
-matches when either name equals one of its identifiers.
+distribution. In a row of the route's kind, each of `id` and `loc` that is `H` + `L` + `<name>`,
+optionally followed by `/`, yields `<name>`: one or more characters other than a separator of
+`H`'s root. `L` is one of `.local/pipx/venvs/`, `.local/share/uv/tools/`,
+`AppData/Local/pipx/pipx/venvs/` and `AppData/Roaming/uv/tools/`, the last two being pipx's and
+uv's defaults on Windows, and every `L` is tried under every home root. The route matches when
+either name equals one of its identifiers.
 
 #### 6.4.7 Home roots
 

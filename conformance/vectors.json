@@ -404,13 +404,34 @@
           "kind": "file",
           "id": "/home/u/.local/pipx/venvs/agent-chat\\",
           "loc": "/home/u/.local/pipx/venvs/agent-chat\\"
+        },
+        {
+          "kind": "file",
+          "id": "C:\\Users\\u\\AppData\\Local\\pipx\\pipx\\venvs\\agent-chat\\",
+          "loc": "C:\\Users\\u\\AppData\\Local\\pipx\\pipx\\venvs\\agent-chat\\"
+        },
+        {
+          "kind": "file",
+          "id": "C:\\Users\\u\\AppData\\Roaming\\uv\\tools\\agent-chat",
+          "loc": "C:\\Users\\u\\AppData\\Roaming\\uv\\tools\\agent-chat"
+        },
+        {
+          "kind": "file",
+          "id": "C:\\Users\\u\\AppData\\Roaming\\uv\\tools\\agent-chat\\Scripts",
+          "loc": "C:\\Users\\u\\AppData\\Roaming\\uv\\tools\\agent-chat\\Scripts"
+        },
+        {
+          "kind": "file",
+          "id": "C:\\Users\\u\\AppData\\Roaming\\uv\\agent-chat\\",
+          "loc": "C:\\Users\\u\\AppData\\Roaming\\uv\\agent-chat\\"
         }
       ],
       "expect": {
-        "matches": ["a", "a", null, null, null, "a", null, "a", null, null, null],
-        "unmatched": [2, 3, 4, 6, 8, 9, 10],
+        "matches": ["a", "a", null, null, null, "a", null, "a", null, null, null, "a", "a", null,
+                    null],
+        "unmatched": [2, 3, 4, 6, 8, 9, 10, 13, 14],
         "dropped": [],
-        "findings": {"a": {"evidence": [0, 1, 5, 7]}}
+        "findings": {"a": {"evidence": [0, 1, 5, 7, 11, 12]}}
       }
     },
     {

@@ -473,7 +473,10 @@ def image_repos(tags):
 # prefix; the other two were this file's path globs and tools/agent_status.py's replay.
 #
 # The layouts are written once, here; tools/validate_catalog.py reads them for overlaps.
-TOOL_LAYOUTS = ("~/.local/pipx/venvs/", "~/.local/share/uv/tools/")
+# The AppData pair is where pipx and uv put a tool on Windows by default, read off
+# windows-2025 (survey runs 40393754308 and 40396366136: `pipx environment`, `uv tool dir`).
+TOOL_LAYOUTS = ("~/.local/pipx/venvs/", "~/.local/share/uv/tools/",
+                "~/AppData/Local/pipx/pipx/venvs/", "~/AppData/Roaming/uv/tools/")
 # ONE PATTERN PER KIND OF ROOT, each capturing the name as group 1. Not one alternation: a
 # group number cannot be shared across branches, and osquery's regex_match returns '' rather
 # than NULL for a group that took no part, so the rendered SQL could not tell them apart.
