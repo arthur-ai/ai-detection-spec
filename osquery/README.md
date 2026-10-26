@@ -167,7 +167,8 @@ Windows PowerShell 5.1's `>` writes UTF-16:
 ```
 
 The inventory carries a `containers` marker, since osquery reads no container on Windows; it
-says `unreadable:docker` where an engine is on disk.
+names an engine on disk (`unreadable:docker`, `:podman` or `:rancher-desktop`) and says
+`absent` only where none is.
 
 ## Scope, so you know what you are getting
 

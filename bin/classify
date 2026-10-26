@@ -478,8 +478,7 @@ def image_repos(tags):
 TOOL_LAYOUTS = ("~/.local/pipx/venvs/", "~/.local/share/uv/tools/",
                 "~/AppData/Local/pipx/pipx/venvs/", "~/AppData/Roaming/uv/tools/")
 # ONE PATTERN PER KIND OF ROOT, each capturing the name as group 1. Not one alternation: a
-# group number cannot be shared across branches, and osquery's regex_match returns '' rather
-# than NULL for a group that took no part, so the rendered SQL could not tell them apart.
+# group number cannot be shared across branches, and the rendered SQL reads group 1.
 TOOL_DIRS = tuple(
     re.compile("^" + root + "(?:" + "|".join(_under("", sep, lay[2:]) for lay in TOOL_LAYOUTS)
                + ")(" + part + ")" + sep + r"?\Z")

@@ -36,6 +36,7 @@
   "known_gaps": [
     "Each per-user install is read while its user is signed in: HKEY_USERS holds loaded hives only, so the same install by a user who is signed out leaves no Uninstall or MSIX row (docs/blind-spots.yaml).",
     "Windsurf is not launched, so its liveness is unproven.",
+    "Claude Desktop wrote its browser bridge only once a Chrome profile existed, so the nmh row is proof for a machine with Chrome set up; one without reads Claude Desktop through its MSIX row alone.",
     "Sign-in gated, as on macOS: nothing exercises behaviour that appears once a user signs in."
   ]
 }

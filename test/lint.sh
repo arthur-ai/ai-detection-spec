@@ -66,7 +66,11 @@ if [ ${#_ps1[@]} -gt 0 ]; then
       '  [void][System.Management.Automation.Language.Parser]::ParseFile($f, [ref]$null, [ref]$errs)' \
       '  foreach ($e in $errs) { "FAIL: ${f}:$($e.Extent.StartLineNumber): $($e.Message)"; $bad = 1 }' \
       '}' 'exit $bad' > "$_parse.ps1"
-    pwsh -NoProfile -NonInteractive -File "$_parse.ps1" "${_ps1[@]}" || fail=1
+    if pwsh -NoProfile -NonInteractive -File "$_parse.ps1" "${_ps1[@]}"; then
+      echo "PowerShell: ok, ${#_ps1[@]} files parse"
+    else
+      fail=1
+    fi
     rm -f "$_parse" "$_parse.ps1"
   elif [ "${REQUIRE_PWSH:-0}" = 1 ]; then
     echo "FAIL: REQUIRE_PWSH=1 and pwsh is not installed, so ${#_ps1[@]} PowerShell files are unchecked"

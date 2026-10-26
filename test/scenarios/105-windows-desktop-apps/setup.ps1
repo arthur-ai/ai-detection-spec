@@ -28,8 +28,19 @@ try {
 
 $exe = Join-Path $env:LOCALAPPDATA 'Programs\cursor\Cursor.exe'
 if (Test-Path $exe) { Start-Process $exe }
-# THE BRIDGE IS WRITTEN SOME TIME AFTER LAUNCH, so this waits for it rather than for a fixed
-# interval: 30 seconds was enough in one run and not in the next.
+# THE BRIDGE NEEDS A CHROME PROFILE TO BRIDGE TO. Both survey runs had one, from Chrome for
+# Testing, and Claude Desktop wrote the key within 30 seconds; here, with none, it ran for two
+# minutes and wrote nothing (PR 127's second run). So Chrome runs once first, headless, which
+# is enough to create its user data directory, and then the key is waited for.
+$chrome = 'C:\Program Files\Google\Chrome\Application\chrome.exe'
+if (Test-Path $chrome) {
+  $p = Start-Process $chrome -PassThru -ArgumentList '--headless=new --no-first-run --no-default-browser-check --disable-gpu about:blank'
+  Start-Sleep -Seconds 15
+  Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+  Get-Process chrome -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq $chrome } |
+    Stop-Process -Force -ErrorAction SilentlyContinue
+}
+Write-Host "Chrome profile: $(Test-Path (Join-Path $env:LOCALAPPDATA 'Google\Chrome\User Data\Local State'))"
 $bridge = 'HKCU:\Software\Google\Chrome\NativeMessagingHosts\com.anthropic.claude_browser_extension'
 $pkg = Get-AppxPackage Claude -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($pkg) {

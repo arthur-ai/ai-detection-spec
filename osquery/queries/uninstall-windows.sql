@@ -16,20 +16,20 @@
 --
 -- HKEY_USERS HOLDS LOADED HIVES ONLY: a per-user install by someone not signed in is not
 -- here, though its files are (docs/blind-spots.yaml).
-SELECT 'uninstall' AS kind, regex_match(n.key, '[^\\]+$', 0) AS id, IFNULL(v.data, '') AS ver,
-       n.key AS loc, n.data AS extra, '' AS perms
+SELECT 'uninstall' AS kind, regex_match(n.key, '[^\\]+(?![\s\S])', 0) AS id,
+       IFNULL(v.data, '') AS ver, n.key AS loc, n.data AS extra, '' AS perms
   FROM registry n
        LEFT JOIN registry v ON v.key = n.key AND v.name = 'DisplayVersion'
  WHERE n.key LIKE 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%'
    AND n.name = 'DisplayName'
 UNION ALL
-SELECT 'uninstall', regex_match(n.key, '[^\\]+$', 0), IFNULL(v.data, ''), n.key, n.data, ''
+SELECT 'uninstall', regex_match(n.key, '[^\\]+(?![\s\S])', 0), IFNULL(v.data, ''), n.key, n.data, ''
   FROM registry n
        LEFT JOIN registry v ON v.key = n.key AND v.name = 'DisplayVersion'
  WHERE n.key LIKE 'HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\%'
    AND n.name = 'DisplayName'
 UNION ALL
-SELECT 'uninstall', regex_match(n.key, '[^\\]+$', 0), IFNULL(v.data, ''), n.key, n.data, ''
+SELECT 'uninstall', regex_match(n.key, '[^\\]+(?![\s\S])', 0), IFNULL(v.data, ''), n.key, n.data, ''
   FROM registry n
        LEFT JOIN registry v ON v.key = n.key AND v.name = 'DisplayVersion'
  WHERE n.key LIKE 'HKEY_USERS\%\Software\Microsoft\Windows\CurrentVersion\Uninstall\%'

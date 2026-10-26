@@ -34,7 +34,7 @@ blind_spots:
   - spot: "A Windows profile outside `<drive>:\\Users\\`"
     why: "SPEC.md 6.4.7's Windows home root is `<drive>:\\Users\\<segment>\\`, and the Windows queries read the homes `users` lists under it. A relocated ProfilesDirectory, and SYSTEM's profile under `C:\\Windows\\system32\\config\\`, are outside it, so an agent installed there matches no `~/` value"
   - spot: "Containers on Windows"
-    why: "osquery's `docker_*` tables are POSIX only (specs/posix at 5.23.1), so nothing reads an image or a container on Windows. The engine is NAMED instead: `osquery/queries/runtime-windows.sql` looks for Docker's service binary and data root on disk, and its marker reads `unreadable:docker` rather than `absent`. Measured both ways on windows-2025, whose Docker Engine runs Windows containers"
+    why: "osquery's `docker_*` tables are POSIX only (specs/posix at 5.23.1), so nothing reads an image or a container on Windows. The engine is NAMED instead: `osquery/queries/runtime-windows.sql` looks for Docker, Podman and Rancher Desktop on disk, and its marker reads `unreadable:docker` (or `:podman`, `:rancher-desktop`) rather than `absent`. Measured both ways for Docker on windows-2025, whose Docker Engine runs Windows containers; the other two are their installers' default paths, unmeasured"
   - spot: "An agent inside WSL"
     why: "A WSL distribution is a Linux filesystem in a virtual disk, and osquery on the Windows host reads the host. Nothing names one yet: no distribution has been installed on a runner to read what its presence looks like, so there is no marker for it, and a Windows machine whose agents live in WSL reads as having none"
   - spot: "An npm global prefix moved on Windows"

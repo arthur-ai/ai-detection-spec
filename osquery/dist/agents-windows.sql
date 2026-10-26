@@ -125,30 +125,38 @@ UNION ALL
 -- from runtime-windows.sql
 SELECT 'scan' AS kind, 'containers' AS id, CAST(t.unix_time AS TEXT) AS ver,
        '\\.\pipe\docker_engine' AS loc,
-       CASE WHEN m.n + d.n + dd.n > 0 THEN 'unreadable:docker' ELSE 'absent' END AS extra,
+       CASE WHEN dm.n + dd.n + dk.n > 0 THEN 'unreadable:docker'
+            WHEN pm.n > 0 THEN 'unreadable:podman'
+            WHEN rd.n > 0 THEN 'unreadable:rancher-desktop'
+            ELSE 'absent' END AS extra,
        '' AS perms
   FROM time t,
-       (SELECT COUNT(*) AS n FROM file WHERE path = 'C:\Windows\System32\dockerd.exe') m,
-       (SELECT COUNT(*) AS n FROM file WHERE path = 'C:\ProgramData\docker\') d,
-       (SELECT COUNT(*) AS n FROM file WHERE path = 'C:\Program Files\Docker\Docker\') dd
+       (SELECT COUNT(*) AS n FROM file WHERE path = 'C:\Windows\System32\dockerd.exe') dm,
+       (SELECT COUNT(*) AS n FROM file WHERE path = 'C:\ProgramData\docker\') dd,
+       (SELECT COUNT(*) AS n FROM file WHERE path = 'C:\Program Files\Docker\Docker\') dk,
+       (SELECT COUNT(*) AS n FROM file
+         WHERE path = 'C:\Program Files\RedHat\Podman\podman.exe') pm,
+       (SELECT COUNT(*) AS n FROM users u
+         CROSS JOIN file f ON f.path = u.directory || '\AppData\Local\Programs\Rancher Desktop\'
+         WHERE u.directory LIKE '_:\Users\%') rd
 
 UNION ALL
 
 -- from uninstall-windows.sql
-SELECT 'uninstall' AS kind, regex_match(n.key, '[^\\]+$', 0) AS id, IFNULL(v.data, '') AS ver,
-       n.key AS loc, n.data AS extra, '' AS perms
+SELECT 'uninstall' AS kind, regex_match(n.key, '[^\\]+(?![\s\S])', 0) AS id,
+       IFNULL(v.data, '') AS ver, n.key AS loc, n.data AS extra, '' AS perms
   FROM registry n
        LEFT JOIN registry v ON v.key = n.key AND v.name = 'DisplayVersion'
  WHERE n.key LIKE 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%'
    AND n.name = 'DisplayName'
 UNION ALL
-SELECT 'uninstall', regex_match(n.key, '[^\\]+$', 0), IFNULL(v.data, ''), n.key, n.data, ''
+SELECT 'uninstall', regex_match(n.key, '[^\\]+(?![\s\S])', 0), IFNULL(v.data, ''), n.key, n.data, ''
   FROM registry n
        LEFT JOIN registry v ON v.key = n.key AND v.name = 'DisplayVersion'
  WHERE n.key LIKE 'HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\%'
    AND n.name = 'DisplayName'
 UNION ALL
-SELECT 'uninstall', regex_match(n.key, '[^\\]+$', 0), IFNULL(v.data, ''), n.key, n.data, ''
+SELECT 'uninstall', regex_match(n.key, '[^\\]+(?![\s\S])', 0), IFNULL(v.data, ''), n.key, n.data, ''
   FROM registry n
        LEFT JOIN registry v ON v.key = n.key AND v.name = 'DisplayVersion'
  WHERE n.key LIKE 'HKEY_USERS\%\Software\Microsoft\Windows\CurrentVersion\Uninstall\%'

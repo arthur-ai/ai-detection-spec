@@ -697,6 +697,16 @@ check("recording does NOT credit a state dir the run never produced",
       "~/.aider appears in no row here; crediting it would report the strongest evidence "
       "for a path no machine produced")
 
+# A SCENARIO IS EXPECTED TO PRODUCE ONLY WHAT ITS PLATFORM CAN. macOS and Linux scenarios find
+# Cursor too, and counting them toward its Windows Uninstall key read the key as tested-absent
+# wherever they had recorded -- and as missing, in the coverage job, wherever they reported.
+_cur = next(a for a in _st.collect()["agents"] if a["id"] == "cursor")
+_key = next(i for i in _cur["identifiers"] if i["route"] == "uninstall_keys")
+_kp = {n: json.loads((ROOT / "test" / "scenarios" / n / "expected.json").read_text())
+       .get("platform") for n in _key["asserted_by_ci"]}
+check("a Windows-only identifier is expected only of Windows scenarios",
+      bool(_kp) and set(_kp.values()) == {"windows"}, str(_kp))
+
 # --- an observation names the run that produced it --------------------------------
 #
 # THE FIELD THAT LETS PROOF OUTLIVE THE RUN. Without it, an observation from a CI runner

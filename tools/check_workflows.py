@@ -187,7 +187,7 @@ if ("scenarios" in _inputs) != ("--only" in _scope_run):
           "everything, or nothing could be named.")
     failed = True
 
-_on_disk ={d.name for d in (repo / "test" / "scenarios").iterdir() if d.is_dir()}
+_on_disk = {d.name for d in (repo / "test" / "scenarios").iterdir() if d.is_dir()}
 for _name in sorted(_matrix - _on_disk):
     print(f"FAIL: scenarios.yml runs {_name!r}, which is not a directory under "
           f"test/scenarios/. CI would fail trying to run it.")
