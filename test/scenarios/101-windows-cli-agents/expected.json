@@ -1,0 +1,40 @@
+{
+  "description": "Four CLI agents installed as npm globals on Windows, found by package name.",
+  "platform": "windows",
+  "counts": {
+    "ext": ">=0",
+    "file": ">=1",
+    "msix": ">=1",
+    "nmh": ">=1",
+    "npm": ">=4",
+    "proc": ">=0",
+    "scan": ">=1",
+    "uninstall": ">=1",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "claude-code",
+      "codex-cli",
+      "gemini-cli",
+      "copilot-cli"
+    ],
+    "forbid": [
+      "cursor",
+      "claude-desktop",
+      "cline",
+      "continue"
+    ]
+  },
+  "require_rows": [
+    {"kind": "npm", "id": "@anthropic-ai/claude-code", "loc": "\\AppData\\Roaming\\npm\\node_modules\\"},
+    {"kind": "npm", "id": "@openai/codex"},
+    {"kind": "npm", "id": "@google/gemini-cli"},
+    {"kind": "npm", "id": "@github/copilot"}
+  ],
+  "why": "npm_packages on Windows, under the npm prefix it searches. The rows carry the package names the catalog already holds for macOS and Linux, so this proves the Windows branch reads them in the form the npm route compares, with no path separator inside a scoped name. `forbid` names agents whose npm packages share a vendor or a word with these.",
+  "known_gaps": [
+    "A global prefix moved anywhere npm_packages does not search, as this runner's image does, is not read (docs/blind-spots.yaml).",
+    "Installed, never run: nothing here creates a CLI's state directory."
+  ]
+}

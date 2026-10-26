@@ -150,9 +150,10 @@ jobs:
         run: |
           gh release upload "$TAG" \
             osquery/dist/discovery-darwin.sql osquery/dist/discovery-linux.sql \
+            osquery/dist/discovery-windows.sql \
             osquery/dist/discovery-deep.sql osquery/dist/ai-detection-spec.conf \
             osquery/dist/signatures.sql osquery/dist/agents-darwin.sql osquery/dist/agents-linux.sql \
-            osquery/dist/fleet-policies.yml \
+            osquery/dist/agents-windows.sql osquery/dist/fleet-policies.yml \
             osquery/bin/discover osquery/bin/container-scan bin/classify \
             catalog/agents.yaml catalog/routes.yaml artifacts/catalog.json \
             schema/catalog.schema.json schema/evidence.schema.json \

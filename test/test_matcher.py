@@ -445,12 +445,15 @@ check("a Windows home root resolves on every path route",
       and _ids([{"kind": "proc", "id": p, "ver": "", "loc": p, "extra": "", "perms": ""}
                 for p in ("C:\\Users\\dana\\.local\\share\\claude\\versions\\2.1.292",)])
       == {"claude-code"})
-# `claude.exe` is not `~/.local/bin/claude`: the anchor that refuses claude-monitor refuses it
-# too, until a Windows install proves the value.
 for near in ("C:\\Users\\dana\\.claudefoo\\", "C:\\users\\dana\\.claude\\",
-             "C:\\Users\\dana\\.local\\bin\\hermes-acp", "/home/dana\\.claude",
-             "C:\\Users\\dana\\.local\\bin\\claude.exe"):
+             "C:\\Users\\dana\\.local\\bin\\hermes-acp", "/home/dana\\.claude"):
     check(f"a Windows near miss is NOT claimed ({near})", _ids(_rows(near)) == set())
+# `claude.exe` is not `~/.local/bin/claude`: the anchor that refuses claude-monitor refuses it
+# too, so the Windows installer's binary is a value of its own, and one that claims nothing
+# beside it.
+check("claude.exe is Claude Code by its own value, and claude.exe-helper is nothing",
+      _ids(_rows("C:\\Users\\dana\\.local\\bin\\claude.exe")) == {"claude-code"}
+      and _ids(_rows("C:\\Users\\dana\\.local\\bin\\claude.exe-helper")) == set())
 
 
 # --- the Linux package routes, and the lookalikes the base OS ships ----------------

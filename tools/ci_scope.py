@@ -115,7 +115,8 @@ NOT_ASSERTED = {
 }
 # Sourced by scenario setup scripts and by nothing else a job runs, which
 # test/test_ci_scope.py also proves. A change runs the scenarios that source it.
-SETUP_LIBS = ("test/lib/guest.sh", "test/lib/guest-linux.sh")
+SETUP_LIBS = ("test/lib/guest.sh", "test/lib/guest-linux.sh", "test/lib/guest-windows.ps1",
+              "test/lib/unpack_crx.py")
 
 # A job may run its platform's scenarios through one of these instead of a matrix: one
 # fresh container per scenario on one runner, so the org's concurrent-job cap stops
@@ -128,9 +129,11 @@ HARNESS = {"linux": "test/run-linux.sh"}
 
 # Rendered from the catalog by osquery/tools/render_match.py. `None` is every platform.
 RENDERED = {"osquery/dist/signatures.sql": None,
-            "osquery/dist/agents-darwin.sql": "darwin", "osquery/dist/agents-linux.sql": "linux"}
+            "osquery/dist/agents-darwin.sql": "darwin", "osquery/dist/agents-linux.sql": "linux",
+            "osquery/dist/agents-windows.sql": "windows"}
 # Which platform's jobs run a composed artifact.
-COMPOSED = {"osquery/dist/discovery-darwin.sql": "darwin", "osquery/dist/discovery-linux.sql": "linux"}
+COMPOSED = {"osquery/dist/discovery-darwin.sql": "darwin", "osquery/dist/discovery-linux.sql": "linux",
+            "osquery/dist/discovery-windows.sql": "windows"}
 # Read only by osquery/bin/discover, which only a `deep: true` scenario runs. It reads the pack only
 # under --write today; the deep scenarios are the bound, not that flag.
 DEEP_ONLY = {"osquery/dist/discovery-deep.sql", "osquery/dist/ai-detection-spec.conf"}
@@ -230,6 +233,24 @@ def harness_jobs(doc):
     return out
 
 
+def runner_platform(spec):
+    """The platform a matrix job's runner hosts, read off its `container:` or its runner
+    labels, or None when no label says. tools/check_workflows.py pairs each scenario with it
+    and tools/agent_status.py derives the platforms CI runs from it: two copies of this
+    mapping were how a new runner could pass one check and be invisible to the other."""
+    if spec.get("container"):
+        return "linux"
+    labels = (((spec.get("strategy") or {}).get("matrix") or {}).get("os") or [])
+    text = " ".join([str(spec.get("runs-on", ""))] + [str(x) for x in labels])
+    if "macos" in text:
+        return "darwin"
+    if "ubuntu" in text or "fedora" in text:
+        return "linux"
+    if "windows" in text:
+        return "windows"
+    return None
+
+
 def tree_scenarios(platform, root=ROOT):
     """Every scenario directory whose expected.json declares `platform`. One whose
     expected.json cannot be read is included: could-not-look must not read as
@@ -294,9 +315,21 @@ class Scope:
         return self.where(lambda i: platform is None or i["platform"] == platform)
 
     def sources(self, name, lib):
-        text = self.read("head", f"test/scenarios/{name}/setup.sh")
+        # setup.sh, or setup.ps1 on Windows; `#` comments in both. Neither readable is
+        # selected: could-not-look must not read as nothing-to-run.
+        text = (self.read("head", f"test/scenarios/{name}/setup.sh")
+                or self.read("head", f"test/scenarios/{name}/setup.ps1"))
         return text is None or any(lib in line for line in text.splitlines()
                                    if not line.lstrip().startswith("#"))
+
+    def platforms(self, name):
+        """The concrete platforms a `-- platform:` value names, through catalog/routes.yaml's
+        groups, or None for a word it does not declare. `posix` is not every scenario once a
+        third platform has some."""
+        reg = self.yaml.safe_load(self.read("head", "catalog/routes.yaml") or "") or {}
+        if name in (reg.get("platforms") or []):
+            return [name]
+        return (reg.get("platform_groups") or {}).get(name)
 
     # One rule per kind of path. Each returns (selection, why); EVERY is every scenario.
     def rule(self, path):
@@ -340,8 +373,9 @@ class Scope:
             text = self.read("head", path) or self.read("base", path) or ""
             plat = re.search(r"^-- platform:\s*(\w+)", text, re.M)
             plat = plat.group(1) if plat else None
-            if plat in ("darwin", "linux"):
-                return self.on(plat), f"a {plat} query"
+            plats = self.platforms(plat) if plat else None
+            if plats:
+                return frozenset().union(*(self.on(p) for p in plats)), f"a {plat} query"
             return EVERY, f"a query whose platform is {plat or 'unreadable'}"
         return EVERY, "not a path this file can scope"
 

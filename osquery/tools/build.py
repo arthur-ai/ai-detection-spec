@@ -21,6 +21,7 @@ No dependencies. Run: python3 osquery/tools/build.py [--check]
 """
 import json
 import pathlib
+import platform
 import re
 import sys
 
@@ -144,6 +145,19 @@ def platform_vocabulary():
 
 
 PLATFORMS, PLATFORM_GROUPS = platform_vocabulary()
+
+# This machine, in that vocabulary, for the tools that RUN queries here: tools/check_pack.py,
+# tools/measure.py and test/test_match_sql.py. Each kept its own Darwin/Linux map, which is
+# how a third platform would have been "unsupported" in three places at once.
+HOST_PLATFORM = {"Darwin": "darwin", "Linux": "linux",
+                 "Windows": "windows"}.get(platform.system())
+
+
+def runs_on(declared, plat):
+    """Whether a query declaring `-- platform: <declared>` runs on `plat`. A group is each of
+    its members, read from catalog/routes.yaml: the literal `posix` these tools once tested
+    for would have run every POSIX query on Windows."""
+    return plat in PLATFORM_GROUPS.get(declared, [declared])
 
 
 def frontmatter(text, path):

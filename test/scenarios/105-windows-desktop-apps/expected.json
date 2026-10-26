@@ -1,0 +1,41 @@
+{
+  "description": "Claude Desktop by its MSIX family name, Cursor and Windsurf by their Uninstall keys, Cursor running and Claude's browser bridge registered.",
+  "platform": "windows",
+  "counts": {
+    "ext": ">=0",
+    "file": ">=1",
+    "msix": ">=2",
+    "nmh": ">=2",
+    "npm": ">=0",
+    "proc": ">=1",
+    "scan": ">=1",
+    "uninstall": ">=3",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "claude-desktop",
+      "cursor",
+      "windsurf"
+    ],
+    "forbid": [
+      "claude-code",
+      "claude-in-chrome",
+      "cline",
+      "continue"
+    ]
+  },
+  "require_rows": [
+    {"kind": "msix", "id": "Claude_", "extra": "Anthropic"},
+    {"kind": "uninstall", "id": "_is1", "extra": "Cursor"},
+    {"kind": "uninstall", "id": "_is1", "extra": "Devin"},
+    {"kind": "nmh", "id": "com.anthropic.claude_browser_extension.json"},
+    {"kind": "proc", "id": "\\AppData\\Local\\Programs\\cursor\\"}
+  ],
+  "why": "The two Windows-only routes against real installs, beside a portable one. Claude Desktop's identity is its package family name, not its display name; Cursor's and Windsurf's are the Uninstall keys their installers choose, and the DisplayName in `extra` is what tells a reader which is which. The bridge is the value macOS already carries, reached here through the registry. `forbid` keeps Claude Desktop's rows from being read as Claude Code or the Claude extension, and the editors' rows from being read as an editor extension.",
+  "known_gaps": [
+    "Each per-user install is read while its user is signed in: HKEY_USERS holds loaded hives only, so the same install by a user who is signed out leaves no Uninstall or MSIX row (docs/blind-spots.yaml).",
+    "Windsurf is not launched, so its liveness is unproven.",
+    "Sign-in gated, as on macOS: nothing exercises behaviour that appears once a user signs in."
+  ]
+}

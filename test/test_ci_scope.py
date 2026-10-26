@@ -212,6 +212,7 @@ _PLAT = {n: json.loads((ROOT / "test" / "scenarios" / n / "expected.json").read_
          .get("platform") for n in _LISTED}
 DARWIN = {n for n, p in _PLAT.items() if p == "darwin"}
 LINUX = {n for n, p in _PLAT.items() if p == "linux"}
+WINDOWS = {n for n, p in _PLAT.items() if p == "windows"}
 
 
 def _replaced(text, old, new):
@@ -386,6 +387,8 @@ check("the rendered files add nothing beside a catalog edit",
 check("but without one, osquery/dist/signatures.sql runs every scenario",
       scenarios(["osquery/dist/signatures.sql"]) == _LISTED)
 check("and osquery/dist/agents-linux.sql runs the Linux ones", scenarios(["osquery/dist/agents-linux.sql"]) == LINUX)
+check("and osquery/dist/agents-windows.sql the Windows ones",
+      bool(WINDOWS) and scenarios(["osquery/dist/agents-windows.sql"]) == WINDOWS)
 
 print()
 print("which scenarios -- by platform")
@@ -393,6 +396,8 @@ check("osquery/dist/discovery-darwin.sql runs exactly the macOS scenarios",
       scenarios(["osquery/dist/discovery-darwin.sql"]) == DARWIN)
 check("osquery/dist/discovery-linux.sql runs exactly the Linux scenarios",
       scenarios(["osquery/dist/discovery-linux.sql"]) == LINUX)
+check("osquery/dist/discovery-windows.sql runs exactly the Windows scenarios",
+      scenarios(["osquery/dist/discovery-windows.sql"]) == WINDOWS)
 DEEP = {n for n in _LISTED if _expected(n).get("deep")}
 check("the deep artifact runs the deep scenarios, the only ones that run osquery/bin/discover",
       bool(DEEP) and scenarios(["osquery/dist/discovery-deep.sql"]) == DEEP, str(sorted(DEEP)))
@@ -411,16 +416,25 @@ check("an unreadable setup.sh is run by a setup-library rule",
           "test/scenarios/00-baseline/setup.sh": None}))
 _q = {re.search(r"^-- platform:\s*(\w+)", p.read_text(), re.M).group(1): p
       for p in sorted((ROOT / "osquery" / "queries").glob("*.sql"))}
-for _p, _want in (("linux", LINUX), ("darwin", DARWIN), ("posix", _LISTED)):
+# A `posix` query is macOS and Linux, read through catalog/routes.yaml's groups: once Windows
+# has scenarios it is not every scenario, and running Windows ones for it buys nothing.
+for _p, _want in (("linux", LINUX), ("darwin", DARWIN), ("windows", WINDOWS),
+                  ("posix", DARWIN | LINUX)):
     _path = str(_q[_p].relative_to(ROOT))
-    check(f"a {_p} query ({_path}) runs {'every scenario' if _p == 'posix' else _p}",
-          scenarios([_path]) == _want)
+    check(f"a {_p} query ({_path}) runs the {_p} scenarios", scenarios([_path]) == _want,
+          str(sorted(scenarios([_path]) ^ _want)))
 _gl = scenarios(["test/lib/guest-linux.sh"])
 check("guest-linux.sh runs Linux scenarios that source it, and no macOS one",
       bool(_gl) and _gl <= LINUX, str(sorted(_gl)))
 _gm = scenarios(["test/lib/guest.sh"])
 check("guest.sh runs macOS scenarios that source it, and no Linux one",
       bool(_gm) and _gm <= DARWIN, str(sorted(_gm)))
+_gw = scenarios(["test/lib/guest-windows.ps1"])
+check("guest-windows.ps1 runs Windows scenarios that source it, and no other",
+      bool(_gw) and _gw <= WINDOWS, str(sorted(_gw)))
+check("an unreadable setup.ps1 is run by a setup-library rule",
+      "101-windows-cli-agents" in scenarios(["test/lib/guest-windows.ps1"], head={
+          "test/scenarios/101-windows-cli-agents/setup.ps1": None}))
 
 print()
 print("the harness job, which lists no scenarios and runs its platform's whole tree")

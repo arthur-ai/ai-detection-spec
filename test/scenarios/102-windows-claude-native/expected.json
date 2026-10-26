@@ -1,0 +1,34 @@
+{
+  "description": "Claude Code from its native Windows installer: its binary on disk, and the same binary running.",
+  "platform": "windows",
+  "counts": {
+    "ext": ">=0",
+    "file": ">=1",
+    "msix": ">=1",
+    "nmh": ">=1",
+    "npm": ">=0",
+    "proc": ">=1",
+    "scan": ">=1",
+    "uninstall": ">=1",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "claude-code"
+    ],
+    "forbid": [
+      "claude-desktop",
+      "cursor",
+      "codex-cli"
+    ]
+  },
+  "require_rows": [
+    {"kind": "file", "id": "\\.local\\bin\\claude.exe"},
+    {"kind": "proc", "id": "\\.local\\bin\\claude.exe"}
+  ],
+  "why": "The Windows home root (SPEC.md 6.4.7) against real rows: the file and the process both come back as C:\\Users\\<user>\\.local\\bin\\claude.exe, and `~/.local/bin/claude` cannot match an `.exe` -- home-prefix refuses a name that only starts with a value, which is what keeps claude-monitor from reading as Claude Code -- so each is a value of its own. The proc row is what marks the finding running. `forbid` keeps Claude Desktop, a different product from the same vendor, from being claimed by Claude Code's rows.",
+  "known_gaps": [
+    "The installer may also create ~\\.claude, which names the agent too, so must_find alone would pass with either new value wrong. require_rows pins both rows, and the coverage gate holds each value to a row it matched.",
+    "A launch through an 8.3 short path keeps the short name in processes.path, which no value matches. Nothing here launches one."
+  ]
+}

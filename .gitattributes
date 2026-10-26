@@ -1,0 +1,4 @@
+# LF in every checkout, whatever core.autocrlf says. GitHub's windows-2025 image sets it true
+# system-wide (survey run 40393754308), and a CRLF checkout breaks every shell script with
+# `$'\r': command not found`, and the bash assertions the Windows jobs run with it.
+* text=auto eol=lf

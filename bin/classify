@@ -525,10 +525,11 @@ def provenance(row):
 #   INSTALL_KINDS  read from an install record -- a package database, a bundle, a manifest
 #   PATH_KINDS     `loc` is where the agent is installed. Not `proc`, whose `loc` may be the
 #                  interpreter running it, nor `image`, `container` or `ilabel`, whose `loc`
-#                  is an id
-INSTALL_KINDS = frozenset({"app", "brew", "deb", "ext", "jbplugin", "npm", "rpm", "vscodeext"})
-PATH_KINDS = frozenset({"app", "brew", "daemon", "desktop", "ext", "file", "jbplugin", "nmh",
-                        "npm", "port", "unit", "vscodeext"})
+#                  is an id, nor `uninstall`, whose `loc` is a registry key
+INSTALL_KINDS = frozenset({"app", "brew", "deb", "ext", "jbplugin", "msix", "npm", "rpm",
+                           "uninstall", "vscodeext"})
+PATH_KINDS = frozenset({"app", "brew", "daemon", "desktop", "ext", "file", "jbplugin", "msix",
+                        "nmh", "npm", "port", "unit", "vscodeext"})
 
 
 def kind_rank(routes):
@@ -880,8 +881,8 @@ def _payload_platform(kinds, kind_platforms):
 
     Those are different machines and routinely different systems: an analyst on a Mac
     reads a Linux fleet's rows. Only a kind exclusive to one platform is evidence; `file`
-    and `npm` are posix and say nothing. A payload merged from both is a real and
-    supported state, so it gets its own word rather than being forced into one.
+    and `npm` come from every platform and say nothing. A payload merged from several is a
+    real and supported state, so it gets its own word rather than being forced into one.
     """
     seen = {p for k in kinds for p in kind_platforms.get(k, ())
             if len(kind_platforms.get(k, ())) == 1}

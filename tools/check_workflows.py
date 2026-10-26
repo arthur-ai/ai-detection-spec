@@ -28,7 +28,8 @@ except ImportError:
     sys.exit(0)
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from ci_scope import HARNESS, HARNESS_ENV, harness_jobs, job_scenarios, output_key  # noqa: E402
+from ci_scope import (HARNESS, HARNESS_ENV, harness_jobs, job_scenarios, output_key,  # noqa: E402
+                      runner_platform)
 
 # EVERY JOB DECLARES A BOUND, AND NO BOUND IS NEAR THE DEFAULT. GitHub's is 360 minutes,
 # and an unbounded job that hangs does not fail -- it bills until the limit. 50-autonomous
@@ -186,22 +187,7 @@ if ("scenarios" in _inputs) != ("--only" in _scope_run):
           "everything, or nothing could be named.")
     failed = True
 
-# WHICH PLATFORM EACH JOB CAN ACTUALLY RUN, read off the job rather than assumed. A
-# scenario listed under a job whose runner cannot host it is the failure a flat set check
-# cannot see: the name is present, the suite looks complete, and every run of it skips.
-def _job_platform(spec):
-    if spec.get("container"):
-        return "linux"
-    runs = str(spec.get("runs-on", ""))
-    labels = (((spec.get("strategy") or {}).get("matrix") or {}).get("os") or [])
-    text = " ".join([runs] + [str(x) for x in labels])
-    if "macos" in text:
-        return "darwin"
-    if "ubuntu" in text or "fedora" in text:
-        return "linux"
-    return None
-
-_on_disk = {d.name for d in (repo / "test" / "scenarios").iterdir() if d.is_dir()}
+_on_disk ={d.name for d in (repo / "test" / "scenarios").iterdir() if d.is_dir()}
 for _name in sorted(_matrix - _on_disk):
     print(f"FAIL: scenarios.yml runs {_name!r}, which is not a directory under "
           f"test/scenarios/. CI would fail trying to run it.")
@@ -213,9 +199,11 @@ for _name in sorted(_on_disk - _matrix - set(EXCLUDED)):
     failed = True
 
 # The pairing, in the direction that matters: a scenario's declared platform must match
-# the platform of every job that lists it.
+# the platform of every job that lists it, read off the job's runner rather than assumed. A
+# scenario under a job whose runner cannot host it is the failure a flat set check cannot
+# see: the name is present, the suite looks complete, and every run of it skips.
 for _job, _names in sorted(_jobs.items()):
-    _plat = _job_platform(_doc["jobs"][_job])
+    _plat = runner_platform(_doc["jobs"][_job])
     if _plat is None:
         print(f"FAIL: scenarios.yml job {_job!r} has a scenario matrix but no runner this "
               f"check can read a platform from. Add the label or the container image.")
@@ -429,13 +417,16 @@ if _rel.exists():
 # simply runs on every README edit forever, and the only symptom is a bill. That is the
 # same shape as a `kind` missing from KIND_ROUTES -- invisible, and green.
 #
-# EXPENSIVE IS DERIVED, NOT LISTED: a job is expensive if it runs on macOS, or if one of
-# its steps installs osquery. Both are read off the job, so a job cannot escape by being
+# EXPENSIVE IS DERIVED, NOT LISTED: a job is expensive if it runs on macOS or Windows, or if
+# one of its steps installs osquery. All are read off the job, so a job cannot escape by being
 # named something this file has not heard of.
 def _expensive(spec):
     labels = (((spec.get("strategy") or {}).get("matrix") or {}).get("os") or [])
-    if "macos" in " ".join([str(spec.get("runs-on", ""))] + [str(x) for x in labels]):
+    runner = " ".join([str(spec.get("runs-on", ""))] + [str(x) for x in labels])
+    if "macos" in runner:
         return "it runs on macOS, which bills at ten times the Linux rate"
+    if "windows" in runner:
+        return "it runs on Windows, which bills at twice the Linux rate"
     if any("pkg.osquery.io" in (s.get("run", "") or "") for s in spec.get("steps", [])):
         return "it installs osquery, so it needs a runner rather than a static check"
     if isinstance(spec.get("env"), dict) and spec["env"].get(HARNESS_ENV):

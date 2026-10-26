@@ -1,0 +1,40 @@
+{
+  "description": "Six agents installed as VS Code extensions on Windows, found by extension id.",
+  "platform": "windows",
+  "counts": {
+    "ext": ">=0",
+    "file": ">=1",
+    "msix": ">=1",
+    "nmh": ">=1",
+    "npm": ">=0",
+    "proc": ">=0",
+    "scan": ">=1",
+    "uninstall": ">=1",
+    "vscodeext": ">=6"
+  },
+  "classified": {
+    "must_find": [
+      "cline",
+      "continue",
+      "roo-code",
+      "kilo-code",
+      "claude-code",
+      "codex-cli"
+    ],
+    "forbid": [
+      "cursor",
+      "windsurf",
+      "claude-desktop"
+    ]
+  },
+  "require_rows": [
+    {"kind": "vscodeext", "id": "saoudrizwan.claude-dev", "extra": "vscode"},
+    {"kind": "vscodeext", "id": "rooveterinaryinc.roo-cline"},
+    {"kind": "vscodeext", "id": "anthropic.claude-code"},
+    {"kind": "vscodeext", "id": "openai.chatgpt"}
+  ],
+  "why": "vscode_extensions through the Windows uid list. Every value is the extension's own id, so a VS Code fork's rows would carry the same ids under another `extra`: `forbid` names the forks and desktop apps whose installs are not here. Each extension is the only witness for its agent: no agent's CLI is installed here.",
+  "known_gaps": [
+    "VS Code itself, from its user installer. Cursor and Windsurf read the same extension directories under their own names and are not exercised here."
+  ]
+}

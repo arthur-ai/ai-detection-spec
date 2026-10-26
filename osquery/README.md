@@ -78,9 +78,9 @@ same evidence.
 
 ## What a release attaches
 
-**Eighteen assets**: `discovery-darwin.sql`, `discovery-linux.sql`, `discovery-deep.sql`,
-`ai-detection-spec.conf`, `signatures.sql`, `agents-darwin.sql`, `agents-linux.sql`,
-`fleet-policies.yml`, `discover`, `container-scan`, `classify`, `agents.yaml`, `routes.yaml`,
+**20 assets**: `discovery-darwin.sql`, `discovery-linux.sql`, `discovery-windows.sql`,
+`discovery-deep.sql`, `ai-detection-spec.conf`, `signatures.sql`, `agents-darwin.sql`,
+`agents-linux.sql`, `agents-windows.sql`, `fleet-policies.yml`, `discover`, `container-scan`, `classify`, `agents.yaml`, `routes.yaml`,
 `catalog.json`, `catalog.schema.json`, `evidence.schema.json`, `ai-detection-spec-darwin.sh`,
 `ai-detection-spec-linux.sh`.
 
@@ -158,16 +158,28 @@ own pipeline, store the JSON and run `bin/classify` over it.
 [docs/deployment.md](docs/deployment.md) has the schedule, the status line, the one-file
 bundle and what a deployment supplies.
 
+**On Windows there is no `bin/discover`**, which is bash. Schedule the pack in osqueryd, load
+`fleet-policies.yml` into Fleet, or run the composed query yourself. From `cmd`, because
+Windows PowerShell 5.1's `>` writes UTF-16:
+
+```console
+> "C:\Program Files\osquery\osqueryi.exe" --json < discovery-windows.sql > inventory.json
+```
+
+The inventory carries a `containers` marker, since osquery reads no container on Windows; it
+says `unreadable:docker` where an engine is on disk.
+
 ## Scope, so you know what you are getting
 
-**macOS and Linux ship. Windows has no code and no date.** CI installs the real software on
-macOS runners, on Ubuntu runners (x86_64 and arm64), and in Debian, Rocky, Fedora and Amazon
-Linux containers.
+**macOS, Linux and Windows ship.** CI installs the real software on macOS runners, on Ubuntu
+runners (x86_64 and arm64), in Debian, Rocky, Fedora and Amazon Linux containers, and on
+Windows Server 2025 runners. Windows has the queries and the rendered match, not the endpoint
+scripts; a native PowerShell binding, for fleets that run no osquery, is not built.
 
 Each route's platform, and the osquery table and version floor behind it
 ([SPEC.md §8.1](../SPEC.md#81-osquery)), are declared in
-[`catalog/routes.yaml`](../catalog/routes.yaml). macOS and Linux read different tables, so the
-composed query is per platform, and no file runs on both.
+[`catalog/routes.yaml`](../catalog/routes.yaml). Each platform reads its own tables, so the
+composed query is per platform, and no file runs on two.
 
 ## Requirements
 
@@ -175,7 +187,8 @@ composed query is per platform, and no file runs on both.
 |---|---|
 | macOS | Apple Silicon or Intel. No lower bound has been established |
 | Linux | Any distro with dpkg or rpm. One artifact serves both: each package table returns no rows on the other family and exits 0 |
-| osquery | **5.10.0** for `osquery/bin/discover --write`, which runs each query separately and reports any that fail. **5.18.0** to run the whole inventory as one query, for the JetBrains table |
+| Windows | osquery's x64 MSI, run as an administrator or SYSTEM. CI runs Windows Server 2025; no lower bound has been established, and osquery's arm64 build is untested |
+| osquery | **5.10.0** for `osquery/bin/discover --write`, which runs each query separately and reports any that fail. **5.18.0** to run the whole inventory as one query, for the JetBrains table. **5.17.0** on Windows, for MSIX packages |
 | `bash` | 3.2, the macOS system `bash` |
 | `python3` 3.7 and PyYAML | Off the machine only: `bin/classify`, `tools/` and `osquery/tools/render_match.py`. `bin/classify` also needs `jsonschema` to read `catalog.json` |
 

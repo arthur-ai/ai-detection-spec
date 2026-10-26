@@ -7,11 +7,11 @@ identifier was proved by installing the real software.**
 
 [![CI](https://github.com/arthur-ai/ai-detection-spec/actions/workflows/ci.yml/badge.svg)](https://github.com/arthur-ai/ai-detection-spec/actions/workflows/ci.yml)
 [![Scenarios](https://github.com/arthur-ai/ai-detection-spec/actions/workflows/scenarios.yml/badge.svg)](https://github.com/arthur-ai/ai-detection-spec/actions/workflows/scenarios.yml)
-[![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-113%2F113-2E7D57)](docs/agents.md)
+[![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-113%2F119-A26A16)](docs/agents.md)
 [![osquery](https://img.shields.io/badge/osquery-5.23.1-1D4E89)](https://osquery.io)
 [![macOS](https://img.shields.io/badge/macOS-shipping-2E7D57)](osquery/README.md#requirements)
 [![Linux](https://img.shields.io/badge/Linux-shipping-2E7D57)](osquery/README.md#requirements)
-[![Windows](https://img.shields.io/badge/Windows-not_yet-6B7480)](osquery/README.md#scope-so-you-know-what-you-are-getting)
+[![Windows](https://img.shields.io/badge/Windows-shipping-2E7D57)](osquery/README.md#requirements)
 [![License](https://img.shields.io/badge/license-Apache--2.0-6B7480)](LICENSE)
 
 **[What we detect, and what tests it →](docs/agents.md)**
@@ -32,9 +32,9 @@ specification, so that any tool can use them.
 | [**`SPEC.md`**](SPEC.md) | **The specification.** What a catalog of agents contains, what evidence a binding reports, and how the two are matched, so that tools written by different people give the same answer about the same machine |
 | [`schema/`](schema) | JSON Schemas for a catalog and for the evidence a binding reports |
 | [`conformance/`](conformance) | The test vectors a matcher must pass |
-| [`catalog/`](catalog) | This repository's catalog: **42 agents and 113 identifiers**, each one seen on a real install in CI |
+| [`catalog/`](catalog) | This repository's catalog: **42 agents and 119 identifiers**, each one seen on a real install in CI |
 | [`bin/classify`](bin/classify) | The reference matcher. It reads collected evidence and names the agents it proves |
-| [`osquery/`](osquery) | **The first binding:** osquery queries for macOS and Linux, and the scripts that run them on a machine. [Start here](osquery/README.md) to find the agents on yours |
+| [`osquery/`](osquery) | **The first binding:** osquery queries for macOS, Linux and Windows, and the scripts that run them on a Mac or a Linux machine. [Start here](osquery/README.md) to find the agents on yours |
 
 ## What the spec guarantees
 
