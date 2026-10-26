@@ -39,18 +39,28 @@ for label, g in (("ids", lambda e: {e["id"]}), ("keys", set),
                  ("classes", lambda e: {e.get("classification")})):
     print(f"{label:10}", sorted(set(f(o,g)) - set(f(n,g))), "gone")
 EOF
-$ art() { { git show "$1:osquery/dist/discovery-$2.sql" 2>/dev/null \
-              || git show "$1:dist/discovery-$2.sql"; } | python3 -c 'import sys
-sys.path.insert(0, "osquery/tools"); from build import flatten
-print(flatten(sys.stdin.read()).replace(" UNION ALL ", "\nUNION ALL "))'; }
+$ art() {  # discovery-$2.sql at $1, comments stripped, one UNION ALL branch per line
+    local sql
+    sql=$(git show "$1:osquery/dist/discovery-$2.sql" 2>/dev/null \
+          || git show "$1:dist/discovery-$2.sql") || return 1
+    python3 -c 'import importlib.util as u, sys
+s = u.spec_from_file_location("osquery_build", sys.argv[1]); b = u.module_from_spec(s)
+s.loader.exec_module(b)
+flat = b.flatten(sys.argv[2]) or sys.exit("art: nothing left after flatten")
+print(flat.replace(" UNION ALL ", "\nUNION ALL "))' \
+      "$(git rev-parse --show-toplevel)/osquery/tools/build.py" "$sql"; }
+$ kinds() { printf '%s\n' "$1" | grep -oE "SELECT '[a-z]+'" | sort -u; }
 $ for p in darwin linux deep; do
-    diff <(art <prev-tag> $p | grep -oE "SELECT '[a-z]+'" | sort -u) \
-         <(art HEAD $p | grep -oE "SELECT '[a-z]+'" | sort -u) && echo "$p: same kinds"
-    diff <(art <prev-tag> $p) <(art HEAD $p) && echo "$p: same SQL, comments aside"
+    o=$(art <prev-tag> $p) && n=$(art HEAD $p) && [ -n "$(kinds "$o")" ] && [ -n "$(kinds "$n")" ] \
+      || { echo "$p: NOT COMPARED, see the error above"; continue; }
+    diff <(kinds "$o") <(kinds "$n") && echo "$p: same kinds"
+    diff <(printf '%s\n' "$o") <(printf '%s\n' "$n") && echo "$p: same SQL, comments aside"
   done
 $ envs() { git grep -hoE '\$\{[A-Z][A-Z0-9_]*:?[-+=?]|(environ\.get\(|environ\[|getenv\(|_env_off\()"[A-Z][A-Z0-9_]*"' \
-             "$1" -- bin osquery/bin | grep -oE '[A-Z][A-Z0-9_]*' | sort -u; }
-$ diff <(envs <prev-tag>) <(envs HEAD)    # environment variables the shipped scripts read
+             "$1" -- :/bin :/osquery/bin | grep -oE '[A-Z][A-Z0-9_]*' | sort -u; }
+$ if o=$(envs <prev-tag>) && n=$(envs HEAD) && [ -n "$o" ] && [ -n "$n" ]; then
+    diff <(printf '%s\n' "$o") <(printf '%s\n' "$n") && echo "same environment variables"
+  else echo "envs: NOT COMPARED, see the error above"; fi
 ```
 
 **Diff all three artifacts**: two are per platform and name disjoint tables, and `deep` alone
@@ -59,6 +69,12 @@ carries the container kinds, so diffing one hides the others. `art` strips comme
 a change, and prints one line per `UNION ALL` branch. **Read every branch the SQL diff
 prints**: a column can change meaning with every kind and key intact, as when a token moved
 from `perms` to `extra`, and that is the six-column contract breaking.
+
+**Each side is read before it is compared.** A read that fails inside `<( )` leaves both sides
+empty and `diff` says *same*: run from `osquery/`, the old `art` imported another package
+called `build` and reported every artifact unchanged. So a failed read, an empty side or no
+kinds prints `NOT COMPARED`, `flatten` is loaded by path, and every path resolves from the
+repository root.
 
 `envs` is complete because both scripts run under `set -u`: an environment read must be a
 guarded expansion, and it takes every guard form. `SUDO_USER` is read only as `:+`, which a
@@ -73,7 +89,7 @@ other's catalog. Diff the keys for the rest.
 document's `format`), which moves only when the normative text does:
 
 ```console
-$ git diff --stat <prev-tag>..HEAD -- SPEC.md schema/ conformance/
+$ git diff --stat <prev-tag>..HEAD -- :/SPEC.md :/schema :/conformance
 ```
 
 A change there that alters an existing result, or removes or renames a member, is a breaking
