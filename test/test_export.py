@@ -23,6 +23,7 @@ import datetime
 import json
 import os
 import pathlib
+import re
 import subprocess
 import sys
 
@@ -98,13 +99,20 @@ def main():
     check("an identifier carries a purl exactly when its route declares one, of that type",
           not wrong, str(wrong[:3]))
     # A chrome-extension purl is a Chrome Web Store coordinate. A store that re-signs, such
-    # as Edge Add-ons, issues another id for the same extension, so each value must be one a
-    # scenario downloads from the Web Store's own update endpoint.
-    setups = [p.read_text() for p in sorted((ROOT / "test" / "scenarios").glob("*/setup.sh"))]
-    cws = "clients2.google.com/service/update2/crx"
+    # as Edge Add-ons, issues another id for the same extension, so each value must come from
+    # a scenario that downloads from the Web Store's update endpoint AND from nowhere else: a
+    # script that also fetches a CRX from another host could be where any of its ids came
+    # from. Not per command, because a setup builds its URL from an id in a loop.
+    def web_store_only(text):
+        hosts = set(re.findall(r"https?://([^/\s\"'$]+)/[^\s\"']*crx", text))
+        return hosts == {"clients2.google.com"} and "/service/update2/crx" in text
+
+    setups = [s for s in (p.read_text() for p in
+                          sorted((ROOT / "test" / "scenarios").glob("*/setup.sh")))
+              if web_store_only(s)]
     not_cws = [i["value"] for a in doc["agents"] for i in a["identifiers"]
                if routes_yaml[i["route"]].get("purl") == "chrome-extension"
-               and not any(cws in s and i["value"] in s for s in setups)]
+               and not any(i["value"] in s for s in setups)]
     check("every chrome-extension value is downloaded from the Chrome Web Store by a scenario",
           not not_cws, str(not_cws[:3]))
     pending, _ = export.agent_status._pending(export.agent_status.collect(), ["--pending-ok"])
