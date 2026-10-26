@@ -88,8 +88,8 @@ docker images --format '  {{.Repository}}:{{.Tag}} {{.ID}} {{.Size}}' \
 
 # --- A RUNNING CONTAINER, which is a different row and a different claim ---------------
 #
-# docker_containers lists RUNNING containers only -- measured 2026-09-11 on Docker 28.4.0,
-# where two exited containers produced zero rows. So an image pull alone can never exercise
+# The container route sees running containers only (osquery/queries/containers.sql says
+# why). So an image pull alone can never exercise
 # the `container_images` route, and without this the whole branch would be dead code that
 # lint could not see.
 #

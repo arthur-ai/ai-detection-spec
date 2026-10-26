@@ -27,10 +27,11 @@ SELECT 'image' AS kind, tags AS id, '' AS ver, id AS loc,
 
 UNION ALL
 
--- RUNNING CONTAINERS: the one route that says something is executing. osquery reads
--- /containers/json without all=1, which also lists paused and restarting containers, so
--- the state is filtered here and the `running` claim is exact. Any other agent container is
--- still found by its image. No version is recorded, so `ver` is empty (SPEC.md 5.1). `id`
+-- RUNNING CONTAINERS: the one route that says something is executing. osquery sends Docker
+-- all=1 only under an `id =` constraint, so this read gets Docker's default list: no exited
+-- container (measured 2026-10-26, Docker 28.4.0, osquery 5.23.1), but paused and restarting
+-- ones, which Docker counts as running. The state is filtered here so the `running` claim
+-- is exact. Any other agent container is still found by its image. No version is recorded, so `ver` is empty (SPEC.md 5.1). `id`
 -- is the full tag, normalised like an image's, so the container_images route reads
 -- `images:` values.
 --

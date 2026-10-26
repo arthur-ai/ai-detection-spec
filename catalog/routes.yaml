@@ -180,10 +180,10 @@ routes:
     # can answer about anything: every other one reports presence. A pulled-and-forgotten
     # image and a live agent are different findings and were previously the same row.
     #
-    # Measured 2026-09-11, Docker 28.4.0 / osquery 5.23.1: docker_containers lists RUNNING
-    # containers only -- two exited containers on the probe host produced ZERO rows. So
-    # this route never supersedes `images`, it corroborates it, and an agent that is
-    # installed but stopped is still seen by `images` alone.
+    # docker_containers lists no exited container unless the query constrains `id`, the
+    # only case in which osquery sends Docker all=1 (measured 2026-10-26, Docker 28.4.0 /
+    # osquery 5.23.1). So this route never supersedes `images`, it corroborates it, and an
+    # agent that is installed but stopped is still seen by `images` alone.
     #
     # `image` on this table carries the full tag ("paulgauthier/aider:latest"), verified on
     # that same host, so image_repo() normalises it exactly as it does a docker_images tag

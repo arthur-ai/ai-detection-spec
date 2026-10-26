@@ -1,6 +1,6 @@
 # ai-detection-spec
 
-Version 0.1.0. Draft. Published at https://github.com/arthur-ai/ai-detection-spec under the
+Version 0.1.1. Draft. Published at https://github.com/arthur-ai/ai-detection-spec under the
 Apache License 2.0.
 
 ai-detection-spec is an open specification for telling whether an AI agent is installed or
@@ -305,6 +305,10 @@ For each agent with at least one matched row, a matcher reports a finding with:
   `only_superseded: true` when every evidence row was. Both appear only when at least one row
   was matched by a superseded identifier.
 
+A finding says the agent is installed: evidence of it is on the machine, whether or not it has
+run. `running: true` says it is also running. A finding without it does not say the agent is
+stopped, because a binding may collect no `live` route.
+
 Findings are reported in order of agent `id`. A superseded identifier still produces a finding:
 a matcher MUST NOT withhold or downgrade it (§7.1). A matcher MAY add members.
 
@@ -414,7 +418,7 @@ Every match mode has at least one row that must match and one that must not.
 
 ## 10. Versioning
 
-The `format` member carries the major and minor version. This document is version 0.1.0.
+The `format` member carries the major and minor version. This document is version 0.1.1.
 
 - A change that alters what a conforming matcher reports for an existing catalog and rows, or
   that removes or renames a member, increases the major version.
