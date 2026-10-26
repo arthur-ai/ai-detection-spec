@@ -9,6 +9,8 @@ two.
 
 scan_outcome_ok() is the format's outcome vocabulary, read from the evidence schema. CI's
 vocabulary checks and the osquery lint call it, so no copy of how to read the schema exists.
+schema_errors() is the one validation of a document against a schema, for the export's test
+and for the file release.yml attaches.
 """
 import json
 import os
@@ -40,6 +42,15 @@ def scan_outcomes():
 def scan_outcome_ok(value):
     words, patterns = scan_outcomes()
     return value in words or any(re.fullmatch(p, value) for p in patterns)
+
+
+def schema_errors(doc, name):
+    """Where `doc` fails schema/<name>.schema.json, as `path: message`. Needs jsonschema, a
+    test-only dependency, so it is imported here rather than at the top."""
+    import jsonschema
+    schema = json.loads((ROOT / "schema" / f"{name}.schema.json").read_text())
+    return [f"{e.json_path}: {e.message}"
+            for e in jsonschema.Draft202012Validator(schema).iter_errors(doc)]
 
 
 def authoring_form(doc, catalog_version):

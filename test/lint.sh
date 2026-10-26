@@ -96,7 +96,8 @@ python3 - "$HERE/.." <<'BOUNDARY' || fail=1
 import ast, pathlib, sys
 root = pathlib.Path(sys.argv[1])
 NEUTRAL = ["bin/classify", "tools/validate_catalog.py", "tools/agent_status.py",
-           "tools/merge_observations.py", "tools/successor_candidates.py"]
+           "tools/merge_observations.py", "tools/successor_candidates.py", "tools/export.py",
+           "tools/observations.py"]
 bad = []
 for name in NEUTRAL:
     tree = ast.parse((root / name).read_text())
@@ -127,15 +128,20 @@ python3 "$HERE/../tools/validate_catalog.py" || fail=1
 python3 "$HERE/../test/test_matcher.py" >/dev/null || { echo "FAIL: matcher tests"; fail=1; }
 python3 "$HERE/../test/test_telemetry.py" >/dev/null || { echo "FAIL: telemetry tests"; fail=1; }
 python3 "$HERE/../test/test_ci_scope.py" >/dev/null || { echo "FAIL: ci scope tests"; fail=1; }
-# The format's vectors and schemas. SKIPs without jsonschema, and the SKIP is printed: discarded,
-# it read as a pass. CI requires jsonschema.
-if _out=$(python3 "$HERE/../test/test_conformance.py" 2>&1); then
-  printf '%s\n' "$_out" | grep '^SKIP' || true
-else
-  echo "FAIL: conformance"
-  { printf '%s\n' "$_out" | grep -E '^ *FAIL' || printf '%s\n' "$_out" | tail -5; } | sed 's/^/      /' || true
-  fail=1
-fi
+# The format's vectors and schemas, and the export. Each SKIPs without jsonschema, and the SKIP
+# is printed: discarded, it read as a pass. CI requires jsonschema.
+schema_test() {  # schema_test <label> <script>
+  local out
+  if out=$(python3 "$2" 2>&1); then
+    printf '%s\n' "$out" | grep -E '^ *SKIP' || true
+  else
+    echo "FAIL: $1"
+    { printf '%s\n' "$out" | grep -E '^ *FAIL' || printf '%s\n' "$out" | tail -5; } | sed 's/^/      /' || true
+    fail=1
+  fi
+}
+schema_test conformance "$HERE/../test/test_conformance.py"
+schema_test export "$HERE/../test/test_export.py"
 python3 "$HERE/../tools/check_workflows.py" || fail=1
 # docs/agents.md is generated from the catalog and its coverage, exactly as osquery/dist/ is
 # generated from osquery/queries/. Gated here so a contributor sees it locally in seconds rather

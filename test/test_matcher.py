@@ -364,6 +364,21 @@ def _ids(rows):
         input=json.dumps(rows), capture_output=True, text=True, check=True).stdout)
     return {f["id"] for f in r["findings"]}
 
+# `matches` NAMES THE IDENTIFIER BEHIND EACH EVIDENCE ROW, in evidence order and on the route
+# that holds it: a container row is credited to `images`, whose values container_images
+# borrows, and a uv directory to `pypi`.
+_mf = classify_json([{"kind": k, "id": i, "ver": "", "loc": i if k == "file" else "",
+                      "extra": "", "perms": ""}
+                     for k, i in (("container", "paulgauthier/aider:latest"), ("brew", "aider"),
+                                  ("file", "/home/dana/.local/share/uv/tools/aider-chat/"),
+                                  ("file", "/home/dana/.aider"))])["findings"]
+check("--json names the identifier behind each evidence row, on the route that holds it",
+      [(f["id"], f.get("matches")) for f in _mf] == [("aider", [
+          {"route": "images", "value": "paulgauthier/aider"},
+          {"route": "homebrew", "value": "aider"},
+          {"route": "pypi", "value": "aider-chat"},
+          {"route": "state_dirs", "value": "~/.aider"}])], json.dumps(_mf)[:400])
+
 # THE NEAR MISS. `~/.claude` was front-anchored only, so it also matched `.claudefoo` --
 # and that is not hypothetical: `/home/%/.%/` on a real Linux box returns `.claude/` and
 # `.claudefoo/` side by side. `home-dir` anchors both ends.
@@ -1150,6 +1165,38 @@ check("the shrink guard reports what arrived, not only what was lost",
 check("...and offers --supersede beside --allow-shrink",
       "--supersede" in _gtext and "--allow-shrink" in _gtext,
       "the two exits differ: one keeps the evidence, one destroys it")
+
+# COVERAGE COUNTS ONLY WHAT COULD BE PUBLISHED AS PROOF. A record with no run id is a local
+# --record, and counting it made an identifier covered that tools/export.py --strict refused.
+_cov_key = ("aider", "pypi", "aider-chat")
+
+
+def _cov_state(scenarios):
+    old, _st.SCENARIOS = _st.SCENARIOS, scenarios
+    try:
+        data = _st.collect()
+    finally:
+        _st.SCENARIOS = old
+    return next(i["state"] for a in data["agents"] if a["id"] == _cov_key[0]
+                for i in a["identifiers"] if (i["route"], str(i["value"])) == _cov_key[1:])
+
+
+_tmp = pathlib.Path(_tf2.mkdtemp())
+try:
+    _sh.copytree(_st.SCENARIOS, _tmp / "scenarios")
+    _cov_before = _cov_state(_tmp / "scenarios")
+    for _p in (_tmp / "scenarios").glob("*/observed.json"):
+        _d = json.loads(_p.read_text())
+        for _r in _d.get("identifiers", []):
+            if (_r["agent"], _r["route"], str(_r["value"])) == _cov_key:
+                _r.pop("run", None)
+        _p.write_text(json.dumps(_d))
+    _cov_after = _cov_state(_tmp / "scenarios")
+finally:
+    _sh.rmtree(_tmp, ignore_errors=True)
+check("an identifier observed only without a run id is not covered by CI",
+      _cov_before in _st.COVERED_STATES and _cov_after not in _st.COVERED_STATES,
+      f"before {_cov_before}, after {_cov_after}")
 
 # --- running containers and vendor labels ------------------------------------------
 # The two routes added beside `images`, and the reason both exist: a tag is chosen by

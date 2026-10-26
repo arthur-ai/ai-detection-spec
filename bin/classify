@@ -220,8 +220,7 @@ def build_index(catalog, registry):
         #
         # Per-value rather than threading the matched route/value out of classify(): the
         # flag then arrives with the hit, through every match mode, with no extra plumbing
-        # in the loop that does the matching. The shared dict is reused where there is no
-        # flag to add, so this costs one dict per superseded value and nothing otherwise.
+        # in the loop that does the matching. It costs one small dict per catalog value.
         #
         # Keyed on (route, value): OpenClaw ships an npm package and a Homebrew cask both
         # called `openclaw`, so keying on the value alone would label one for the other.
@@ -233,9 +232,13 @@ def build_index(catalog, registry):
             # The machines a superseded identifier exists for are exactly the ones nothing
             # else will find, so anything that dropped them here would be the empty result
             # this repo is built to refuse, wearing a new name.
+            #
+            # `route` and `value` name the identifier itself -- on the route that holds it --
+            # so a finding can say which identifier proved each row, not only which agent.
+            meta = {**_base, "route": route, "value": str(value)}
             if (route, str(value)) in _sup:
-                return {**_base, "superseded": True}
-            return _base
+                meta["superseded"] = True
+            return meta
 
         for route, mode in registry.match.items():
             # A RETIRED ROUTE IDENTIFIES NOTHING, and tools/validate_catalog.py refuses a
@@ -980,6 +983,8 @@ def _run(state, started):
                  "evidence": [r for _, r in hits],
                  **describe([r for _, r in hits], rank,
                             [bool(m.get("superseded")) for m, _ in hits], live_kinds),
+                 # Which identifier matched each evidence row, in the same order.
+                 "matches": [{"route": m["route"], "value": m["value"]} for m, _ in hits],
                  **({"running": True}
                     if any(r.get("kind") in live_kinds for _, r in hits) else {}),
                  **({"superseded": [r.get("id") for m, r in hits if m.get("superseded")],

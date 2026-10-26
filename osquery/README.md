@@ -157,10 +157,10 @@ Run the inventory query alone and you get the raw rows it matched those from:
 
 ## What a release attaches
 
-**Fifteen assets**: `discovery-darwin.sql`, `discovery-linux.sql`, `discovery-deep.sql`,
+**Sixteen assets**: `discovery-darwin.sql`, `discovery-linux.sql`, `discovery-deep.sql`,
 `ai-discovery.conf`, `signatures.sql`, `agents-darwin.sql`, `agents-linux.sql`,
 `fleet-policies.yml`, `discover`, `container-scan`, `classify`, `agents.yaml`, `routes.yaml`,
-`ai-discovery-darwin.sh`, `ai-discovery-linux.sh`.
+`catalog.json`, `ai-discovery-darwin.sh`, `ai-discovery-linux.sh`.
 
 You do not need all of them. Which you take depends on where the thing runs.
 
@@ -181,6 +181,7 @@ You do not need all of them. Which you take depends on where the thing runs.
 | `classify` | Turns collected evidence into agent names. Never runs on the endpoint |
 | `agents.yaml` | What the evidence is matched against. Add a signature here and it re-matches evidence you already collected |
 | `routes.yaml` | How each kind of evidence is matched — a bundle id, a Debian package, an npm install, a config directory. The matcher, the validator, the coverage report and lint all read this one file, and `classify` expects it beside `agents.yaml` |
+| `catalog.json` | The same catalog as an [Open Agent Detection Format](../SPEC.md) document, for a tool that is not `classify`: every identifier with its status, its package URL where one exists, and the CI runs that proved it |
 
 **On the endpoint: the match**
 

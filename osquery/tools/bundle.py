@@ -75,7 +75,7 @@ def payload_files(platform):
             f"dist/discovery-{platform}.sql", "dist/discovery-deep.sql",
             "dist/ai-discovery.conf", "dist/signatures.sql")
 
-FORBIDDEN = ("catalog/", "agents.yaml", "routes.yaml", "bin/classify")
+FORBIDDEN = ("catalog/", "agents.yaml", "routes.yaml", "catalog.json", "bin/classify")
 
 MARKER = "AI_DISCOVERY_PAYLOAD_EOF"
 

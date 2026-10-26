@@ -102,6 +102,7 @@ of the names.
 | `live` | OPTIONAL. `true` when a row of this route says the agent is running, not only installed (§6.6) |
 | `retired` | OPTIONAL. `true` when the route identifies nothing. Its kind stays registered, because evidence of that kind is still collected (§6.1) |
 | `value_pattern` | OPTIONAL. A regular expression every identifier on the route MUST match in full |
+| `purl` | OPTIONAL. The [package-url](https://github.com/package-url/purl-spec) type of the route's identifiers, present only when an identifier alone determines a package URL. A route whose coordinate needs more than the identifier, such as a distribution namespace, does not declare one |
 
 ### 4.4 Agents and identifiers
 
@@ -124,6 +125,9 @@ A conforming catalog MUST meet all of these:
    containment: a `prefix` value that another agent's value starts with, or a `home-prefix`
    value that another agent's path sits under. Because of this rule, the order in which a
    matcher tries identifiers (§6.5) can never decide which agent a row belongs to.
+7. An identifier on a route that declares `purl` carries `purl`: the package URL of that
+   type that the identifier names, with no version. One on any other route carries none.
+   Route names are the catalog's own, so the schema cannot check this.
 
 ## 5. Evidence
 

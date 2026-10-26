@@ -67,6 +67,7 @@ a published release with no artifacts on it.
 ```console
 $ git switch main && git pull
 $ tools/gates.sh                      # every fast gate, non-zero when one fails
+$ python3 tools/export.py --strict > /dev/null   # release.yml runs this; an unproved identifier fails it
 $ python3 osquery/tools/measure.py --check    # cost bands; needs osquery locally
 $ sudo python3 osquery/tools/check_pack.py    # every pack query actually returns rows
 $ sudo osquery/test/docker_states.sh          # every Docker state, guard, bound, catalog
@@ -301,10 +302,11 @@ $ gh run list --workflow=release.yml --limit=1
 $ gh release view v<X.Y.Z> --json assets --jq '[.assets[].name]'
 ```
 
-**Fifteen assets**, and a missing one is a broken release: `discovery-darwin.sql`,
+**Sixteen assets**, and a missing one is a broken release: `discovery-darwin.sql`,
 `discovery-linux.sql`, `discovery-deep.sql`, `ai-discovery.conf`, `signatures.sql`,
 `agents-darwin.sql`, `agents-linux.sql`, `fleet-policies.yml`, `discover`, `container-scan`,
-`classify`, `agents.yaml`, `routes.yaml`, `ai-discovery-darwin.sh`, `ai-discovery-linux.sh`.
+`classify`, `agents.yaml`, `routes.yaml`, `catalog.json`, `ai-discovery-darwin.sh`,
+`ai-discovery-linux.sh`.
 `tools/check_workflows.py` holds this list to `release.yml`'s upload step.
 
 The notes must say two things about layout, because the scripts resolve each other by relative

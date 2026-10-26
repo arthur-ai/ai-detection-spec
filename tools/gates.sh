@@ -37,6 +37,7 @@ run python3 test/test_matcher.py
 run python3 test/test_telemetry.py
 run python3 test/test_ci_scope.py
 run python3 test/test_conformance.py
+run python3 test/test_export.py
 run python3 osquery/tools/check_no_catalog.py
 run python3 tools/check_doc_numbers.py
 run python3 tools/check_workflows.py

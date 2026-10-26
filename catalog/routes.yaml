@@ -17,14 +17,15 @@
 # EVERY FIELD IS READ. Deliberately. catalog/agents.yaml carried `version: 1` for its
 # whole life and nothing ever read it, which is how a schema grows fields that disagree
 # with reality because nothing can fail. So this file carries no field that no code
-# checks. Two that a coordinate-conscious reader will miss are absent for exactly that
-# reason and are recorded here instead of half-added:
+# checks. Two fields a coordinate-conscious reader looks for, and where each stands:
 #
-#   purl:    the PURL type for the route. Omitted -- nothing emits a PURL yet. purl-spec
-#            registers `brew` now, but its coordinate cannot tell a cask from a formula and
-#            `codex` ships as both; `chocolatey` and JetBrains plugins are not registered.
-#            A wrong coordinate lands inside someone else's SBOM pipeline, where nobody
-#            here can see it.
+#   purl:    on the routes whose value alone is the coordinate, read by tools/export.py --
+#            see FIELDS. Absent elsewhere: purl-spec's `brew` cannot tell a cask from a
+#            formula and `codex` ships as both; `deb` and `rpm` require the distribution
+#            as a namespace, and Cursor's packages come from Cursor's own repository;
+#            `chocolatey` and JetBrains plugins are not registered types. A wrong
+#            coordinate lands inside someone else's SBOM pipeline, where nobody here can
+#            see it.
 #   version: what a row's `ver` column MEANS. Not a route field: the query that emits a
 #            kind fixes it, so bin/classify declares it per kind (VERSION_KINDS, beside
 #            PATH_KINDS) and a custom registry cannot get it wrong.
@@ -46,6 +47,9 @@
 #   value_pattern optional regex every catalog value on this route must fullmatch
 #   retired       optional. The route no longer identifies anything, but rows of its
 #                 kind are still collected and MUST stay registered -- see `ports`
+#   purl          optional. The package-url type of this route's values, when a value alone
+#                 determines the coordinate. tools/export.py reads it and fails on a type it
+#                 cannot build; test/test_export.py holds each builder to purl-spec's rules
 #   live          optional. Rows of this route say the agent is RUNNING, not only
 #                 installed; bin/classify marks a finding with one `running`. Every other
 #                 route reports presence
@@ -123,6 +127,7 @@ routes:
     platform: posix
     kind: npm
     match: exact
+    purl: npm
     osquery: {table: npm_packages, min_osquery: 5.10.0}
   running_npm:
     # A process running out of a package, or a node, bun or deno process whose script sits
@@ -137,6 +142,7 @@ routes:
     platform: posix
     kind: file
     match: tool-dir
+    purl: pypi
     osquery: {table: file, min_osquery: 5.10.0}
   extension_ids:
     # Chromium extension ids are derived from the developer's public key, so they are
@@ -144,6 +150,10 @@ routes:
     platform: posix
     kind: ext
     match: exact
+    # Chrome Web Store ids. A store that re-signs, such as Edge Add-ons, issues another id,
+    # which is not a chrome-extension purl; test/test_export.py holds each value to a
+    # scenario that downloads it from the Web Store's update endpoint.
+    purl: chrome-extension
     osquery: {table: chrome_extensions, min_osquery: 5.10.0}
     # 32 characters from a-p: a base16 encoding of the first half of a SHA-256 over the
     # key, remapped onto letters. A hex-looking id, one with a digit, or one of the
@@ -181,6 +191,7 @@ routes:
     platform: posix
     kind: vscodeext
     match: exact
+    purl: vscode-extension
     osquery: {table: vscode_extensions, min_osquery: 5.11.0}
     value_pattern: '^[A-Za-z0-9][A-Za-z0-9._-]*\.[A-Za-z0-9][A-Za-z0-9._-]*$'
   jetbrains_plugins:

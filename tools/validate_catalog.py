@@ -15,6 +15,8 @@ import sys
 import yaml
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "tools"))
+import observations  # noqa: E402
 
 # THE ROUTE VOCABULARY IS NOT WRITTEN HERE ANY MORE. It is catalog/routes.yaml, which is
 # also what bin/classify, tools/agent_status.py and test/lint.sh read -- this list used
@@ -49,13 +51,9 @@ def archived_match(aid, rec):
     that scenario's `archived` list rather than being discarded -- so the two can be
     compared field for field, by reading a file, with no network and no git archaeology.
     """
-    path = ROOT / "test" / "scenarios" / str(rec["by"]) / "observed.json"
-    if not path.exists():
-        return False
-    for obs in json.loads(path.read_text()).get("archived", []):
-        if (obs.get("agent") == aid
-                and str(obs.get("route")) == str(rec["route"])
-                and str(obs.get("value")) == str(rec["value"])
+    _, archived = observations.read(ROOT / "test" / "scenarios")
+    for obs in archived.get((aid, str(rec["route"]), str(rec["value"])), []):
+        if (obs["scenario"] == str(rec["by"])
                 and str(obs.get("run")) == str(rec["run"])
                 and str(obs.get("agent_version", "")) == str(rec["last_version"])):
             return True
@@ -104,7 +102,7 @@ def validate_registry(reg, modes=None):
     legal_platform = platforms | set(groups)
     modes = load_classify().MATCH_MODES if modes is None else modes
     required = {"platform", "kind", "match"}
-    optional = {"value_pattern", "retired", "values_from", "live"}
+    optional = {"value_pattern", "retired", "values_from", "live", "purl"}
     for name, r in (reg.get("routes") or {}).items():
         # Lowercase, digits and underscores: the names every reader of the registry can parse.
         if not re.fullmatch(r"[a-z][a-z0-9_]*", str(name)):
@@ -308,12 +306,8 @@ def overlap_errors(agents, reg):
 
 def live_observations(root):
     """(agent, route, value) -> where a current run still produces it."""
-    live = {}
-    for path in sorted((root / "test" / "scenarios").glob("*/observed.json")):
-        for o in json.loads(path.read_text()).get("identifiers", []):
-            key = (o.get("agent"), str(o.get("route")), str(o.get("value")))
-            live.setdefault(key, set()).add(path.parent.name)
-    return live
+    live, _ = observations.read(root / "test" / "scenarios")
+    return {key: {o["scenario"] for o in recs} for key, recs in live.items()}
 
 
 def live_superseded_errors(aid, agent, live):

@@ -50,6 +50,8 @@ _spec.loader.exec_module(classify_mod)
 # guard at all -- so the guard could not be tested, because a test had nowhere to put a
 # fixture that record() would accept as a scenario. test/test_matcher.py repoints this.
 SCENARIOS = ROOT / "test" / "scenarios"
+sys.path.insert(0, str(ROOT / "tools"))
+import observations as _observations  # noqa: E402
 
 ROUTES = classify_mod.load_routes()
 REGISTRY = classify_mod.Registry(ROUTES)
@@ -458,6 +460,11 @@ def ci_platforms():
     return plats
 
 
+def observations(scenarios=None):
+    """tools/observations.py's reader, over this module's SCENARIOS, which tests repoint."""
+    return _observations.read(SCENARIOS if scenarios is None else scenarios)
+
+
 def collect():
     catalog = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
 
@@ -486,10 +493,12 @@ def collect():
     # one a pull request would catch.
     seen_in = collections.defaultdict(set)      # (agent, route, value) -> {scenario}
     observed_os = set()
-    for path in sorted(SCENARIOS.glob("*/observed.json")):
-        doc = json.loads(path.read_text())
-        for rec in doc.get("identifiers", []):
-            seen_in[(rec["agent"], rec["route"], rec["value"])].add(doc["scenario"])
+    # Only observations tools/export.py could publish as proof; see observations.provable().
+    live = {k: [r for r in recs if _observations.provable(r)]
+            for k, recs in observations()[0].items()}
+    for key, recs in live.items():
+        for rec in recs:
+            seen_in[key].add(rec["scenario"])
             if rec.get("os"):
                 observed_os.add(rec["os"])
     in_ci = ci_scenarios()
@@ -513,7 +522,7 @@ def collect():
     # the count is pessimistic until each has run once. Absence of an observation is not
     # absence of a test, and reporting the total without saying which scenarios are
     # missing would present a floor as a measurement.
-    recorded = {p.parent.name for p in SCENARIOS.glob("*/observed.json")}
+    recorded = {r["scenario"] for recs in live.values() for r in recs}
     unrecorded = sorted(in_ci - recorded)
 
     agents = []
