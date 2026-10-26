@@ -16,7 +16,7 @@
       "agent_version": "26.42.0",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40258151112"
+      "run": "40267041759"
     },
     {
       "agent": "perplexity-desktop",
@@ -25,7 +25,7 @@
       "agent_version": "26.42.0",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40258151112"
+      "run": "40267041759"
     },
     {
       "agent": "perplexity-desktop",
@@ -42,16 +42,16 @@
       "agent_version": "26.35.0",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40258151112"
+      "run": "40267041759"
     },
     {
       "agent": "perplexity-desktop",
       "route": "homebrew",
       "value": "perplexity",
-      "agent_version": "26.39.0",
+      "agent_version": "26.42.0",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40258151112"
+      "run": "40267041759"
     }
   ]
 }
