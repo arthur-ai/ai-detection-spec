@@ -291,7 +291,7 @@ check("a catalog with no base runs every scenario",
       scenarios([ci_scope.CATALOG], base={ci_scope.CATALOG: None}) == _LISTED)
 check("a catalog edit outside `agents:` runs every scenario",
       scenarios([ci_scope.CATALOG], head={ci_scope.CATALOG: _replaced(
-          _cat, "\nversion: 3\n", "\nversion: 4\n")}) == _LISTED)
+          _cat, "\nversion: 4\n", "\nversion: 5\n")}) == _LISTED)
 _out, _ = ci_scope.scenarios_outputs(None, _reader())
 check("and every scenario means every exclusion is empty, the direction that runs more",
       all(line.endswith("=[]") for line in _out if line.startswith("exclude_")), str(_out))

@@ -258,6 +258,25 @@ def image_errors(aid, agent, image_repo, routes):
             for r in routes for v in agent.get(r, []) if image_repo(str(v)) != str(v)]
 
 
+def path_errors(aid, agent, path_routes):
+    """A `~/` value is written the one way the matcher reads (SPEC.md 4.4 rule 4).
+
+    THE `~/` IS A CORRECTNESS DEPENDENCY, not a style rule: bin/classify's home_pattern()
+    strips exactly two leading characters, so a value without the prefix silently loses two
+    of its own. AND `/` SEPARATES ON EVERY PLATFORM: the matcher reads it as each home root's
+    separators (SPEC.md 6.4.7), so a `\\` would match a Windows separator only as itself, and
+    claims() below, which reads values by `/`, would miss what it overlaps."""
+    errors = []
+    for route in path_routes:
+        for value in agent.get(route, []):
+            if not str(value).startswith("~/"):
+                errors.append(f"{aid}: {route} {value!r} should start with '~/'")
+            if "\\" in str(value):
+                errors.append(f"{aid}: {route} {value!r} contains '\\'; write it with '/', "
+                              f"which matches either separator on Windows")
+    return errors
+
+
 def claims(mode, p, q):
     """Does every row the value `q` can match also match `p`, under `p`'s mode?
     The modes are bin/classify's home_pattern() and prefix rule, read as containment."""
@@ -276,11 +295,12 @@ def claims(mode, p, q):
     return False
 
 
-def overlap_errors(agents, reg):
+def overlap_errors(agents, reg, layouts=None):
     """NO VALUE CLAIMS ANOTHER AGENT'S ROWS on the same kind. The matcher takes the first
     hit in catalog order, so an overlap would be settled by where an entry sits in the file
     -- `binaries: ~/.local/bin/kiro` would take kiro-cli's binary. With none allowed, a row
     satisfies at most one agent and order decides nothing."""
+    layouts = load_classify().TOOL_LAYOUTS if layouts is None else layouts
     entries = []
     for agent in agents:
         for name, r in reg["routes"].items():
@@ -291,7 +311,7 @@ def overlap_errors(agents, reg):
                     # A tool-dir value matches the DIRECTORIES pipx and uv name after it, so
                     # it is compared as those paths: another agent's `~/.local/share/uv/`
                     # would otherwise claim its rows unseen (SPEC.md 4.4, rule 6).
-                    for d in (f"~/.local/pipx/venvs/{v}", f"~/.local/share/uv/tools/{v}"):
+                    for d in (layout + str(v) for layout in layouts):
                         entries.append((r["kind"], "home-dir", agent.get("id"), name, d))
                     continue
                 entries.append((r["kind"], r["match"], agent.get("id"), name, str(v)))
@@ -467,14 +487,7 @@ def main():
                         f"{pattern} that routes.yaml declares for this route. Read the "
                         f"identifier off a real install rather than transcribing it.")
 
-        # Paths are written with ~ so nothing user-specific is implied, and so the
-        # matcher expands them consistently. THIS IS A CORRECTNESS DEPENDENCY, not a
-        # style rule: bin/classify's home_pattern() strips exactly two leading
-        # characters, so a value without the prefix silently loses two of its own.
-        for route in PATH_ROUTES:
-            for value in agent.get(route, []):
-                if not str(value).startswith("~/"):
-                    errors.append(f"{aid}: {route} {value!r} should start with '~/'")
+        errors.extend(path_errors(aid, agent, PATH_ROUTES))
 
         # --- platforms -------------------------------------------------------------
         #

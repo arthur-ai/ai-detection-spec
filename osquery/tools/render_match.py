@@ -246,14 +246,17 @@ def sql_literal(s):
     return "'" + s.replace("'", "''") + "'"
 
 
-def fragment(sigs, tool_dir):
-    """The `, sig(...) AS (VALUES ...), hit AS (...)` text. No banner, no statement."""
+def fragment(sigs, tool_dirs):
+    """The `, sig(...) AS (VALUES ...), hit AS (...)` text. No banner, no statement.
+    `tool_dirs` is bin/classify's TOOL_DIRS, one pattern per kind of home root."""
     values = ",\n  ".join(
         "(" + ",".join([sql_literal(agent), sql_literal(name), sql_literal(cls),
                         sql_literal(kind), sql_literal(mode), sql_literal(value),
                         str(sup)]) + ")"
         for agent, name, cls, kind, mode, value, sup in sigs)
-    td = sql_literal(ecma(tool_dir))
+    tool_dir = "\n                      OR ".join(
+        f"regex_match(e.{col}, {sql_literal(ecma(p))}, 1) = s.value"
+        for col in ("id", "loc") for p in tool_dirs)
     return (
         ", sig(agent, name, classification, kind, mode, value, superseded) AS (VALUES\n"
         f"  {values}),\n"
@@ -265,8 +268,7 @@ def fragment(sigs, tool_dir):
         "    WHEN 'path'     THEN regex_match(e.id, s.value, 0) IS NOT NULL\n"
         "                      OR regex_match(e.loc, s.value, 0) IS NOT NULL\n"
         "    WHEN 'image'    THEN regex_match(e.id, s.value, 0) IS NOT NULL\n"
-        f"    WHEN 'tool-dir' THEN regex_match(e.id, {td}, 1) = s.value\n"
-        f"                      OR regex_match(e.loc, {td}, 1) = s.value\n"
+        f"    WHEN 'tool-dir' THEN {tool_dir}\n"
         "    ELSE 0 END)\n")
 
 
@@ -289,9 +291,9 @@ def image_only_agents(sigs, inline_kinds):
     return sorted({a for a, *_ in sigs} - reachable)
 
 
-def policy(agent, plat, sigs, parts, tool_dir):
+def policy(agent, plat, sigs, parts, tool_dirs):
     """One Fleet policy document. `parts` are the branches this agent needs."""
-    sql = ev_cte(parts) + fragment(sigs, tool_dir) + \
+    sql = ev_cte(parts) + fragment(sigs, tool_dirs) + \
         "SELECT 1 WHERE NOT EXISTS (SELECT 1 FROM hit);"
     name = agent["name"]
     kinds = ", ".join(sorted({k for _, _, _, k, _, _, _ in sigs}))
@@ -317,9 +319,9 @@ def targets():
     catalog = classify.load_catalog(CATALOG)
     registry = classify.Registry(classify.load_routes())
     sigs = signatures(classify, catalog, registry)
-    tool_dir = classify.TOOL_DIR.pattern
+    tool_dirs = [p.pattern for p in classify.TOOL_DIRS]
     sha = catalog_sha()
-    frag = fragment(sigs, tool_dir)
+    frag = fragment(sigs, tool_dirs)
     qs = [q for q in build.queries() if not q["expensive"]]
     inline_kinds = {k for q in qs for k in q["kinds"]}
     image_only = image_only_agents(sigs, inline_kinds)
@@ -350,7 +352,7 @@ def targets():
                      if plat in q["platforms"] and kinds & set(q["kinds"])]
             if not parts:
                 continue
-            docs.append(policy(agent, plat, mine, parts, tool_dir))
+            docs.append(policy(agent, plat, mine, parts, tool_dirs))
     out[DIST / "fleet-policies.yml"] = "".join(docs)
 
     for path in out:

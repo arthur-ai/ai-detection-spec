@@ -219,8 +219,8 @@ def main():
     routes = classify.load_routes()
     registry = classify.Registry(routes)
     sigs = R.signatures(classify, catalog, registry)
-    tool_dir = classify.TOOL_DIR.pattern
-    frag = R.fragment(sigs, tool_dir)
+    tool_dirs = [p.pattern for p in classify.TOOL_DIRS]
+    frag = R.fragment(sigs, tool_dirs)
 
     # --- the shipped fragment is the one under test, not a fresh render -------------
     shipped = shipped_fragment()
@@ -254,6 +254,15 @@ def main():
         ("file", "/Users/u/.claudefoo/", None),                 # home-dir is anchored
         ("file", "/opt/dana/.claude/", None),                    # outside every home root
         ("file", "/root/.claude/", "claude-code"),               # /root is its own root
+        ("file", "C:\\Users\\dana\\.claude\\", "claude-code"),   # a Windows root, SPEC.md 6.4.7
+        ("file", "d:/Users/dana/.claude", "claude-code"),        # ...either separator, any drive
+        ("file", "C:\\Users\\dana\\.claudefoo\\", None),
+        ("file", "C:\\users\\dana\\.claude\\", None),            # `Users` is compared as written
+        ("file", "/home/dana\\.claude", None),                   # `\` is no separator under /home
+        ("file", "C:\\Users\\dana\\.local\\bin\\hermes", "hermes"),
+        ("file", "C:\\Users\\dana\\.local\\bin\\hermes-acp", None),
+        ("file", "C:\\Users\\dana\\.local\\pipx\\venvs\\aider-chat\\", "aider"),
+        ("proc", "C:\\Users\\dana\\.local\\share\\claude\\versions\\2.1.292", "claude-code"),
         ("daemon", "ai.openclaw.gateway", "openclaw"),
         ("daemon", "AI.OPENCLAW.X", None),                       # prefix is case-sensitive
         ("file", "/Users/u/.local/bin/hermes", "hermes"),             # home-prefix: the path
@@ -318,7 +327,7 @@ def main():
         vcat, vroutes = conformance.authoring_form(classify, v["catalog"])
         vreg = classify.Registry(vroutes)
         vhits = sql_hits(osqi, v["rows"], R.fragment(R.signatures(classify, vcat, vreg),
-                                                     classify.TOOL_DIR.pattern))
+                                                     [p.pattern for p in classify.TOOL_DIRS]))
         got = []
         for r in v["rows"]:
             key = (str(r.get("kind")), str(r.get("id", "")), str(r.get("loc", "")))
@@ -433,7 +442,7 @@ def main():
 
     # --- the comparison itself bites: drop one agent and it must say so --------------
     without = [s for s in sigs if s[0] != "openclaw"]
-    broken = R.fragment(without, tool_dir)
+    broken = R.fragment(without, tool_dirs)
     known = json.loads((FIXTURES / "known-agents.json").read_text())
     check("dropping openclaw from the fragment is detected",
           classify_hits(classify, known, catalog, routes) != sql_hits(osqi, known, broken))

@@ -147,10 +147,8 @@ def replay(paths, catalog):
 
                 # A pipx/uv tool directory names its PACKAGE, which is why classify
                 # checks the package routes for it and not the path globs.
-                tool = (classify_mod.TOOL_DIR.match(ident)
-                        or classify_mod.TOOL_DIR.match(loc))
-                if tool:
-                    name = tool.group(1)
+                name = next(classify_mod.tool_names(ident, loc), None)
+                if name:
                     for route in REGISTRY.bridged():
                         if name in [str(v) for v in agent.get(route, [])]:
                             credit(route, name)
