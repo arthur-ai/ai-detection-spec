@@ -89,8 +89,8 @@ What makes the scenario prove the identifier rather than the agent:
   agent there, `must_find` passes with the new value wrong. 84's `why` says this outright.
 - **`classified.forbid` every agent the new rows could be mistaken for**, and the converse:
   85 forbids `cline` because `roo-cline` contains its id, and 78 forbids `claude-code` while
-  installing Cline. `test/lib/assert.sh` reads the other keys (`must_contain`, `forbid_rows`,
-  `forbid_evidence`).
+  installing Cline. `test/lib/assert.sh` reads the other keys (`must_contain`, `require_rows`,
+  `forbid_rows`, `forbid_evidence`).
 - **Add a lookalike to `test/test_matcher.py`** and assert it is declined, where one exists — a
   generic sibling binary, an id another id contains.
 - **Break it once.** Remove the value from the catalog and confirm the matcher check or the

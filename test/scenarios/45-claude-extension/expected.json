@@ -23,12 +23,14 @@
       "merlin"
     ]
   },
-  "why": "Verifies the ext route end to end: a real signed artifact, a real profile, and an identifier osquery derives from the manifest key rather than one we assert. The same method works on any Chromium browser -- osquery's chrome_extensions spans 11 browser_types and a Chromium extension id is key-derived, so it is identical in Brave, Edge and Chromium. The extension is then registered by Chrome for Testing's --load-extension, not from the store, so the row's `extra` carries sideloaded:<sha256 of manifest.json>. The hash changes with every release, so the assertion pins the token's prefix, which the provenance CASE writes only for a registered, non-store extension.",
+  "why": "Verifies the ext route end to end: a real signed artifact, a real profile, and an identifier osquery derives from the manifest key rather than one we assert. The same method works on any Chromium browser -- osquery's chrome_extensions spans 11 browser_types and a Chromium extension id is key-derived, so it is identical in Brave, Edge and Chromium. The extension is then registered by Chrome for Testing's --load-extension, not from the store, so the row's `extra` carries sideloaded:<sha256 of manifest.json>. The hash changes with every release, so require_rows pins the token's prefix to the Claude row: every extension here is sideloaded, so any of them would satisfy a probe on its own.",
+  "require_rows": [
+    {"kind": "ext", "id": "fcoeoabgfenejglbffodgkkbkcdhcgfn", "extra": ",sideloaded:"}
+  ],
   "must_contain": [
     "fcoeoabgfenejglbffodgkkbkcdhcgfn",
     "nativeMessaging",
     "<all_urls>",
-    ",sideloaded:",
     "eanggfilgoajaocelnaflolkadkeghjp",
     "ofpnmcalabcbjgholdjcjblkibolbppb",
     "difoiogjjojoaoomphldepapgpbgkhkb",

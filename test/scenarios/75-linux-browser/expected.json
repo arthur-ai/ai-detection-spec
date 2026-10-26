@@ -27,9 +27,10 @@
   "why": "The extension branch and both native-messaging casings, on paths read off a real install. `claude-in-chrome` is FORBIDDEN rather than expected, and that is the interesting part: osquery derives `identifier` from the manifest `key`, which a planted extension does not carry, so the id comes back EMPTY. A scenario that expected the agent here would be asserting something the platform cannot produce. What is asserted is that the branch returns the row, the permissions and the <all_urls> flag -- and that an empty id is not silently matched to anything.",
   "must_contain": [
     "nativeMessaging",
-    "<all_urls>",
-    ",unreferenced",
     "com.anthropic.claude_browser_extension.json"
+  ],
+  "require_rows": [
+    {"kind": "ext", "extra": ",unreferenced", "perms": ["cookies", "<all_urls>"]}
   ],
   "known_gaps": [
     "No real extension identifier. 45-claude-extension gets one on macOS by unpacking the Web Store's signed CRX, which does carry the key; the same route would work here and is not yet built.",

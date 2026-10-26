@@ -56,8 +56,13 @@ def read_catalog(path, routes_path=DEFAULT_ROUTES):
     TOLD APART BY `format`, and it has to be. Read as the authoring form, a catalog document's
     agents carry no route keys, so every row came back unmatched and the report said "No AI
     agents found" -- this repository's own catalog.json, read as a clean machine.
+
+    JSON is parsed without PyYAML, so a catalog document needs only jsonschema.
     """
-    doc = _yaml(path)
+    try:
+        doc = json.loads(pathlib.Path(path).read_text())
+    except ValueError:
+        doc = _yaml(path)
     if isinstance(doc, dict) and "format" in doc:
         return from_document(doc, path)
     return load_catalog(path, doc), load_routes(routes_path)

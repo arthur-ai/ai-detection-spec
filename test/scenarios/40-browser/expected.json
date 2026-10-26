@@ -25,9 +25,10 @@
     "nativeMessaging",
     "NativeMessagingHosts",
     "cookies",
-    "scripting",
-    "<all_urls>",
-    ",unreferenced"
+    "scripting"
+  ],
+  "require_rows": [
+    {"kind": "ext", "extra": ",unreferenced", "perms": ["scripting", "<all_urls>"]}
   ],
   "known_gaps": [
     "The planted extension is unreferenced by construction, so the sideloaded token is exercised only by 45-claude-extension."

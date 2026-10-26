@@ -26,6 +26,7 @@ import pathlib
 import re
 import subprocess
 import sys
+import tempfile
 
 import yaml
 
@@ -200,6 +201,18 @@ def main():
         check("classify refuses a document the schema rejects, rather than reading it in part",
               raises(classify.from_document, bad, expected=SystemExit,
                      message="does not validate"))
+        # A catalog document needs jsonschema and not PyYAML, as bin/classify's header says.
+        tmp = pathlib.Path(tempfile.mkdtemp())
+        (tmp / "catalog.json").write_text(json.dumps(doc))
+        proc = subprocess.run(
+            [sys.executable, "-c", "import runpy, sys; sys.modules['yaml'] = None; "
+             "sys.argv = sys.argv[1:]; runpy.run_path(sys.argv[0], run_name='__main__')",
+             str(ROOT / "bin" / "classify"), "--json", "--catalog", str(tmp / "catalog.json"),
+             str(ROOT / "test" / "fixtures" / "known-agents.json")],
+            capture_output=True, text=True, env={**os.environ, "AI_DETECTION_SPEC_TELEMETRY": "0"})
+        check("classify reads catalog.json where PyYAML is not installed",
+              proc.returncode == 0 and json.loads(proc.stdout or "{}").get("findings"),
+              proc.stderr.strip()[-200:])
 
     def index(catalog, routes):
         exact, prefix, glob = classify.build_index(catalog, classify.Registry(routes))

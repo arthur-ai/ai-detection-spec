@@ -80,6 +80,19 @@ for spec in expected.get("forbid_rows", []):
     print(f"  forbid_rows {label}: {'FAIL' if hits else 'ok'}"
           + (f"  found {len(hits)}" if hits else ""))
     fail |= bool(hits)
+
+# require_rows: SOME ONE ROW MUST MATCH EVERY NAMED FIELD. A value is a substring of that
+# field, or a list of substrings that must all be in it: substrings, because a sideload hash
+# and a permission list vary by run. must_contain cannot say "on the same row", and a
+# scenario that sideloads five extensions satisfies `,sideloaded:` with any of them.
+for spec in expected.get("require_rows", []):
+    def matches(r, spec=spec):
+        return all(all(s in str(r.get(k, "")) for s in (v if isinstance(v, list) else [v]))
+                   for k, v in spec.items())
+    ok = any(matches(r) for r in actual)
+    label = ", ".join(f"{k}~{v}" for k, v in spec.items())
+    print(f"  require_rows {label}: {'ok' if ok else 'FAIL'}")
+    fail |= not ok
 sys.exit(1 if fail else 0)
 PY
 }
