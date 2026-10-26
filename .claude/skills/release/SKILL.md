@@ -1,6 +1,6 @@
 ---
 name: release
-description: Cut a release of ai-detection-spec — pick the version, verify the tree is green and osquery/dist/ is in sync, write notes from commit bodies, and open a draft GitHub Release with the dist artifacts attached. Use when asked to cut, tag, or publish a release, or to draft release notes.
+description: Cut a release of ai-detection-spec — pick the version, verify the tree is green and osquery/dist/ is in sync, write notes from commit bodies, and open a draft GitHub Release, whose artifacts release.yml attaches on publish. Use when asked to cut, tag, or publish a release, or to draft release notes.
 ---
 
 # Cutting a release
@@ -25,7 +25,7 @@ and lead with the breaks either way.
 | a **route key** falls out of use | `validate_catalog.py` still accepts it with no entry carrying it, so the route never fires. `model_stores` is in that state; `ports` is `retired: true`, which is the visible case |
 | a **row kind** stops being emitted | a consumer reading that kind gets no rows, and nothing errors |
 | an identifier is **superseded** | it stays matched but leaves continuous testing, so the identifier count falls with nothing removed. Say which value, and that machines on the old build still report it |
-| a **flag or mode** leaves a shipped script | nothing in `osquery/dist/` or `catalog/` moves, so every check above says patch. It is not: a script in `bin/` is an interface, and someone has the old invocation in a LaunchDaemon. Say which invocation to replace, and confirm the flag is refused by name rather than falling through to "unknown argument" |
+| a **flag, mode or environment variable** leaves a shipped script | nothing in `osquery/dist/` or `catalog/` moves, so every check above says patch. It is not: a script in `bin/` is an interface, and someone has the old invocation in a LaunchDaemon. Say which invocation to replace, and confirm the flag is refused by name rather than falling through to "unknown argument". A variable cannot be refused, only no longer read, so a renamed opt-out turns back on what it turned off |
 
 ```console
 $ python3 - <<'EOF'
@@ -39,18 +39,26 @@ for label, g in (("ids", lambda e: {e["id"]}), ("keys", set),
                  ("classes", lambda e: {e.get("classification")})):
     print(f"{label:10}", sorted(set(f(o,g)) - set(f(n,g))), "gone")
 EOF
-$ for p in darwin linux; do
-    diff <({ git show <prev-tag>:osquery/dist/discovery-$p.sql 2>/dev/null \
-               || git show <prev-tag>:dist/discovery-$p.sql; } \
-             | grep -oE "SELECT '[a-z]+'" | sort -u) \
-         <(grep -oE "SELECT '[a-z]+'" osquery/dist/discovery-$p.sql | sort -u) \
-      && echo "$p: same kinds"
+$ art() { { git show "$1:osquery/dist/discovery-$2.sql" 2>/dev/null \
+              || git show "$1:dist/discovery-$2.sql"; } | grep -vE '^[[:space:]]*(--|$)'; }
+$ for p in darwin linux deep; do
+    diff <(art <prev-tag> $p | grep -oE "SELECT '[a-z]+'" | sort -u) \
+         <(art HEAD $p | grep -oE "SELECT '[a-z]+'" | sort -u) && echo "$p: same kinds"
+    diff <(art <prev-tag> $p) <(art HEAD $p) && echo "$p: same SQL, comments aside"
   done
+$ envs() { git grep -hoE '\$\{[A-Z][A-Z0-9_]+:-|environ(\.get)?[[(]"[A-Z][A-Z0-9_]+"|_env_off\("[A-Z][A-Z0-9_]+"' \
+             "$1" -- bin osquery/bin | grep -oE '[A-Z][A-Z0-9_]{2,}' | sort -u; }
+$ diff <(envs <prev-tag>) <(envs HEAD)    # environment variables the shipped scripts read
 ```
 
-**Diff both artifacts**: they are per platform and name disjoint tables, so diffing one hides
-the platform you are not sitting on. `agents.yaml`'s `version:` key does not track the release;
-diff the keys.
+**Diff all three artifacts**: two are per platform and name disjoint tables, and `deep` alone
+carries the container kinds, so diffing one hides the others. **Read every line the SQL diff
+prints**: a column can change meaning with every kind and key intact, as when a token moved
+from `perms` to `extra`, and that is the six-column contract breaking.
+
+`agents.yaml`'s `version:` is the authoring form's, not the release's, and `bin/classify`
+refuses any other, so a move is a break: a classifier from one release will not read the
+other's catalog. Diff the keys for the rest.
 
 **Check the spec separately.** It has its own version (`SPEC.md`'s header and a catalog
 document's `format`), which moves only when the normative text does:
@@ -61,7 +69,8 @@ $ git diff --stat <prev-tag>..HEAD -- SPEC.md schema/ conformance/
 
 A change there that alters an existing result, or removes or renames a member, is a breaking
 spec change (SPEC.md §10), and a breaking change for every implementer, not only this repo's
-users.
+users. While the spec is `0.x`, §10 also has a consumer reject any minor it does not support,
+so every move of `format` breaks a matcher already deployed.
 
 ## 2. Verify before you tag
 
@@ -220,6 +229,8 @@ State the change, then its consequence for someone running this on a fleet. Cove
   deployment-relevant as one that appears, and easier to omit because nothing breaks. Say what
   the endpoint runs on now, what a deployer can stop provisioning, and whether a machine that
   was failing recovers on its own.
+- **Telemetry**, if `docs/telemetry.md` moved: what `bin/classify` now sends or stopped
+  sending.
 - **Detection changes** — new agents, corrected identifiers, routes now covered. Say plainly
   whether a Mac must rescan or whether reclassifying retained evidence repairs history. **A
   removal on scope grounds is a detection change**: the honest framing is that the last release
@@ -300,9 +311,10 @@ Better, hand over the two links that cannot go stale: `https://github.com/<owner
 where drafts sit at the top, and `…/releases/edit/untagged-<hash>`, which opens the editor where
 the Publish button is. Both need write access.
 
-**Do not upload `osquery/dist/` by hand.** `release.yml` fires on publish, checks the tag is an ancestor
-of `main`, re-runs the static gates at that commit, rebuilds `osquery/dist/` from `osquery/queries/` and attaches
-the rebuild, so the artifacts derive from the tagged source by construction.
+**Do not upload anything by hand.** `release.yml` fires on publish, checks the tag is an
+ancestor of `main`, re-runs the static gates at that commit, rebuilds `osquery/dist/` from
+`osquery/queries/`, builds the two bundles and `catalog.json`, which are never committed, and
+attaches them all, so the artifacts derive from the tagged source by construction.
 
 ```console
 $ gh run list --workflow=release.yml --limit=1
