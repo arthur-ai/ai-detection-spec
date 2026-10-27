@@ -36,7 +36,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40465874719"
+      "run": "40468018397"
     },
     {
       "agent": "aider",
@@ -46,7 +46,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40465874719"
+      "run": "40468018397"
     },
     {
       "agent": "claude-code",
@@ -83,7 +83,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40465874719"
+      "run": "40468018397"
     },
     {
       "agent": "claude-code",
@@ -93,7 +93,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40465874719"
+      "run": "40468018397"
     },
     {
       "agent": "codex-cli",
@@ -130,17 +130,17 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40465874719"
+      "run": "40468018397"
     },
     {
       "agent": "codex-cli",
       "route": "homebrew",
       "value": "codex",
-      "agent_version": "0.162.1",
+      "agent_version": "0.163.0",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40465874719"
+      "run": "40468018397"
     },
     {
       "agent": "copilot-cli",
@@ -177,17 +177,17 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40465874719"
+      "run": "40468018397"
     },
     {
       "agent": "copilot-cli",
       "route": "homebrew",
       "value": "copilot-cli",
-      "agent_version": "1.0.96",
+      "agent_version": "1.0.101",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40465874719"
+      "run": "40468018397"
     },
     {
       "agent": "cursor",
@@ -197,17 +197,17 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40465874719"
+      "run": "40468018397"
     },
     {
       "agent": "cursor",
       "route": "homebrew",
       "value": "cursor-cli",
-      "agent_version": "2026.10.01-e373342",
+      "agent_version": "2026.10.19-6bbf2c4",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40465874719"
+      "run": "40468018397"
     },
     {
       "agent": "gemini-cli",
@@ -244,17 +244,17 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40465874719"
+      "run": "40468018397"
     },
     {
       "agent": "gemini-cli",
       "route": "homebrew",
       "value": "gemini-cli",
-      "agent_version": "0.46.0",
+      "agent_version": "0.64.0",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40465874719"
+      "run": "40468018397"
     },
     {
       "agent": "goose",
@@ -264,17 +264,17 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40465874719"
+      "run": "40468018397"
     },
     {
       "agent": "goose",
       "route": "homebrew",
       "value": "block-goose-cli",
-      "agent_version": "1.54.0",
+      "agent_version": "1.55.0",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40465874719"
+      "run": "40468018397"
     },
     {
       "agent": "hermes",
@@ -311,17 +311,17 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40465874719"
+      "run": "40468018397"
     },
     {
       "agent": "hermes",
       "route": "homebrew",
       "value": "hermes-agent",
-      "agent_version": "0.21.6",
+      "agent_version": "0.22.2",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40465874719"
+      "run": "40468018397"
     },
     {
       "agent": "kiro-cli",
@@ -331,17 +331,17 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40465874719"
+      "run": "40468018397"
     },
     {
       "agent": "kiro-cli",
       "route": "bundle_ids",
       "value": "com.amazon.codewhisperer",
-      "agent_version": "2.30.0",
+      "agent_version": "2.33.0",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40465874719"
+      "run": "40468018397"
     },
     {
       "agent": "kiro-cli",
@@ -351,17 +351,17 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40465874719"
+      "run": "40468018397"
     },
     {
       "agent": "kiro-cli",
       "route": "homebrew",
       "value": "kiro-cli",
-      "agent_version": "2.30.0",
+      "agent_version": "2.33.0",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40465874719"
+      "run": "40468018397"
     },
     {
       "agent": "muse-code",
@@ -371,17 +371,17 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40465874719"
+      "run": "40468018397"
     },
     {
       "agent": "muse-code",
       "route": "homebrew",
       "value": "muse-code",
-      "agent_version": "1.4.6-R6000.1",
+      "agent_version": "1.4.11-R6667.1",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40465874719"
+      "run": "40468018397"
     },
     {
       "agent": "opencode",
@@ -391,17 +391,17 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40465874719"
+      "run": "40468018397"
     },
     {
       "agent": "opencode",
       "route": "homebrew",
       "value": "opencode",
-      "agent_version": "2.0.25",
+      "agent_version": "2.1.2",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40465874719"
+      "run": "40468018397"
     }
   ]
 }
