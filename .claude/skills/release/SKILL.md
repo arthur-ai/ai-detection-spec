@@ -150,7 +150,12 @@ $ test/run-linux.sh                                          # locally, needs Do
 
 Read the run at the commit the suite ran on, not the newest: a later `.md`-only push gets its
 own run. Each `Runtime on <platform>` job must read `success`. The scope job skips them for a
-diff it judges documentation, and the run still concludes `success`.
+diff it judges documentation, and the run still concludes `success`, so `skipped` verifies
+nothing. `ci.yml` has no manual trigger, so a commit whose jobs read `skipped` never gets them.
+Read the last commit on `main` whose run executed them, and check that nothing since is more
+than documentation or `collect`'s observations:
+`git diff --name-only <that-sha> <verified-sha> | grep -v '\.md$\|observed\.json$'` prints
+nothing.
 
 Windows has no local harness: its scenarios run only in `scenarios.yml`, one
 `<scenario> on windows-2025` job each.
