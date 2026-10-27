@@ -1,5 +1,5 @@
 {
-  "description": "Agents found only as VS Code extensions, on macOS, matched by extension id.",
+  "description": "Agents as VS Code extensions on macOS, matched by extension id, and one JetBrains plugin by its directory.",
   "platform": "darwin",
   "counts": {
     "file": ">=0",
@@ -11,7 +11,7 @@
     "daemon": ">=0",
     "port": ">=0",
     "vscodeext": ">=6",
-    "jbplugin": ">=0",
+    "jbplugin": ">=1",
     "proc": ">=0"
   },
   "classified": {
@@ -27,5 +27,8 @@
       "cline"
     ]
   },
-  "why": "Each agent on macOS, where nothing proved one before. The extension id is each agent's only witness here, and it is the same on every platform. `forbid` names Cline, whose name Roo Code's id `rooveterinaryinc.roo-cline` contains, the control 85-linux-vscode-agents holds on Linux."
+  "require_rows": [
+    {"kind": "jbplugin", "id": "plugin-amazonq"}
+  ],
+  "why": "Each agent on macOS, where nothing proved one before. The extension id is each agent's only witness here, and it is the same on every platform. The Amazon Q plugin row is pinned because must_find passes on its VS Code extension alone, and the row is what proves jetbrains.sql reads plugins on macOS. `forbid` names Cline, whose name Roo Code's id `rooveterinaryinc.roo-cline` contains, the control 85-linux-vscode-agents holds on Linux."
 }
