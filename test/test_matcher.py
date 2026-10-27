@@ -1232,6 +1232,39 @@ check("an identifier observed only without a run id is not covered by CI",
       _cov_before in _st.COVERED_STATES and _cov_after not in _st.COVERED_STATES,
       f"before {_cov_before}, after {_cov_after}")
 
+# PROOF IS PER PLATFORM IN THE REPORT. Take an identifier proved on every platform it is
+# claimed on, at least two, and drop its records from one platform's scenarios: it stays
+# covered, the coverage gate's question, and is short of exactly that platform, on the page.
+_full = next((a["id"], i["route"], i["value"], i["claimed_on"])
+             for a in _st.collect()["agents"] for i in a["identifiers"]
+             if i["state"] == "ci-install" and len(i["claimed_on"]) > 1
+             and set(i["claimed_on"]) <= set(i["proven_on"]))
+_drop = _full[3][0]
+_tmp = pathlib.Path(_tf2.mkdtemp())
+try:
+    _sh.copytree(_st.SCENARIOS, _tmp / "scenarios")
+    for _p in (_tmp / "scenarios").glob("*/observed.json"):
+        _plat = json.loads((_p.parent / "expected.json").read_text()).get("platform")
+        if _plat != _drop:
+            continue
+        _d = json.loads(_p.read_text())
+        _d["identifiers"] = [r for r in _d["identifiers"]
+                             if (r["agent"], r["route"], str(r["value"])) != _full[:3]]
+        _p.write_text(json.dumps(_d))
+    old, _st.SCENARIOS = _st.SCENARIOS, _tmp / "scenarios"
+    try:
+        _data = _st.collect()
+    finally:
+        _st.SCENARIOS = old
+finally:
+    _sh.rmtree(_tmp, ignore_errors=True)
+_after = next(i for a in _data["agents"] if a["id"] == _full[0] for i in a["identifiers"]
+              if (i["route"], i["value"]) == _full[1:3])
+check("an identifier unproved on one claimed platform stays covered and is short of it",
+      _after["state"] == "ci-install" and _st.short_of(_after) == [_drop]
+      and f"`{_full[2]}`" in _st.limits_markdown(_data).split("## Proven on fewer")[-1],
+      f"{_full[:3]} without {_drop}: state {_after['state']}, short of {_st.short_of(_after)}")
+
 # --- running containers and vendor labels ------------------------------------------
 # The two routes added beside `images`, and the reason both exist: a tag is chosen by
 # whoever ran `docker tag`, a label is written by the vendor, and a running container says
