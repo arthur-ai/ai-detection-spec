@@ -142,9 +142,15 @@ and `check_pack.py` on each platform, and `docker_states.sh` on macOS and Linux,
 has no Docker tables on Windows.
 
 ```console
-$ gh run list --workflow=ci.yml --branch=main --limit=1     # macOS, Linux AND Windows
+$ gh run list --workflow=ci.yml --branch=main --limit=10 --json headSha,databaseId \
+    --jq '.[] | select(.headSha=="<verified-sha>") | .databaseId'
+$ gh run view <id> --json jobs --jq '.jobs[] | "\(.name) \(.conclusion)"'
 $ test/run-linux.sh                                          # locally, needs Docker
 ```
+
+Read the run at the commit the suite ran on, not the newest: a later `.md`-only push gets its
+own run. Each `Runtime on <platform>` job must read `success`. The scope job skips them for a
+diff it judges documentation, and the run still concludes `success`.
 
 Windows has no local harness: its scenarios run only in `scenarios.yml`, one
 `<scenario> on windows-2025` job each.
