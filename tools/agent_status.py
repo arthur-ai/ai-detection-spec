@@ -146,9 +146,12 @@ def replay(paths, catalog):
                                 credit(route, value, exact_value=False)
 
                 # A pipx/uv tool directory names its PACKAGE, which is why classify
-                # checks the package routes for it and not the path globs.
-                name = next(classify_mod.tool_names(ident, loc), None)
-                if name:
+                # checks the package routes for it and not the path globs. Every name
+                # `id` and `loc` yield, as classify tries them: the first alone missed a
+                # row whose `id` named an unlisted directory and `loc` a listed one. Not
+                # `_meta`, which names the one value classify picked, where this loop
+                # credits every value the row proves.
+                for name in classify_mod.tool_names(ident, loc):
                     for route in REGISTRY.bridged():
                         if name in [str(v) for v in agent.get(route, [])]:
                             credit(route, name)

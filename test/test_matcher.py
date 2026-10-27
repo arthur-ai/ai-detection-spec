@@ -707,6 +707,19 @@ _kp = {n: json.loads((ROOT / "test" / "scenarios" / n / "expected.json").read_te
 check("a Windows-only identifier is expected only of Windows scenarios",
       bool(_kp) and set(_kp.values()) == {"windows"}, str(_kp))
 
+# classify tries the tool dir `loc` names when `id`'s is unlisted (the tool-dir vectors'
+# shape); the recorder must credit what classify matched.
+_mixed = [{"kind": "file", "id": "/Users/x/.local/pipx/venvs/not-an-agent/", "ver": "",
+           "loc": "/Users/x/.local/share/uv/tools/aider-chat/", "extra": "", "perms": ""}]
+with _tf2.NamedTemporaryFile("w", suffix=".json", delete=False) as _fm:
+    json.dump(_mixed, _fm)
+with _tf2.TemporaryDirectory() as _d:
+    _st.record(_fm.name, _d)
+    _got = {(r["route"], r["value"]) for r in
+            json.loads((pathlib.Path(_d) / "observed.json").read_text())["identifiers"]}
+check("recording credits a tool dir named by `loc` when `id` names an unlisted one",
+      _got == {("pypi", "aider-chat")}, f"got {sorted(_got)}")
+
 # --- an observation names the run that produced it --------------------------------
 #
 # THE FIELD THAT LETS PROOF OUTLIVE THE RUN. Without it, an observation from a CI runner
