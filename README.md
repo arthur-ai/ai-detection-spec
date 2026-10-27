@@ -108,8 +108,7 @@ working days.**
 ## License
 
 **Apache-2.0** — use it, fork it, vendor it into your own tooling, ship it inside a product.
-See [LICENSE](LICENSE) and [NOTICE](NOTICE). Releases up to and including v0.14.1 were published
-under MIT, and copies of those stay MIT.
+See [LICENSE](LICENSE) and [NOTICE](NOTICE).
 
-Maintained by the Arthur Unify team, and built on [osquery](https://osquery.io), which does all
-the hard parts.
+Maintained by the Arthur Unify team. The first binding is built on
+[osquery](https://osquery.io), which does the collecting.
