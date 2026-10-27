@@ -420,7 +420,9 @@ agents:
   - id: openhands
     name: OpenHands
     classification: Coding agent
-    platforms: [darwin, linux]
+    # LINUX ONLY, IN THE CLAIM. Its routes are container images, which no hosted macOS runner
+    # can pull, so nothing proves it on a Mac; a Mac's Docker images still match, unclaimed.
+    platforms: [linux]
     # TWO REPOSITORIES, AND BOTH ARE LIVE. The project moved GitHub organisation and
     # publishes under the new one; the old path still serves an image, so a machine that
     # pulled before the move still has it and must still be found. Read off real rows on
@@ -469,7 +471,7 @@ agents:
   - id: swe-agent
     name: SWE-agent
     classification: Coding agent
-    platforms: [darwin, linux]
+    platforms: [linux]  # as openhands: image routes only, which no macOS runner can prove
     # Read off a real row on 2026-09-11: "sweagent/swe-agent:latest", id 11206d866593.
     #
     # STALE, AND CATALOGUED ANYWAY. The image was created 2024-12-07 -- twenty-one months

@@ -18,7 +18,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "antigravity",
@@ -28,7 +28,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "antigravity",
@@ -47,7 +47,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "antigravity",
@@ -57,7 +57,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "antigravity",
@@ -76,7 +76,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "antigravity",
@@ -86,7 +86,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "antigravity",
@@ -105,7 +105,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "antigravity",
@@ -115,7 +115,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "chatgpt-desktop",
@@ -152,7 +152,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "chatgpt-desktop",
@@ -162,7 +162,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "chatgpt-desktop",
@@ -199,7 +199,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "chatgpt-desktop",
@@ -209,7 +209,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "claude-desktop",
@@ -246,7 +246,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "claude-desktop",
@@ -256,7 +256,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "claude-desktop",
@@ -293,7 +293,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "claude-desktop",
@@ -303,7 +303,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "cursor",
@@ -340,7 +340,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "cursor",
@@ -350,7 +350,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "cursor",
@@ -387,7 +387,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "cursor",
@@ -397,7 +397,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "kiro",
@@ -416,7 +416,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "kiro",
@@ -426,7 +426,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "kiro",
@@ -445,7 +445,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "kiro",
@@ -455,7 +455,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "orion",
@@ -492,7 +492,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "orion",
@@ -502,7 +502,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "orion",
@@ -539,7 +539,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "orion",
@@ -549,7 +549,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "perplexity-comet",
@@ -586,7 +586,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "perplexity-comet",
@@ -596,7 +596,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "perplexity-comet",
@@ -633,7 +633,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "perplexity-comet",
@@ -643,7 +643,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "windsurf",
@@ -680,7 +680,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "windsurf",
@@ -690,7 +690,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "windsurf",
@@ -727,7 +727,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "windsurf",
@@ -737,7 +737,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     }
   ]
 }

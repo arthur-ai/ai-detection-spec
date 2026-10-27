@@ -44,7 +44,8 @@ container image. A signature written for one route is blind to a fleet that used
   the value is compared to and, where one has happened, the trap that cost an identifier
   (`vscode_extensions` is `name`, never `publisher_id`; `jetbrains_plugins` is the directory,
   not the plugin.xml id). Each route's `platform:` is there too, and the agent's `platforms:`
-  must agree.
+  must agree. Each platform listed needs a CI scenario on it that produces one of the agent's
+  identifiers, or the coverage gate fails: list only the platforms a run proves.
 - **Not identifiers**: a generic name (Cursor writes `~/.local/bin/agent`, Grok
   `~/.grok/bin/agent`), a listening port, a package a third party publishes for the vendor's
   tool (npm `hermes-agent`). Leave them out and say why in the entry's comment, as `hermes`

@@ -1250,53 +1250,19 @@ finally:
 check("an identifier observed only without a platform is not covered by CI",
       _cov_noplat not in _st.COVERED_STATES, f"state {_cov_noplat}")
 
-# PROOF IS PER PLATFORM IN THE REPORT. Take an identifier proved on every platform it is
-# claimed on, at least two, and drop its records from one platform's scenarios: it stays
-# covered, the coverage gate's question, and is short of exactly that platform, on the page.
-_full = next((a["id"], i["route"], i["value"], i["claimed_on"])
-             for a in _st.collect()["agents"] for i in a["identifiers"]
-             if i["state"] == "ci-install" and len(i["claimed_on"]) > 1
-             and set(i["claimed_on"]) <= set(i["proven_on"]))
-_drop = _full[3][0]
+# EACH PLATFORM AN AGENT LISTS IS PROVED BY A RECORD FROM IT. Take an agent proved on every
+# platform it lists, at least two, and retag its records from one of them as another
+# platform's: it is unproven there, by the record's own `platform` and not by what its
+# scenario declares, and the gate names it.
+_ag = next(a for a in _st.collect()["agents"] if len(a["platforms"]) > 1 and not a["unproven"])
+_drop = _ag["platforms"][-1]
 _tmp = pathlib.Path(_tf2.mkdtemp())
 try:
     _sh.copytree(_st.SCENARIOS, _tmp / "scenarios")
     for _p in (_tmp / "scenarios").glob("*/observed.json"):
-        _plat = json.loads((_p.parent / "expected.json").read_text()).get("platform")
-        if _plat != _drop:
-            continue
-        _d = json.loads(_p.read_text())
-        _d["identifiers"] = [r for r in _d["identifiers"]
-                             if (r["agent"], r["route"], str(r["value"])) != _full[:3]]
-        _p.write_text(json.dumps(_d))
-    old, _st.SCENARIOS = _st.SCENARIOS, _tmp / "scenarios"
-    try:
-        _data = _st.collect()
-    finally:
-        _st.SCENARIOS = old
-finally:
-    _sh.rmtree(_tmp, ignore_errors=True)
-_after = next(i for a in _data["agents"] if a["id"] == _full[0] for i in a["identifiers"]
-              if (i["route"], i["value"]) == _full[1:3])
-check("an identifier unproved on one claimed platform stays covered and is short of it",
-      _after["state"] == "ci-install" and _st.short_of(_after) == [_drop]
-      and f"`{_full[2]}`" in _st.limits_markdown(_data).split("## Proven on fewer")[-1],
-      f"{_full[:3]} without {_drop}: state {_after['state']}, short of {_st.short_of(_after)}")
-
-# THE RECORD'S PLATFORM, NOT THE SCENARIO'S: proven_on is what tools/observations.py reads,
-# the platform tools/export.py publishes, which falls back to the scenario's only when a
-# record has none. Retag every record of one identifier and proven_on must follow it.
-_tmp = pathlib.Path(_tf2.mkdtemp())
-try:
-    _sh.copytree(_st.SCENARIOS, _tmp / "scenarios")
-    _files = sorted((_tmp / "scenarios").glob("*/observed.json"))
-    _key = next((r["agent"], r["route"], str(r["value"])) for _p in _files
-                for r in json.loads(_p.read_text()).get("identifiers", [])
-                if r.get("run") and r.get("platform") == "linux")
-    for _p in _files:
         _d = json.loads(_p.read_text())
         for r in _d.get("identifiers", []):
-            if (r["agent"], r["route"], str(r["value"])) == _key:
+            if r["agent"] == _ag["id"] and r.get("platform") == _drop:
                 r["platform"] = "plan9"
         _p.write_text(json.dumps(_d))
     old, _st.SCENARIOS = _st.SCENARIOS, _tmp / "scenarios"
@@ -1306,10 +1272,12 @@ try:
         _st.SCENARIOS = old
 finally:
     _sh.rmtree(_tmp, ignore_errors=True)
-_retag = next(i for a in _data["agents"] if a["id"] == _key[0] for i in a["identifiers"]
-              if (i["route"], i["value"]) == _key[1:])
-check("proven_on is each record's own platform, not its scenario's declared one",
-      _retag["proven_on"] == ["plan9"], f"{_key}: proven_on {_retag['proven_on']}")
+_after = next(a for a in _data["agents"] if a["id"] == _ag["id"])
+_bad, _ = _st._unproven(_data, [])
+check("an agent listed on a platform no record of its own proves fails the gate",
+      [u["platform"] for u in _after["unproven"]] == [_drop]
+      and any(b.startswith(f"{_ag['id']} is listed on {_drop} ") for b in _bad),
+      f"{_ag['id']} retagged off {_drop}: unproven {_after['unproven']}")
 
 # --- running containers and vendor labels ------------------------------------------
 # The two routes added beside `images`, and the reason both exist: a tag is chosen by

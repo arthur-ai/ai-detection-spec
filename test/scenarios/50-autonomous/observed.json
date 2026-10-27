@@ -18,17 +18,17 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "openclaw",
       "route": "bundle_ids",
       "value": "ai.openclaw.mac",
-      "agent_version": "2026.10.2",
+      "agent_version": "2026.10.5",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "openclaw",
@@ -47,17 +47,17 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "openclaw",
       "route": "homebrew",
       "value": "openclaw",
-      "agent_version": "2026.10.2",
+      "agent_version": "2026.10.5",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40464767467"
+      "run": "40465874719"
     }
   ]
 }

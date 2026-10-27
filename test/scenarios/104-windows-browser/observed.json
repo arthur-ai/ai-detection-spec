@@ -9,7 +9,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "claude-desktop",
@@ -18,7 +18,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "claude-in-chrome",
@@ -28,7 +28,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "harpa",
@@ -38,7 +38,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "merlin",
@@ -48,7 +48,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "monica",
@@ -58,7 +58,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "sider",
@@ -68,7 +68,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "40464767467"
+      "run": "40465874719"
     }
   ]
 }

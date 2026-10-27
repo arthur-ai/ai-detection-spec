@@ -204,6 +204,39 @@ diagnose() {
   done
 }
 
+# Google Chrome from Google's own deb or rpm, by family, for 75-linux-browser and
+# 92-linux-browser-agents. Google publishes both from the same URL shape, and what is under
+# test -- the profile osquery reads and the native-messaging directories beside it -- is the
+# same install either way. The rpm goes through dnf rather than rpm -i so its dependencies
+# resolve: Chrome needs the X libraries to start even headless, and so does Chrome for
+# Testing, whose zip carries none of them.
+#
+# mktemp, with the suffix the package manager keys on: apt-get and dnf treat an argument as a
+# local package only when it ends in .deb or .rpm. A fixed /tmp name is a symlink waiting to
+# be planted between the download and the privileged install. A failed download is not a
+# SKIP: see retry below. x86_64 only, which each caller checks before installing anything.
+need_chrome() {
+  local pkg
+  case "$(pm)" in
+    apt) pkg=$(mktemp /tmp/chrome.XXXXXX.deb)
+         retry "the Chrome download" curl --retry 3 -fsSLo "$pkg" \
+           https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb \
+           || { rm -f "$pkg"; echo "FAIL: Chrome did not download"; exit 1; }
+         try "installing the Chrome deb" sudo_maybe apt-get -qq install -y "$pkg" \
+           || echo "WARN: Chrome did not install"
+         rm -f "$pkg" ;;
+    dnf) pkg=$(mktemp /tmp/chrome.XXXXXX.rpm)
+         retry "the Chrome download" curl --retry 3 -fsSLo "$pkg" \
+           https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm \
+           || { rm -f "$pkg"; echo "FAIL: Chrome did not download"; exit 1; }
+         try "installing the Chrome rpm" sudo_maybe dnf -q -y install "$pkg" \
+           || echo "WARN: Chrome did not install"
+         rm -f "$pkg" ;;
+    *)   echo "SKIP: no package manager this scenario can install Chrome with"; exit 3 ;;
+  esac
+  google-chrome --version 2>&1 | head -1 || true
+}
+
 # VS Code from Microsoft's own deb or rpm, by family: the same URL shape publishes both, and
 # the extension directory osquery reads is the same install either way. Exits 3 (SKIP) where
 # Microsoft publishes no package; a download that fails three times exits 1, per retry.

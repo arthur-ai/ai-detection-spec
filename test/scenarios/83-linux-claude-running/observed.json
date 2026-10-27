@@ -24,7 +24,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "claude-code",
@@ -33,7 +33,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "claude-code",
@@ -58,7 +58,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "claude-code",
@@ -67,7 +67,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "claude-code",
@@ -92,7 +92,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "40464767467"
+      "run": "40465874719"
     },
     {
       "agent": "claude-code",
@@ -101,7 +101,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "40464767467"
+      "run": "40465874719"
     }
   ]
 }

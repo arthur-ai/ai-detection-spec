@@ -1,0 +1,31 @@
+{
+  "description": "Agents found only as VS Code extensions, on macOS, matched by extension id.",
+  "platform": "darwin",
+  "counts": {
+    "file": ">=0",
+    "npm": ">=0",
+    "app": ">=0",
+    "brew": ">=0",
+    "ext": ">=0",
+    "nmh": ">=0",
+    "daemon": ">=0",
+    "port": ">=0",
+    "vscodeext": ">=6",
+    "jbplugin": ">=0",
+    "proc": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "roo-code",
+      "gemini-code-assist",
+      "amazon-q",
+      "cody",
+      "codegpt",
+      "blackbox"
+    ],
+    "forbid": [
+      "cline"
+    ]
+  },
+  "why": "Each agent on macOS, where nothing proved one before. The extension id is each agent's only witness here, and it is the same on every platform. `forbid` names Cline, whose name Roo Code's id `rooveterinaryinc.roo-cline` contains, the control 85-linux-vscode-agents holds on Linux."
+}

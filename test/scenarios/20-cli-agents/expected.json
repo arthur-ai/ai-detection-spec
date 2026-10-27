@@ -26,7 +26,8 @@
       "continue",
       "kilo-code",
       "augment",
-      "pi"
+      "pi",
+      "grok"
     ],
     "forbid": [
       "openclaw"
@@ -42,7 +43,8 @@
     "@continuedev/cli",
     "@kilocode/cli",
     "@augmentcode/auggie",
-    "/.pi/"
+    "/.pi/",
+    "/.grok/"
   ],
   "forbid_rows": [
     {
