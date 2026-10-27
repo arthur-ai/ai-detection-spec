@@ -24,9 +24,12 @@ import json
 import pathlib
 import re
 import platform as _platform
+import shutil
 import subprocess
 import sys
 import time
+
+import build
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 BANDS = {"fast": 1.0, "slow": 5.0, "expensive": float("inf")}
@@ -50,15 +53,22 @@ TIMEOUT = 60
 # in different languages and there is no shared config file to put it in.
 DEEP_BOUND = 6.0
 # The macOS pair first so a Mac's answer does not change, then Linux, where both the deb
-# and the rpm install to /usr/bin. Kept in step with bin/container-scan's osqueryi_path.
+# and the rpm install to /usr/bin, then where the Windows MSI installs. The POSIX entries are
+# kept in step with bin/container-scan's osqueryi_path.
 OSQI_CANDIDATES = ["/usr/local/bin/osqueryi",
                    "/opt/osquery/lib/osquery.app/Contents/MacOS/osqueryi",
-                   "/usr/bin/osqueryi", "osqueryi"]
+                   "/usr/bin/osqueryi", r"C:\Program Files\osquery\osqueryi.exe", "osqueryi"]
+
+# docker_* is in osquery's specs/posix alone, and Windows osqueryi refuses a flag it has no
+# table for: `ERROR: unknown command line flag 'docker_socket'`, exit 1, nothing on stdout
+# (measured, windows-2025). Passed there, every query here would read as broken.
+DOCKER_FLAGS = (["--docker_socket", "/nonexistent/docker.sock"]
+                if build.runs_on("posix", build.HOST_PLATFORM) else [])
 
 
 def osqueryi():
     for c in OSQI_CANDIDATES:
-        if pathlib.Path(c).exists() or subprocess.run(["which", c], capture_output=True).returncode == 0:
+        if pathlib.Path(c).exists() or shutil.which(c):
             return c
     sys.exit("osqueryi not found")
 
@@ -86,10 +96,12 @@ def measure(binary, sql):
     best, rows = float("inf"), 0
     for _ in range(RUNS):
         start = time.time()
+        # ON STDIN, as bin/discover runs an artifact: an argument beginning with `--` is read
+        # as a flag, and Windows caps a command line at 32,767 characters.
         try:
-            out = subprocess.run([binary, "--docker_socket", "/nonexistent/docker.sock",
-                                  "--json", sql],
-                                 capture_output=True, text=True, timeout=TIMEOUT)
+            out = subprocess.run([binary, *DOCKER_FLAGS, "--json"], input=sql + ";\n",
+                                 capture_output=True, text=True, encoding="utf-8",
+                                 timeout=TIMEOUT)
         except subprocess.TimeoutExpired:
             return float("inf"), -1
         best = min(best, time.time() - start)
@@ -116,7 +128,7 @@ def main():
     # this file's own header warns about: "the failing query then returns instantly, which
     # reads as a SPEEDUP if you happen to be timing it." A band held by a query that never
     # ran is a band nobody is holding.
-    plat = {"Darwin": "darwin", "Linux": "linux"}.get(_platform.system())
+    plat = build.HOST_PLATFORM
     if plat is None:
         sys.exit(f"measure: unsupported platform {_platform.system()}")
     skipped = []
@@ -130,7 +142,7 @@ def main():
             head.append(line)
         declared = (re.search(r"^--\s*platform:\s*(\S+)", "\n".join(head), re.M)
                     or [None, ""])[1]
-        if declared not in (plat, "posix", "all"):
+        if not build.runs_on(declared, plat):
             skipped.append(f"{path.name}({declared})")
             continue
         band = (re.search(r"^--\s*cost:\s*(\w+)", text, re.M) or [None, "fast"])[1]
@@ -161,7 +173,9 @@ def main():
     # finish inside its own bound on the ABSENT case is broken for a different reason than
     # a slow one.
     deep = ROOT / "dist" / "discovery-deep.sql"
-    if deep.exists():
+    # Every expensive query is `posix` (tools/build.py refuses one that is not), so on any
+    # other platform the deep artifact names tables osqueryi does not have.
+    if deep.exists() and build.runs_on("posix", plat):
         secs, rows = measure(binary, body(deep.read_text()))
         results.append({"query": "dist/discovery-deep.sql", "band": "deep",
                         "seconds": round(secs, 2), "rows": rows,

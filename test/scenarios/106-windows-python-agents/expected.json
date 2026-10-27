@@ -1,0 +1,33 @@
+{
+  "description": "aider from PyPI by pipx and by uv on Windows, found by the package its tool directories are named for.",
+  "platform": "windows",
+  "counts": {
+    "ext": ">=0",
+    "file": ">=2",
+    "msix": ">=1",
+    "nmh": ">=1",
+    "npm": ">=0",
+    "proc": ">=0",
+    "scan": ">=1",
+    "uninstall": ">=1",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "aider"
+    ],
+    "forbid": [
+      "claude-code",
+      "codex-cli",
+      "gemini-cli"
+    ]
+  },
+  "require_rows": [
+    {"kind": "file", "id": "\\AppData\\Local\\pipx\\pipx\\venvs\\aider-chat\\"},
+    {"kind": "file", "id": "\\AppData\\Roaming\\uv\\tools\\aider-chat\\"}
+  ],
+  "why": "The two Windows tool-dir layouts against real installs. aider installs as aider-chat, so a directory named for the command would match nothing; the row names the package, and the pypi route reads the name back under the Windows home root. Installed and never run, so ~\\.aider does not exist and the tool directories are the only witness. `forbid` names CLI agents whose launchers share ~\\.local\\bin with aider's.",
+  "known_gaps": [
+    "Installed, never run, so aider's own state directory is not produced here."
+  ]
+}

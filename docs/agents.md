@@ -10,16 +10,16 @@ Every AI agent this repo finds, every identifier it is matched on,
 and the CI test behind each one.
 
 ![agents](https://img.shields.io/badge/agents-42-1D4E89)
-![identifiers](https://img.shields.io/badge/identifiers-113-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-113%2F113-2E7D57)
-![real install](https://img.shields.io/badge/by_real_install-113-2E7D57)
+![identifiers](https://img.shields.io/badge/identifiers-119-1D4E89)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-119%2F119-2E7D57)
+![real install](https://img.shields.io/badge/by_real_install-119-2E7D57)
 
 </div>
 
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 113 of 113. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all; the build rejects it.
+**Every identifier is proved by a real install in CI** — 119 of 119. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all; the build rejects it.
 
 ## 🧪 Why a real install is the bar
 
@@ -42,34 +42,34 @@ Operates on a codebase, usually with shell access.
 
 | name | identifiers | scenarios |
 |---|---|---|
-| **aider** | **`aider`**, **`aider-chat`**, **`paulgauthier/aider`**, **`~/.aider`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
+| **aider** | **`aider`**, **`aider-chat`**, **`paulgauthier/aider`**, **`~/.aider`** | 106-windows-python-agents, 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
 | **Amazon Q Developer** | **`amazonwebservices.amazon-q-vscode`**, **`plugin-amazonq`** | 85-linux-vscode-agents, 86-linux-jetbrains-agents |
 | **Google Antigravity** | **`com.google.antigravity`**, **`com.google.antigravity-ide`**, **`antigravity`**, **`antigravity-ide`** | 10-desktop-apps |
 | **Augment Code** | **`@augmentcode/auggie`**, **`augment.vscode-augment`** | 20-cli-agents, 71-linux-cli-agents, 85-linux-vscode-agents |
 | **BLACKBOX AI** | **`blackboxapp.blackbox`**, **`blackboxapp.blackboxagent`** | 85-linux-vscode-agents |
-| **Claude Code** | **`@anthropic-ai/claude-code`**, **`anthropic.claude-code`**, **`~/.claude`**, **`~/.local/bin/claude`**, **`~/.local/share/claude/versions/`**, **`claude-code`**, **`claude-code`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 83-linux-claude-running, 85-linux-vscode-agents, 89-linux-claude-deb, 90-demo-fleet, 91-linux-claude-rpm |
-| **Cline** | **`cline`**, **`saoudrizwan.claude-dev`**, **`cline`** | 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode, 80-linux-jetbrains |
+| **Claude Code** | **`@anthropic-ai/claude-code`**, **`anthropic.claude-code`**, **`~/.claude`**, **`~/.local/bin/claude`**, **`~/.local/bin/claude.exe`**, **`~/.local/share/claude/versions/`**, **`~/.local/bin/claude.exe`**, **`claude-code`**, **`claude-code`** | 101-windows-cli-agents, 102-windows-claude-native, 103-windows-vscode-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 83-linux-claude-running, 85-linux-vscode-agents, 89-linux-claude-deb, 90-demo-fleet, 91-linux-claude-rpm |
+| **Cline** | **`cline`**, **`saoudrizwan.claude-dev`**, **`cline`** | 103-windows-vscode-agents, 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode, 80-linux-jetbrains |
 | **CodeGPT** | **`danielsanmedium.dscodegpt`** | 85-linux-vscode-agents |
-| **Codex CLI** | **`codex`**, **`@openai/codex`**, **`openai.chatgpt`**, **`~/.codex`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 85-linux-vscode-agents, 90-demo-fleet |
+| **Codex CLI** | **`codex`**, **`@openai/codex`**, **`openai.chatgpt`**, **`~/.codex`** | 101-windows-cli-agents, 103-windows-vscode-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 85-linux-vscode-agents, 90-demo-fleet |
 | **Cody** | **`sourcegraph.cody-ai`**, **`Sourcegraph`** | 85-linux-vscode-agents, 86-linux-jetbrains-agents |
-| **Continue** | **`@continuedev/cli`**, **`continue.continue`**, **`continue-intellij-extension`** | 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode, 80-linux-jetbrains |
-| **GitHub Copilot** | **`copilot-cli`**, **`@github/copilot`**, **`github-copilot-intellij`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 86-linux-jetbrains-agents |
-| **Cursor** | **`com.todesktop.230313mzl4w4u92`**, **`cursor`**, **`cursor-cli`**, **`~/.local/bin/cursor-agent`**, **`cursor`**, **`cursor`**, **`cursor.desktop`** | 10-desktop-apps, 21-cli-agents-homebrew, 73-linux-deb, 77-linux-rpm, 84-linux-installers, 90-demo-fleet |
-| **Gemini CLI** | **`gemini-cli`**, **`@google/gemini-cli`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 81-linux-bun |
+| **Continue** | **`@continuedev/cli`**, **`continue.continue`**, **`continue-intellij-extension`** | 103-windows-vscode-agents, 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode, 80-linux-jetbrains |
+| **GitHub Copilot** | **`copilot-cli`**, **`@github/copilot`**, **`github-copilot-intellij`** | 101-windows-cli-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 86-linux-jetbrains-agents |
+| **Cursor** | **`com.todesktop.230313mzl4w4u92`**, **`cursor`**, **`cursor-cli`**, **`~/.local/bin/cursor-agent`**, **`~/AppData/Local/Programs/cursor/`**, **`cursor`**, **`cursor`**, **`cursor.desktop`**, **`{DADADADA-ADAD-ADAD-ADAD-ADADADADADAD}}_is1`** | 10-desktop-apps, 105-windows-desktop-apps, 21-cli-agents-homebrew, 73-linux-deb, 77-linux-rpm, 84-linux-installers, 90-demo-fleet |
+| **Gemini CLI** | **`gemini-cli`**, **`@google/gemini-cli`** | 101-windows-cli-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 81-linux-bun |
 | **Gemini Code Assist** | **`google.geminicodeassist`**, **`gemini`** | 85-linux-vscode-agents, 86-linux-jetbrains-agents |
 | **goose** | **`com.electron.goose`**, **`block-goose-cli`**, **`block-goose`**, **`ghcr.io/block/goose`**, **`https://github.com/block/goose`**, **`~/.local/bin/goose`** | 13-desktop-apps-more, 21-cli-agents-homebrew, 79-linux-image, 84-linux-installers |
 | **Grok Build** | **`~/.grok`** | 84-linux-installers |
-| **Kilo Code** | **`@kilocode/cli`**, **`kilocode.kilo-code`** | 20-cli-agents, 71-linux-cli-agents, 85-linux-vscode-agents |
+| **Kilo Code** | **`@kilocode/cli`**, **`kilocode.kilo-code`** | 103-windows-vscode-agents, 20-cli-agents, 71-linux-cli-agents, 85-linux-vscode-agents |
 | **Kiro** | **`dev.kiro.desktop`**, **`kiro`** | 10-desktop-apps |
 | **Kiro CLI** | **`com.amazon.codewhisperer`**, **`kiro-cli`**, **`~/.local/bin/kiro-cli`** | 21-cli-agents-homebrew, 84-linux-installers |
 | **Muse Code** | **`muse-code`**, **`~/.local/bin/muse`** | 14-meta-muse, 21-cli-agents-homebrew, 84-linux-installers |
 | **opencode** | **`opencode`**, **`opencode-ai`**, **`~/.opencode`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 84-linux-installers |
 | **OpenHands** | **`ghcr.io/openhands/openhands`**, **`ghcr.io/all-hands-ai/openhands`**, **`https://github.com/OpenHands/OpenHands`** | 79-linux-image |
 | **Pi** | **`@earendil-works/pi-coding-agent`**, **`@mariozechner/pi-coding-agent`**, **`~/.pi`** | 20-cli-agents, 84-linux-installers, 87-linux-pi, 88-linux-pi-legacy |
-| **Roo Code** | **`rooveterinaryinc.roo-cline`** | 85-linux-vscode-agents |
+| **Roo Code** | **`rooveterinaryinc.roo-cline`** | 103-windows-vscode-agents, 85-linux-vscode-agents |
 | **SWE-agent** | **`sweagent/swe-agent`** | 79-linux-image |
 | **Trae** | **`com.trae.app`**, **`cn.trae.app`**, **`trae`**, **`trae-cn`** | 13-desktop-apps-more |
-| **Windsurf** | **`com.exafunction.windsurf`**, **`devin-desktop`** | 10-desktop-apps |
+| **Windsurf** | **`com.exafunction.windsurf`**, **`devin-desktop`**, **`{5A8B7D94-9B5F-4D1F-93FC-5609F7159349}_is1`** | 10-desktop-apps, 105-windows-desktop-apps |
 
 ## Personal agent
 
@@ -97,11 +97,11 @@ An extension that acts inside the browser on the user's behalf.
 
 | name | identifiers | scenarios |
 |---|---|---|
-| **Claude in Chrome** | **`fcoeoabgfenejglbffodgkkbkcdhcgfn`** | 45-claude-extension |
-| **HARPA AI** | **`eanggfilgoajaocelnaflolkadkeghjp`** | 45-claude-extension |
-| **Merlin** | **`camppjleccjaphfdbohjdohecfnoikec`** | 45-claude-extension |
-| **Monica** | **`ofpnmcalabcbjgholdjcjblkibolbppb`** | 45-claude-extension |
-| **Sider** | **`difoiogjjojoaoomphldepapgpbgkhkb`** | 45-claude-extension |
+| **Claude in Chrome** | **`fcoeoabgfenejglbffodgkkbkcdhcgfn`** | 104-windows-browser, 45-claude-extension |
+| **HARPA AI** | **`eanggfilgoajaocelnaflolkadkeghjp`** | 104-windows-browser, 45-claude-extension |
+| **Merlin** | **`camppjleccjaphfdbohjdohecfnoikec`** | 104-windows-browser, 45-claude-extension |
+| **Monica** | **`ofpnmcalabcbjgholdjcjblkibolbppb`** | 104-windows-browser, 45-claude-extension |
+| **Sider** | **`difoiogjjojoaoomphldepapgpbgkhkb`** | 104-windows-browser, 45-claude-extension |
 
 ## Desktop assistant
 
@@ -110,7 +110,7 @@ A chat client that can run tools on the machine, for example through MCP.
 | name | identifiers | scenarios |
 |---|---|---|
 | **ChatGPT Desktop** | **`com.openai.codex`**, **`com.openai.chat`**, **`chatgpt`** | 10-desktop-apps, 12-chatgpt-pre-rename, 90-demo-fleet |
-| **Claude Desktop** | **`com.anthropic.claudefordesktop`**, **`claude`**, **`com.anthropic.claude_browser_extension.json`** | 10-desktop-apps, 90-demo-fleet |
+| **Claude Desktop** | **`com.anthropic.claudefordesktop`**, **`claude`**, **`com.anthropic.claude_browser_extension.json`**, **`Claude_pzs8sxrjxfjjc`** | 10-desktop-apps, 104-windows-browser, 105-windows-desktop-apps, 90-demo-fleet |
 | **Perplexity** | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
 
 > **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = superseded: a run proved it and the current release no longer emits it. ∅ = no CI runner for its platform. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it.

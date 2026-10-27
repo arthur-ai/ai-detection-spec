@@ -86,7 +86,7 @@ is omitted rather than sent as zero.
 | `newest_scan_age_seconds` | age of the most recently read source |
 | `host_os` | the OS **`bin/classify` ran on** |
 | `host_os_release` | its major version only |
-| `payload_platform` | the platform the **payload** came from: `darwin`, `linux`, `mixed` or `unknown` |
+| `payload_platform` | the platform the **payload** came from: `darwin`, `linux`, `windows`, `mixed` or `unknown` |
 | `python_version` | the interpreter running `bin/classify` |
 | `output_mode` | `json` or `text` |
 | `show_unmatched` | whether `--show-unmatched` was passed |

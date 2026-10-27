@@ -1,0 +1,65 @@
+{
+  "scenario": "103-windows-vscode-agents",
+  "identifiers": [
+    {
+      "agent": "claude-code",
+      "route": "vscode_extensions",
+      "value": "anthropic.claude-code",
+      "agent_version": "2.1.311",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "40438032192"
+    },
+    {
+      "agent": "cline",
+      "route": "vscode_extensions",
+      "value": "saoudrizwan.claude-dev",
+      "agent_version": "4.1.26",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "40438032192"
+    },
+    {
+      "agent": "codex-cli",
+      "route": "vscode_extensions",
+      "value": "openai.chatgpt",
+      "agent_version": "26.1021.22027",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "40438032192"
+    },
+    {
+      "agent": "continue",
+      "route": "vscode_extensions",
+      "value": "continue.continue",
+      "agent_version": "2.0.0",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "40438032192"
+    },
+    {
+      "agent": "kilo-code",
+      "route": "vscode_extensions",
+      "value": "kilocode.kilo-code",
+      "agent_version": "7.8.18",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "40438032192"
+    },
+    {
+      "agent": "roo-code",
+      "route": "vscode_extensions",
+      "value": "rooveterinaryinc.roo-cline",
+      "agent_version": "3.54.0",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "40438032192"
+    }
+  ]
+}

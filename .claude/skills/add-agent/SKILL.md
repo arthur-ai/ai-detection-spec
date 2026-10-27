@@ -103,6 +103,11 @@ Mechanics:
   `install_jb_plugin`); both carry `retry`. Wrap every download and install in it; the
   helpers already do. Running out should `WARN` and continue, so the assertion names which agent is
   missing, or `exit 1` when nothing after it can run.
+- **A Windows scenario is `setup.ps1`**, Windows PowerShell 5.1 and ASCII only, dot-sourcing
+  `test/lib/guest-windows.ps1` (`Invoke-Retry`, `Invoke-Try`, `Get-Download`, `Install-Exe`,
+  `Reset-NpmPrefix`, `Install-VSCodeExtension`, `Exit-Skip`), and it ends in an explicit `exit`.
+  A Windows path in `expected.json` is asserted with `require_rows`, whose values are
+  substrings of one field: `must_contain` matches the JSON text, where every `\` is doubled.
 - `exit 3` is SKIP, for an environment that cannot host the scenario — a missing package
   family or architecture, never a failed download. Be slow to conclude even that (`CLAUDE.md`,
   *Testing*).
@@ -110,9 +115,12 @@ Mechanics:
   job, which runs it on both macOS labels. Linux goes in `scenario-linux` (Ubuntu) and
   `scenario-linux-container` (Debian, Rocky, Fedora, Amazon Linux); one that needs a package
   family exits 3 on the others, as 74 does off apt, and 77 is left out of the Ubuntu job
-  because Ubuntu never has rpm. `tools/check_workflows.py` fails until it is listed.
+  because Ubuntu never has rpm. Windows goes in `scenario-windows`. `tools/check_workflows.py`
+  fails until it is listed.
 - Run it: `test/run-linux.sh <name>` (Docker; `LINUX_IMAGE=quay.io/rockylinux/rockylinux:9`
   for the rpm family) or `test/run.sh <name>` (Tart). Both write `observed.json` on a pass.
+  Windows has no local harness: its job uploads `observed-<name>--windows-2025`, and
+  `tools/merge_observations.py` merges a downloaded run's artifacts into the tree.
   **Commit it** — `collect` only commits on `main`, so without it `docs/agents.md` reports the
   new values as uncovered until the merge.
 

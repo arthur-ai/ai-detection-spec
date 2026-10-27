@@ -44,6 +44,42 @@ for f in "$HERE"/run.sh "$HERE"/run-ec2.sh "$HERE"/run-gce.sh "$HERE"/lib/vm.sh 
   bash -n "$f" || { echo "FAIL: bash syntax in $f"; fail=1; }
 done
 
+# THE WINDOWS SCRIPTS ARE WINDOWS POWERSHELL 5.1, parsed by PowerShell's own parser in one
+# pwsh call. pwsh is REQUIRED where REQUIRE_PWSH=1 -- ci.yml's lint job, whose ubuntu runner
+# ships it -- and otherwise skipped LOUDLY, with the count, never silently: a check that
+# dissolves into "command not found" leaves every Windows scenario unchecked and green.
+# ASCII ONLY, because 5.1 reads a script without a BOM as ANSI, and one that has a BOM is a
+# diff nobody can see.
+_ps1=()
+for f in "$HERE"/scenarios/*/setup.ps1 "$HERE"/lib/guest-windows.ps1; do
+  [ -e "$f" ] && _ps1+=("$f")
+done
+if [ ${#_ps1[@]} -gt 0 ]; then
+  if LC_ALL=C grep -n $'[^\t -~]' "${_ps1[@]}"; then
+    echo "FAIL: the PowerShell lines above are not ASCII"; fail=1
+  fi
+  if command -v pwsh >/dev/null; then
+    _parse="$(mktemp)"
+    printf '%s\n' '$bad = 0' \
+      'foreach ($f in $args) {' \
+      '  $errs = $null' \
+      '  [void][System.Management.Automation.Language.Parser]::ParseFile($f, [ref]$null, [ref]$errs)' \
+      '  foreach ($e in $errs) { "FAIL: ${f}:$($e.Extent.StartLineNumber): $($e.Message)"; $bad = 1 }' \
+      '}' 'exit $bad' > "$_parse.ps1"
+    if pwsh -NoProfile -NonInteractive -File "$_parse.ps1" "${_ps1[@]}"; then
+      echo "PowerShell: ok, ${#_ps1[@]} files parse"
+    else
+      fail=1
+    fi
+    rm -f "$_parse" "$_parse.ps1"
+  elif [ "${REQUIRE_PWSH:-0}" = 1 ]; then
+    echo "FAIL: REQUIRE_PWSH=1 and pwsh is not installed, so ${#_ps1[@]} PowerShell files are unchecked"
+    fail=1
+  else
+    echo "SKIP: pwsh not found; ${#_ps1[@]} PowerShell files unparsed (brew install --cask powershell)"
+  fi
+fi
+
 # ONE WAY TO BECOME THE SCENARIO USER, and only one.
 #
 # test/lib/guest-linux.sh had two: as_user, which scrubs the environment with `env -i`, and
@@ -77,6 +113,25 @@ if [ -z "$_retry_mac" ] || [ "$_retry_mac" != "$(_retry_body "$HERE/lib/guest-li
 else
   echo "guest.sh, guest-linux.sh: one retry"
 fi
+
+# AND ONE RETRY CONTRACT IN THE THIRD, which is another language and cannot be byte-identical:
+# guest-windows.ps1's Invoke-Retry keeps retry()'s schedule and both its messages, so a log
+# reads the same on every platform and a change to one is a change to all.
+python3 - "$_retry_mac" "$HERE/lib/guest-windows.ps1" <<'RETRY' || fail=1
+import re, sys
+bash, ps = sys.argv[1], open(sys.argv[2]).read()
+ps = ps[ps.index("function Invoke-Retry"):]
+ps = ps[:ps.index("\n}\n")]
+want = (re.search(r"for wait in ([\w ]+); do", bash).group(1).split(),
+        sorted(m.replace("$label", "$L") for m in re.findall(r'"(\s*(?:retrying|WARN:)[^"]*)"', bash)))
+got = ([x.strip(" '") for x in re.search(r"foreach \(\$wait in ([^)]+)\)", ps).group(1).split(",")],
+       sorted(m.replace("$Label", "$L") for m in re.findall(r'"(\s*(?:retrying|WARN:)[^"]*)"', ps)))
+if got != want:
+    print(f"FAIL: Invoke-Retry in lib/guest-windows.ps1 is not retry()'s contract: "
+          f"schedule and messages {got}, want {want}")
+    sys.exit(1)
+print("guest-windows.ps1: Invoke-Retry keeps retry()'s schedule and messages")
+RETRY
 
 # test/lib/assert.sh is sourced by test/assert.sh, test/run.sh and test/run-gce.sh. `bash -n`
 # cannot see a function that is missing, and a scenario found exactly that: assert_match_sql

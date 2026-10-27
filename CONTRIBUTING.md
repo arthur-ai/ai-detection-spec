@@ -145,7 +145,7 @@ the marker is what tells *no agent units* from *could not read the unit list*.
 -- tables: users, chrome_extensions
 -- min-osquery: 5.10.0
 -- cost: fast          # fast | slow | expensive: osquery/tools/measure.py's BANDS
--- platform: darwin    # darwin | linux | posix
+-- platform: darwin    # darwin | linux | windows | posix | all
 ```
 
 **A query must be fast in its worst state, not its typical one.** A `docker_images` branch cost
@@ -187,8 +187,13 @@ about the runner: `76-linux-systemd` needs a system bus, `79-linux-image` a Dock
 deb and rpm scenarios their own package manager, and `75-linux-browser` x86_64, because Google
 ships no arm64 Linux Chrome.
 
+**Windows has no local harness.** A Windows scenario is a `setup.ps1` in Windows PowerShell
+5.1, sourcing `test/lib/guest-windows.ps1`, and runs on GitHub's `windows-2025` runners; to run
+one, dispatch `scenarios.yml` with its name in `scenarios`. `test/lint.sh` parses every `.ps1`
+with `pwsh` when it is installed, and CI's lint requires it.
+
 You do not need to run scenarios locally. **CI runs the ones a pull request's diff can move**,
-on macOS and Linux, and all of them weekly. `tools/ci_scope.py` decides, and when it cannot tell
+on macOS, Linux and Windows, and all of them weekly. `tools/ci_scope.py` decides, and when it cannot tell
 it runs every scenario; the scope job's summary says what ran and why. A `workflow_dispatch`
 runs everything, or only the scenarios named in its `scenarios` input. A new identifier
 over-matching rows in an unrelated scenario is the one thing scoping can miss, and the weekly

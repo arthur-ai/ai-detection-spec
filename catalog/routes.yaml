@@ -14,7 +14,7 @@
 # failing, as agents.yaml's unread `version: 1` once did.
 #
 # FIELDS
-#   platform      darwin | linux | windows | posix (darwin and linux)
+#   platform      darwin | linux | windows | posix (darwin and linux) | all (every platform)
 #   kind          the evidence row kind that carries the route (SPEC.md 5.1)
 #   match         how a value is compared with a row; SPEC.md 6.4 defines each mode
 #   osquery       {table, min_osquery}: the osquery table the evidence comes from, and the
@@ -37,10 +37,13 @@
 # osqueryd never scheduled.
 platforms: [darwin, linux, windows]
 
-# osqueryd's own word for darwin and linux, so a query's `-- platform:` and a route's
-# `platform:` share one vocabulary.
+# osqueryd's own words for a set of platforms, so a query's `-- platform:` and a route's
+# `platform:` share one vocabulary. A NAME HERE MUST BE ONE osqueryd SCHEDULES:
+# osquery/tools/build.py writes a query's word into the pack verbatim. A route is `all` only
+# once a Windows query feeds it; build.py fails a route claiming a platform nothing feeds.
 platform_groups:
   posix: [darwin, linux]
+  all: [darwin, linux, windows]
 
 routes:
 
@@ -78,7 +81,7 @@ routes:
 
   # --- portable ----------------------------------------------------------------------
   npm:
-    platform: posix
+    platform: all
     kind: npm
     match: exact
     purl: npm
@@ -86,14 +89,14 @@ routes:
   running_npm:
     # A process running out of a package, or a node, bun or deno process whose script sits
     # in one. osquery/queries/running.sql extracts the package name and never ships the cmdline.
-    platform: posix
+    platform: all
     kind: proc
     live: true
     match: exact
     osquery: {table: processes, min_osquery: 5.10.0}
     values_from: npm
   pypi:
-    platform: posix
+    platform: all
     kind: file
     match: tool-dir
     purl: pypi
@@ -101,7 +104,7 @@ routes:
   extension_ids:
     # Chromium extension ids are derived from the developer's public key, so they are
     # identical on every OS and across every browser_type osquery enumerates.
-    platform: posix
+    platform: all
     kind: ext
     match: exact
     # Chrome Web Store ids. A store that re-signs, such as Edge Add-ons, issues another id,
@@ -119,7 +122,11 @@ routes:
     # uses ~/.config/<browser>/NativeMessagingHosts/ for the user scope and the
     # lower-case /etc/opt/chrome/native-messaging-hosts/ for the system scope. Both
     # casings were read off a real Chrome install; osquery's LIKE is case-sensitive.
-    platform: posix
+    # Windows REGISTERS a manifest rather than placing it, under a NativeMessagingHosts\<host>
+    # key, and osquery/queries/native-messaging-windows.sql follows the key to the file:
+    # Claude Desktop's registered manifest is named com.anthropic.claude_browser_extension.json
+    # there too (survey run 40393754308).
+    platform: all
     kind: nmh
     match: exact
     osquery: {table: file, min_osquery: 5.10.0}
@@ -137,16 +144,17 @@ routes:
     # against osquery 5.23.1 with Cline 4.1.17 and Continue 2.0.0 installed by
     # `code --install-extension`.
     #
-    # min_osquery is 5.11.0, ABOVE the 5.10.0 floor every other route declares, which is
+    # min_osquery is 5.15.0, ABOVE the 5.10.0 floor every other route declares, which is
     # the whole reason the bound is per-route and per-query rather than repo-wide. The
-    # `vscode_edition` column that tells VS Code from Cursor, Windsurf and VSCodium
-    # arrived later still (5.15.0) and ships in `extra`, so a build between the two
-    # loses the edition and keeps the identifier.
-    platform: posix
+    # table arrived in 5.11.0, but the queries also read `vscode_edition`, which tells VS
+    # Code from Cursor, Windsurf and VSCodium, and it arrived in 5.15.0. A column the table
+    # lacks fails the whole statement, so a build between the two reads no extension at all
+    # (osquery/queries/vscode.sql).
+    platform: all
     kind: vscodeext
     match: exact
     purl: vscode-extension
-    osquery: {table: vscode_extensions, min_osquery: 5.11.0}
+    osquery: {table: vscode_extensions, min_osquery: 5.15.0}
     value_pattern: '^[A-Za-z0-9][A-Za-z0-9._-]*\.[A-Za-z0-9][A-Za-z0-9._-]*$'
   jetbrains_plugins:
     # THE VALUE IS THE PLUGIN DIRECTORY NAME, the last component of the row's `path`. The
@@ -234,21 +242,22 @@ routes:
     # name cannot be written here by someone reaching for `title` instead.
     value_pattern: '^https?://[A-Za-z0-9.-]+/[A-Za-z0-9._~:/?#@!$&()*+,;=%-]+$'
   state_dirs:
-    platform: posix
+    platform: all
     kind: file
     match: home-dir
     osquery: {table: file, min_osquery: 5.10.0}
   binaries:
-    platform: posix
+    platform: all
     kind: file
     match: home-prefix
     osquery: {table: file, min_osquery: 5.10.0}
   process_paths:
-    # A `~/`-rooted path a RUNNING agent's executable sits under, for an agent whose process
-    # does not run from the path `binaries` names. Its own values, so every one must be
-    # produced by a CI scenario. Its values end in `/`, because a version directory
-    # follows.
-    platform: posix
+    # A `~/`-rooted path a RUNNING agent's executable sits under, or is. Its own values, so
+    # every one must be produced by a CI scenario. A value ends in `/` where a version
+    # directory follows. One that repeats a `binaries` value is not a duplicate: that route
+    # reads `file` rows and this one `proc` rows, as on Windows, where Claude Code runs from
+    # the ~/.local/bin/claude.exe its installer writes.
+    platform: all
     kind: proc
     live: true
     match: home-prefix
@@ -345,3 +354,30 @@ routes:
     kind: unit
     match: prefix
     osquery: {table: systemd_units, min_osquery: 5.10.0}
+
+  # --- Windows -----------------------------------------------------------------------
+  msix_families:
+    # A Store or sideloaded MSIX app's PACKAGE FAMILY NAME, `<Name>_<PublisherHash>`: the
+    # version and architecture are not in it, so it is the bundle id's counterpart. Claude
+    # Desktop ships as one, and `programs` reports it as `Claude_pzs8sxrjxfjjc` (survey run
+    # 40393754308). min_osquery 5.17.0, where `programs` learned MSIX (osquery/osquery#8585).
+    platform: windows
+    kind: msix
+    match: exact
+    osquery: {table: programs, min_osquery: 5.17.0}
+    # The publisher hash is 13 characters of base32; every one of the 48 family names on a
+    # stock windows-2025 runner has that shape.
+    value_pattern: '^[A-Za-z0-9][A-Za-z0-9.-]*_[a-z0-9]{13}$'
+  uninstall_keys:
+    # THE UNINSTALL KEY'S NAME, which the installer chooses and keeps across versions: Inno
+    # Setup writes `<AppId>_is1`, Squirrel the app name. `programs` reads the same keys and
+    # hides the name, and its `identifying_number` is an MSI ProductCode, which changes with a
+    # major upgrade. The DisplayName ships in `extra`, for a reader, and is never compared:
+    # Cursor's reads "Cursor (User)", and Windsurf's "Devin (User)".
+    #
+    # A per-user install is under HKEY_USERS, which holds signed-in users' hives only, so it
+    # is read while its user is signed in (docs/blind-spots.yaml).
+    platform: windows
+    kind: uninstall
+    match: exact
+    osquery: {table: registry, min_osquery: 5.10.0}

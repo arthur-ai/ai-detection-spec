@@ -65,8 +65,10 @@ def run_sql(osqi, sql, privileged=False):
     for the standalone artifact, which reads other users' homes; the parity wrapper
     reads a document and never needs it."""
     cmd = [osqi, "--json"]
-    if privileged and os.geteuid() != 0:
-        proc = subprocess.run(["sudo", "-n"] + cmd, input=sql, capture_output=True, text=True)
+    # No sudo on Windows: a CI runner there is already elevated, and os.geteuid() is POSIX.
+    if privileged and hasattr(os, "geteuid") and os.geteuid() != 0:
+        proc = subprocess.run(["sudo", "-n"] + cmd, input=sql, capture_output=True, text=True,
+                              encoding="utf-8")
         if proc.returncode == 0:
             return json.loads(proc.stdout or "[]")
         if "password" not in proc.stderr:
@@ -77,7 +79,7 @@ def run_sql(osqi, sql, privileged=False):
         # it would otherwise have seen. CI runners and the containers never land here.
         print("  (sudo -n refused; running the live artifact unprivileged, so other "
               "users' homes are unread)")
-    proc = subprocess.run(cmd, input=sql, capture_output=True, text=True)
+    proc = subprocess.run(cmd, input=sql, capture_output=True, text=True, encoding="utf-8")
     if proc.returncode != 0:
         raise RuntimeError(f"osqueryi exited {proc.returncode}: {proc.stderr.strip()[:300]}")
     return json.loads(proc.stdout or "[]")
@@ -89,7 +91,7 @@ def shipped_fragment():
 
 
 def platform_here():
-    return {"Darwin": "darwin", "Linux": "linux"}.get(os.uname().sysname)
+    return R.build.HOST_PLATFORM
 
 
 # The `ev` CTE bin/discover --names builds over a payload, written once here and asserted
@@ -435,7 +437,7 @@ def main():
                       - {a for a, _, _, k, _, _, _ in sigs if k not in {"image", "container", "ilabel"}})
     check(f"image-only agents are exactly those with no inline kind: {image_only}",
           image_only == by_kinds, str(by_kinds))
-    for p in ("agents-darwin.sql", "agents-linux.sql", "fleet-policies.yml"):
+    for p in [o for o in R.OUTPUTS if o != "signatures.sql"]:
         text = (ROOT / "dist" / p).read_text()
         check(f"{p} names every image-only agent",
               all(a in text for a in image_only))

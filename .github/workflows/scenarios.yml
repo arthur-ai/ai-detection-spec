@@ -102,6 +102,8 @@ jobs:
       exclude_scenario_linux: ${{ steps.scope.outputs.exclude_scenario_linux }}
       skip_scenario_linux_container: ${{ steps.scope.outputs.skip_scenario_linux_container }}
       run_scenario_linux_container: ${{ steps.scope.outputs.run_scenario_linux_container }}
+      skip_scenario_windows: ${{ steps.scope.outputs.skip_scenario_windows }}
+      exclude_scenario_windows: ${{ steps.scope.outputs.exclude_scenario_windows }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -463,6 +465,111 @@ jobs:
           path: test/scenarios/${{ matrix.scenario }}/observed.json
           if-no-files-found: error
 
+  # WINDOWS, on GitHub's hosted Server 2025, one scenario per runner as on macOS. The
+  # workflow's own plumbing runs in Git Bash: `<` works, GITHUB_OUTPUT stays UTF-8 (Windows
+  # PowerShell 5.1 writes UTF-16 with `>>`), and test/assert.sh runs unchanged. Only a
+  # scenario's setup.ps1 runs in PowerShell, the language a Windows installer speaks; its
+  # helpers are test/lib/guest-windows.ps1. What the runner looks like to osquery was read
+  # off it before any of this was written (survey runs 40393754308 and 40396366136).
+  scenario-windows:
+    needs: scope
+    if: needs.scope.outputs.runtime == 'true' && needs.scope.outputs.skip_scenario_windows != 'true'
+    name: ${{ matrix.scenario }} on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    # The survey's slowest install, VS Code and five extensions, took under two minutes, so
+    # this is a ceiling for a hang rather than a budget.
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    env:
+      # read_text() without an encoding is cp1252 on Windows, and the catalog is UTF-8.
+      PYTHONUTF8: "1"
+      # Forward slashes, which Git Bash, Python and PowerShell all take.
+      OSQI: "C:/Program Files/osquery/osqueryi.exe"
+    strategy:
+      fail-fast: false
+      matrix:
+        # Pinned, as the macOS labels are: a moving label changes the machine every scenario
+        # is measured on without a diff to show it.
+        os: [windows-2025]
+        scenario:
+          - 100-windows-baseline
+          - 101-windows-cli-agents
+          - 102-windows-claude-native
+          - 103-windows-vscode-agents
+          - 104-windows-browser
+          - 105-windows-desktop-apps
+          - 106-windows-python-agents
+        exclude: ${{ fromJSON(needs.scope.outputs.exclude_scenario_windows || '[]') }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install osquery
+        shell: powershell
+        run: |
+          $msi = "$env:RUNNER_TEMP\osquery.msi"
+          curl.exe --retry 3 --retry-all-errors --retry-delay 5 -fsSL -o $msi "https://pkg.osquery.io/windows/osquery-$env:OSQUERY_VERSION.msi"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $p = Start-Process msiexec.exe -Wait -PassThru -ArgumentList "/i `"$msi`" /qn /norestart /l*v `"$env:RUNNER_TEMP\msi.log`""
+          if ($p.ExitCode -ne 0) { Get-Content "$env:RUNNER_TEMP\msi.log" -Tail 40; exit 1 }
+          & $env:OSQI --version
+      - name: Install pyyaml
+        run: python -m pip install --quiet pyyaml
+
+      # EXIT 3 IS SKIP, as on Linux. -File exits 0 when a script falls off its end, which is
+      # why every setup.ps1 ends in an explicit `exit`.
+      - name: Provision
+        id: provision
+        run: |
+          set +e
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File "test/scenarios/${{ matrix.scenario }}/setup.ps1"
+          rc=$?
+          set -e
+          if [ "$rc" = 3 ]; then
+            echo "runnable=false" >> "$GITHUB_OUTPUT"
+            echo "### SKIPPED: the scenario reported this runner cannot host it" \
+              >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$rc" != 0 ]; then
+            exit "$rc"
+          else
+            echo "runnable=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Query and assert
+        if: steps.provision.outputs.runnable == 'true'
+        run: |
+          out="$(cygpath -u "$RUNNER_TEMP")/out.json"
+          "$OSQI" --json < osquery/dist/discovery-windows.sql > "$out"
+          test/assert.sh "$out" test/scenarios/${{ matrix.scenario }}/expected.json
+      # --os is the edition, release and build, not the monthly update revision, which would
+      # split one OS into twelve records a year. --arch is the machine's, read where x64
+      # emulation cannot rename it, in uname's spelling. Here rather than in
+      # test/lib/guest-windows.ps1, which only setup scripts may reach (tools/ci_scope.py).
+      - name: Which Windows this is
+        if: steps.provision.outputs.runnable == 'true'
+        shell: powershell
+        run: |
+          $cv = Get-ItemProperty 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion'
+          $edition = if ($cv.InstallationType -eq 'Server') { 'server' } else { 'client' }
+          $release = if ((Get-CimInstance Win32_OperatingSystem).Caption -match '(20\d\d|10|11)\b') { $Matches[1] } else { 'unknown' }
+          $native = (Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Environment').PROCESSOR_ARCHITECTURE
+          $arch = @{ AMD64 = 'x86_64'; ARM64 = 'arm64' }[$native]
+          if (-not $arch) { $arch = $native.ToLower() }
+          "WIN_OS=windows-$edition-$release-$($cv.CurrentBuild)", "WIN_ARCH=$arch" |
+            Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+      - name: Record which identifiers this run matched
+        if: steps.provision.outputs.runnable == 'true'
+        run: |
+          python3 tools/agent_status.py --record "$(cygpath -u "$RUNNER_TEMP")/out.json" \
+            test/scenarios/${{ matrix.scenario }} \
+            --platform windows --os "$WIN_OS" --arch "$WIN_ARCH" --run-id "${{ github.run_id }}"
+      - name: Upload the observation
+        if: steps.provision.outputs.runnable == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: observed-${{ matrix.scenario }}--${{ matrix.os }}
+          path: test/scenarios/${{ matrix.scenario }}/observed.json
+          if-no-files-found: error
+
   # THE OTHER FAMILIES, in containers on an ubuntu runner, because GitHub offers no Debian
   # or RHEL-family runner. A matrix of images because the Linux artifact had been proved
   # on one distro while a Compute Engine fleet boots three: Debian 12 by default, Ubuntu
@@ -549,7 +656,7 @@ jobs:
 
   collect:
     name: Coverage, and commit observations on main
-    needs: [scope, scenario, scenario-linux, scenario-linux-container]
+    needs: [scope, scenario, scenario-linux, scenario-linux-container, scenario-windows]
     # always() so a green scenario's observation still lands when a DIFFERENT scenario
     # failed. Each observation is independent evidence, and discarding all of them because
     # one scenario broke would throw away the runs that worked.

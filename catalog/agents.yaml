@@ -103,10 +103,19 @@ agents:
   - id: claude-desktop
     name: Claude Desktop
     classification: Desktop assistant
-    platforms: [darwin]
+    platforms: [darwin, windows]
     bundle_ids: [com.anthropic.claudefordesktop]
     homebrew: [claude]
+    # Windows registers the same manifest name, under HKCU's NativeMessagingHosts, once it runs
+    # with a Chrome profile present: read off a windows-2025 runner on 2026-10-26, Claude
+    # 3.6556.2.0, its file at
+    # ~\AppData\Local\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude-NativeHost\.
+    # 104-windows-browser.
     native_messaging_hosts: [com.anthropic.claude_browser_extension.json]
+    # Windows ships it as a signed MSIX (claude.ai/api/desktop/win32/x64/msix/latest), and
+    # osquery's `programs` reports the family name: read off the same install, publisher
+    # "Anthropic, PBC", package Claude_3.6556.2.0_x64__pzs8sxrjxfjjc. 105-windows-desktop-apps.
+    msix_families: [Claude_pzs8sxrjxfjjc]
 
   # Its own entry rather than a route on claude-desktop, because it installs
   # independently: no app bundle, no package manager, and it follows a Google account
@@ -127,23 +136,31 @@ agents:
   - id: claude-in-chrome
     name: Claude in Chrome
     classification: Browser agent
-    platforms: [darwin, linux]
+    platforms: [darwin, linux, windows]
     extension_ids: [fcoeoabgfenejglbffodgkkbkcdhcgfn]
 
   - id: claude-code
     name: Claude Code
     classification: Coding agent
-    platforms: [darwin, linux]
+    platforms: [darwin, linux, windows]
     # Ships as a native installer, NOT an npm package. The binary at ~/.local/bin/claude
     # is a symlink into ~/.local/share/claude/versions/<ver>, which is where the version
     # comes from. Never execute it to ask.
-    binaries: ["~/.local/bin/claude"]
+    #
+    # ON WINDOWS THE INSTALLER WRITES A COPY, ~/.local/bin/claude.exe, and the process runs
+    # from it. home-prefix will not let `~/.local/bin/claude` claim `claude.exe`, which is
+    # the anchor that refuses claude-monitor, so each is a value. Read off a windows-2025
+    # runner on 2026-10-26: install.ps1, v2.1.310, osquery 5.23.1 reading the file and the
+    # running `claude mcp serve` as C:\Users\runneradmin\.local\bin\claude.exe.
+    # 102-windows-claude-native.
+    binaries: ["~/.local/bin/claude", "~/.local/bin/claude.exe"]
     npm: ["@anthropic-ai/claude-code"]
     state_dirs: ["~/.claude"]
     # RUNNING, where the symlink above leads. Read off 83-linux-claude-running on
     # 2026-10-07: `claude mcp serve` as an ordinary user, osquery 5.23.1 reading its path as
-    # /home/dana/.local/share/claude/versions/2.1.292. The same shape runs on macOS.
-    process_paths: ["~/.local/share/claude/versions/"]
+    # /home/dana/.local/share/claude/versions/2.1.292. The same shape runs on macOS. And
+    # claude.exe on Windows, as above.
+    process_paths: ["~/.local/share/claude/versions/", "~/.local/bin/claude.exe"]
     # The VS Code extension, whose VSIX carries this CLI at
     # extension/resources/native-binary/claude. Read off 85-linux-vscode-agents on
     # 2026-10-07: v2.1.293 at ~/.vscode/extensions/anthropic.claude-code-2.1.293-linux-arm64.
@@ -221,7 +238,7 @@ agents:
   - id: codex-cli
     name: Codex CLI
     classification: Coding agent
-    platforms: [darwin, linux]
+    platforms: [darwin, linux, windows]
     npm: ["@openai/codex"]
     homebrew: [codex]                  # a cask, not a formula; both land in homebrew_packages
     state_dirs: ["~/.codex"]
@@ -236,7 +253,7 @@ agents:
   - id: cursor
     name: Cursor
     classification: Coding agent
-    platforms: [darwin, linux]
+    platforms: [darwin, linux, windows]
     # An opaque ToDesktop identifier. Unguessable; it must be pinned. Note `todesktop` is
     # the PACKAGER, not the vendor -- a reverse-DNS prefix cannot be trusted to name who
     # publishes a thing.
@@ -275,6 +292,16 @@ agents:
     # 84-linux-installers on 2026-10-07 (package 2026.10.01-e373342). It also links
     # ~/.local/bin/agent, which names nothing and is deliberately not a value.
     binaries: ["~/.local/bin/cursor-agent"]
+    # WINDOWS. The user installer (api2.cursor.sh/.../win32-x64-user) is Inno Setup, and its
+    # Uninstall key is `<AppId>_is1`, read off a windows-2025 runner on 2026-10-26, Cursor
+    # 3.27.14, DisplayName "Cursor (User)", publisher Anysphere. The doubled `}` is in the
+    # key as written. AN AppId THAT LOOKS LIKE A PLACEHOLDER: a VS Code fork that copied it
+    # would be claimed here, and the DisplayName in the row's `extra` is what tells them
+    # apart. 105-windows-desktop-apps.
+    uninstall_keys: ["{DADADADA-ADAD-ADAD-ADAD-ADADADADADAD}}_is1"]
+    # RUNNING, from where that installer puts it: ~\AppData\Local\Programs\cursor\Cursor.exe,
+    # read off the same install, launched.
+    process_paths: ["~/AppData/Local/Programs/cursor/"]
 
   - id: perplexity-comet
     name: Perplexity Comet
@@ -294,9 +321,15 @@ agents:
   - id: windsurf
     name: Windsurf
     classification: Coding agent
-    platforms: [darwin]
+    platforms: [darwin, windows]
     bundle_ids: [com.exafunction.windsurf]
     homebrew: [devin-desktop]          # cask renamed from `windsurf`
+    # WINDOWS, the Inno Setup user installer the update endpoint names
+    # (windsurf-stable.codeium.com/api/update/win32-x64-user/stable/latest). Read off a
+    # windows-2025 runner on 2026-10-26: DevinUserSetup-x64-3.11.216.exe, DisplayName
+    # "Devin (User)", publisher Codeium, installed to ~\AppData\Local\Programs\Devin.
+    # 105-windows-desktop-apps.
+    uninstall_keys: ["{5A8B7D94-9B5F-4D1F-93FC-5609F7159349}_is1"]
 
   - id: orion
     name: Orion
@@ -351,7 +384,7 @@ agents:
   - id: aider
     name: aider
     classification: Coding agent
-    platforms: [darwin, linux]
+    platforms: [darwin, linux, windows]
     homebrew: [aider]
     # `npm: [aider]` WAS HERE AND IS REMOVED. npm's `aider` is "Lightweight website popular
     # article component for static website", published by an unrelated maintainer -- not
@@ -455,7 +488,7 @@ agents:
   - id: gemini-cli
     name: Gemini CLI
     classification: Coding agent
-    platforms: [darwin, linux]
+    platforms: [darwin, linux, windows]
     homebrew: [gemini-cli]
     npm: ["@google/gemini-cli"]        # a vendor scope, missed by @anthropic-ai/@openai globs
 
@@ -464,7 +497,7 @@ agents:
   - id: copilot-cli
     name: GitHub Copilot
     classification: Coding agent
-    platforms: [darwin, linux]
+    platforms: [darwin, linux, windows]
     homebrew: [copilot-cli]
     npm: ["@github/copilot"]
     # Read off 86-linux-jetbrains-agents on 2026-10-07: Marketplace plugin 17718, v1.18.0-261,
@@ -476,7 +509,7 @@ agents:
   - id: cline
     name: Cline
     classification: Coding agent
-    platforms: [darwin, linux]
+    platforms: [darwin, linux, windows]
     npm: [cline]
     # ITS PRIMARY SHAPE, and until osquery 5.11.0 there was no table that could see it:
     # docs/blind-spots.yaml said VS Code extensions were invisible, which was true when
@@ -532,7 +565,7 @@ agents:
   - id: continue
     name: Continue
     classification: Coding agent
-    platforms: [darwin, linux]
+    platforms: [darwin, linux, windows]
     # Read off a real install on 2026-09-04: v2.0.0 at
     # ~/.vscode/extensions/continue.continue-2.0.0-linux-arm64, osquery 5.23.1.
     #
@@ -768,13 +801,13 @@ agents:
   - id: roo-code
     name: Roo Code
     classification: Coding agent
-    platforms: [darwin, linux]
+    platforms: [darwin, linux, windows]
     vscode_extensions: [rooveterinaryinc.roo-cline]
 
   - id: kilo-code
     name: Kilo Code
     classification: Coding agent
-    platforms: [darwin, linux]
+    platforms: [darwin, linux, windows]
     # 85-linux-vscode-agents, 2026-10-07: v7.8.8, at the same version as the CLI below.
     vscode_extensions: [kilocode.kilo-code]
     # 71-linux-cli-agents, same day: @kilocode/cli 7.8.8, commands `kilo` and `kilocode`.
@@ -868,7 +901,7 @@ agents:
   - id: harpa
     name: HARPA AI
     classification: Browser agent
-    platforms: [darwin, linux]
+    platforms: [darwin, linux, windows]
     extension_ids: [eanggfilgoajaocelnaflolkadkeghjp]
 
   # MONICA IS A CHAT SIDEBAR THAT GREW AN OPERATOR, and the operator is why it is here. Read
@@ -877,7 +910,7 @@ agents:
   - id: monica
     name: Monica
     classification: Browser agent
-    platforms: [darwin, linux]
+    platforms: [darwin, linux, windows]
     extension_ids: [ofpnmcalabcbjgholdjcjblkibolbppb]
 
   # SIDER AND MERLIN LOOK LIKE CHAT SIDEBARS FROM THEIR LISTINGS, and were nearly left out
@@ -886,7 +919,7 @@ agents:
   - id: sider
     name: Sider
     classification: Browser agent
-    platforms: [darwin, linux]
+    platforms: [darwin, linux, windows]
     extension_ids: [difoiogjjojoaoomphldepapgpbgkhkb]
 
   # Merlin (8.3.0) describes itself as an "AI-powered browser agent", and gmailStrip.js
@@ -895,5 +928,5 @@ agents:
   - id: merlin
     name: Merlin
     classification: Browser agent
-    platforms: [darwin, linux]
+    platforms: [darwin, linux, windows]
     extension_ids: [camppjleccjaphfdbohjdohecfnoikec]

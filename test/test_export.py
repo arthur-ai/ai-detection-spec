@@ -112,8 +112,9 @@ def main():
         hosts = set(re.findall(r"https?://([^/\s\"'$]+)/[^\s\"']*crx", text))
         return hosts == {"clients2.google.com"} and "/service/update2/crx" in text
 
+    # setup.sh, or setup.ps1 on Windows: a scenario's script in either language.
     setups = [s for s in (p.read_text() for p in
-                          sorted((ROOT / "test" / "scenarios").glob("*/setup.sh")))
+                          sorted((ROOT / "test" / "scenarios").glob("*/setup.*")))
               if web_store_only(s)]
     not_cws = [i["value"] for a in doc["agents"] for i in a["identifiers"]
                if routes_yaml[i["route"]].get("purl") == "chrome-extension"

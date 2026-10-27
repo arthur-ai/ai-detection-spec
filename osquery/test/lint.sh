@@ -265,8 +265,15 @@ for f in SCENARIOS:
         floor = v if isinstance(v, int) else int(v[2:] or 0)
         if floor > 0:
             covered.add(k)
-    if not os.access(os.path.join(os.path.dirname(f), "setup.sh"), os.X_OK):
-        print(f"FAIL: {name}/setup.sh is not executable"); bad = True
+    # ONE SETUP SCRIPT, IN THE PLATFORM'S OWN LANGUAGE: Windows PowerShell on Windows, an
+    # executable shell script elsewhere. A scenario carrying both has one nobody runs.
+    here = os.path.dirname(f)
+    sh, ps1 = os.path.join(here, "setup.sh"), os.path.join(here, "setup.ps1")
+    if platform == "windows":
+        if not os.path.exists(ps1) or os.path.exists(sh):
+            print(f"FAIL: {name} (windows) needs setup.ps1 and no setup.sh"); bad = True
+    elif os.path.exists(ps1) or not os.access(sh, os.X_OK):
+        print(f"FAIL: {name} ({platform}) needs an executable setup.sh and no setup.ps1"); bad = True
 
 # Every kind must be exercised somewhere, or a branch ships untested -- which is the exact
 # state four of these were in before this harness existed. Only kinds belonging to a

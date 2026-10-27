@@ -365,6 +365,12 @@ check("a clean payload reports nothing dropped", props.get("dropped_rows") == 0,
       f"{props.get('dropped_rows')}")
 check("the platform reported is the PAYLOAD's, not the machine classify ran on",
       props.get("payload_platform") == "darwin", f"{props.get('payload_platform')}")
+_kp = classify_mod._kind_platforms(classify_mod.load_routes())
+check("a Windows-only kind names Windows, beside a macOS one it is mixed, and a kind every "
+      "platform emits names nothing",
+      classify_mod._payload_platform({"msix", "npm"}, _kp) == "windows"
+      and classify_mod._payload_platform({"uninstall", "app"}, _kp) == "mixed"
+      and classify_mod._payload_platform({"npm", "file"}, _kp) == "unknown")
 
 # --- the gap vocabulary, end to end ----------------------------------------------------
 # Every reason osquery/bin/discover and osquery/bin/container-scan can emit, plus one nobody emits. The

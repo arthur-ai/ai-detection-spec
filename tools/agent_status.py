@@ -444,25 +444,19 @@ def ci_platforms():
         return set()
     doc = yaml.safe_load(wf.read_text())
     plats = set()
-    # A harness job declares its platform outright; a matrix job's is read off its runner.
-    harness = _ci_scope().harness_jobs(doc)
+    # A harness job declares its platform outright; a matrix job's is read off its runner,
+    # by the one function tools/check_workflows.py pairs scenarios with.
+    scope = _ci_scope()
+    harness = scope.harness_jobs(doc)
     for job, spec in (doc.get("jobs") or {}).items():
         if job in harness:
             plats.add(harness[job])
             continue
         if not ((spec.get("strategy") or {}).get("matrix") or {}).get("scenario"):
             continue
-        if spec.get("container"):
-            plats.add("linux")
-            continue
-        text = " ".join([str(spec.get("runs-on", ""))]
-                        + [str(x) for x in
-                           (((spec.get("strategy") or {}).get("matrix") or {})
-                            .get("os") or [])])
-        if "macos" in text:
-            plats.add("darwin")
-        if "ubuntu" in text or "fedora" in text:
-            plats.add("linux")
+        plat = scope.runner_platform(spec)
+        if plat:
+            plats.add(plat)
     return plats
 
 
@@ -518,11 +512,14 @@ def collect():
     # identifier of such an agent that the run did NOT produce was reached by the suite and
     # failed to appear -- worth naming separately from one nothing has ever tried.
     asserted_by = collections.defaultdict(set)      # agent id -> {scenario}
+    platform_of = {}                                # scenario -> its declared platform
     for path in sorted(SCENARIOS.glob("*/expected.json")):
         name = path.parent.name
         if name not in in_ci:
             continue
-        for aid in json.loads(path.read_text()).get("classified", {}).get("must_find", []):
+        doc = json.loads(path.read_text())
+        platform_of[name] = doc.get("platform")
+        for aid in doc.get("classified", {}).get("must_find", []):
             asserted_by[aid].add(name)
     # A CI scenario that has never RECORDED contributes nothing to the numbers below, so
     # the count is pessimistic until each has run once. Absence of an observation is not
@@ -548,6 +545,12 @@ def collect():
         aid = agent["id"]
         idents = []
         for route in ALL_ROUTES:
+            # ONLY A SCENARIO ON ONE OF THE ROUTE'S PLATFORMS CAN PRODUCE ITS VALUE. A macOS
+            # scenario that finds Cursor says nothing about Cursor's Windows Uninstall key,
+            # and counting it read that key as tested-absent, failing every Windows value of
+            # an agent macOS or Linux already proves.
+            reach = {s for s in asserted_by[aid]
+                     if platform_of.get(s) in route_platforms.get(route, ())}
             for value in agent.get(route, []):
                 value = str(value)
                 scens = sorted(seen_in.get((aid, route, value), ()))
@@ -572,7 +575,7 @@ def collect():
                 # report -- adding one entry to the catalog broke the page that describes
                 # the catalog. Found by simulating exactly the change this tooling exists
                 # to survive.
-                elif asserted_by[aid] - set(unrecorded):
+                elif reach - set(unrecorded):
                     # A scenario installed this agent and this identifier never showed up.
                     state = "tested-absent"
                 else:
@@ -585,14 +588,14 @@ def collect():
                 # which by then had no platform column.
                 idents.append({"route": route, "value": value,
                                "scenarios": scens,
-                               "reached_by": sorted(asserted_by[aid] - set(unrecorded)),
+                               "reached_by": sorted(reach - set(unrecorded)),
                                # EVERY CI scenario that asserts this agent, including ones
                                # with no recorded observation yet. `reached_by` above drops
                                # those, which is right for the report and wrong for the
                                # gate: a scenario that has never run is exactly the case
                                # the gate has to tell apart from one that ran and found
                                # nothing. See _pending().
-                               "asserted_by_ci": sorted(asserted_by[aid]),
+                               "asserted_by_ci": sorted(reach),
                                "state": state})
         agents.append({
             "id": aid, "name": agent["name"], "classification": agent["classification"],

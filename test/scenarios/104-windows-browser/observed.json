@@ -1,0 +1,74 @@
+{
+  "scenario": "104-windows-browser",
+  "identifiers": [
+    {
+      "agent": "claude-desktop",
+      "route": "msix_families",
+      "value": "Claude_pzs8sxrjxfjjc",
+      "agent_version": "3.6556.2.0",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "40438032192"
+    },
+    {
+      "agent": "claude-desktop",
+      "route": "native_messaging_hosts",
+      "value": "com.anthropic.claude_browser_extension.json",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "40438032192"
+    },
+    {
+      "agent": "claude-in-chrome",
+      "route": "extension_ids",
+      "value": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
+      "agent_version": "1.0.102",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "40438032192"
+    },
+    {
+      "agent": "harpa",
+      "route": "extension_ids",
+      "value": "eanggfilgoajaocelnaflolkadkeghjp",
+      "agent_version": "16.2.0",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "40438032192"
+    },
+    {
+      "agent": "merlin",
+      "route": "extension_ids",
+      "value": "camppjleccjaphfdbohjdohecfnoikec",
+      "agent_version": "8.3.1",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "40438032192"
+    },
+    {
+      "agent": "monica",
+      "route": "extension_ids",
+      "value": "ofpnmcalabcbjgholdjcjblkibolbppb",
+      "agent_version": "9.0.23",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "40438032192"
+    },
+    {
+      "agent": "sider",
+      "route": "extension_ids",
+      "value": "difoiogjjojoaoomphldepapgpbgkhkb",
+      "agent_version": "5.35.3",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "40438032192"
+    }
+  ]
+}

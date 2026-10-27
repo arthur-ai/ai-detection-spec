@@ -1,0 +1,32 @@
+{
+  "scenario": "102-windows-claude-native",
+  "identifiers": [
+    {
+      "agent": "claude-code",
+      "route": "binaries",
+      "value": "~/.local/bin/claude.exe",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "40438032192"
+    },
+    {
+      "agent": "claude-code",
+      "route": "process_paths",
+      "value": "~/.local/bin/claude.exe",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "40438032192"
+    },
+    {
+      "agent": "claude-code",
+      "route": "state_dirs",
+      "value": "~/.claude",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "40438032192"
+    }
+  ]
+}

@@ -24,19 +24,17 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 import os
 import platform as _platform
 
-OSQI = next((c for c in (os.environ.get("OSQI", ""),
-                         "/usr/local/bin/osqueryi",
-                         "/opt/osquery/lib/osquery.app/Contents/MacOS/osqueryi",
-                         "/usr/bin/osqueryi")
-             if c and pathlib.Path(c).exists()), None)
-if OSQI is None:
-    sys.exit("osqueryi not found")
+import build
+import measure
+
+# $OSQI, then measure.py's candidate list: one list, not a copy per tool.
+OSQI = os.environ.get("OSQI") or measure.osqueryi()
 
 # THE PACK CARRIES EVERY PLATFORM'S QUERIES -- that is what osqueryd's per-query
 # `platform` field is for -- so running all of them here fails on whichever platform this
 # is not. `apps` on Linux and `packages-linux` on macOS both die on a missing table, and
 # the all-zero-rows check below would then call a correct pack a build defect.
-PLATFORM = {"Darwin": "darwin", "Linux": "linux"}.get(_platform.system())
+PLATFORM = build.HOST_PLATFORM
 if PLATFORM is None:
     sys.exit(f"check_pack: unsupported platform {_platform.system()}")
 
@@ -46,7 +44,7 @@ failed, total_rows = False, 0
 
 skipped = []
 for name, spec in sorted(pack["queries"].items()):
-    if spec.get("platform") not in (PLATFORM, "posix", "all"):
+    if not build.runs_on(spec.get("platform"), PLATFORM):
         skipped.append(f"{name}({spec.get('platform')})")
         continue
     sql = spec["query"]
@@ -58,11 +56,11 @@ for name, spec in sorted(pack["queries"].items()):
     # A timeout, because the pack now carries the container query and docker_images has
     # no timeout of its own. Against a daemon that accepts and never answers it runs
     # indefinitely -- this check would hang the build rather than fail it. Point it at a
-    # socket path that cannot exist so the pack test never depends on local Docker state.
+    # socket path that cannot exist so the pack test never depends on local Docker state;
+    # measure.py says where that flag exists. On stdin, as measure.py runs a query.
     try:
-        proc = subprocess.run([OSQI, "--docker_socket", "/nonexistent/docker.sock",
-                               "--json", sql],
-                              capture_output=True, text=True, timeout=30)
+        proc = subprocess.run([OSQI, *measure.DOCKER_FLAGS, "--json"], input=sql + "\n",
+                              capture_output=True, text=True, encoding="utf-8", timeout=30)
     except subprocess.TimeoutExpired:
         print(f"FAIL: {name} did not finish in 30s")
         failed = True

@@ -445,12 +445,15 @@ check("a Windows home root resolves on every path route",
       and _ids([{"kind": "proc", "id": p, "ver": "", "loc": p, "extra": "", "perms": ""}
                 for p in ("C:\\Users\\dana\\.local\\share\\claude\\versions\\2.1.292",)])
       == {"claude-code"})
-# `claude.exe` is not `~/.local/bin/claude`: the anchor that refuses claude-monitor refuses it
-# too, until a Windows install proves the value.
 for near in ("C:\\Users\\dana\\.claudefoo\\", "C:\\users\\dana\\.claude\\",
-             "C:\\Users\\dana\\.local\\bin\\hermes-acp", "/home/dana\\.claude",
-             "C:\\Users\\dana\\.local\\bin\\claude.exe"):
+             "C:\\Users\\dana\\.local\\bin\\hermes-acp", "/home/dana\\.claude"):
     check(f"a Windows near miss is NOT claimed ({near})", _ids(_rows(near)) == set())
+# `claude.exe` is not `~/.local/bin/claude`: the anchor that refuses claude-monitor refuses it
+# too, so the Windows installer's binary is a value of its own, and one that claims nothing
+# beside it.
+check("claude.exe is Claude Code by its own value, and claude.exe-helper is nothing",
+      _ids(_rows("C:\\Users\\dana\\.local\\bin\\claude.exe")) == {"claude-code"}
+      and _ids(_rows("C:\\Users\\dana\\.local\\bin\\claude.exe-helper")) == set())
 
 
 # --- the Linux package routes, and the lookalikes the base OS ships ----------------
@@ -693,6 +696,16 @@ check("recording does NOT credit a state dir the run never produced",
       not any(r == "state_dirs" for r, _ in _got),
       "~/.aider appears in no row here; crediting it would report the strongest evidence "
       "for a path no machine produced")
+
+# A SCENARIO IS EXPECTED TO PRODUCE ONLY WHAT ITS PLATFORM CAN. macOS and Linux scenarios find
+# Cursor too, and counting them toward its Windows Uninstall key read the key as tested-absent
+# wherever they had recorded -- and as missing, in the coverage job, wherever they reported.
+_cur = next(a for a in _st.collect()["agents"] if a["id"] == "cursor")
+_key = next(i for i in _cur["identifiers"] if i["route"] == "uninstall_keys")
+_kp = {n: json.loads((ROOT / "test" / "scenarios" / n / "expected.json").read_text())
+       .get("platform") for n in _key["asserted_by_ci"]}
+check("a Windows-only identifier is expected only of Windows scenarios",
+      bool(_kp) and set(_kp.values()) == {"windows"}, str(_kp))
 
 # classify tries the tool dir `loc` names when `id`'s is unlisted (the tool-dir vectors'
 # shape); the recorder must credit what classify matched.

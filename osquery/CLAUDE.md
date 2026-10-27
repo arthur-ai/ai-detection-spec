@@ -43,6 +43,11 @@ side by side. What keeps the rendered files honest:
 - `regex_match` returns NULL on a miss, an invalid pattern aborts the statement, and `LIKE` is
   case-insensitive, so the join is a `CASE`, every regex is compiled before it is written,
   and a prefix is `substr`.
+- **On Windows `^` and `$` match at every line break** (osquery's regex there is MSVC's
+  `std::regex`, measured on windows-2025). So the end is `(?![\s\S])`, and the start is checked
+  as `instr(x, regex_match(x, p, 0)) = 1`: the leftmost match begins at the start exactly when
+  instr() finds it there. The conformance vectors' line-break rows hold both, on every
+  platform's osqueryi.
 - A new signature reaches the rendered files only when they are redeployed. The payload
   re-matches without that. The bundle carries `signatures.sql` for `--names` and nothing
   else that names an agent.
@@ -86,10 +91,11 @@ is present and says so when it is not; `render_match.py --check` is its own gate
 |---|---|
 | `osquery/dist/discovery-darwin.sql` | the `fast` and `slow` queries for macOS, composed |
 | `osquery/dist/discovery-linux.sql` | the same for Linux: a different set of tables, not a superset |
+| `osquery/dist/discovery-windows.sql` | the same for Windows, which `osquery/bin/discover` does not run: it is bash |
 | `osquery/dist/discovery-deep.sql` | the `expensive` queries, a supplement. One file because every expensive query is `posix`; `build.py` fails if one stops being |
 | `osquery/dist/ai-detection-spec.conf` | the osqueryd pack, every platform's queries with osqueryd's per-query `platform` field |
 | `osquery/dist/signatures.sql` | **rendered from the catalog**: the signature table and the match, as a fragment over an `ev` CTE the caller supplies |
-| `osquery/dist/agents-darwin.sql`, `osquery/dist/agents-linux.sql` | the enumeration wrapped in that match, one row per agent. They never see image-only agents, because the container branch needs a bound |
+| `osquery/dist/agents-<platform>.sql` | the enumeration wrapped in that match, one row per agent, for each platform. They never see image-only agents, because the container branch needs a bound |
 | `osquery/dist/fleet-policies.yml` | one Fleet policy per agent per platform, passing when absent, each wrapping only the branches its agent's routes need |
 
 **There is no unqualified `discovery.sql`.** Fed to the wrong platform's `osqueryi`, an
@@ -97,9 +103,12 @@ artifact prints `[\n\n]`, valid empty JSON, and exits 1. `osquery/bin/discover` 
 `uname -s`. The deep artifact can block forever, so `osquery/bin/container-scan` is the only
 supported way to run it.
 
-A query declares `-- platform: darwin | linux | posix`; `posix` means both and is osqueryd's
-own word. `build.py` checks the value against `catalog/routes.yaml`, because `macos` once
-built clean and shipped a pack query osqueryd never scheduled.
+A query declares `-- platform: darwin | linux | windows | posix | all`; `posix` is darwin and
+linux, `all` every platform, both osqueryd's own words. **A group in `catalog/routes.yaml` must
+be a word osqueryd schedules**, because `build.py` writes a query's word into the pack
+verbatim, and it checks the value against that file, because `macos` once built clean and
+shipped a pack query osqueryd never scheduled. A tool that runs queries here asks
+`build.runs_on`, never a literal `posix`.
 
 ## Traps
 
@@ -127,3 +136,18 @@ built clean and shipped a pack query osqueryd never scheduled.
   unpacked extension reports an empty one. The Web Store's signed CRX carries the key, and
   unpacking one into a real profile yields the real id, as `45-claude-extension` does. The id
   is the same across every Chromium browser.
+
+**On Windows**, each measured on a windows-2025 runner (survey runs 40393754308 and
+40396366136):
+
+- **A glob echoes its own pattern's case** in the literal part of a path: `c:\users\%` comes
+  back as `c:\users\...`. Write `C:\Users\` as SPEC.md 6.4.7 compares it. A directory comes
+  back with a trailing `\` either way, and never as `.` or `..`.
+- **Take homes from `users`, not a `C:\Users\%` glob.** `f.path LIKE u.directory || '\...'`
+  pushes down per home, reaches a profile on any drive and skips the Default template.
+- **`HKEY_USERS` holds signed-in users' hives only**, so a per-user registry or MSIX row
+  disappears when its user signs out; their files do not.
+- **osqueryi refuses a flag for a table it lacks**: `--docker_socket` exits 1 with nothing on
+  stdout. `osquery/tools/measure.py` passes it only where the docker tables exist.
+- **osqueryi writes CRLF**, and PowerShell 5.1's `>` writes UTF-16, which nothing here reads.
+  Redirect from `cmd` or Git Bash.

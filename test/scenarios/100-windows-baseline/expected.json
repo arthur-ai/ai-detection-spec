@@ -1,0 +1,45 @@
+{
+  "description": "A stock windows-2025 runner. The control: the suite must be able to say no on Windows.",
+  "platform": "windows",
+  "counts": {
+    "ext": ">=0",
+    "file": ">=1",
+    "msix": ">=1",
+    "nmh": ">=1",
+    "npm": ">=0",
+    "proc": ">=0",
+    "scan": ">=1",
+    "uninstall": ">=1",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [],
+    "forbid": [
+      "claude-code",
+      "codex-cli",
+      "gemini-cli",
+      "copilot-cli",
+      "cline",
+      "continue",
+      "roo-code",
+      "kilo-code",
+      "claude-in-chrome",
+      "harpa",
+      "monica",
+      "sider",
+      "merlin",
+      "claude-desktop",
+      "cursor",
+      "windsurf",
+      "aider"
+    ]
+  },
+  "require_rows": [
+    {"kind": "scan", "id": "containers", "extra": "unreadable:docker"}
+  ],
+  "why": "Every Windows-capable agent is forbidden on a machine that carries a great deal of other software. The floors say each branch ran, not that anything is installed: the runner's profile always has dotdirs (.cargo, .dotnet), Windows ships inbox MSIX packages and a BrowserCore native-messaging host, and a runner has hundreds of programs, so a zero in `file`, `msix`, `nmh` or `uninstall` would mean the branch did not run. The image runs Docker Engine for Windows containers, which osquery cannot read, so the containers marker must say `unreadable:docker` rather than `absent`: declining to look and finding nothing may not share a word.",
+  "known_gaps": [
+    "The runner's npm global prefix is C:\\npm\\prefix, which osquery's npm_packages does not search, so `npm` is pinned at zero or more here. 101-windows-cli-agents moves the prefix back to npm's default.",
+    "Windows Server 2025, not a client edition: no Microsoft Store, so no Store-installed lookalike is on the machine."
+  ]
+}
