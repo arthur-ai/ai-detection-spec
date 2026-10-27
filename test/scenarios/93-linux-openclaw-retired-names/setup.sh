@@ -5,10 +5,15 @@
 #
 # --ignore-scripts: npm_packages reads the installed package.json, which needs no install
 # script, and the retired builds' scripts are not what is under test.
+#
+# git, because clawdbot resolves a dependency from a git URL: a bare fedora:41 has none, and
+# npm answered `spawn git ENOENT` there (PR 132's first run). Node 24, which moltbot declares
+# and 82-linux-running already installs for openclaw.
 set -e
 source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest-linux.sh"
 need_curl
-need_node 22 || echo "WARN: Node 22 did not install"
+need_pkgs git || echo "WARN: git did not install"
+need_node 24 || echo "WARN: Node 24 did not install"
 need_user
 for pkg in clawdbot moltbot; do
   retry "npm install -g $pkg" \
