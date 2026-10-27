@@ -112,9 +112,9 @@ EXCLUDED = {
     "90-demo-fleet": "a demo fleet, not a regression test: it installs the whole catalogue "
                      "to populate a walkthrough, and asserts breadth rather than a signature",
 }
-# The recording step must pass --os and --arch. Without them the step still succeeds and
-# still writes an observation -- just one that cannot say which platform produced it, which
-# is the entire reason the os matrix axis exists. That is exactly how it shipped: the edit
+# The recording step must pass --platform, --os and --arch. Without them the step still
+# succeeds and still writes an observation -- just one that cannot say which platform
+# produced it, which is the entire reason the os matrix axis exists. That is exactly how it shipped: the edit
 # adding the flags aborted, the matrix edit landed, and eleven CI runs recorded no platform
 # at all while looking perfectly healthy.
 #
@@ -135,7 +135,9 @@ if not _steps:
     failed = True
 for _n, _at in enumerate(_steps, 1):
     _step = _sc[_at:][:400]
-    for _flag in ("--os", "--arch", "--run-id"):
+    # --platform last of the four: the macOS step omitted it for months, and
+    # tools/observations.py filled it in from the scenario until a record had to carry it.
+    for _flag in ("--os", "--arch", "--run-id", "--platform"):
         if _flag not in _step:
             print(f"FAIL: scenarios.yml recording step {_n} of {len(_steps)} omits "
                   f"{_flag}. The step succeeds and writes a record that cannot say which "

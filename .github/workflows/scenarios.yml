@@ -273,7 +273,7 @@ jobs:
         run: |
           python3 tools/agent_status.py --record /tmp/out.json \
             test/scenarios/${{ matrix.scenario }} \
-            --os "$(sw_vers -productVersion)" --arch "$(uname -m)" \
+            --platform darwin --os "$(sw_vers -productVersion)" --arch "$(uname -m)" \
             --run-id "${{ github.run_id }}"
       - name: Upload the observation
         if: steps.runnable.outputs.runnable == 'true'

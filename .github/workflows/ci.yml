@@ -903,6 +903,11 @@ jobs:
         run: python3 osquery/tools/measure.py --check --json > "$(cygpath -u "$RUNNER_TEMP")/perf-windows.json"
       - name: Confirm every query returned JSON
         run: python3 osquery/tools/check_output.py "$(cygpath -u "$RUNNER_TEMP")/perf-windows.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: performance-windows
+          path: ${{ runner.temp }}/perf-windows.json
 
       # The gaps-imply-hedged invariant of the other two jobs. This runner carries Docker for
       # Windows containers, which osquery cannot read, so a gap is open and the summary

@@ -6,6 +6,7 @@
       "route": "homebrew",
       "value": "aider",
       "agent_version": "0.86.2",
+      "platform": "darwin",
       "os": "14.8.7",
       "arch": "arm64"
     },
@@ -14,6 +15,7 @@
       "route": "homebrew",
       "value": "aider",
       "agent_version": "0.86.2",
+      "platform": "darwin",
       "os": "14.8.9",
       "arch": "arm64"
     },
@@ -22,6 +24,7 @@
       "route": "homebrew",
       "value": "aider",
       "agent_version": "0.86.2",
+      "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64"
     },
@@ -30,6 +33,7 @@
       "route": "homebrew",
       "value": "aider",
       "agent_version": "0.86.2",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -39,6 +43,7 @@
       "route": "homebrew",
       "value": "aider",
       "agent_version": "0.86.2",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -48,6 +53,7 @@
       "route": "npm",
       "value": "@anthropic-ai/claude-code",
       "agent_version": "2.1.252",
+      "platform": "darwin",
       "os": "14.8.7",
       "arch": "arm64"
     },
@@ -56,6 +62,7 @@
       "route": "npm",
       "value": "@anthropic-ai/claude-code",
       "agent_version": "2.1.259",
+      "platform": "darwin",
       "os": "14.8.9",
       "arch": "arm64"
     },
@@ -64,6 +71,7 @@
       "route": "npm",
       "value": "@anthropic-ai/claude-code",
       "agent_version": "2.1.260",
+      "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64"
     },
@@ -72,6 +80,7 @@
       "route": "npm",
       "value": "@anthropic-ai/claude-code",
       "agent_version": "2.1.311",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -81,6 +90,7 @@
       "route": "npm",
       "value": "@anthropic-ai/claude-code",
       "agent_version": "2.1.311",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -90,6 +100,7 @@
       "route": "homebrew",
       "value": "codex",
       "agent_version": "0.142.3",
+      "platform": "darwin",
       "os": "14.8.7",
       "arch": "arm64"
     },
@@ -98,6 +109,7 @@
       "route": "homebrew",
       "value": "codex",
       "agent_version": "0.151.0",
+      "platform": "darwin",
       "os": "14.8.9",
       "arch": "arm64"
     },
@@ -106,6 +118,7 @@
       "route": "homebrew",
       "value": "codex",
       "agent_version": "0.145.0",
+      "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64"
     },
@@ -114,6 +127,7 @@
       "route": "homebrew",
       "value": "codex",
       "agent_version": "0.153.4",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -123,6 +137,7 @@
       "route": "homebrew",
       "value": "codex",
       "agent_version": "0.163.0",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -132,6 +147,7 @@
       "route": "homebrew",
       "value": "copilot-cli",
       "agent_version": "1.0.65",
+      "platform": "darwin",
       "os": "14.8.7",
       "arch": "arm64"
     },
@@ -140,6 +156,7 @@
       "route": "homebrew",
       "value": "copilot-cli",
       "agent_version": "1.0.82",
+      "platform": "darwin",
       "os": "14.8.9",
       "arch": "arm64"
     },
@@ -148,6 +165,7 @@
       "route": "homebrew",
       "value": "copilot-cli",
       "agent_version": "1.0.75",
+      "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64"
     },
@@ -156,6 +174,7 @@
       "route": "homebrew",
       "value": "copilot-cli",
       "agent_version": "1.0.83",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -165,6 +184,7 @@
       "route": "homebrew",
       "value": "copilot-cli",
       "agent_version": "1.0.101",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -174,6 +194,7 @@
       "route": "homebrew",
       "value": "cursor-cli",
       "agent_version": "2026.09.02-c22c1a3",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -183,6 +204,7 @@
       "route": "homebrew",
       "value": "cursor-cli",
       "agent_version": "2026.10.19-6bbf2c4",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -192,6 +214,7 @@
       "route": "homebrew",
       "value": "gemini-cli",
       "agent_version": "0.46.0",
+      "platform": "darwin",
       "os": "14.8.7",
       "arch": "arm64"
     },
@@ -200,6 +223,7 @@
       "route": "homebrew",
       "value": "gemini-cli",
       "agent_version": "0.46.0",
+      "platform": "darwin",
       "os": "14.8.9",
       "arch": "arm64"
     },
@@ -208,6 +232,7 @@
       "route": "homebrew",
       "value": "gemini-cli",
       "agent_version": "0.46.0",
+      "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64"
     },
@@ -216,6 +241,7 @@
       "route": "homebrew",
       "value": "gemini-cli",
       "agent_version": "0.46.0",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -225,6 +251,7 @@
       "route": "homebrew",
       "value": "gemini-cli",
       "agent_version": "0.64.0",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -234,6 +261,7 @@
       "route": "homebrew",
       "value": "block-goose-cli",
       "agent_version": "1.49.0",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -243,6 +271,7 @@
       "route": "homebrew",
       "value": "block-goose-cli",
       "agent_version": "1.55.0",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -252,6 +281,7 @@
       "route": "homebrew",
       "value": "hermes-agent",
       "agent_version": "2026.6.19",
+      "platform": "darwin",
       "os": "14.8.7",
       "arch": "arm64"
     },
@@ -260,6 +290,7 @@
       "route": "homebrew",
       "value": "hermes-agent",
       "agent_version": "2026.8.27",
+      "platform": "darwin",
       "os": "14.8.9",
       "arch": "arm64"
     },
@@ -268,6 +299,7 @@
       "route": "homebrew",
       "value": "hermes-agent",
       "agent_version": "2026.7.20",
+      "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64"
     },
@@ -276,6 +308,7 @@
       "route": "homebrew",
       "value": "hermes-agent",
       "agent_version": "2026.8.31_1",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -285,6 +318,7 @@
       "route": "homebrew",
       "value": "hermes-agent",
       "agent_version": "0.22.2",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -294,6 +328,7 @@
       "route": "bundle_ids",
       "value": "com.amazon.codewhisperer",
       "agent_version": "2.21.1",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -303,6 +338,7 @@
       "route": "bundle_ids",
       "value": "com.amazon.codewhisperer",
       "agent_version": "2.33.0",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -312,6 +348,7 @@
       "route": "homebrew",
       "value": "kiro-cli",
       "agent_version": "2.21.1",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -321,6 +358,7 @@
       "route": "homebrew",
       "value": "kiro-cli",
       "agent_version": "2.33.0",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -330,6 +368,7 @@
       "route": "homebrew",
       "value": "muse-code",
       "agent_version": "1.0.3-R2198.1",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -339,6 +378,7 @@
       "route": "homebrew",
       "value": "muse-code",
       "agent_version": "1.4.11-R6667.1",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -348,6 +388,7 @@
       "route": "homebrew",
       "value": "opencode",
       "agent_version": "1.18.20",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -357,6 +398,7 @@
       "route": "homebrew",
       "value": "opencode",
       "agent_version": "2.1.2",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"

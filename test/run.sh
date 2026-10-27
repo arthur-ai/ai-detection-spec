@@ -160,7 +160,7 @@ EOF
     guest_os=$(vm_ssh "$vm" "sw_vers -productVersion" 2>/dev/null | tr -d '\r')
     guest_arch=$(vm_ssh "$vm" "uname -m" 2>/dev/null | tr -d '\r')
     python3 "$HERE/../tools/agent_status.py" --record "$ART/$s.json" "$dir" \
-      --os "$guest_os" --arch "$guest_arch"
+      --platform darwin --os "$guest_os" --arch "$guest_arch"
   fi
   echo
   return $rc

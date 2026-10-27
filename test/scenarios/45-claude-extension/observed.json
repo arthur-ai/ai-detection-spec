@@ -6,6 +6,7 @@
       "route": "extension_ids",
       "value": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
       "agent_version": "1.0.90",
+      "platform": "darwin",
       "os": "14.8.7",
       "arch": "arm64"
     },
@@ -14,6 +15,7 @@
       "route": "extension_ids",
       "value": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
       "agent_version": "1.0.90",
+      "platform": "darwin",
       "os": "14.8.9",
       "arch": "arm64"
     },
@@ -22,6 +24,7 @@
       "route": "extension_ids",
       "value": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
       "agent_version": "1.0.90",
+      "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64"
     },
@@ -30,6 +33,7 @@
       "route": "extension_ids",
       "value": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
       "agent_version": "1.0.102",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -39,6 +43,7 @@
       "route": "extension_ids",
       "value": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
       "agent_version": "1.0.102",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -48,6 +53,7 @@
       "route": "extension_ids",
       "value": "eanggfilgoajaocelnaflolkadkeghjp",
       "agent_version": "16.2.0",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -57,6 +63,7 @@
       "route": "extension_ids",
       "value": "eanggfilgoajaocelnaflolkadkeghjp",
       "agent_version": "16.2.0",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -66,6 +73,7 @@
       "route": "extension_ids",
       "value": "camppjleccjaphfdbohjdohecfnoikec",
       "agent_version": "8.3.1",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -75,6 +83,7 @@
       "route": "extension_ids",
       "value": "camppjleccjaphfdbohjdohecfnoikec",
       "agent_version": "8.3.1",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -84,6 +93,7 @@
       "route": "extension_ids",
       "value": "ofpnmcalabcbjgholdjcjblkibolbppb",
       "agent_version": "9.0.23",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -93,6 +103,7 @@
       "route": "extension_ids",
       "value": "ofpnmcalabcbjgholdjcjblkibolbppb",
       "agent_version": "9.0.23",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -102,6 +113,7 @@
       "route": "extension_ids",
       "value": "difoiogjjojoaoomphldepapgpbgkhkb",
       "agent_version": "5.35.3",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -111,6 +123,7 @@
       "route": "extension_ids",
       "value": "difoiogjjojoaoomphldepapgpbgkhkb",
       "agent_version": "5.35.3",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"

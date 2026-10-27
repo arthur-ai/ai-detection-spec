@@ -21,21 +21,17 @@ def provable(rec):
 
 def read(scenarios=SCENARIOS):
     """(live, archived): every observation keyed (agent, route, value), each carrying its
-    scenario and that scenario's platform. `archived` holds the observations of superseded
-    values.
+    scenario. `archived` holds the observations of superseded values.
 
-    The scenario is the directory, not the file's own field. The platform comes from the
-    scenario's expected.json when the record has none: the macOS runners record without
-    `--platform`, and the scenario declares it anyway."""
+    The scenario is the directory, not the file's own field. The platform is the record's
+    own and is never filled in from the scenario: every runner records it, so one without it
+    is not provable, rather than proof credited to whatever the scenario declares now."""
     scenarios = pathlib.Path(scenarios)
-    platform_of = {p.parent.name: json.loads(p.read_text()).get("platform")
-                   for p in sorted(scenarios.glob("*/expected.json"))}
     live, archived = collections.defaultdict(list), collections.defaultdict(list)
     for path in sorted(scenarios.glob("*/observed.json")):
         doc, scenario = json.loads(path.read_text()), path.parent.name
         for bucket, key in ((live, "identifiers"), (archived, "archived")):
             for rec in doc.get(key, []):
-                full = {**rec, "scenario": scenario,
-                        "platform": rec.get("platform") or platform_of.get(scenario)}
+                full = {**rec, "scenario": scenario}
                 bucket[(rec["agent"], rec["route"], str(rec["value"]))].append(full)
     return live, archived

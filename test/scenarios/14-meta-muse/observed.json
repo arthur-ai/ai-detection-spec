@@ -5,6 +5,7 @@
       "agent": "muse-code",
       "route": "binaries",
       "value": "~/.local/bin/muse",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -13,6 +14,7 @@
       "agent": "muse-code",
       "route": "binaries",
       "value": "~/.local/bin/muse",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -22,6 +24,7 @@
       "route": "bundle_ids",
       "value": "com.meta.endo",
       "agent_version": "9.0",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -31,6 +34,7 @@
       "route": "bundle_ids",
       "value": "com.meta.endo",
       "agent_version": "9.0",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
