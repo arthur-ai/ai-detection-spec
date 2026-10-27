@@ -190,9 +190,13 @@ fi
 # Desktop registered its native-messaging host once it ran with this profile present and not
 # without one. The cask is 10-desktop-apps'. `open -g` returns at once and the wait is
 # bounded here, so a launch that hangs costs two minutes rather than the job.
+#
+# BY PATH, NOT `-a Claude`: on macOS 26 the name lookup ran right after the cask moved the
+# app into /Applications and answered "Unable to find application named 'Claude'", because
+# Launch Services had not registered it yet (PR 132's first run).
 BRIDGE="$UDD/NativeMessagingHosts/com.anthropic.claude_browser_extension.json"
 if need_brew && brew install --cask claude; then
-  open -g -a Claude || echo "WARN: Claude Desktop did not launch"
+  open -g /Applications/Claude.app || echo "WARN: Claude Desktop did not launch"
   for i in {1..60}; do [ -f "$BRIDGE" ] && break; sleep 2; done
   if [ -f "$BRIDGE" ]; then
     echo "Claude Desktop registered its bridge after about $((2 * i))s"
