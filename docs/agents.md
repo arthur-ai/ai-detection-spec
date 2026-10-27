@@ -19,7 +19,7 @@ and the CI test behind each one.
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 119 of 119. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all; the build rejects it.
+**Every identifier is proved by a real install in CI** — 119 of 119. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all; the build rejects it. The gate asks for proof on one platform: ◐ marks the 52 not yet proved on every platform their agent is listed for, and [`docs/limits.md`](limits.md#proven-on-fewer-platforms-than-claimed) names the platforms missing.
 
 ## 🧪 Why a real install is the bar
 
@@ -40,80 +40,80 @@ Software that acts on the user's behalf. This is what the catalog is for.
 
 Operates on a codebase, usually with shell access.
 
-| name | identifiers | scenarios |
-|---|---|---|
-| **aider** | **`aider`**, **`aider-chat`**, **`paulgauthier/aider`**, **`~/.aider`** | 106-windows-python-agents, 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
-| **Amazon Q Developer** | **`amazonwebservices.amazon-q-vscode`**, **`plugin-amazonq`** | 85-linux-vscode-agents, 86-linux-jetbrains-agents |
-| **Google Antigravity** | **`com.google.antigravity`**, **`com.google.antigravity-ide`**, **`antigravity`**, **`antigravity-ide`** | 10-desktop-apps |
-| **Augment Code** | **`@augmentcode/auggie`**, **`augment.vscode-augment`** | 20-cli-agents, 71-linux-cli-agents, 85-linux-vscode-agents |
-| **BLACKBOX AI** | **`blackboxapp.blackbox`**, **`blackboxapp.blackboxagent`** | 85-linux-vscode-agents |
-| **Claude Code** | **`@anthropic-ai/claude-code`**, **`anthropic.claude-code`**, **`~/.claude`**, **`~/.local/bin/claude`**, **`~/.local/bin/claude.exe`**, **`~/.local/share/claude/versions/`**, **`~/.local/bin/claude.exe`**, **`claude-code`**, **`claude-code`** | 101-windows-cli-agents, 102-windows-claude-native, 103-windows-vscode-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 83-linux-claude-running, 85-linux-vscode-agents, 89-linux-claude-deb, 90-demo-fleet, 91-linux-claude-rpm |
-| **Cline** | **`cline`**, **`saoudrizwan.claude-dev`**, **`cline`** | 103-windows-vscode-agents, 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode, 80-linux-jetbrains |
-| **CodeGPT** | **`danielsanmedium.dscodegpt`** | 85-linux-vscode-agents |
-| **Codex CLI** | **`codex`**, **`@openai/codex`**, **`openai.chatgpt`**, **`~/.codex`** | 101-windows-cli-agents, 103-windows-vscode-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 85-linux-vscode-agents, 90-demo-fleet |
-| **Cody** | **`sourcegraph.cody-ai`**, **`Sourcegraph`** | 85-linux-vscode-agents, 86-linux-jetbrains-agents |
-| **Continue** | **`@continuedev/cli`**, **`continue.continue`**, **`continue-intellij-extension`** | 103-windows-vscode-agents, 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode, 80-linux-jetbrains |
-| **GitHub Copilot** | **`copilot-cli`**, **`@github/copilot`**, **`github-copilot-intellij`** | 101-windows-cli-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 86-linux-jetbrains-agents |
-| **Cursor** | **`com.todesktop.230313mzl4w4u92`**, **`cursor`**, **`cursor-cli`**, **`~/.local/bin/cursor-agent`**, **`~/AppData/Local/Programs/cursor/`**, **`cursor`**, **`cursor`**, **`cursor.desktop`**, **`{DADADADA-ADAD-ADAD-ADAD-ADADADADADAD}}_is1`** | 10-desktop-apps, 105-windows-desktop-apps, 21-cli-agents-homebrew, 73-linux-deb, 77-linux-rpm, 84-linux-installers, 90-demo-fleet |
-| **Gemini CLI** | **`gemini-cli`**, **`@google/gemini-cli`** | 101-windows-cli-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 81-linux-bun |
-| **Gemini Code Assist** | **`google.geminicodeassist`**, **`gemini`** | 85-linux-vscode-agents, 86-linux-jetbrains-agents |
-| **goose** | **`com.electron.goose`**, **`block-goose-cli`**, **`block-goose`**, **`ghcr.io/block/goose`**, **`https://github.com/block/goose`**, **`~/.local/bin/goose`** | 13-desktop-apps-more, 21-cli-agents-homebrew, 79-linux-image, 84-linux-installers |
-| **Grok Build** | **`~/.grok`** | 84-linux-installers |
-| **Kilo Code** | **`@kilocode/cli`**, **`kilocode.kilo-code`** | 103-windows-vscode-agents, 20-cli-agents, 71-linux-cli-agents, 85-linux-vscode-agents |
-| **Kiro** | **`dev.kiro.desktop`**, **`kiro`** | 10-desktop-apps |
-| **Kiro CLI** | **`com.amazon.codewhisperer`**, **`kiro-cli`**, **`~/.local/bin/kiro-cli`** | 21-cli-agents-homebrew, 84-linux-installers |
-| **Muse Code** | **`muse-code`**, **`~/.local/bin/muse`** | 14-meta-muse, 21-cli-agents-homebrew, 84-linux-installers |
-| **opencode** | **`opencode`**, **`opencode-ai`**, **`~/.opencode`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 84-linux-installers |
-| **OpenHands** | **`ghcr.io/openhands/openhands`**, **`ghcr.io/all-hands-ai/openhands`**, **`https://github.com/OpenHands/OpenHands`** | 79-linux-image |
-| **Pi** | **`@earendil-works/pi-coding-agent`**, **`@mariozechner/pi-coding-agent`**, **`~/.pi`** | 20-cli-agents, 84-linux-installers, 87-linux-pi, 88-linux-pi-legacy |
-| **Roo Code** | **`rooveterinaryinc.roo-cline`** | 103-windows-vscode-agents, 85-linux-vscode-agents |
-| **SWE-agent** | **`sweagent/swe-agent`** | 79-linux-image |
-| **Trae** | **`com.trae.app`**, **`cn.trae.app`**, **`trae`**, **`trae-cn`** | 13-desktop-apps-more |
-| **Windsurf** | **`com.exafunction.windsurf`**, **`devin-desktop`**, **`{5A8B7D94-9B5F-4D1F-93FC-5609F7159349}_is1`** | 10-desktop-apps, 105-windows-desktop-apps |
+| name | platforms | identifiers | scenarios |
+|---|---|---|---|
+| **aider** | macOS, Linux, Windows | **`aider`**, **`aider-chat`**, **`paulgauthier/aider`** ◐, **`~/.aider`** ◐ | 106-windows-python-agents, 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
+| **Amazon Q Developer** | macOS, Linux | **`amazonwebservices.amazon-q-vscode`** ◐, **`plugin-amazonq`** ◐ | 85-linux-vscode-agents, 86-linux-jetbrains-agents |
+| **Google Antigravity** | macOS | **`com.google.antigravity`**, **`com.google.antigravity-ide`**, **`antigravity`**, **`antigravity-ide`** | 10-desktop-apps |
+| **Augment Code** | macOS, Linux | **`@augmentcode/auggie`**, **`augment.vscode-augment`** ◐ | 20-cli-agents, 71-linux-cli-agents, 85-linux-vscode-agents |
+| **BLACKBOX AI** | macOS, Linux | **`blackboxapp.blackbox`** ◐, **`blackboxapp.blackboxagent`** ◐ | 85-linux-vscode-agents |
+| **Claude Code** | macOS, Linux, Windows | **`@anthropic-ai/claude-code`** ◐, **`anthropic.claude-code`** ◐, **`~/.claude`**, **`~/.local/bin/claude`** ◐, **`~/.local/bin/claude.exe`** ◐, **`~/.local/share/claude/versions/`** ◐, **`~/.local/bin/claude.exe`** ◐, **`claude-code`**, **`claude-code`** | 101-windows-cli-agents, 102-windows-claude-native, 103-windows-vscode-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 83-linux-claude-running, 85-linux-vscode-agents, 89-linux-claude-deb, 90-demo-fleet, 91-linux-claude-rpm |
+| **Cline** | macOS, Linux, Windows | **`cline`** ◐, **`saoudrizwan.claude-dev`** ◐, **`cline`** ◐ | 103-windows-vscode-agents, 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode, 80-linux-jetbrains |
+| **CodeGPT** | macOS, Linux | **`danielsanmedium.dscodegpt`** ◐ | 85-linux-vscode-agents |
+| **Codex CLI** | macOS, Linux, Windows | **`codex`**, **`@openai/codex`**, **`openai.chatgpt`** ◐, **`~/.codex`** ◐ | 101-windows-cli-agents, 103-windows-vscode-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 85-linux-vscode-agents, 90-demo-fleet |
+| **Cody** | macOS, Linux | **`sourcegraph.cody-ai`** ◐, **`Sourcegraph`** ◐ | 85-linux-vscode-agents, 86-linux-jetbrains-agents |
+| **Continue** | macOS, Linux, Windows | **`@continuedev/cli`** ◐, **`continue.continue`** ◐, **`continue-intellij-extension`** ◐ | 103-windows-vscode-agents, 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode, 80-linux-jetbrains |
+| **GitHub Copilot** | macOS, Linux, Windows | **`copilot-cli`**, **`@github/copilot`**, **`github-copilot-intellij`** ◐ | 101-windows-cli-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 86-linux-jetbrains-agents |
+| **Cursor** | macOS, Linux, Windows | **`com.todesktop.230313mzl4w4u92`**, **`cursor`**, **`cursor-cli`**, **`~/.local/bin/cursor-agent`** ◐, **`~/AppData/Local/Programs/cursor/`** ◐, **`cursor`**, **`cursor`**, **`cursor.desktop`**, **`{DADADADA-ADAD-ADAD-ADAD-ADADADADADAD}}_is1`** | 10-desktop-apps, 105-windows-desktop-apps, 21-cli-agents-homebrew, 73-linux-deb, 77-linux-rpm, 84-linux-installers, 90-demo-fleet |
+| **Gemini CLI** | macOS, Linux, Windows | **`gemini-cli`**, **`@google/gemini-cli`** | 101-windows-cli-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 81-linux-bun |
+| **Gemini Code Assist** | macOS, Linux | **`google.geminicodeassist`** ◐, **`gemini`** ◐ | 85-linux-vscode-agents, 86-linux-jetbrains-agents |
+| **goose** | macOS, Linux | **`com.electron.goose`**, **`block-goose-cli`**, **`block-goose`**, **`ghcr.io/block/goose`** ◐, **`https://github.com/block/goose`** ◐, **`~/.local/bin/goose`** ◐ | 13-desktop-apps-more, 21-cli-agents-homebrew, 79-linux-image, 84-linux-installers |
+| **Grok Build** | macOS, Linux | **`~/.grok`** ◐ | 84-linux-installers |
+| **Kilo Code** | macOS, Linux, Windows | **`@kilocode/cli`** ◐, **`kilocode.kilo-code`** ◐ | 103-windows-vscode-agents, 20-cli-agents, 71-linux-cli-agents, 85-linux-vscode-agents |
+| **Kiro** | macOS | **`dev.kiro.desktop`**, **`kiro`** | 10-desktop-apps |
+| **Kiro CLI** | macOS, Linux | **`com.amazon.codewhisperer`**, **`kiro-cli`**, **`~/.local/bin/kiro-cli`** ◐ | 21-cli-agents-homebrew, 84-linux-installers |
+| **Muse Code** | macOS, Linux | **`muse-code`**, **`~/.local/bin/muse`** | 14-meta-muse, 21-cli-agents-homebrew, 84-linux-installers |
+| **opencode** | macOS, Linux | **`opencode`**, **`opencode-ai`**, **`~/.opencode`** ◐ | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 84-linux-installers |
+| **OpenHands** | macOS, Linux | **`ghcr.io/openhands/openhands`** ◐, **`ghcr.io/all-hands-ai/openhands`** ◐, **`https://github.com/OpenHands/OpenHands`** ◐ | 79-linux-image |
+| **Pi** | macOS, Linux | **`@earendil-works/pi-coding-agent`** ◐, **`@mariozechner/pi-coding-agent`** ◐, **`~/.pi`** | 20-cli-agents, 84-linux-installers, 87-linux-pi, 88-linux-pi-legacy |
+| **Roo Code** | macOS, Linux, Windows | **`rooveterinaryinc.roo-cline`** ◐ | 103-windows-vscode-agents, 85-linux-vscode-agents |
+| **SWE-agent** | macOS, Linux | **`sweagent/swe-agent`** ◐ | 79-linux-image |
+| **Trae** | macOS | **`com.trae.app`**, **`cn.trae.app`**, **`trae`**, **`trae-cn`** | 13-desktop-apps-more |
+| **Windsurf** | macOS, Windows | **`com.exafunction.windsurf`**, **`devin-desktop`**, **`{5A8B7D94-9B5F-4D1F-93FC-5609F7159349}_is1`** | 10-desktop-apps, 105-windows-desktop-apps |
 
 ## Personal agent
 
 General-purpose, and often bridged to messaging.
 
-| name | identifiers | scenarios |
-|---|---|---|
-| **Hermes Agent** | **`hermes-agent`**, **`hermes-agent`**, **`~/.hermes`**, **`~/.local/bin/hermes`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents |
-| **Muse for Mac** | **`com.meta.endo`** | 14-meta-muse |
-| **OpenClaw** | **`ai.openclaw.mac`**, **`com.clawdbot.mac`**, **`openclaw`**, **`ai.openclaw.`**, **`openclaw`**, **`clawdbot`**, **`moltbot`**, **`~/.openclaw`** | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 57-clawdbot-era, 60-persistence, 82-linux-running, 90-demo-fleet |
+| name | platforms | identifiers | scenarios |
+|---|---|---|---|
+| **Hermes Agent** | macOS, Linux | **`hermes-agent`**, **`hermes-agent`**, **`~/.hermes`**, **`~/.local/bin/hermes`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents |
+| **Muse for Mac** | macOS | **`com.meta.endo`** | 14-meta-muse |
+| **OpenClaw** | macOS, Linux | **`ai.openclaw.mac`**, **`com.clawdbot.mac`**, **`openclaw`**, **`ai.openclaw.`**, **`openclaw`**, **`clawdbot`** ◐, **`moltbot`** ◐, **`~/.openclaw`** | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 57-clawdbot-era, 60-persistence, 82-linux-running, 90-demo-fleet |
 
 ## AI browser
 
 A browser whose AI features are the product.
 
-| name | identifiers | scenarios |
-|---|---|---|
-| **Dia** | **`company.thebrowser.dia`**, **`thebrowsercompany-dia`** | 13-desktop-apps-more |
-| **Orion** | **`com.kagi.kagimacOS`**, **`orion`** | 10-desktop-apps |
-| **Perplexity Comet** | **`ai.perplexity.comet`**, **`comet`** | 10-desktop-apps, 90-demo-fleet |
+| name | platforms | identifiers | scenarios |
+|---|---|---|---|
+| **Dia** | macOS | **`company.thebrowser.dia`**, **`thebrowsercompany-dia`** | 13-desktop-apps-more |
+| **Orion** | macOS | **`com.kagi.kagimacOS`**, **`orion`** | 10-desktop-apps |
+| **Perplexity Comet** | macOS | **`ai.perplexity.comet`**, **`comet`** | 10-desktop-apps, 90-demo-fleet |
 
 ## Browser agent
 
 An extension that acts inside the browser on the user's behalf.
 
-| name | identifiers | scenarios |
-|---|---|---|
-| **Claude in Chrome** | **`fcoeoabgfenejglbffodgkkbkcdhcgfn`** | 104-windows-browser, 45-claude-extension |
-| **HARPA AI** | **`eanggfilgoajaocelnaflolkadkeghjp`** | 104-windows-browser, 45-claude-extension |
-| **Merlin** | **`camppjleccjaphfdbohjdohecfnoikec`** | 104-windows-browser, 45-claude-extension |
-| **Monica** | **`ofpnmcalabcbjgholdjcjblkibolbppb`** | 104-windows-browser, 45-claude-extension |
-| **Sider** | **`difoiogjjojoaoomphldepapgpbgkhkb`** | 104-windows-browser, 45-claude-extension |
+| name | platforms | identifiers | scenarios |
+|---|---|---|---|
+| **Claude in Chrome** | macOS, Linux, Windows | **`fcoeoabgfenejglbffodgkkbkcdhcgfn`** ◐ | 104-windows-browser, 45-claude-extension |
+| **HARPA AI** | macOS, Linux, Windows | **`eanggfilgoajaocelnaflolkadkeghjp`** ◐ | 104-windows-browser, 45-claude-extension |
+| **Merlin** | macOS, Linux, Windows | **`camppjleccjaphfdbohjdohecfnoikec`** ◐ | 104-windows-browser, 45-claude-extension |
+| **Monica** | macOS, Linux, Windows | **`ofpnmcalabcbjgholdjcjblkibolbppb`** ◐ | 104-windows-browser, 45-claude-extension |
+| **Sider** | macOS, Linux, Windows | **`difoiogjjojoaoomphldepapgpbgkhkb`** ◐ | 104-windows-browser, 45-claude-extension |
 
 ## Desktop assistant
 
 A chat client that can run tools on the machine, for example through MCP.
 
-| name | identifiers | scenarios |
-|---|---|---|
-| **ChatGPT Desktop** | **`com.openai.codex`**, **`com.openai.chat`**, **`chatgpt`** | 10-desktop-apps, 12-chatgpt-pre-rename, 90-demo-fleet |
-| **Claude Desktop** | **`com.anthropic.claudefordesktop`**, **`claude`**, **`com.anthropic.claude_browser_extension.json`**, **`Claude_pzs8sxrjxfjjc`** | 10-desktop-apps, 104-windows-browser, 105-windows-desktop-apps, 90-demo-fleet |
-| **Perplexity** | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
+| name | platforms | identifiers | scenarios |
+|---|---|---|---|
+| **ChatGPT Desktop** | macOS | **`com.openai.codex`**, **`com.openai.chat`**, **`chatgpt`** | 10-desktop-apps, 12-chatgpt-pre-rename, 90-demo-fleet |
+| **Claude Desktop** | macOS, Windows | **`com.anthropic.claudefordesktop`**, **`claude`**, **`com.anthropic.claude_browser_extension.json`** ◐, **`Claude_pzs8sxrjxfjjc`** | 10-desktop-apps, 104-windows-browser, 105-windows-desktop-apps, 90-demo-fleet |
+| **Perplexity** | macOS | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
 
-> **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = superseded: a run proved it and the current release no longer emits it. ∅ = no CI runner for its platform. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it.
+> **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = superseded: a run proved it and the current release no longer emits it. ∅ = no CI runner for its platform. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it. ◐ = proved on some of the platforms its agent is listed for ([which](limits.md#proven-on-fewer-platforms-than-claimed)).
 
 **What it cannot see is a separate page.** [`docs/limits.md`](limits.md) carries what osquery cannot see on any machine and what each scenario leaves unproved after its install succeeds -- rendered from the same inputs, gated the same way.
 

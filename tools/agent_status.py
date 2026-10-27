@@ -469,14 +469,8 @@ def collect():
     catalog = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
 
     scenarios = collections.defaultdict(set)
-    # A scenario's platform is declared in its own expected.json, which is also what
-    # test/lint.sh and tools/check_workflows.py read. Taken from there rather than from an
-    # observation's `os` field, because "24.04" names a platform family only to a reader
-    # who already knows whose numbering that is.
-    scenario_platform = {}
     for path in sorted(SCENARIOS.glob("*/expected.json")):
         doc = json.loads(path.read_text())
-        scenario_platform[path.parent.name] = doc.get("platform")
         block = doc.get("classified", {})
         for aid in block.get("must_find", []):
             scenarios[aid].add(path.parent.name)
@@ -492,6 +486,9 @@ def collect():
     # Keyed by scenario, so an identifier proved only outside CI can be told apart from
     # one a pull request would catch.
     seen_in = collections.defaultdict(set)      # (agent, route, value) -> {scenario}
+    # The platform each record carries as tools/observations.py reads it, which is the one
+    # tools/export.py publishes as proof: not re-derived here, or the two could disagree.
+    seen_on = collections.defaultdict(set)      # (agent, route, value) -> {(scen, platform)}
     observed_os = set()
     # Only observations tools/export.py could publish as proof; see observations.provable().
     live = {k: [r for r in recs if _observations.provable(r)]
@@ -499,6 +496,7 @@ def collect():
     for key, recs in live.items():
         for rec in recs:
             seen_in[key].add(rec["scenario"])
+            seen_on[key].add((rec["scenario"], rec["platform"]))
             if rec.get("os"):
                 observed_os.add(rec["os"])
     in_ci = ci_scenarios()
@@ -512,6 +510,9 @@ def collect():
     # identifier of such an agent that the run did NOT produce was reached by the suite and
     # failed to appear -- worth naming separately from one nothing has ever tried.
     asserted_by = collections.defaultdict(set)      # agent id -> {scenario}
+    # Declared in each scenario's expected.json, as test/lint.sh and check_workflows.py read
+    # it, not taken from a record's `os`: "24.04" names a platform only to a reader who
+    # already knows whose numbering that is.
     platform_of = {}                                # scenario -> its declared platform
     for path in sorted(SCENARIOS.glob("*/expected.json")):
         name = path.parent.name
@@ -586,7 +587,16 @@ def collect():
                 # renderer, no gate and no test. One of them carried a comment claiming
                 # the per-platform detail had "moved to the per-identifier table below",
                 # which by then had no platform column.
+                # PER PLATFORM, REPORTED AND NOT GATED. `state` asks for proof on one platform;
+                # an identifier is claimed on every platform its agent lists that its route
+                # reads, so a value proved on macOS alone also reads as covered on Linux.
+                # These two say where, and docs/limits.md lists the difference.
+                claimed = sorted(set(agent.get("platforms", []))
+                                 & route_platforms.get(route, set()))
+                proven = sorted({p for s, p in seen_on.get((aid, route, value), ())
+                                 if s in in_ci})
                 idents.append({"route": route, "value": value,
+                               "claimed_on": claimed, "proven_on": proven,
                                "scenarios": scens,
                                "reached_by": sorted(reach - set(unrecorded)),
                                # EVERY CI scenario that asserts this agent, including ones
@@ -599,6 +609,7 @@ def collect():
                                "state": state})
         agents.append({
             "id": aid, "name": agent["name"], "classification": agent["classification"],
+            "platforms": sorted(agent.get("platforms", [])),
             "scenarios": sorted(scenarios.get(aid, ())),
             "identifiers": idents,
         })
@@ -644,6 +655,22 @@ ROUTE_LABEL = {"bundle_ids": "bundle id", "homebrew": "homebrew", "npm": "npm",
                "launchd_prefixes": "launchd", "ports": "port", "model_stores": "model store",
                "native_messaging_hosts": "native msg", "images": "image",
                "extension_ids": "extension id"}
+PLATFORM_NAME = {"darwin": "macOS", "linux": "Linux", "windows": "Windows"}
+SHORT_ANCHOR = "limits.md#proven-on-fewer-platforms-than-claimed"
+
+
+def short_of(ident):
+    """The claimed platforms a CI-proved identifier has not been produced on. Only a
+    `ci-install` identifier: every other state already has its own row in agents.md."""
+    if ident["state"] != "ci-install":
+        return []
+    return [p for p in ident["claimed_on"] if p not in ident["proven_on"]]
+
+
+def _platforms(names):
+    return ", ".join(PLATFORM_NAME.get(p, p) for p in names) or "--"
+
+
 DOC = ROOT / "docs" / "agents.md"
 LIMITS = ROOT / "docs" / "limits.md"
 README = ROOT / "README.md"
@@ -697,6 +724,7 @@ def markdown(data):  # noqa: C901
     n_scen = sum(1 for a in agents if a["scenarios"])
     n_st = lambda s: sum(1 for a in agents for i in a["identifiers"] if i["state"] == s)
     n_ci = n_st("ci-install")
+    n_short = sum(1 for a in agents for i in a["identifiers"] if short_of(i))
 
     out = [
         "<!-- GENERATED BY tools/agent_status.py -- DO NOT EDIT.",
@@ -748,7 +776,13 @@ def markdown(data):  # noqa: C901
            if n_st("superseded") else "")
         + " Anything below complete is a red build, so there is no partial number to read"
           " here. An agent with no test that installs it cannot be added to the catalog at"
-          " all; the build rejects it.",
+          " all; the build rejects it."
+        # WHAT THE GATE ASKS, SAID WHERE ITS NUMBER IS. "Every identifier is proved" holds
+        # on one platform; without this sentence it reads as every platform the agent lists.
+        + (f" The gate asks for proof on one platform: ◐ marks the {n_short} not yet proved"
+           f" on every platform their agent is listed for, and"
+           f" [`docs/limits.md`]({SHORT_ANCHOR}) names the platforms missing."
+           if n_short else ""),
         "",
         "## 🧪 Why a real install is the bar",
         "",
@@ -807,7 +841,7 @@ def markdown(data):  # noqa: C901
                     # NO `evidence` COLUMN. It held "real install" for every row and could
                     # hold nothing else once the exception register went -- a column with
                     # one possible value reads as a distinction being drawn when none is.
-                    "| name | identifiers | scenarios |", "|---|---|---|"]
+                    "| name | platforms | identifiers | scenarios |", "|---|---|---|---|"]
             for a in sorted(by_class[cls], key=lambda x: x["id"]):
                 # `no-ci-platform` WAS MISSING FROM THIS DICT, and would have raised a
                 # KeyError the first time an identifier reached that state -- the page that
@@ -816,16 +850,17 @@ def markdown(data):  # noqa: C901
                 MARK = {"ci-install": "**`%s`**",
                         "superseded": "~~`%s`~~", "local-only": "_`%s`_",
                         "no-ci-platform": "%s ∅", "tested-absent": "%s ⚠", "none": "%s"}
-                ids = ", ".join(MARK[i["state"]] % i["value"]
+                ids = ", ".join(MARK[i["state"]] % i["value"] + (" ◐" if short_of(i) else "")
                                 for i in a["identifiers"]) or "--"
-                out.append(f"| **{a['name']}** | {ids} | "
+                out.append(f"| **{a['name']}** | {_platforms(a['platforms'])} | {ids} | "
                            f"{', '.join(a['scenarios']) or '--'} |")
             out.append("")
 
     out += ["> **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = "
 "superseded: a run proved it and the current release no longer emits it. "
             "∅ = no CI runner for its platform. ⚠ = a scenario installed this agent and "
-            "the identifier did not appear. plain = nothing tests it.", ""]
+            "the identifier did not appear. plain = nothing tests it. ◐ = proved on some of "
+            f"the platforms its agent is listed for ([which]({SHORT_ANCHOR})).", ""]
 
 
     unex = [(a, i) for a in sorted(agents, key=lambda x: x["id"])
@@ -896,8 +931,8 @@ def limits_markdown(data):
         "# 🚧 What it cannot see, and what the tests do not prove",
         "",
         "The limits of [the coverage report](agents.md), kept beside it rather than in it.",
-        "Generated from `docs/blind-spots.yaml` and each scenario's `known_gaps`; lint fails",
-        "when it drifts.",
+        "Generated from `docs/blind-spots.yaml`, each scenario's `known_gaps` and the platform",
+        "each identifier was produced on; lint fails when it drifts.",
         "",
     ]
 
@@ -907,6 +942,22 @@ def limits_markdown(data):
                 "they are stated once. No amount of test coverage moves them.", "",
                 "| blind spot | why |", "|---|---|"]
         out += [f"| {b['spot']} | {b['why']} |" for b in data["blind_spots"]]
+        out.append("")
+
+    short = [(a, i, short_of(i)) for a in sorted(data["agents"], key=lambda x: x["id"])
+             for i in a["identifiers"] if short_of(i)]
+    if short:
+        out += ["## Proven on fewer platforms than claimed", "",
+                "An identifier counts as covered once a CI scenario on any platform produces it,",
+                "and it is claimed on each platform its agent is listed for that its route",
+                "reads. These were produced on some of those platforms and not yet on the rest.",
+                "The catalog does not yet say which platform a value belongs to, so a value that",
+                "exists on one platform only, such as a Windows `.exe`, is listed against the",
+                "others too.", "",
+                "| agent | route | identifier | proven on | not yet on |", "|---|---|---|---|---|"]
+        out += [f"| {a['name']} | {ROUTE_LABEL.get(i['route'], i['route'])} | `{i['value']}` | "
+                f"{_platforms(i['proven_on'])} | {_platforms(missing)} |"
+                for a, i, missing in short]
         out.append("")
 
     # ONE ROW PER GAP, and only for a gap. This section used to render every known_gaps
