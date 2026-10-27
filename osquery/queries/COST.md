@@ -152,6 +152,32 @@ Later additions, 2026-10-07: `jetbrains.sql` 0.39s for 0 rows (no JetBrains IDE)
 for 865. In an Ubuntu container, one `bun add -g @google/gemini-cli` produced 6 `packages.sql`
 rows, because bun hoists a global's dependencies.
 
+## Windows
+
+### Hosted runner
+
+GitHub-hosted `windows-2025`, Windows Server 2025 build 26100, x86_64, osquery 5.23.1, the
+stock image with no agents, 2026-10-27. `osquery/tools/measure.py --check` in CI's Windows
+runtime job, which uploads it as `performance-windows`.
+
+| query | band | seconds | rows |
+|---|---|---|---|
+| `browser-windows.sql` | fast | 0.12 | 0 |
+| `filesystem-windows.sql` | fast | 0.10 | 6 |
+| `native-messaging-windows.sql` | fast | 0.33 | 7 |
+| `packages-windows.sql` | fast | 0.09 | 0 |
+| `programs-windows.sql` | slow | 0.40 | 47 |
+| `running-windows.sql` | fast | 0.13 | 1 |
+| `runtime-windows.sql` | fast | 0.09 | 1 |
+| `uninstall-windows.sql` | fast | 0.46 | 429 |
+| `vscode-windows.sql` | fast | 0.26 | 0 |
+| `osquery/dist/discovery-windows.sql` | composed | 1.12 | 491 |
+
+`programs-windows.sql` is `slow` for its **cold** run, 7.2s on a fresh runner against 0.4s
+warm, because `programs` reads every MSIX package's manifest off disk (survey run
+40396366136). That cold number is what an endpoint's first scheduled scan pays. The 429
+Uninstall keys are the runner image's own installs, most of the composed artifact's rows.
+
 ## Deliberately not collected
 
 `python_packages`: 15.6s per scan, no WHERE push-down. It took the full query from 2.0s to

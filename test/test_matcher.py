@@ -1232,6 +1232,24 @@ check("an identifier observed only without a run id is not covered by CI",
       _cov_before in _st.COVERED_STATES and _cov_after not in _st.COVERED_STATES,
       f"before {_cov_before}, after {_cov_after}")
 
+# NOR WITHOUT A PLATFORM. Every runner records one; tools/observations.py used to fill a
+# missing one in from the scenario's expected.json, which credited proof to whatever the
+# scenario declares now. A record without it is not proof.
+_tmp = pathlib.Path(_tf2.mkdtemp())
+try:
+    _sh.copytree(_st.SCENARIOS, _tmp / "scenarios")
+    for _p in (_tmp / "scenarios").glob("*/observed.json"):
+        _d = json.loads(_p.read_text())
+        for _r in _d.get("identifiers", []):
+            if (_r["agent"], _r["route"], str(_r["value"])) == _cov_key:
+                _r.pop("platform", None)
+        _p.write_text(json.dumps(_d))
+    _cov_noplat = _cov_state(_tmp / "scenarios")
+finally:
+    _sh.rmtree(_tmp, ignore_errors=True)
+check("an identifier observed only without a platform is not covered by CI",
+      _cov_noplat not in _st.COVERED_STATES, f"state {_cov_noplat}")
+
 # PROOF IS PER PLATFORM IN THE REPORT. Take an identifier proved on every platform it is
 # claimed on, at least two, and drop its records from one platform's scenarios: it stays
 # covered, the coverage gate's question, and is short of exactly that platform, on the page.

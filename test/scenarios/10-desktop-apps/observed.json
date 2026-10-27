@@ -6,6 +6,7 @@
       "route": "bundle_ids",
       "value": "com.google.antigravity",
       "agent_version": "2.11.0",
+      "platform": "darwin",
       "os": "14.8.9",
       "arch": "arm64"
     },
@@ -14,6 +15,7 @@
       "route": "bundle_ids",
       "value": "com.google.antigravity",
       "agent_version": "2.12.2",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -23,6 +25,7 @@
       "route": "bundle_ids",
       "value": "com.google.antigravity",
       "agent_version": "2.22.0",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -32,6 +35,7 @@
       "route": "bundle_ids",
       "value": "com.google.antigravity-ide",
       "agent_version": "2.5.5",
+      "platform": "darwin",
       "os": "14.8.9",
       "arch": "arm64"
     },
@@ -40,6 +44,7 @@
       "route": "bundle_ids",
       "value": "com.google.antigravity-ide",
       "agent_version": "2.5.5",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -49,6 +54,7 @@
       "route": "bundle_ids",
       "value": "com.google.antigravity-ide",
       "agent_version": "2.5.5",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -58,6 +64,7 @@
       "route": "homebrew",
       "value": "antigravity",
       "agent_version": "2.11.0,6376446768316416",
+      "platform": "darwin",
       "os": "14.8.9",
       "arch": "arm64"
     },
@@ -66,6 +73,7 @@
       "route": "homebrew",
       "value": "antigravity",
       "agent_version": "2.12.2,6298742303883264",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -75,6 +83,7 @@
       "route": "homebrew",
       "value": "antigravity",
       "agent_version": "2.22.0,5446056071266304",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -84,6 +93,7 @@
       "route": "homebrew",
       "value": "antigravity-ide",
       "agent_version": "2.5.5,4923483625488384",
+      "platform": "darwin",
       "os": "14.8.9",
       "arch": "arm64"
     },
@@ -92,6 +102,7 @@
       "route": "homebrew",
       "value": "antigravity-ide",
       "agent_version": "2.5.5,4923483625488384",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -101,6 +112,7 @@
       "route": "homebrew",
       "value": "antigravity-ide",
       "agent_version": "2.5.5,4923483625488384",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -110,6 +122,7 @@
       "route": "bundle_ids",
       "value": "com.openai.chat",
       "agent_version": "1.2026.160",
+      "platform": "darwin",
       "os": "14.8.7",
       "arch": "arm64"
     },
@@ -118,6 +131,7 @@
       "route": "bundle_ids",
       "value": "com.openai.codex",
       "agent_version": "26.825.51511",
+      "platform": "darwin",
       "os": "14.8.9",
       "arch": "arm64"
     },
@@ -126,6 +140,7 @@
       "route": "bundle_ids",
       "value": "com.openai.codex",
       "agent_version": "26.721.41059",
+      "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64"
     },
@@ -134,6 +149,7 @@
       "route": "bundle_ids",
       "value": "com.openai.codex",
       "agent_version": "26.901.51231",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -143,6 +159,7 @@
       "route": "bundle_ids",
       "value": "com.openai.codex",
       "agent_version": "26.1007.30912",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -152,6 +169,7 @@
       "route": "homebrew",
       "value": "chatgpt",
       "agent_version": "1.2026.160,1781312926",
+      "platform": "darwin",
       "os": "14.8.7",
       "arch": "arm64"
     },
@@ -160,6 +178,7 @@
       "route": "homebrew",
       "value": "chatgpt",
       "agent_version": "26.825.51511",
+      "platform": "darwin",
       "os": "14.8.9",
       "arch": "arm64"
     },
@@ -168,6 +187,7 @@
       "route": "homebrew",
       "value": "chatgpt",
       "agent_version": "26.721.41059",
+      "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64"
     },
@@ -176,6 +196,7 @@
       "route": "homebrew",
       "value": "chatgpt",
       "agent_version": "26.901.51231",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -185,6 +206,7 @@
       "route": "homebrew",
       "value": "chatgpt",
       "agent_version": "26.1007.30912",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -194,6 +216,7 @@
       "route": "bundle_ids",
       "value": "com.anthropic.claudefordesktop",
       "agent_version": "1.15962.1",
+      "platform": "darwin",
       "os": "14.8.7",
       "arch": "arm64"
     },
@@ -202,6 +225,7 @@
       "route": "bundle_ids",
       "value": "com.anthropic.claudefordesktop",
       "agent_version": "1.40609.0",
+      "platform": "darwin",
       "os": "14.8.9",
       "arch": "arm64"
     },
@@ -210,6 +234,7 @@
       "route": "bundle_ids",
       "value": "com.anthropic.claudefordesktop",
       "agent_version": "1.24012.9",
+      "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64"
     },
@@ -218,6 +243,7 @@
       "route": "bundle_ids",
       "value": "com.anthropic.claudefordesktop",
       "agent_version": "1.46388.4",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -227,6 +253,7 @@
       "route": "bundle_ids",
       "value": "com.anthropic.claudefordesktop",
       "agent_version": "2.31226.1",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -236,6 +263,7 @@
       "route": "homebrew",
       "value": "claude",
       "agent_version": "1.15962.1,1e236d9fa9efd21a5a0a66a7b70c028f48848604",
+      "platform": "darwin",
       "os": "14.8.7",
       "arch": "arm64"
     },
@@ -244,6 +272,7 @@
       "route": "homebrew",
       "value": "claude",
       "agent_version": "1.40609.0,f65e386db0db64c8f8b39950e25adb11f5f5e3f3",
+      "platform": "darwin",
       "os": "14.8.9",
       "arch": "arm64"
     },
@@ -252,6 +281,7 @@
       "route": "homebrew",
       "value": "claude",
       "agent_version": "1.24012.9,03c61d06f8e01a4db2273b9514e225f21d2ba62e",
+      "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64"
     },
@@ -260,6 +290,7 @@
       "route": "homebrew",
       "value": "claude",
       "agent_version": "1.46388.4,50e62f90a2c85243eef42913398f7c8f1534abef",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -269,6 +300,7 @@
       "route": "homebrew",
       "value": "claude",
       "agent_version": "2.31226.1,8576520051724193e9f74fc538f9ce8125e9ddd2",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -278,6 +310,7 @@
       "route": "bundle_ids",
       "value": "com.todesktop.230313mzl4w4u92",
       "agent_version": "3.9.16",
+      "platform": "darwin",
       "os": "14.8.7",
       "arch": "arm64"
     },
@@ -286,6 +319,7 @@
       "route": "bundle_ids",
       "value": "com.todesktop.230313mzl4w4u92",
       "agent_version": "3.18.9",
+      "platform": "darwin",
       "os": "14.8.9",
       "arch": "arm64"
     },
@@ -294,6 +328,7 @@
       "route": "bundle_ids",
       "value": "com.todesktop.230313mzl4w4u92",
       "agent_version": "3.13.10",
+      "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64"
     },
@@ -302,6 +337,7 @@
       "route": "bundle_ids",
       "value": "com.todesktop.230313mzl4w4u92",
       "agent_version": "3.19.13",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -311,6 +347,7 @@
       "route": "bundle_ids",
       "value": "com.todesktop.230313mzl4w4u92",
       "agent_version": "3.24.12",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -320,6 +357,7 @@
       "route": "homebrew",
       "value": "cursor",
       "agent_version": "3.9.16,042b3c1a4c53f2c3808067f519fbfc67b72cad8b",
+      "platform": "darwin",
       "os": "14.8.7",
       "arch": "arm64"
     },
@@ -328,6 +366,7 @@
       "route": "homebrew",
       "value": "cursor",
       "agent_version": "3.18.9,2ba48ff3f7514cc4643c52ca9f7b3173d9b66137",
+      "platform": "darwin",
       "os": "14.8.9",
       "arch": "arm64"
     },
@@ -336,6 +375,7 @@
       "route": "homebrew",
       "value": "cursor",
       "agent_version": "3.13.10,4f02290ccd9304f0e6bf8ee85f6e9106f02ac1f7",
+      "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64"
     },
@@ -344,6 +384,7 @@
       "route": "homebrew",
       "value": "cursor",
       "agent_version": "3.19.13,dd066f332fcea7382764400fde902f61920648d5",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -353,6 +394,7 @@
       "route": "homebrew",
       "value": "cursor",
       "agent_version": "3.24.12,37b865941ccb31e2fc90c685157534efca87f964",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -362,6 +404,7 @@
       "route": "bundle_ids",
       "value": "dev.kiro.desktop",
       "agent_version": "1.0.395",
+      "platform": "darwin",
       "os": "14.8.9",
       "arch": "arm64"
     },
@@ -370,6 +413,7 @@
       "route": "bundle_ids",
       "value": "dev.kiro.desktop",
       "agent_version": "1.0.437",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -379,6 +423,7 @@
       "route": "bundle_ids",
       "value": "dev.kiro.desktop",
       "agent_version": "1.2.56",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -388,6 +433,7 @@
       "route": "homebrew",
       "value": "kiro",
       "agent_version": "1.0.395",
+      "platform": "darwin",
       "os": "14.8.9",
       "arch": "arm64"
     },
@@ -396,6 +442,7 @@
       "route": "homebrew",
       "value": "kiro",
       "agent_version": "1.0.437",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -405,6 +452,7 @@
       "route": "homebrew",
       "value": "kiro",
       "agent_version": "1.2.56",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -414,6 +462,7 @@
       "route": "bundle_ids",
       "value": "com.kagi.kagimacOS",
       "agent_version": "1.1.1",
+      "platform": "darwin",
       "os": "14.8.7",
       "arch": "arm64"
     },
@@ -422,6 +471,7 @@
       "route": "bundle_ids",
       "value": "com.kagi.kagimacOS",
       "agent_version": "1.1.2",
+      "platform": "darwin",
       "os": "14.8.9",
       "arch": "arm64"
     },
@@ -430,6 +480,7 @@
       "route": "bundle_ids",
       "value": "com.kagi.kagimacOS",
       "agent_version": "1.1.1",
+      "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64"
     },
@@ -438,6 +489,7 @@
       "route": "bundle_ids",
       "value": "com.kagi.kagimacOS",
       "agent_version": "1.1.2",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -447,6 +499,7 @@
       "route": "bundle_ids",
       "value": "com.kagi.kagimacOS",
       "agent_version": "1.1.3",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -456,6 +509,7 @@
       "route": "homebrew",
       "value": "orion",
       "agent_version": "1.1.1,149",
+      "platform": "darwin",
       "os": "14.8.7",
       "arch": "arm64"
     },
@@ -464,6 +518,7 @@
       "route": "homebrew",
       "value": "orion",
       "agent_version": "1.1.2,151",
+      "platform": "darwin",
       "os": "14.8.9",
       "arch": "arm64"
     },
@@ -472,6 +527,7 @@
       "route": "homebrew",
       "value": "orion",
       "agent_version": "1.1.1,149",
+      "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64"
     },
@@ -480,6 +536,7 @@
       "route": "homebrew",
       "value": "orion",
       "agent_version": "1.1.2,151",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -489,6 +546,7 @@
       "route": "homebrew",
       "value": "orion",
       "agent_version": "1.1.3,152",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -498,6 +556,7 @@
       "route": "bundle_ids",
       "value": "ai.perplexity.comet",
       "agent_version": "151.0.7922.247",
+      "platform": "darwin",
       "os": "14.8.7",
       "arch": "arm64"
     },
@@ -506,6 +565,7 @@
       "route": "bundle_ids",
       "value": "ai.perplexity.comet",
       "agent_version": "151.0.7922.247",
+      "platform": "darwin",
       "os": "14.8.9",
       "arch": "arm64"
     },
@@ -514,6 +574,7 @@
       "route": "bundle_ids",
       "value": "ai.perplexity.comet",
       "agent_version": "151.0.7922.247",
+      "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64"
     },
@@ -522,6 +583,7 @@
       "route": "bundle_ids",
       "value": "ai.perplexity.comet",
       "agent_version": "155.0.8059.148",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -531,6 +593,7 @@
       "route": "bundle_ids",
       "value": "ai.perplexity.comet",
       "agent_version": "155.0.8059.148",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -540,6 +603,7 @@
       "route": "homebrew",
       "value": "comet",
       "agent_version": "145.2.7632.4581",
+      "platform": "darwin",
       "os": "14.8.7",
       "arch": "arm64"
     },
@@ -548,6 +612,7 @@
       "route": "homebrew",
       "value": "comet",
       "agent_version": "145.2.7632.4581",
+      "platform": "darwin",
       "os": "14.8.9",
       "arch": "arm64"
     },
@@ -556,6 +621,7 @@
       "route": "homebrew",
       "value": "comet",
       "agent_version": "145.2.7632.4581",
+      "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64"
     },
@@ -564,6 +630,7 @@
       "route": "homebrew",
       "value": "comet",
       "agent_version": "145.2.7632.4581",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -573,6 +640,7 @@
       "route": "homebrew",
       "value": "comet",
       "agent_version": "145.2.7632.4581",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -582,6 +650,7 @@
       "route": "bundle_ids",
       "value": "com.exafunction.windsurf",
       "agent_version": "3.3.18",
+      "platform": "darwin",
       "os": "14.8.7",
       "arch": "arm64"
     },
@@ -590,6 +659,7 @@
       "route": "bundle_ids",
       "value": "com.exafunction.windsurf",
       "agent_version": "3.8.20",
+      "platform": "darwin",
       "os": "14.8.9",
       "arch": "arm64"
     },
@@ -598,6 +668,7 @@
       "route": "bundle_ids",
       "value": "com.exafunction.windsurf",
       "agent_version": "3.5.17",
+      "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64"
     },
@@ -606,6 +677,7 @@
       "route": "bundle_ids",
       "value": "com.exafunction.windsurf",
       "agent_version": "3.8.20",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -615,6 +687,7 @@
       "route": "bundle_ids",
       "value": "com.exafunction.windsurf",
       "agent_version": "3.10.48",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -624,6 +697,7 @@
       "route": "homebrew",
       "value": "devin-desktop",
       "agent_version": "3.3.18,16737566f57f3b53bde136375fe0544eca12fac4",
+      "platform": "darwin",
       "os": "14.8.7",
       "arch": "arm64"
     },
@@ -632,6 +706,7 @@
       "route": "homebrew",
       "value": "devin-desktop",
       "agent_version": "3.8.20,2d9020110aa91587b3c3b0fcf7d1faaf601fc7b8",
+      "platform": "darwin",
       "os": "14.8.9",
       "arch": "arm64"
     },
@@ -640,6 +715,7 @@
       "route": "homebrew",
       "value": "devin-desktop",
       "agent_version": "3.5.17,2c489dfc762456657db8662309c0d5e76e886397",
+      "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64"
     },
@@ -648,6 +724,7 @@
       "route": "homebrew",
       "value": "devin-desktop",
       "agent_version": "3.8.20,2d9020110aa91587b3c3b0fcf7d1faaf601fc7b8",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -657,6 +734,7 @@
       "route": "homebrew",
       "value": "devin-desktop",
       "agent_version": "3.10.48,fcf7ba39e6150055fad817f8716385b4d320d46d",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"

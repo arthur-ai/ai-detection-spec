@@ -112,9 +112,9 @@ EXCLUDED = {
     "90-demo-fleet": "a demo fleet, not a regression test: it installs the whole catalogue "
                      "to populate a walkthrough, and asserts breadth rather than a signature",
 }
-# The recording step must pass --os and --arch. Without them the step still succeeds and
-# still writes an observation -- just one that cannot say which platform produced it, which
-# is the entire reason the os matrix axis exists. That is exactly how it shipped: the edit
+# The recording step must pass --platform, --os and --arch. Without them the step still
+# succeeds and still writes an observation -- just one that cannot say which platform
+# produced it, which is the entire reason the os matrix axis exists. That is exactly how it shipped: the edit
 # adding the flags aborted, the matrix edit landed, and eleven CI runs recorded no platform
 # at all while looking perfectly healthy.
 #
@@ -128,14 +128,21 @@ _repo = root.parent.parent
 # same three flags as the workflow's own steps.
 _sc = "\n".join([(root / "scenarios.yml").read_text()]
                 + [(_repo / h).read_text() for h in HARNESS.values() if (_repo / h).exists()])
-_steps = [m.end() for m in re.finditer(r"agent_status\.py --record \S+\.json", _sc)]
+# A QUOTED OUTPUT PATH COUNTS TOO. `\S+\.json` alone could not span the Windows step's
+# "$(cygpath -u "$RUNNER_TEMP")/out.json", so that step was never checked and dropping its
+# --platform passed. The .json argument stays required: without it, the commit message
+# above and run-linux.sh's comment "agent_status.py --record writes" would match.
+_steps = [m.end() for m in re.finditer(
+    r'agent_status\.py --record (?:"[^\n]*?\.json"|\S+\.json)', _sc)]
 if not _steps:
     print("FAIL: scenarios.yml records no observations at all. Coverage would freeze at "
           "whatever is committed, while every run looked green.")
     failed = True
 for _n, _at in enumerate(_steps, 1):
     _step = _sc[_at:][:400]
-    for _flag in ("--os", "--arch", "--run-id"):
+    # --platform last of the four: the macOS step omitted it for months, and
+    # tools/observations.py filled it in from the scenario until a record had to carry it.
+    for _flag in ("--os", "--arch", "--run-id", "--platform"):
         if _flag not in _step:
             print(f"FAIL: scenarios.yml recording step {_n} of {len(_steps)} omits "
                   f"{_flag}. The step succeeds and writes a record that cannot say which "

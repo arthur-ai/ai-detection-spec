@@ -6,6 +6,7 @@
       "route": "bundle_ids",
       "value": "company.thebrowser.dia",
       "agent_version": "1.54.2",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -15,6 +16,7 @@
       "route": "bundle_ids",
       "value": "company.thebrowser.dia",
       "agent_version": "1.54.2",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -24,6 +26,7 @@
       "route": "homebrew",
       "value": "thebrowsercompany-dia",
       "agent_version": "1.54.2,89247",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -33,6 +36,7 @@
       "route": "homebrew",
       "value": "thebrowsercompany-dia",
       "agent_version": "1.54.2,89247",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -42,6 +46,7 @@
       "route": "bundle_ids",
       "value": "com.electron.goose",
       "agent_version": "1.56.0",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -51,6 +56,7 @@
       "route": "bundle_ids",
       "value": "com.electron.goose",
       "agent_version": "1.56.0",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -60,6 +66,7 @@
       "route": "homebrew",
       "value": "block-goose",
       "agent_version": "1.56.0",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -69,6 +76,7 @@
       "route": "homebrew",
       "value": "block-goose",
       "agent_version": "1.56.0",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -78,6 +86,7 @@
       "route": "bundle_ids",
       "value": "cn.trae.app",
       "agent_version": "3.3.83",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -87,6 +96,7 @@
       "route": "bundle_ids",
       "value": "cn.trae.app",
       "agent_version": "3.3.83",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -96,6 +106,7 @@
       "route": "bundle_ids",
       "value": "com.trae.app",
       "agent_version": "3.5.81",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -105,6 +116,7 @@
       "route": "bundle_ids",
       "value": "com.trae.app",
       "agent_version": "3.5.81",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -114,6 +126,7 @@
       "route": "homebrew",
       "value": "trae",
       "agent_version": "2.3.61406",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -123,6 +136,7 @@
       "route": "homebrew",
       "value": "trae",
       "agent_version": "2.3.61406",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
@@ -132,6 +146,7 @@
       "route": "homebrew",
       "value": "trae-cn",
       "agent_version": "2.3.62837",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40456507401"
@@ -141,6 +156,7 @@
       "route": "homebrew",
       "value": "trae-cn",
       "agent_version": "2.3.62837",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
       "run": "40456507401"
