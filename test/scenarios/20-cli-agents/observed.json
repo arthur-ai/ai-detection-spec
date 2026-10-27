@@ -19,7 +19,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "claude-code",
@@ -61,7 +61,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "claude-code",
@@ -103,7 +103,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "cline",
@@ -150,7 +150,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "codex-cli",
@@ -197,7 +197,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "codex-cli",
@@ -239,7 +239,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "continue",
@@ -259,7 +259,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "copilot-cli",
@@ -306,7 +306,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "gemini-cli",
@@ -353,7 +353,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "grok",
@@ -371,7 +371,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "kilo-code",
@@ -391,7 +391,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "opencode",
@@ -411,7 +411,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "pi",
@@ -429,7 +429,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     }
   ]
 }
