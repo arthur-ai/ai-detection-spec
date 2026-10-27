@@ -133,8 +133,9 @@ routes need.
 
 Policies report no versions; use the JSON for those. They never look at containers, because
 osqueryd cannot bound one query, so an agent that ships only as an image has no policy, and
-the file lists those at the top. `dist/agents-darwin.sql` and `dist/agents-linux.sql` do the
-same matching as one `osqueryi` query, one row per agent, with the same container limit.
+the file lists those at the top. `dist/agents-darwin.sql`, `dist/agents-linux.sql` and
+`dist/agents-windows.sql` do the same matching as one `osqueryi` query, one row per agent,
+with the same container limit.
 
 ## Linux
 

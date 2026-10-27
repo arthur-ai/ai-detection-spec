@@ -67,14 +67,15 @@ The inventory alone is the evidence rows ([SPEC.md §5.1](../SPEC.md#51-evidence
 
 ## Two ways to match
 
-- **Off the machine.** The endpoint runs the inventory and `bin/classify` matches it wherever
-  you keep the JSON. A new signature re-matches evidence you already have.
-- **On the machine.** `agents-darwin.sql` or `agents-linux.sql` returns agent names from
-  osquery, `fleet-policies.yml` loads into Fleet, and `osquery/bin/discover --names` prints one
-  line for a Jamf Extension Attribute. A new signature reaches these when you redeploy them.
+- **Off the machine.** The endpoint runs the inventory, and `bin/classify` matches the JSON
+  wherever you keep it. A new signature re-matches evidence you already have.
+- **On the machine.** osquery runs `agents-darwin.sql`, `agents-linux.sql` or
+  `agents-windows.sql` and returns one row per agent. Fleet loads `fleet-policies.yml`. A Jamf
+  Extension Attribute runs `osquery/bin/discover --names`, which prints one line. A new
+  signature reaches these files only when you redeploy them.
 
-Both are generated from `catalog/agents.yaml`, and CI holds them to the same answer on the
-same evidence.
+Both ways read the same `catalog/agents.yaml`: `bin/classify` at run time, the on-machine
+files when they are rendered. CI holds the two to the same answer on the same evidence.
 
 ## What a release attaches
 
@@ -84,7 +85,8 @@ same evidence.
 `classify`, `agents.yaml`, `routes.yaml`, `catalog.json`, `catalog.schema.json`,
 `evidence.schema.json`, `ai-detection-spec-darwin.sh`, `ai-detection-spec-linux.sh`.
 
-Which you need depends on where each runs.
+Each asset runs on the endpoint or off it. The tables below group them that way, so take the
+ones for the place you deploy to.
 
 **On the endpoint: the inventory**
 
