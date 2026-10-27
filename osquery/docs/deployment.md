@@ -1,6 +1,7 @@
 # Running it on a fleet
 
-What only matters at fleet scale. [The README](../README.md) covers one machine.
+This page covers what matters only at fleet scale. [The README](../README.md) covers one
+machine.
 
 Paths on this page are the release layout, `bin/`, `dist/` and `catalog/` side by side, as a
 deployment unpacks them. In a clone, `discover`, `container-scan` and `dist/` are under
@@ -171,6 +172,36 @@ on Ubuntu runners. A container has no systemd or OS Login, so `test/run-gce.sh` 
   credit mode, can take the composed artifact past the 10s convention, while every branch
   of `--write` stays inside its own 30s bound. [COST.md](../queries/COST.md) has the
   figures, and the reason to prefer the scheduled writer.
+
+## Windows
+
+`bin/discover` is bash, so Windows has no `--write`, no `status.txt`, no `--names` and no
+bundle. The queries and the rendered match are the same files as on the other platforms, and
+there are three ways to run them:
+
+- **osqueryd**, with `dist/ai-detection-spec.conf`. The pack schedules each query on its own,
+  so one unavailable table costs one query, which is what `--write` arranges elsewhere.
+- **Fleet**, with `dist/fleet-policies.yml`, which carries a policy per agent for Windows.
+- **A scheduled task** that runs the composed query and writes the file. Run it from `cmd`,
+  because Windows PowerShell 5.1's `>` writes UTF-16, which nothing here reads:
+
+  ```console
+  > "C:\Program Files\osquery\osqueryi.exe" --json < dist\discovery-windows.sql > inventory.json
+  ```
+
+  Check the exit status. Given one table it lacks, `osqueryi.exe` prints `[\n\n]`, valid
+  empty JSON, and exits 1, and that file is not a clean machine.
+
+There is no status line, so the outcome travels in the payload. The inventory carries a
+`containers` marker, because osquery reads no container on Windows: it names an engine found
+on disk (`unreadable:docker`, `:podman` or `:rancher-desktop`) and says `absent` only where
+none is. `bin/classify` sorts it with the other markers
+([SPEC.md §6.7](../../SPEC.md#67-scans-absences-and-gaps)).
+
+Two limits are Windows's own, and [limits.md](../../docs/limits.md#what-osquery-cannot-see)
+has both. A user who is not signed in has no registry hive loaded, so their per-user installs
+are seen only while they are signed in. A profile outside `<drive>:\Users\` is outside the
+spec's home root.
 
 ## What a deployment supplies
 

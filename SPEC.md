@@ -25,9 +25,9 @@ find are the ones nobody registered.
 
 This specification answers that question from evidence the machine already holds: an
 application's bundle identifier, a package in a package manager's database, a browser
-extension's id, a directory an agent creates when it first runs. A catalog lists those identifiers for each agent
-and says how each one is matched. A collector, called a binding, reports what it found as rows.
-A matcher pairs the rows with the catalog.
+extension's id, a directory an agent creates when it first runs. A catalog lists those
+identifiers for each agent and says how each one is matched. A collector, called a binding,
+reports what it found as rows. A matcher pairs the rows with the catalog.
 
 Two properties shape everything else:
 

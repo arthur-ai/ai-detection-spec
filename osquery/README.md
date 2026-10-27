@@ -1,9 +1,9 @@
 # The osquery binding
 
 The first binding of [ai-detection-spec](../SPEC.md): osquery queries that collect agent
-evidence on macOS, Linux and Windows, and the scripts that run them on a machine. Which of
-those things are agents is the repository's [catalog](../catalog/agents.yaml) to say, and
-what counts as one, and how every identifier is proved, is in [the README](../README.md).
+evidence on macOS, Linux and Windows, and the scripts that run them on a machine. The
+repository's [catalog](../catalog/agents.yaml) says which of those things are agents. [The
+root README](../README.md) says what counts as an agent and how every identifier is proved.
 
 - **It is SQL you can read.** `osquery/dist/discovery-darwin.sql`,
   `osquery/dist/discovery-linux.sql` and `osquery/dist/discovery-windows.sql` are everything
@@ -34,6 +34,12 @@ $ sudo osquery/bin/discover --deep | bin/classify     # the same, plus container
 $ sudo apt install ./osquery_5.23.1-1.linux_amd64.deb
 $ sudo osqueryi --json < osquery/dist/agents-linux.sql
 $ sudo osqueryi --json < osquery/dist/discovery-linux.sql | bin/classify
+
+# On Windows there is no osquery/bin/discover, which is bash. Run osqueryi.exe from cmd,
+# because Windows PowerShell 5.1's > writes UTF-16
+> "C:\Program Files\osquery\osqueryi.exe" --json < osquery\dist\agents-windows.sql
+> "C:\Program Files\osquery\osqueryi.exe" --json < osquery\dist\discovery-windows.sql > inventory.json
+$ bin/classify < inventory.json                       # off the machine, as above
 ```
 
 `osquery/dist/` is committed, so a clone has nothing to build. Pin a tagged release in
@@ -92,7 +98,7 @@ ones for the place you deploy to.
 
 | | |
 |---|---|
-| `discovery-darwin.sql`<br>`discovery-linux.sql`<br>`discovery-windows.sql` | The query for each platform. `discover` picks between the first two by `uname -s`, so you can ship both. Windows has no `discover`; run the third [with `osqueryi`](#running-it-on-a-fleet) |
+| `discovery-darwin.sql`<br>`discovery-linux.sql`<br>`discovery-windows.sql` | The query for each platform. `discover` picks between the first two by `uname -s`, so you can ship both. Windows has no `discover`; run the third with `osqueryi` ([quickstart](#quickstart)) |
 | `discovery-deep.sql` | The container query, a supplement rather than a superset. Only `container-scan` runs it, because the wall-clock bound lives there |
 | `ai-detection-spec.conf` | The osqueryd pack, every platform's queries with osqueryd's per-query `platform` field. Take it *instead of* the `.sql` files if you schedule through osqueryd |
 | `discover` | Runs the query for its platform and prints one JSON array |
@@ -137,9 +143,10 @@ prints it and `AI_DETECTION_SPEC_TELEMETRY=0` turns it off
 
 ## What it cannot see
 
-Anything inside a VM or container other than Docker images, snap and Flatpak packages,
-AppImage installs, and what an agent *does* as opposed to what it may do. These are limits of
-the platform and of osquery's tables, not of the tests:
+It cannot see inside a VM. Inside a container it sees only what `--deep` reads: images,
+running containers and their labels. It cannot see snap and Flatpak packages or AppImage
+installs. It reports what an agent *may* do, never what it does. These are limits of the
+platform and of osquery's tables, not of the tests:
 [docs/limits.md](../docs/limits.md#what-osquery-cannot-see) has the list.
 
 ## Containers
@@ -160,17 +167,9 @@ own pipeline, store the JSON and run `bin/classify` over it.
 [docs/deployment.md](docs/deployment.md) has the schedule, the status line, the one-file
 bundle and what a deployment supplies.
 
-**On Windows there is no `bin/discover`**, which is bash. Schedule the pack in osqueryd, load
-`fleet-policies.yml` into Fleet, or run the composed query yourself. From `cmd`, because
-Windows PowerShell 5.1's `>` writes UTF-16:
-
-```console
-> "C:\Program Files\osquery\osqueryi.exe" --json < osquery\dist\discovery-windows.sql > inventory.json
-```
-
-The inventory carries a `containers` marker, since osquery reads no container on Windows; it
-names an engine on disk (`unreadable:docker`, `:podman` or `:rancher-desktop`) and says
-`absent` only where none is.
+**On Windows there is no `bin/discover`**, which is bash. The [quickstart](#quickstart) has
+the one-machine command, and [docs/deployment.md](docs/deployment.md#windows) has what to
+schedule on a fleet and how to read what comes back.
 
 ## Scope, so you know what you are getting
 

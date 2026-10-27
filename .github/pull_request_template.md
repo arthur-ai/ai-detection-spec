@@ -4,7 +4,7 @@
 
 ## Checklist
 
-- [ ] `test/lint.sh` passes
+- [ ] `tools/gates.sh` passes
 - [ ] Every query branch emits the six columns in order
 - [ ] **A new or changed identifier comes with a test scenario**, and was read off a real
       install rather than taken from vendor documentation

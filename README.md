@@ -19,9 +19,9 @@ identifier was proved by installing the real software.**
 </div>
 
 Teams taking stock of the AI tools on their machines keep rediscovering the same facts the hard
-way: that Cursor's bundle id is an opaque ToDesktop string, that ChatGPT's desktop app is
+way. Cursor's bundle id is an opaque ToDesktop string. ChatGPT's desktop app is
 `com.openai.codex` on current builds and `com.openai.chat` on the ones before, so a fleet needs
-both, that one agent ships as a Homebrew cask *and* an npm package *and* a curl installer. This
+both. One agent ships as a Homebrew cask *and* an npm package *and* a curl installer. This
 repository writes those facts down, keeps them true, and publishes them as an open
 specification, so that any tool can use them.
 
