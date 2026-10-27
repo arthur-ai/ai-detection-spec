@@ -1,0 +1,14 @@
+{
+  "scenario": "106-windows-python-agents",
+  "identifiers": [
+    {
+      "agent": "aider",
+      "route": "pypi",
+      "value": "aider-chat",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "40438032192"
+    }
+  ]
+}

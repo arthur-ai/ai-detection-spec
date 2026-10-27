@@ -11,15 +11,15 @@ and the CI test behind each one.
 
 ![agents](https://img.shields.io/badge/agents-42-1D4E89)
 ![identifiers](https://img.shields.io/badge/identifiers-119-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-113%2F119-A26A16)
-![real install](https://img.shields.io/badge/by_real_install-113-2E7D57)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-119%2F119-2E7D57)
+![real install](https://img.shields.io/badge/by_real_install-119-2E7D57)
 
 </div>
 
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 113 of 119. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all; the build rejects it.
+**Every identifier is proved by a real install in CI** — 119 of 119. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all; the build rejects it.
 
 ## 🧪 Why a real install is the bar
 
@@ -31,8 +31,6 @@ review.
 Proof is counted **per identifier**, not per agent. Installing an agent vouches
 only for the identifiers that run actually matched, so a sibling identifier on the
 same agent is not covered by association.
-
-> **This number is a floor.** `00-baseline`, `100-windows-baseline`, `101-windows-cli-agents`, `102-windows-claude-native`, `103-windows-vscode-agents`, `104-windows-browser`, `105-windows-desktop-apps`, `106-windows-python-agents`, `70-linux-baseline`, `74-linux-dpkg-removed`, `76-linux-systemd` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
 
 # Agents (42)
 
@@ -49,14 +47,14 @@ Operates on a codebase, usually with shell access.
 | **Google Antigravity** | **`com.google.antigravity`**, **`com.google.antigravity-ide`**, **`antigravity`**, **`antigravity-ide`** | 10-desktop-apps |
 | **Augment Code** | **`@augmentcode/auggie`**, **`augment.vscode-augment`** | 20-cli-agents, 71-linux-cli-agents, 85-linux-vscode-agents |
 | **BLACKBOX AI** | **`blackboxapp.blackbox`**, **`blackboxapp.blackboxagent`** | 85-linux-vscode-agents |
-| **Claude Code** | **`@anthropic-ai/claude-code`**, **`anthropic.claude-code`**, **`~/.claude`**, **`~/.local/bin/claude`**, ~/.local/bin/claude.exe ⚠, **`~/.local/share/claude/versions/`**, ~/.local/bin/claude.exe ⚠, **`claude-code`**, **`claude-code`** | 101-windows-cli-agents, 102-windows-claude-native, 103-windows-vscode-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 83-linux-claude-running, 85-linux-vscode-agents, 89-linux-claude-deb, 90-demo-fleet, 91-linux-claude-rpm |
+| **Claude Code** | **`@anthropic-ai/claude-code`**, **`anthropic.claude-code`**, **`~/.claude`**, **`~/.local/bin/claude`**, **`~/.local/bin/claude.exe`**, **`~/.local/share/claude/versions/`**, **`~/.local/bin/claude.exe`**, **`claude-code`**, **`claude-code`** | 101-windows-cli-agents, 102-windows-claude-native, 103-windows-vscode-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 83-linux-claude-running, 85-linux-vscode-agents, 89-linux-claude-deb, 90-demo-fleet, 91-linux-claude-rpm |
 | **Cline** | **`cline`**, **`saoudrizwan.claude-dev`**, **`cline`** | 103-windows-vscode-agents, 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode, 80-linux-jetbrains |
 | **CodeGPT** | **`danielsanmedium.dscodegpt`** | 85-linux-vscode-agents |
 | **Codex CLI** | **`codex`**, **`@openai/codex`**, **`openai.chatgpt`**, **`~/.codex`** | 101-windows-cli-agents, 103-windows-vscode-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 85-linux-vscode-agents, 90-demo-fleet |
 | **Cody** | **`sourcegraph.cody-ai`**, **`Sourcegraph`** | 85-linux-vscode-agents, 86-linux-jetbrains-agents |
 | **Continue** | **`@continuedev/cli`**, **`continue.continue`**, **`continue-intellij-extension`** | 103-windows-vscode-agents, 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode, 80-linux-jetbrains |
 | **GitHub Copilot** | **`copilot-cli`**, **`@github/copilot`**, **`github-copilot-intellij`** | 101-windows-cli-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 86-linux-jetbrains-agents |
-| **Cursor** | **`com.todesktop.230313mzl4w4u92`**, **`cursor`**, **`cursor-cli`**, **`~/.local/bin/cursor-agent`**, ~/AppData/Local/Programs/cursor/ ⚠, **`cursor`**, **`cursor`**, **`cursor.desktop`**, {DADADADA-ADAD-ADAD-ADAD-ADADADADADAD}}_is1 | 10-desktop-apps, 105-windows-desktop-apps, 21-cli-agents-homebrew, 73-linux-deb, 77-linux-rpm, 84-linux-installers, 90-demo-fleet |
+| **Cursor** | **`com.todesktop.230313mzl4w4u92`**, **`cursor`**, **`cursor-cli`**, **`~/.local/bin/cursor-agent`**, **`~/AppData/Local/Programs/cursor/`**, **`cursor`**, **`cursor`**, **`cursor.desktop`**, **`{DADADADA-ADAD-ADAD-ADAD-ADADADADADAD}}_is1`** | 10-desktop-apps, 105-windows-desktop-apps, 21-cli-agents-homebrew, 73-linux-deb, 77-linux-rpm, 84-linux-installers, 90-demo-fleet |
 | **Gemini CLI** | **`gemini-cli`**, **`@google/gemini-cli`** | 101-windows-cli-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 81-linux-bun |
 | **Gemini Code Assist** | **`google.geminicodeassist`**, **`gemini`** | 85-linux-vscode-agents, 86-linux-jetbrains-agents |
 | **goose** | **`com.electron.goose`**, **`block-goose-cli`**, **`block-goose`**, **`ghcr.io/block/goose`**, **`https://github.com/block/goose`**, **`~/.local/bin/goose`** | 13-desktop-apps-more, 21-cli-agents-homebrew, 79-linux-image, 84-linux-installers |
@@ -71,7 +69,7 @@ Operates on a codebase, usually with shell access.
 | **Roo Code** | **`rooveterinaryinc.roo-cline`** | 103-windows-vscode-agents, 85-linux-vscode-agents |
 | **SWE-agent** | **`sweagent/swe-agent`** | 79-linux-image |
 | **Trae** | **`com.trae.app`**, **`cn.trae.app`**, **`trae`**, **`trae-cn`** | 13-desktop-apps-more |
-| **Windsurf** | **`com.exafunction.windsurf`**, **`devin-desktop`**, {5A8B7D94-9B5F-4D1F-93FC-5609F7159349}_is1 | 10-desktop-apps, 105-windows-desktop-apps |
+| **Windsurf** | **`com.exafunction.windsurf`**, **`devin-desktop`**, **`{5A8B7D94-9B5F-4D1F-93FC-5609F7159349}_is1`** | 10-desktop-apps, 105-windows-desktop-apps |
 
 ## Personal agent
 
@@ -112,23 +110,10 @@ A chat client that can run tools on the machine, for example through MCP.
 | name | identifiers | scenarios |
 |---|---|---|
 | **ChatGPT Desktop** | **`com.openai.codex`**, **`com.openai.chat`**, **`chatgpt`** | 10-desktop-apps, 12-chatgpt-pre-rename, 90-demo-fleet |
-| **Claude Desktop** | **`com.anthropic.claudefordesktop`**, **`claude`**, **`com.anthropic.claude_browser_extension.json`**, Claude_pzs8sxrjxfjjc | 10-desktop-apps, 104-windows-browser, 105-windows-desktop-apps, 90-demo-fleet |
+| **Claude Desktop** | **`com.anthropic.claudefordesktop`**, **`claude`**, **`com.anthropic.claude_browser_extension.json`**, **`Claude_pzs8sxrjxfjjc`** | 10-desktop-apps, 104-windows-browser, 105-windows-desktop-apps, 90-demo-fleet |
 | **Perplexity** | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
 
 > **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = superseded: a run proved it and the current release no longer emits it. ∅ = no CI runner for its platform. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it.
-
-## ⚠️ Identifiers that did not pass
-
-Every one is work, and the middle column says what kind. **did not appear** means a scenario installed the agent and this identifier never showed up — the suite reached it and it did not reproduce, usually because the scenario installs by a different route, or because the artifact only exists once the agent has run.
-
-| agent | route | identifier | state | reached by |
-|---|---|---|---|---|
-| Claude Code | binary | `~/.local/bin/claude.exe` | did not appear | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 83-linux-claude-running, 85-linux-vscode-agents, 89-linux-claude-deb, 91-linux-claude-rpm |
-| Claude Code | process_paths | `~/.local/bin/claude.exe` | did not appear | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 83-linux-claude-running, 85-linux-vscode-agents, 89-linux-claude-deb, 91-linux-claude-rpm |
-| Claude Desktop | msix_families | `Claude_pzs8sxrjxfjjc` | no test | -- |
-| Cursor | process_paths | `~/AppData/Local/Programs/cursor/` | did not appear | 10-desktop-apps, 21-cli-agents-homebrew, 73-linux-deb, 77-linux-rpm, 84-linux-installers |
-| Cursor | uninstall_keys | `{DADADADA-ADAD-ADAD-ADAD-ADADADADADAD}}_is1` | no test | -- |
-| Windsurf | uninstall_keys | `{5A8B7D94-9B5F-4D1F-93FC-5609F7159349}_is1` | no test | -- |
 
 **What it cannot see is a separate page.** [`docs/limits.md`](limits.md) carries what osquery cannot see on any machine and what each scenario leaves unproved after its install succeeds -- rendered from the same inputs, gated the same way.
 

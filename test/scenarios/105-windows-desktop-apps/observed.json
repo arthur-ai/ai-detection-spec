@@ -1,0 +1,44 @@
+{
+  "scenario": "105-windows-desktop-apps",
+  "identifiers": [
+    {
+      "agent": "claude-desktop",
+      "route": "msix_families",
+      "value": "Claude_pzs8sxrjxfjjc",
+      "agent_version": "3.6556.2.0",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "40438032192"
+    },
+    {
+      "agent": "cursor",
+      "route": "process_paths",
+      "value": "~/AppData/Local/Programs/cursor/",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "40438032192"
+    },
+    {
+      "agent": "cursor",
+      "route": "uninstall_keys",
+      "value": "{DADADADA-ADAD-ADAD-ADAD-ADADADADADAD}}_is1",
+      "agent_version": "3.27.14",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "40438032192"
+    },
+    {
+      "agent": "windsurf",
+      "route": "uninstall_keys",
+      "value": "{5A8B7D94-9B5F-4D1F-93FC-5609F7159349}_is1",
+      "agent_version": "3.11.228",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "40438032192"
+    }
+  ]
+}
