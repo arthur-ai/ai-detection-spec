@@ -253,8 +253,14 @@ jobs:
           bad = [r for r in base if set(r) != {"kind","id","ver","loc","extra","perms"}]
           if bad:
               sys.exit(f"::error::{len(bad)} rows violate the six-column contract: {bad[:1]}")
-          if len(deep) < len(base):
-              sys.exit(f"::error::--deep lost rows: {len(base)} base, {len(deep)} deep. "
+          # BY ROW, NOT BY COUNT, AND NOT `proc`. The two scans run seconds apart on a live
+          # runner whose processes come and go, so comparing counts failed a run that touched
+          # nothing here (PR 133: 604 base, 603 deep) and could not say which rows. A process
+          # that ended in between is not inventory --deep lost.
+          key = lambda r: (r["kind"], r["id"], r["loc"])
+          lost = sorted({key(r) for r in base if r["kind"] != "proc"} - {key(r) for r in deep})
+          if lost:
+              sys.exit(f"::error::--deep lost {len(lost)} base rows, first {lost[:3]}. "
                        "The base inventory must survive a failed container scan.")
           # No Docker on a hosted runner, so the scan cannot succeed -- and a missing
           # marker would mean a wedged daemon reports as a Mac with no containers.
@@ -633,8 +639,11 @@ jobs:
           bad = [r for r in base if set(r) != {"kind","id","ver","loc","extra","perms"}]
           if bad:
               sys.exit(f"::error::{len(bad)} rows violate the six-column contract: {bad[:1]}")
-          if len(deep) < len(base):
-              sys.exit(f"::error::--deep lost rows: {len(base)} base, {len(deep)} deep. "
+          # By row and not `proc`, as in the darwin job, which says why.
+          key = lambda r: (r["kind"], r["id"], r["loc"])
+          lost = sorted({key(r) for r in base if r["kind"] != "proc"} - {key(r) for r in deep})
+          if lost:
+              sys.exit(f"::error::--deep lost {len(lost)} base rows, first {lost[:3]}. "
                        "The base inventory must survive a failed container scan.")
           markers = [r for r in deep if r["kind"] == "scan"]
           if not markers:
