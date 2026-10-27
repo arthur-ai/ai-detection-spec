@@ -17,7 +17,10 @@ What is held here, and why each one:
   * the evidence fixtures validate against the evidence schema, so the rows this repository
     produces are rows the spec describes;
   * SPEC.md, schema/ and conformance/ name no implementation path. The spec may not come
-    to depend on this repository's code.
+    to depend on this repository's code;
+  * the version is the same everywhere it is written: SPEC.md, bin/classify's FORMATS, both
+    schemas and every vector but the one refusing another version. Eight copies of one fact
+    moved by hand drift, and a matcher refusing its own catalog is the result.
 
 The rendered SQL is held to the same vectors in osquery/test/test_match_sql.py.
 
@@ -128,6 +131,30 @@ def main():
                  *sorted((ROOT / "conformance").glob("*"))]:
         hits = sorted({m.group(0) for m in bad.finditer(path.read_text())})
         check(f"{path.relative_to(ROOT)} names none", not hits, str(hits))
+
+    print("\none version, wherever it is written")
+    m = re.search(r"^Version (\d+)\.(\d+)\.(\d+)\b", spec, re.M)
+    check("SPEC.md states its version", m is not None)
+    if m:
+        major, minor, patch = m.groups()
+        ver, fmt = f"{major}.{minor}", f"ai-detection-spec/{major}.{minor}"
+        check("SPEC.md 4.1 names the same format", f"this version is `{fmt}`" in spec)
+        check("SPEC.md 9 names the same version", f"*an ai-detection-spec {ver} matcher*" in spec)
+        check("SPEC.md 10 names the same version",
+              f"This document is version {major}.{minor}.{patch}." in spec)
+        check("bin/classify reads that format and no other", set(classify.FORMATS) == {fmt},
+              str(sorted(classify.FORMATS)))
+        check("the catalog schema accepts that format",
+              catalog_schema["properties"]["format"]["pattern"] == f"^ai-detection-spec/{major}\\.{minor}$",
+              catalog_schema["properties"]["format"]["pattern"])
+        for name, schema in (("catalog", catalog_schema), ("evidence", evidence_schema)):
+            check(f"the {name} schema's $id carries the version",
+                  schema["$id"] == f"urn:ai-detection-spec:schema:{name}:{ver}", schema["$id"])
+        doc = json.loads((ROOT / "conformance" / "vectors.json").read_text())
+        check("the vectors document says that format", doc["format"] == fmt, doc["format"])
+        stale = [v["id"] for v in vectors
+                 if v["catalog"].get("format") != fmt and not v["expect"].get("error")]
+        check("every vector's catalog says that format", not stale, str(stale))
 
     print(f"\nconformance: {'PASS' if not failures else f'FAIL ({len(failures)})'}")
     return 1 if failures else 0

@@ -20,6 +20,7 @@ import importlib.util
 import json
 import os
 import pathlib
+import re
 import shutil
 import socket
 import subprocess
@@ -481,8 +482,12 @@ check("...and the path it could not find is NOT in the event",
 # A REFUSED CATALOG IS COUNTED AS ONE, by its own phase, so version skew in the field stays
 # visible now that it is refused rather than warned about.
 newer = TMP / "catalog-v99.yaml"
-newer.write_text((ROOT / "catalog" / "agents.yaml").read_text()
-                 .replace("\nversion: 3\n", "\nversion: 99\n"))
+# By pattern, not by the current number: a literal that went stale replaced nothing, and the
+# catalog it wrote was simply this one.
+_skewed, _n = re.subn(r"^version: \d+$", "version: 99",
+                      (ROOT / "catalog" / "agents.yaml").read_text(), count=1, flags=re.M)
+assert _n == 1, "catalog/agents.yaml has no `version:` line to skew"
+newer.write_text(_skewed)
 proc_srv, port, cap_skew = serve("ok")
 try:
     skewed, _ = run(KNOWN, env(TMP / "home-skew", AI_DETECTION_SPEC_AMPLITUDE_URL=

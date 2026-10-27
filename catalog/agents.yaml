@@ -34,9 +34,10 @@
 
 # The authoring form's version, which ships and moves with bin/classify; bin/classify refuses
 # any other, as it refuses an unsupported `format` in a catalog document (SPEC.md 10).
-# 3: `classifications` became {name, definition}. 2: `platforms:` became required, and the
-# route vocabulary moved to catalog/routes.yaml.
-version: 3
+# 4: `~/` values also match under Windows home roots (SPEC.md 6.4.7). 3: `classifications`
+# became {name, definition}. 2: `platforms:` became required, and the route vocabulary moved
+# to catalog/routes.yaml.
+version: 4
 
 # REMOVED FOR FAILING SPEC.md 3, with the reason, because the temptation to re-add each is
 # obvious: all were easy to detect and belong in some AI inventory. Their rows stay in the

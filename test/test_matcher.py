@@ -341,9 +341,9 @@ check("...and the JSON counts it", json.loads(classify_rows(_drop, "--json")).ge
 # --- home roots and anchors: the two halves of one fix -----------------------------
 #
 # There were three hand-written copies of `/Users/[^/]+/` -- this matcher's path globs,
-# its TOOL_DIR bridge, and tools/agent_status.py's replay, whose comment claimed the two
-# "cannot disagree" while being a copy. They are one HOME_ROOTS alternation now, and it
-# covers every platform at once because a fleet payload can carry rows from several.
+# its tool-dir bridge, and tools/agent_status.py's replay, whose comment claimed the two
+# "cannot disagree" while being a copy. They are one ROOT_KINDS list in bin/classify now,
+# and it covers every platform at once because a fleet payload can carry rows from several.
 
 def classify_json(rows, *extra):
     """classify() over an inline row list, as JSON. The sibling of classify_rows()."""
@@ -434,6 +434,23 @@ check("the pipx/uv tool-dir bridge works under every home root",
 # substring search.
 check("a path outside every home root is not claimed",
       _ids(_rows("/opt/dana/.claude/", "/srv/home/dana/.claude/")) == set())
+
+# WINDOWS ROOTS (SPEC.md 6.4.7), on real catalog values: either separator, any drive, every
+# path route. `\` separates only under a Windows root.
+check("a Windows home root resolves on every path route",
+      _ids(_rows("C:\\Users\\dana\\.claude\\")) == {"claude-code"}
+      and _ids(_rows("d:/Users/dana/.claude")) == {"claude-code"}
+      and _ids(_rows("C:\\Users\\dana\\.local\\bin\\hermes")) == {"hermes"}
+      and _ids(_rows("C:\\Users\\dana\\.local\\pipx\\venvs\\aider-chat\\")) == {"aider"}
+      and _ids([{"kind": "proc", "id": p, "ver": "", "loc": p, "extra": "", "perms": ""}
+                for p in ("C:\\Users\\dana\\.local\\share\\claude\\versions\\2.1.292",)])
+      == {"claude-code"})
+# `claude.exe` is not `~/.local/bin/claude`: the anchor that refuses claude-monitor refuses it
+# too, until a Windows install proves the value.
+for near in ("C:\\Users\\dana\\.claudefoo\\", "C:\\users\\dana\\.claude\\",
+             "C:\\Users\\dana\\.local\\bin\\hermes-acp", "/home/dana\\.claude",
+             "C:\\Users\\dana\\.local\\bin\\claude.exe"):
+    check(f"a Windows near miss is NOT claimed ({near})", _ids(_rows(near)) == set())
 
 
 # --- the Linux package routes, and the lookalikes the base OS ships ----------------
@@ -676,6 +693,19 @@ check("recording does NOT credit a state dir the run never produced",
       not any(r == "state_dirs" for r, _ in _got),
       "~/.aider appears in no row here; crediting it would report the strongest evidence "
       "for a path no machine produced")
+
+# classify tries the tool dir `loc` names when `id`'s is unlisted (the tool-dir vectors'
+# shape); the recorder must credit what classify matched.
+_mixed = [{"kind": "file", "id": "/Users/x/.local/pipx/venvs/not-an-agent/", "ver": "",
+           "loc": "/Users/x/.local/share/uv/tools/aider-chat/", "extra": "", "perms": ""}]
+with _tf2.NamedTemporaryFile("w", suffix=".json", delete=False) as _fm:
+    json.dump(_mixed, _fm)
+with _tf2.TemporaryDirectory() as _d:
+    _st.record(_fm.name, _d)
+    _got = {(r["route"], r["value"]) for r in
+            json.loads((pathlib.Path(_d) / "observed.json").read_text())["identifiers"]}
+check("recording credits a tool dir named by `loc` when `id` names an unlisted one",
+      _got == {("pypi", "aider-chat")}, f"got {sorted(_got)}")
 
 # --- an observation names the run that produced it --------------------------------
 #
@@ -1423,6 +1453,10 @@ check("a home-prefix value that claims another agent's path is refused",
 check("...but not a sibling name, which home-prefix does not claim",
       _oe([{"id": "a", "binaries": ["~/.local/bin/kiro"]},
            {"id": "b", "binaries": ["~/.local/bin/kiro-cli"]}], _reg) == [])
+_pe = _vc.path_errors
+check("a `~/` value written with `\\` is refused, and one without `~/` too",
+      len(_pe("a", {"state_dirs": ["~/.agent\\sub", ".agent"]}, ["state_dirs"])) == 2
+      and _pe("a", {"state_dirs": ["~/.agent/sub"]}, ["state_dirs"]) == [])
 check("a launchd prefix covering another agent's label is refused",
       bool(_oe([{"id": "a", "launchd_prefixes": ["ai."]},
                 {"id": "b", "launchd_prefixes": ["ai.openclaw."]}], _reg)))

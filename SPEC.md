@@ -1,6 +1,6 @@
 # ai-detection-spec
 
-Version 0.1.0. Draft. Published at https://github.com/arthur-ai/ai-detection-spec under the
+Version 0.2.0. Draft. Published at https://github.com/arthur-ai/ai-detection-spec under the
 Apache License 2.0.
 
 ai-detection-spec is an open specification for telling whether an AI agent is installed or
@@ -82,9 +82,9 @@ MUST reject a catalog that does not.
 
 | member | |
 |---|---|
-| `format` | REQUIRED. `ai-detection-spec/<major>.<minor>`; this version is `ai-detection-spec/0.1` |
+| `format` | REQUIRED. `ai-detection-spec/<major>.<minor>`; this version is `ai-detection-spec/0.2` |
 | `platforms` | REQUIRED. The platform names a route may use: `darwin`, `linux`, `windows` |
-| `platform_groups` | REQUIRED. A name for a set of platforms. `posix` is `darwin` and `linux` |
+| `platform_groups` | REQUIRED. Names for sets of platforms, usable wherever a route names a platform. `posix`, for example, is `darwin` and `linux` |
 | `classifications` | REQUIRED. §4.2 |
 | `routes` | REQUIRED. §4.3 |
 | `agents` | REQUIRED. §4.4 |
@@ -126,7 +126,8 @@ A conforming catalog MUST meet all of these:
 2. No identifier sits on a retired route.
 3. Each of the agent's routes is available on at least one of its platforms, and each of its
    platforms has at least one of its routes.
-4. A value on a `home-dir` or `home-prefix` route starts with `~/`.
+4. A value on a `home-dir` or `home-prefix` route starts with `~/` and contains no `\`. `/`
+   separates its components on every platform (§6.4.7).
 5. A value on an `exact-normalised` route is already in normalised form (§6.4.3).
 6. **No two agents claim the same row.** No value of one agent may match a row that a value of
    another agent matches on a route of the same kind. This covers equal values, and also
@@ -264,15 +265,28 @@ match `~/.local/bin/tool-helper`.
 #### 6.4.6 `tool-dir`
 
 For packages installed by pipx or uv, which give each tool a directory named after its
-distribution. In a row of the route's kind, each of `id` and `loc` that is
-`H` + `.local/pipx/venvs/<name>` or `H` + `.local/share/uv/tools/<name>`, optionally followed
-by `/`, yields `<name>`. The route matches when either name equals one of its identifiers.
+distribution. In a row of the route's kind, each of `id` and `loc` that is `H` + `L` + `<name>`,
+optionally followed by `/`, yields `<name>`: one or more characters other than a separator of
+`H`'s root. `L` is one of `.local/pipx/venvs/`, `.local/share/uv/tools/`,
+`AppData/Local/pipx/pipx/venvs/` and `AppData/Roaming/uv/tools/`, the last two being pipx's and
+uv's defaults on Windows, and every `L` is tried under every home root. The route matches when
+either name equals one of its identifiers.
 
 #### 6.4.7 Home roots
 
-The home roots are `/Users/<segment>/`, `/home/<segment>/` and `/root/`, where `<segment>` is
-one or more characters other than `/`. A matcher MUST try all three for every row, whatever
-platform the row came from.
+| home root | its separators |
+|---|---|
+| `/Users/<segment>/`, `/home/<segment>/`, `/root/` | `/` |
+| `<drive>:\Users\<segment>\` | `\` and `/` |
+
+`<drive>` is one ASCII letter. `<segment>` is one or more characters other than the root's
+separators. Each separator written in a root, and each `/` that §6.4.4 to §6.4.6 write after
+`H`, including those in `P`, matches any one of that root's separators: `C:\Users\u\.agent`,
+`C:/Users/u/.agent` and `C:\Users\u/.agent` are each `H` + `.agent`. Under a root whose only
+separator is `/`, `\` is an ordinary character. Every other character compares as §6.4 says,
+`Users` included.
+
+A matcher MUST try every home root for every row, whatever platform the row came from.
 
 #### 6.4.8 Unknown modes
 
@@ -380,6 +394,10 @@ A binding collects evidence rows for the routes it binds. A conforming binding:
 4. proves identifiers as described in §7, from its own rows and from installations of the real
    software.
 
+A binding SHOULD report a path as the operating system reports it, without rewriting its
+separators or its case. The home roots (§6.4.7) are written for those forms, and a rewritten
+path can match nothing.
+
 ### 8.1 osquery
 
 The binding named `osquery` declares two fields on each route:
@@ -398,7 +416,7 @@ The binding named `osquery` declares two fields on each route:
 - **A binding conforms** when its output validates against `schema/evidence.schema.json` and it
   meets §8.
 
-Conformance is claimed per role and per version: *an ai-detection-spec 0.1 matcher*. A catalog
+Conformance is claimed per role and per version: *an ai-detection-spec 0.2 matcher*. A catalog
 states its version in `format`.
 
 Each vector names the section it tests. It carries a catalog, a list of rows and the expected
@@ -414,7 +432,7 @@ Every match mode has at least one row that must match and one that must not.
 
 ## 10. Versioning
 
-The `format` member carries the major and minor version. This document is version 0.1.0.
+The `format` member carries the major and minor version. This document is version 0.2.0.
 
 - A change that alters what a conforming matcher reports for an existing catalog and rows, or
   that removes or renames a member, increases the major version.
