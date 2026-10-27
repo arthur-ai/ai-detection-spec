@@ -50,7 +50,7 @@ flat = b.flatten(sys.argv[2]) or sys.exit("art: nothing left after flatten")
 print(flat.replace(" UNION ALL ", "\nUNION ALL "))' \
       "$(git rev-parse --show-toplevel)/osquery/tools/build.py" "$sql"; }
 $ kinds() { printf '%s\n' "$1" | grep -oE "SELECT '[a-z]+'" | sort -u; }
-$ for p in darwin linux deep; do
+$ for p in darwin linux windows deep; do
     o=$(art <prev-tag> $p) && n=$(art HEAD $p) && [ -n "$(kinds "$o")" ] && [ -n "$(kinds "$n")" ] \
       || { echo "$p: NOT COMPARED, see the error above"; continue; }
     diff <(kinds "$o") <(kinds "$n") && echo "$p: same kinds"
@@ -63,8 +63,10 @@ $ if o=$(envs <prev-tag>) && n=$(envs HEAD) && [ -n "$o" ] && [ -n "$n" ]; then
   else echo "envs: NOT COMPARED, see the error above"; fi
 ```
 
-**Diff all three artifacts**: two are per platform and name disjoint tables, and `deep` alone
-carries the container kinds, so diffing one hides the others. `art` strips comments with
+**Diff all four artifacts**: three are per platform and name disjoint tables, and `deep` alone
+carries the container kinds, so diffing one hides the others. An artifact new since
+`<prev-tag>` prints `NOT COMPARED` under git's `does not exist`, the one expected case: read it
+whole with `art HEAD <platform>`. `art` strips comments with
 `build.py`'s own `flatten`, which is quote-aware, so neither a comment nor a reindent reads as
 a change, and prints one line per `UNION ALL` branch. **Read every branch the SQL diff
 prints**: a column can change meaning with every kind and key intact, as when a token moved
@@ -123,6 +125,9 @@ non-zero. Three of its failures reach the notes directly:
 The last three commands need osquery or sudo, so they sit outside it. Run them: several things
 ship and they are not the same query (`osquery/CLAUDE.md` has the table).
 
+Without `pwsh`, `test/lint.sh` skips the PowerShell parse and says so. `ci.yml`'s Lint job
+requires it, so read that job at the commit you tag.
+
 ### One machine verifies one platform
 
 `measure.py`, `check_pack.py` and `docker_states.sh` each resolve the platform and skip the
@@ -132,13 +137,17 @@ other's queries by name. They say which half they ran — read that line:
 pack: ok, 10 of 15 queries run on darwin
 ```
 
-For the other half, CI is the one that counts: `ci.yml`'s Runtime jobs run the cost bands,
-`check_pack.py` and `docker_states.sh` on each platform.
+For the other platforms, CI is the one that counts: `ci.yml`'s Runtime jobs run the cost bands
+and `check_pack.py` on each platform, and `docker_states.sh` on macOS and Linux, since osquery
+has no Docker tables on Windows.
 
 ```console
-$ gh run list --workflow=ci.yml --branch=main --limit=1     # macOS AND Linux
+$ gh run list --workflow=ci.yml --branch=main --limit=1     # macOS, Linux AND Windows
 $ test/run-linux.sh                                          # locally, needs Docker
 ```
+
+Windows has no local harness: its scenarios run only in `scenarios.yml`, one
+`<scenario> on windows-2025` job each.
 
 `run-linux.sh` skips a scenario the container, image or host arch cannot host, prints the
 reason and exits 3 — a SKIP for the half you care about has verified nothing about it. CI's
@@ -319,12 +328,16 @@ table, a coverage figure, a row count — are the ones that read most convincing
 quantity and confirm every identifier it names is still in the catalog.
 
 ```console
-$ gh release create v<X.Y.Z> --draft --target main \
+$ gh release create v<X.Y.Z> --draft --target <verified-sha> \
     --title "v<X.Y.Z> — <what changed, then must I act. Plain words: see The title above>" \
     --notes-file <notes.md>
 ```
 
-Hand the user the draft and let them publish; that creates the tag on `main`. **A draft's
+**Target the full SHA step 2 verified** (the `collect` commit, if you tagged past one), never
+`main`. A draft's tag is created on publish, at whatever its target names then, so `main` would
+tag anything merged since, including a `.md`-only commit, for which CI runs no scenario.
+
+Hand the user the draft and let them publish; that creates the tag at that commit. **A draft's
 `untagged-<hash>` URL changes on every edit**, a retitle included, so the one `create` printed is
 dead after the first `gh release edit`. Re-read it after the last edit:
 
@@ -359,7 +372,9 @@ path: ship `bin/`, `dist/`, `catalog/` and `schema/` **side by side** — loose 
 `bin/discover` will not find its artifact — and `classify` needs both catalog files beside it,
 or `catalog.json` and `schema/catalog.schema.json`. The two
 `ai-detection-spec-*.sh` bundles are that layout packed into one file; they carry no catalog and no
-classifier. Deployment glue for a particular MDM is not released from here.
+classifier. Windows has neither a bundle nor `discover`, which are bash: it takes
+`discovery-windows.sql` and `agents-windows.sql` through `osqueryi`, the pack or the Fleet
+policies. Deployment glue for a particular MDM is not released from here.
 
 ## Don'ts
 
