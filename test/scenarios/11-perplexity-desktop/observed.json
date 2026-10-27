@@ -18,7 +18,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40468018397"
+      "run": "40470852600"
     },
     {
       "agent": "perplexity-desktop",
@@ -28,7 +28,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40468018397"
+      "run": "40470852600"
     },
     {
       "agent": "perplexity-desktop",
@@ -47,17 +47,17 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40468018397"
+      "run": "40470852600"
     },
     {
       "agent": "perplexity-desktop",
       "route": "homebrew",
       "value": "perplexity",
-      "agent_version": "26.39.0",
+      "agent_version": "26.42.0",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40468018397"
+      "run": "40470852600"
     }
   ]
 }

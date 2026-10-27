@@ -32,7 +32,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40468018397"
+      "run": "40470852600"
     },
     {
       "agent": "aider",
@@ -41,7 +41,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40468018397"
+      "run": "40470852600"
     },
     {
       "agent": "aider",
@@ -74,7 +74,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40468018397"
+      "run": "40470852600"
     },
     {
       "agent": "aider",
@@ -83,7 +83,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40468018397"
+      "run": "40470852600"
     },
     {
       "agent": "hermes",
@@ -116,7 +116,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40468018397"
+      "run": "40470852600"
     },
     {
       "agent": "hermes",
@@ -125,7 +125,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40468018397"
+      "run": "40470852600"
     },
     {
       "agent": "hermes",
@@ -158,7 +158,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40468018397"
+      "run": "40470852600"
     },
     {
       "agent": "hermes",
@@ -167,7 +167,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40468018397"
+      "run": "40470852600"
     },
     {
       "agent": "hermes",
@@ -200,7 +200,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40468018397"
+      "run": "40470852600"
     },
     {
       "agent": "hermes",
@@ -209,7 +209,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40468018397"
+      "run": "40470852600"
     }
   ]
 }
