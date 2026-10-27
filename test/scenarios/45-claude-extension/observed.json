@@ -36,7 +36,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "claude-in-chrome",
@@ -46,7 +46,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "harpa",
@@ -56,7 +56,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "harpa",
@@ -66,27 +66,27 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "merlin",
       "route": "extension_ids",
       "value": "camppjleccjaphfdbohjdohecfnoikec",
-      "agent_version": "8.3.1",
+      "agent_version": "8.3.2",
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "merlin",
       "route": "extension_ids",
       "value": "camppjleccjaphfdbohjdohecfnoikec",
-      "agent_version": "8.3.1",
+      "agent_version": "8.3.2",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "monica",
@@ -96,7 +96,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "monica",
@@ -106,7 +106,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "sider",
@@ -116,7 +116,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "sider",
@@ -126,7 +126,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     }
   ]
 }

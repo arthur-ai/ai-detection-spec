@@ -36,7 +36,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "openclaw",
@@ -46,7 +46,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "openclaw",
@@ -83,7 +83,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "openclaw",
@@ -93,7 +93,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40470852600"
+      "run": "40536154538"
     }
   ]
 }

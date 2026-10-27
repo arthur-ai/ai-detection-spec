@@ -14,11 +14,11 @@
       "agent": "openclaw",
       "route": "npm",
       "value": "openclaw",
-      "agent_version": "2026.10.7",
+      "agent_version": "2026.10.8",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "openclaw",
@@ -33,11 +33,11 @@
       "agent": "openclaw",
       "route": "npm",
       "value": "openclaw",
-      "agent_version": "2026.10.7",
+      "agent_version": "2026.10.8",
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "openclaw",
@@ -52,11 +52,11 @@
       "agent": "openclaw",
       "route": "npm",
       "value": "openclaw",
-      "agent_version": "2026.10.7",
+      "agent_version": "2026.10.8",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "openclaw",
@@ -71,31 +71,31 @@
       "agent": "openclaw",
       "route": "npm",
       "value": "openclaw",
-      "agent_version": "2026.10.7",
+      "agent_version": "2026.10.8",
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "openclaw",
       "route": "npm",
       "value": "openclaw",
-      "agent_version": "2026.10.7",
+      "agent_version": "2026.10.8",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "openclaw",
       "route": "npm",
       "value": "openclaw",
-      "agent_version": "2026.10.7",
+      "agent_version": "2026.10.8",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "openclaw",
@@ -112,7 +112,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "openclaw",
@@ -129,7 +129,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "openclaw",
@@ -146,7 +146,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "openclaw",
@@ -163,7 +163,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "openclaw",
@@ -172,7 +172,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "40470852600"
+      "run": "40536154538"
     },
     {
       "agent": "openclaw",
@@ -181,7 +181,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "40470852600"
+      "run": "40536154538"
     }
   ]
 }
