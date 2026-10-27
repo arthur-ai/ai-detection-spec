@@ -55,7 +55,7 @@
     }
   ],
   "known_gaps": [
-    "Only the installers' Linux branches run here. On macOS opencode, Cursor CLI, goose and Kiro CLI are proved through Homebrew in 21-cli-agents-homebrew, Muse Code by the same installer in 14-meta-muse, and Pi's installer runs in 20-cli-agents; Grok Build's macOS install is unexercised, though ~/.grok is a posix route.",
+    "Only the installers' Linux branches run here. On macOS opencode, Cursor CLI, goose and Kiro CLI are proved through Homebrew in 21-cli-agents-homebrew, Muse Code by the same installer in 14-meta-muse, and Pi's and Grok Build's installers run in 20-cli-agents.",
     "Nothing is run after installing, so state that appears on first use -- ~/.config/goose, ~/.local/share/opencode, ~/.muse -- is unexamined. Only the last is a top-level directory the enumeration would reach, and it is not a catalog value."
   ]
 }

@@ -1,0 +1,38 @@
+{
+  "description": "The browser-agent extensions on Linux, matched by id, from the Web Store's signed CRX.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "deb+rpm": ">=1",
+    "desktop": ">=0",
+    "ext": ">=5",
+    "file": ">=0",
+    "jbplugin": ">=0",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "port": ">=0",
+    "proc": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "claude-in-chrome",
+      "harpa",
+      "monica",
+      "sider",
+      "merlin"
+    ],
+    "forbid": [
+      "claude-code",
+      "claude-desktop"
+    ]
+  },
+  "why": "Each browser agent on Linux, where nothing proved one before. An extension id is derived from its manifest key, so it is the same on every OS; the id is each agent's only witness here. `forbid` keeps Claude's extension from being read as the same vendor's CLI or desktop app.",
+  "known_gaps": [
+    "Chrome for Testing registers the extensions. Branded Chrome's own install and ExtensionInstallForcelist, which a managed fleet uses, are untested.",
+    "x86_64 only: Google ships no Linux arm64 Chrome, so the arm64 runner skips this."
+  ]
+}

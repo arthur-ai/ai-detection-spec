@@ -2,8 +2,8 @@
 
     python unpack_crx.py <crx> <extension id> <profile>/Extensions
 
-For the Windows scenarios, which have Python and no zsh. test/scenarios/45-claude-extension/
-setup.sh carries the same code inline and the reasoning: osquery derives an extension's id
+For the Windows and Linux scenarios, which run no zsh.
+test/scenarios/45-claude-extension/setup.sh carries the same code inline and the reasoning: osquery derives an extension's id
 from the manifest `key`, Chrome's own unpacker copies the publisher key out of the CRX
 header, and this does the same, then checks the key derives the id requested. Prints the
 version, which names the directory the extension lands in (<id>/<version>_0).

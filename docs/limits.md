@@ -5,8 +5,8 @@
 # 🚧 What it cannot see, and what the tests do not prove
 
 The limits of [the coverage report](agents.md), kept beside it rather than in it.
-Generated from `docs/blind-spots.yaml`, each scenario's `known_gaps` and the platform
-each identifier was produced on; lint fails when it drifts.
+Generated from `docs/blind-spots.yaml` and each scenario's `known_gaps`; lint fails
+when it drifts.
 
 ## What osquery cannot see
 
@@ -51,70 +51,6 @@ they are stated once. No amount of test coverage moves them.
 | A running node CLI that names no package path | A global launched through its bin link reads `node /usr/local/bin/<name>`, and a process that renames itself carries no path at all. `osquery/queries/running.sql` finds OpenClaw's gateway through its workers, which run a script under node_modules/openclaw; a CLI that starts none is found as installed and not as running |
 | Behaviour that only appears after launch or sign-in | Nothing here launches an app -- `open -a` needs an Aqua session and SSH has none -- so first-launch daemons, ports and state directories go unobserved, and account-gated products are never signed in to |
 | Whether ChatGPT's dots is enabled or in use | A dot runs on an OpenAI cloud computer; local computer access is opt-in and runs through the ChatGPT desktop app, which `chatgpt-desktop` already reports (help.openai.com/en/articles/20001554-manage-dots-in-chatgpt-workspaces). No dots-only signal has been read off a real install, so a match means the app, never dots |
-
-## Proven on fewer platforms than claimed
-
-An identifier counts as covered once a CI scenario on any platform produces it,
-and it is claimed on each platform its agent is listed for that its route
-reads. These were produced on some of those platforms and not yet on the rest.
-The catalog does not yet say which platform a value belongs to, so a value that
-exists on one platform only, such as a Windows `.exe`, is listed against the
-others too.
-
-| agent | route | identifier | proven on | not yet on |
-|---|---|---|---|---|
-| aider | image | `paulgauthier/aider` | Linux | macOS |
-| aider | state dir | `~/.aider` | macOS, Linux | Windows |
-| Amazon Q Developer | vscode_extensions | `amazonwebservices.amazon-q-vscode` | Linux | macOS |
-| Amazon Q Developer | jetbrains_plugins | `plugin-amazonq` | Linux | macOS |
-| Augment Code | vscode_extensions | `augment.vscode-augment` | Linux | macOS |
-| BLACKBOX AI | vscode_extensions | `blackboxapp.blackbox` | Linux | macOS |
-| BLACKBOX AI | vscode_extensions | `blackboxapp.blackboxagent` | Linux | macOS |
-| Claude Code | npm | `@anthropic-ai/claude-code` | macOS, Windows | Linux |
-| Claude Code | vscode_extensions | `anthropic.claude-code` | Linux, Windows | macOS |
-| Claude Code | binary | `~/.local/bin/claude` | macOS, Linux | Windows |
-| Claude Code | binary | `~/.local/bin/claude.exe` | Windows | macOS, Linux |
-| Claude Code | process_paths | `~/.local/share/claude/versions/` | Linux | macOS, Windows |
-| Claude Code | process_paths | `~/.local/bin/claude.exe` | Windows | macOS, Linux |
-| Claude Desktop | native msg | `com.anthropic.claude_browser_extension.json` | Linux, Windows | macOS |
-| Claude in Chrome | extension id | `fcoeoabgfenejglbffodgkkbkcdhcgfn` | macOS, Windows | Linux |
-| Cline | npm | `cline` | macOS, Linux | Windows |
-| Cline | vscode_extensions | `saoudrizwan.claude-dev` | Linux, Windows | macOS |
-| Cline | jetbrains_plugins | `cline` | Linux | macOS |
-| CodeGPT | vscode_extensions | `danielsanmedium.dscodegpt` | Linux | macOS |
-| Codex CLI | vscode_extensions | `openai.chatgpt` | Linux, Windows | macOS |
-| Codex CLI | state dir | `~/.codex` | macOS, Linux | Windows |
-| Cody | vscode_extensions | `sourcegraph.cody-ai` | Linux | macOS |
-| Cody | jetbrains_plugins | `Sourcegraph` | Linux | macOS |
-| Continue | npm | `@continuedev/cli` | macOS, Linux | Windows |
-| Continue | vscode_extensions | `continue.continue` | Linux, Windows | macOS |
-| Continue | jetbrains_plugins | `continue-intellij-extension` | Linux | macOS |
-| GitHub Copilot | jetbrains_plugins | `github-copilot-intellij` | Linux | macOS |
-| Cursor | binary | `~/.local/bin/cursor-agent` | Linux | macOS, Windows |
-| Cursor | process_paths | `~/AppData/Local/Programs/cursor/` | Windows | macOS, Linux |
-| Gemini Code Assist | vscode_extensions | `google.geminicodeassist` | Linux | macOS |
-| Gemini Code Assist | jetbrains_plugins | `gemini` | Linux | macOS |
-| goose | image | `ghcr.io/block/goose` | Linux | macOS |
-| goose | image_labels | `https://github.com/block/goose` | Linux | macOS |
-| goose | binary | `~/.local/bin/goose` | Linux | macOS |
-| Grok Build | state dir | `~/.grok` | Linux | macOS |
-| HARPA AI | extension id | `eanggfilgoajaocelnaflolkadkeghjp` | macOS, Windows | Linux |
-| Kilo Code | npm | `@kilocode/cli` | macOS, Linux | Windows |
-| Kilo Code | vscode_extensions | `kilocode.kilo-code` | Linux, Windows | macOS |
-| Kiro CLI | binary | `~/.local/bin/kiro-cli` | Linux | macOS |
-| Merlin | extension id | `camppjleccjaphfdbohjdohecfnoikec` | macOS, Windows | Linux |
-| Monica | extension id | `ofpnmcalabcbjgholdjcjblkibolbppb` | macOS, Windows | Linux |
-| OpenClaw | npm | `clawdbot` | macOS | Linux |
-| OpenClaw | npm | `moltbot` | macOS | Linux |
-| opencode | state dir | `~/.opencode` | Linux | macOS |
-| OpenHands | image | `ghcr.io/openhands/openhands` | Linux | macOS |
-| OpenHands | image | `ghcr.io/all-hands-ai/openhands` | Linux | macOS |
-| OpenHands | image_labels | `https://github.com/OpenHands/OpenHands` | Linux | macOS |
-| Pi | npm | `@earendil-works/pi-coding-agent` | Linux | macOS |
-| Pi | npm | `@mariozechner/pi-coding-agent` | Linux | macOS |
-| Roo Code | vscode_extensions | `rooveterinaryinc.roo-cline` | Linux, Windows | macOS |
-| Sider | extension id | `difoiogjjojoaoomphldepapgpbgkhkb` | macOS, Windows | Linux |
-| SWE-agent | image | `sweagent/swe-agent` | Linux | macOS |
 
 ## What the scenarios do not prove
 
@@ -176,7 +112,7 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 82-linux-running | The gateway runs with a throwaway token and no channel or model. This proves what a running gateway looks like to osquery, not an agent at work. |
 | 83-linux-claude-running | `claude mcp serve` runs unauthenticated with no client connected, so this proves what a running Claude Code process looks like to osquery, not an agent at work. |
 | 83-linux-claude-running | Skips in a default container, where osquery cannot read another user's executable path. It runs for real on CI's ubuntu runner and under test/run-gce.sh and test/run-ec2.sh. |
-| 84-linux-installers | Only the installers' Linux branches run here. On macOS opencode, Cursor CLI, goose and Kiro CLI are proved through Homebrew in 21-cli-agents-homebrew, Muse Code by the same installer in 14-meta-muse, and Pi's installer runs in 20-cli-agents; Grok Build's macOS install is unexercised, though ~/.grok is a posix route. |
+| 84-linux-installers | Only the installers' Linux branches run here. On macOS opencode, Cursor CLI, goose and Kiro CLI are proved through Homebrew in 21-cli-agents-homebrew, Muse Code by the same installer in 14-meta-muse, and Pi's and Grok Build's installers run in 20-cli-agents. |
 | 84-linux-installers | Nothing is run after installing, so state that appears on first use -- ~/.config/goose, ~/.local/share/opencode, ~/.muse -- is unexamined. Only the last is a top-level directory the enumeration would reach, and it is not a catalog value. |
 | 85-linux-vscode-agents | Installed into VS Code only. Cursor, Windsurf, VSCodium and Trae keep their own extension directories, which osquery reports under vscode_edition, and none is exercised. |
 | 85-linux-vscode-agents | Blackbox's extensions are unpublished from the Marketplace and arrive here as the VSIX the Marketplace still serves by URL. If that URL stops answering, the two ids can no longer be produced, which is the cue to supersede them rather than drop them. |
@@ -187,6 +123,8 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 89-linux-claude-deb | Anthropic's apk repository cannot be exercised, and no route could read it: osquery has no apk_packages table at any version, and osquery's own builds are glibc-linked and do not load on musl, so an Alpine host cannot run the collector at all. Measured 2026-10-20 on alpine:3.22; docs/blind-spots.yaml carries it. 91-linux-claude-rpm carries the dnf repository. |
 | 91-linux-claude-rpm | Runs in Rocky 9, Fedora 41 and Amazon Linux 2023 containers on an ubuntu runner, because GitHub offers no RPM-distro runner. A container has no systemd, so `unit` is 0 here and the systemd marker reports absent, correctly. |
 | 91-linux-claude-rpm | Anthropic's apk repository cannot be exercised, and no route could read it: osquery has no apk_packages table at any version, and osquery's own builds are glibc-linked and do not load on musl, so an Alpine host cannot run the collector at all. Measured 2026-10-20 on alpine:3.22; docs/blind-spots.yaml carries it. |
+| 92-linux-browser-agents | Chrome for Testing registers the extensions. Branded Chrome's own install and ExtensionInstallForcelist, which a managed fleet uses, are untested. |
+| 92-linux-browser-agents | x86_64 only: Google ships no Linux arm64 Chrome, so the arm64 runner skips this. |
 
 `14-meta-muse` needs macOS 14 or newer, so CI skips it on older runners rather than failing it. Its `requires.json` carries the reason.
 

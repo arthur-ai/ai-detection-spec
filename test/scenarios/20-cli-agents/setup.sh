@@ -43,6 +43,11 @@ done
 pi_once() { curl --retry 3 -fsSL https://pi.dev/install.sh | sh && test -e "$HOME/.pi/agent/bin/pi"; }
 retry "the Pi installer" pi_once || true
 
+# Grok Build's own installer, as 84-linux-installers runs it on Linux: ~/.grok is the only
+# route that names Grok, and nothing else proved it on macOS.
+grok_once() { curl --retry 3 -fsSL https://x.ai/cli/install.sh | bash && test -e "$HOME/.grok/bin/grok"; }
+retry "the Grok Build installer" grok_once || true
+
 # INVOKED, NOT JUST INSTALLED. A state directory does not exist until the agent runs once,
 # which is why ~/.codex read DID NOT APPEAR while a scenario was installing Codex CLI on every run.
 # `--version` is the smallest invocation that is not a no-op and needs no credentials.
