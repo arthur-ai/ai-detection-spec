@@ -2,8 +2,8 @@
 
 # 🔎 ai-detection-spec
 
-**An open specification for finding the AI agents on a machine, and a catalog in which every
-identifier was proved by installing the real software.**
+**An open specification for finding the AI agents on a machine. Every identifier in its
+catalog comes from installing the real software.**
 
 [![CI](https://github.com/arthur-ai/ai-detection-spec/actions/workflows/ci.yml/badge.svg)](https://github.com/arthur-ai/ai-detection-spec/actions/workflows/ci.yml)
 [![Scenarios](https://github.com/arthur-ai/ai-detection-spec/actions/workflows/scenarios.yml/badge.svg)](https://github.com/arthur-ai/ai-detection-spec/actions/workflows/scenarios.yml)
