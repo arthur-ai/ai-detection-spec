@@ -80,9 +80,9 @@ same evidence.
 
 **20 assets**: `discovery-darwin.sql`, `discovery-linux.sql`, `discovery-windows.sql`,
 `discovery-deep.sql`, `ai-detection-spec.conf`, `signatures.sql`, `agents-darwin.sql`,
-`agents-linux.sql`, `agents-windows.sql`, `fleet-policies.yml`, `discover`, `container-scan`, `classify`, `agents.yaml`, `routes.yaml`,
-`catalog.json`, `catalog.schema.json`, `evidence.schema.json`, `ai-detection-spec-darwin.sh`,
-`ai-detection-spec-linux.sh`.
+`agents-linux.sql`, `agents-windows.sql`, `fleet-policies.yml`, `discover`, `container-scan`,
+`classify`, `agents.yaml`, `routes.yaml`, `catalog.json`, `catalog.schema.json`,
+`evidence.schema.json`, `ai-detection-spec-darwin.sh`, `ai-detection-spec-linux.sh`.
 
 Which you need depends on where each runs.
 
@@ -90,7 +90,7 @@ Which you need depends on where each runs.
 
 | | |
 |---|---|
-| `discovery-darwin.sql`<br>`discovery-linux.sql` | The query for each platform. `discover` picks by `uname -s`, so you can ship both |
+| `discovery-darwin.sql`<br>`discovery-linux.sql`<br>`discovery-windows.sql` | The query for each platform. `discover` picks between the first two by `uname -s`, so you can ship both. Windows has no `discover`; run the third [with `osqueryi`](#running-it-on-a-fleet) |
 | `discovery-deep.sql` | The container query, a supplement rather than a superset. Only `container-scan` runs it, because the wall-clock bound lives there |
 | `ai-detection-spec.conf` | The osqueryd pack, every platform's queries with osqueryd's per-query `platform` field. Take it *instead of* the `.sql` files if you schedule through osqueryd |
 | `discover` | Runs the query for its platform and prints one JSON array |
@@ -109,7 +109,7 @@ Which you need depends on where each runs.
 
 | | |
 |---|---|
-| `agents-darwin.sql`<br>`agents-linux.sql` | One row per agent found: `sudo osqueryi --json < agents-darwin.sql`. No container images, because those need `container-scan`'s bound |
+| `agents-darwin.sql`<br>`agents-linux.sql`<br>`agents-windows.sql` | One row per agent found: `sudo osqueryi --json < agents-darwin.sql`. No container images, because those need `container-scan`'s bound |
 | `signatures.sql` | The catalog as SQL, for `discover --names`. Keep it next to `discover` |
 | `fleet-policies.yml` | One Fleet policy per agent per platform: `fleetctl apply -f fleet-policies.yml` |
 
@@ -179,8 +179,9 @@ scripts; a native PowerShell binding, for fleets that run no osquery, is not bui
 
 Each route's platform, and the osquery table and version floor behind it
 ([SPEC.md §8.1](../SPEC.md#81-osquery)), are declared in
-[`catalog/routes.yaml`](../catalog/routes.yaml). Each platform reads its own tables, so the
-composed query is per platform, and no file runs on two.
+[`catalog/routes.yaml`](../catalog/routes.yaml). Each platform reads its own tables, so each
+composed `discovery-<platform>.sql` runs on its own platform only, though a source query
+declared `posix` or `all` is composed into several.
 
 ## Requirements
 
