@@ -262,8 +262,8 @@ Each branch in its own process costs ~0.47s of `osqueryi` startup per branch, an
 | composed, one statement | **0 rows**, exit 1, stdout `[\n\n]` |
 | independent, one process per branch | **6 of 6 branches, 757 rows**; the bad branch contributes 0 |
 
-Most queries need 5.10.0, `vscode.sql` 5.11.0 and `jetbrains.sql` 5.18.0, so a missing table
-is a real deployment state.
+Most queries need 5.10.0, `vscode.sql` 5.15.0 and `jetbrains.sql` 5.18.0, so a missing table
+or column is a real deployment state.
 
 ## Payload
 

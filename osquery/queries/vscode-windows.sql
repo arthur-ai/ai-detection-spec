@@ -1,7 +1,7 @@
 -- name: vscode-windows
 -- description: VS Code extensions on Windows, which is how several agents primarily ship
 -- tables: users, vscode_extensions
--- min-osquery: 5.11.0
+-- min-osquery: 5.15.0
 -- cost: fast
 -- platform: windows
 --

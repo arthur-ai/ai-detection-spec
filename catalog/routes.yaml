@@ -144,16 +144,17 @@ routes:
     # against osquery 5.23.1 with Cline 4.1.17 and Continue 2.0.0 installed by
     # `code --install-extension`.
     #
-    # min_osquery is 5.11.0, ABOVE the 5.10.0 floor every other route declares, which is
+    # min_osquery is 5.15.0, ABOVE the 5.10.0 floor every other route declares, which is
     # the whole reason the bound is per-route and per-query rather than repo-wide. The
-    # `vscode_edition` column that tells VS Code from Cursor, Windsurf and VSCodium
-    # arrived later still (5.15.0) and ships in `extra`, so a build between the two
-    # loses the edition and keeps the identifier.
+    # table arrived in 5.11.0, but the queries also read `vscode_edition`, which tells VS
+    # Code from Cursor, Windsurf and VSCodium, and it arrived in 5.15.0. A column the table
+    # lacks fails the whole statement, so a build between the two reads no extension at all
+    # (osquery/queries/vscode.sql).
     platform: all
     kind: vscodeext
     match: exact
     purl: vscode-extension
-    osquery: {table: vscode_extensions, min_osquery: 5.11.0}
+    osquery: {table: vscode_extensions, min_osquery: 5.15.0}
     value_pattern: '^[A-Za-z0-9][A-Za-z0-9._-]*\.[A-Za-z0-9][A-Za-z0-9._-]*$'
   jetbrains_plugins:
     # THE VALUE IS THE PLUGIN DIRECTORY NAME, the last component of the row's `path`. The

@@ -1,14 +1,15 @@
 -- name: vscode
 -- description: VS Code extensions, which is how several agents primarily ship
 -- tables: users, file, vscode_extensions
--- min-osquery: 5.11.0
+-- min-osquery: 5.15.0
 -- cost: fast
 -- platform: posix
 --
--- min-osquery IS 5.11.0, where the table first appears. `vscode_edition` follows in 5.15.0,
--- and between the two this query loses the edition and keeps the id. On 5.10.x it exits 1
--- with "[\n\n]", so it stays its own pack entry and composed branch, never folded into a
--- file other branches depend on.
+-- min-osquery IS 5.15.0, for `vscode_edition`, not 5.11.0, where the table first appears:
+-- osqueryi given a column its table lacks fails the statement ("no such column", exit 1,
+-- "[\n\n]", measured on 5.23.1), so on 5.11-5.14 this returns nothing rather than ids
+-- without an edition. So it stays its own pack entry and composed branch, never folded into
+-- a file other branches depend on.
 --
 -- Six columns: kind, id, ver, loc, extra, perms. See CONTRIBUTING.md before changing them.
 --

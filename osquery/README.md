@@ -1,13 +1,13 @@
 # The osquery binding
 
 The first binding of [ai-detection-spec](../SPEC.md): osquery queries that collect agent
-evidence on macOS and Linux, and the scripts that run them on a machine. Which of those
-things are agents is the repository's [catalog](../catalog/agents.yaml) to say, and what
-counts as one, and how every identifier is proved, is in [the README](../README.md).
+evidence on macOS, Linux and Windows, and the scripts that run them on a machine. Which of
+those things are agents is the repository's [catalog](../catalog/agents.yaml) to say, and
+what counts as one, and how every identifier is proved, is in [the README](../README.md).
 
-- **It is SQL you can read.** `osquery/dist/discovery-darwin.sql` and
-  `osquery/dist/discovery-linux.sql` are everything it collects: names, paths, versions and
-  declared permissions.
+- **It is SQL you can read.** `osquery/dist/discovery-darwin.sql`,
+  `osquery/dist/discovery-linux.sql` and `osquery/dist/discovery-windows.sql` are everything
+  it collects: names, paths, versions and declared permissions.
 - **The inventory names no agent.** It reports what is installed, and matching happens
   later, so a catalog fix re-matches evidence you already collected.
 - **One catalog, matched where you need it**: off the machine with `bin/classify`, or on it
@@ -163,7 +163,7 @@ bundle and what a deployment supplies.
 Windows PowerShell 5.1's `>` writes UTF-16:
 
 ```console
-> "C:\Program Files\osquery\osqueryi.exe" --json < discovery-windows.sql > inventory.json
+> "C:\Program Files\osquery\osqueryi.exe" --json < osquery\dist\discovery-windows.sql > inventory.json
 ```
 
 The inventory carries a `containers` marker, since osquery reads no container on Windows; it
