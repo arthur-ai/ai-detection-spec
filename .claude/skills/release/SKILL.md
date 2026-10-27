@@ -142,8 +142,8 @@ and `check_pack.py` on each platform, and `docker_states.sh` on macOS and Linux,
 has no Docker tables on Windows.
 
 ```console
-$ gh run list --workflow=ci.yml --branch=main --limit=10 --json headSha,databaseId \
-    --jq '.[] | select(.headSha=="<verified-sha>") | .databaseId'
+$ gh run list --workflow=ci.yml --branch=main --commit <verified-sha> --json databaseId \
+    --jq '.[].databaseId'
 $ gh run view <id> --json jobs --jq '.jobs[] | "\(.name) \(.conclusion)"'
 $ test/run-linux.sh                                          # locally, needs Docker
 ```
@@ -168,9 +168,9 @@ a `push` run against `main`.
 
 ```console
 $ sha=$(git rev-parse HEAD)
-$ gh run list --workflow=scenarios.yml --branch=main --limit=6 \
-    --json headSha,status,conclusion,databaseId \
-    --jq ".[] | select(.headSha==\"$sha\") | \"\(.databaseId) \(.status)/\(.conclusion)\""
+$ gh run list --workflow=scenarios.yml --branch=main --commit "$sha" \
+    --json event,status,conclusion,databaseId \
+    --jq '.[] | "\(.databaseId) \(.event) \(.status)/\(.conclusion)"'
 ```
 
 Nothing printed means the suite has not run for that commit — wait, do not read the previous one.
