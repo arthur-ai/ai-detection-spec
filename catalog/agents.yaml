@@ -106,9 +106,11 @@ agents:
     platforms: [darwin, windows]
     bundle_ids: [com.anthropic.claudefordesktop]
     homebrew: [claude]
-    # Windows registers the same manifest name, under HKCU's NativeMessagingHosts, on first
-    # launch: read off a windows-2025 runner on 2026-10-26, Claude 3.6556.2.0, its file at
+    # Windows registers the same manifest name, under HKCU's NativeMessagingHosts, once it runs
+    # with a Chrome profile present: read off a windows-2025 runner on 2026-10-26, Claude
+    # 3.6556.2.0, its file at
     # ~\AppData\Local\Packages\Claude_pzs8sxrjxfjjc\LocalCache\Roaming\Claude-NativeHost\.
+    # 104-windows-browser.
     native_messaging_hosts: [com.anthropic.claude_browser_extension.json]
     # Windows ships it as a signed MSIX (claude.ai/api/desktop/win32/x64/msix/latest), and
     # osquery's `programs` reports the family name: read off the same install, publisher

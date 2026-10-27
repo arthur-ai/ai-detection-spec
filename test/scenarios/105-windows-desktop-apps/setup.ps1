@@ -2,10 +2,11 @@
 #
 # Claude Desktop ships as a signed MSIX, which Server 2025 installs without the Store; its
 # identity is the package family name. Cursor and Windsurf ship Inno Setup user installers,
-# whose identity is the Uninstall key they write under HKEY_CURRENT_USER.
+# whose identity is the Uninstall key they write under HKEY_CURRENT_USER. Claude Desktop's
+# browser bridge is proved in 104-windows-browser, which has the Chrome profile it needs.
 #
-# LAUNCHED, BOTH OF THE ONES THAT NEED IT: Claude Desktop registers its browser bridge on
-# first run, and a running Cursor is what process_paths reads. Windsurf is installed only.
+# LAUNCHED: Cursor, because a running Cursor is what process_paths reads. Windsurf is
+# installed only.
 . (Join-Path $PSScriptRoot '..\..\lib\guest-windows.ps1')
 
 $dl = Join-Path $env:RUNNER_TEMP 'desktop'
@@ -28,33 +29,5 @@ try {
 
 $exe = Join-Path $env:LOCALAPPDATA 'Programs\cursor\Cursor.exe'
 if (Test-Path $exe) { Start-Process $exe }
-# THE BRIDGE NEEDS A CHROME PROFILE TO BRIDGE TO. Both survey runs had one, from Chrome for
-# Testing, and Claude Desktop wrote the key within 30 seconds; here, with none, it ran for two
-# minutes and wrote nothing (PR 127's second run). So Chrome runs once first, headless, which
-# is enough to create its user data directory, and then the key is waited for.
-$chrome = 'C:\Program Files\Google\Chrome\Application\chrome.exe'
-if (Test-Path $chrome) {
-  $p = Start-Process $chrome -PassThru -ArgumentList '--headless=new --no-first-run --no-default-browser-check --disable-gpu about:blank'
-  Start-Sleep -Seconds 15
-  Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
-  Get-Process chrome -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq $chrome } |
-    Stop-Process -Force -ErrorAction SilentlyContinue
-}
-Write-Host "Chrome profile: $(Test-Path (Join-Path $env:LOCALAPPDATA 'Google\Chrome\User Data\Local State'))"
-$bridge = 'HKCU:\Software\Google\Chrome\NativeMessagingHosts\com.anthropic.claude_browser_extension'
-$pkg = Get-AppxPackage Claude -ErrorAction SilentlyContinue | Select-Object -First 1
-if ($pkg) {
-  $app = (Get-AppxPackageManifest $pkg).Package.Applications.Application.Id | Select-Object -First 1
-  Start-Process explorer.exe -ArgumentList "shell:AppsFolder\$($pkg.PackageFamilyName)!$app"
-  foreach ($i in 1..60) {
-    if (Test-Path $bridge) { break }
-    Start-Sleep -Seconds 2
-  }
-  if (Test-Path $bridge) { Write-Host "Claude Desktop registered its bridge after about $(2 * $i)s" }
-  else {
-    Write-Host 'WARN: Claude Desktop registered no bridge in 120s. Its processes:'
-    Get-Process claude -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "      $($_.Path)" }
-  }
-}
-Start-Sleep -Seconds 10
+Start-Sleep -Seconds 15
 exit 0

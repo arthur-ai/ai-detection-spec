@@ -68,9 +68,9 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 102-windows-claude-native | A launch through an 8.3 short path keeps the short name in processes.path, which no value matches. Nothing here launches one. |
 | 103-windows-vscode-agents | VS Code itself, from its user installer. Cursor and Windsurf read the same extension directories under their own names and are not exercised here. |
 | 104-windows-browser | Chrome for Testing registers the extensions. Branded Chrome's own install and ExtensionInstallForcelist, which a Windows fleet uses, are untested. |
+| 104-windows-browser | Claude Desktop registered its bridge with this profile present and not without one, so the nmh row is proof for a machine with Chrome and the extension set up. |
 | 105-windows-desktop-apps | Each per-user install is read while its user is signed in: HKEY_USERS holds loaded hives only, so the same install by a user who is signed out leaves no Uninstall or MSIX row (docs/blind-spots.yaml). |
 | 105-windows-desktop-apps | Windsurf is not launched, so its liveness is unproven. |
-| 105-windows-desktop-apps | Claude Desktop wrote its browser bridge only once a Chrome profile existed, so the nmh row is proof for a machine with Chrome set up; one without reads Claude Desktop through its MSIX row alone. |
 | 105-windows-desktop-apps | Sign-in gated, as on macOS: nothing exercises behaviour that appears once a user signs in. |
 | 106-windows-python-agents | Installed, never run, so aider's own state directory is not produced here. |
 | 12-chatgpt-pre-rename | The bundle id only. A direct download leaves no Homebrew record, so the `chatgpt` brew route is not exercised here; 10-desktop-apps covers it. |

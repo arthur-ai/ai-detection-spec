@@ -51,4 +51,29 @@ if (-not (Test-Path (Join-Path $udd 'Default\Preferences'))) {
   Write-Host 'FAIL: Chrome for Testing wrote no Default\Preferences'
   exit 1
 }
+
+# THE OTHER END OF CLAUDE'S BRIDGE. Claude Desktop registers its native-messaging host under
+# HKCU some time after its first launch -- with a Chrome profile carrying the Claude extension
+# present, as here and in both survey runs. With neither (105-windows-desktop-apps, two runs)
+# it registered nothing, so this is where the Windows nmh route is proved. Which of the two it
+# needs is not measured.
+$msix = Join-Path $dl 'claude.msix'
+if (Get-Download 'https://claude.ai/api/desktop/win32/x64/msix/latest/redirect' $msix) {
+  try { Add-AppxPackage -Path $msix } catch { Write-Host "WARN: Claude Desktop failed: $_" }
+}
+$bridge = 'HKCU:\Software\Google\Chrome\NativeMessagingHosts\com.anthropic.claude_browser_extension'
+$pkg = Get-AppxPackage Claude -ErrorAction SilentlyContinue | Select-Object -First 1
+if ($pkg) {
+  $app = (Get-AppxPackageManifest $pkg).Package.Applications.Application.Id | Select-Object -First 1
+  Start-Process explorer.exe -ArgumentList "shell:AppsFolder\$($pkg.PackageFamilyName)!$app"
+  foreach ($i in 1..60) {
+    if (Test-Path $bridge) { break }
+    Start-Sleep -Seconds 2
+  }
+  if (Test-Path $bridge) { Write-Host "Claude Desktop registered its bridge after about $(2 * $i)s" }
+  else {
+    Write-Host 'WARN: Claude Desktop registered no bridge in 120s. Its processes:'
+    Get-Process claude -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "      $($_.Path)" }
+  }
+}
 exit 0

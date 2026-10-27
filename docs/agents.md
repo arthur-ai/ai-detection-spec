@@ -112,7 +112,7 @@ A chat client that can run tools on the machine, for example through MCP.
 | name | identifiers | scenarios |
 |---|---|---|
 | **ChatGPT Desktop** | **`com.openai.codex`**, **`com.openai.chat`**, **`chatgpt`** | 10-desktop-apps, 12-chatgpt-pre-rename, 90-demo-fleet |
-| **Claude Desktop** | **`com.anthropic.claudefordesktop`**, **`claude`**, **`com.anthropic.claude_browser_extension.json`**, Claude_pzs8sxrjxfjjc | 10-desktop-apps, 105-windows-desktop-apps, 90-demo-fleet |
+| **Claude Desktop** | **`com.anthropic.claudefordesktop`**, **`claude`**, **`com.anthropic.claude_browser_extension.json`**, Claude_pzs8sxrjxfjjc | 10-desktop-apps, 104-windows-browser, 105-windows-desktop-apps, 90-demo-fleet |
 | **Perplexity** | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
 
 > **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = superseded: a run proved it and the current release no longer emits it. ∅ = no CI runner for its platform. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it.

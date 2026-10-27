@@ -1,11 +1,11 @@
 {
-  "description": "The browser-agent extensions on Windows, collected as kind=ext and matched by id.",
+  "description": "The browser-agent extensions on Windows, matched by id, and the Claude Desktop bridge Claude's extension talks to.",
   "platform": "windows",
   "counts": {
     "ext": ">=5",
     "file": ">=1",
-    "msix": ">=1",
-    "nmh": ">=1",
+    "msix": ">=2",
+    "nmh": ">=2",
     "npm": ">=0",
     "proc": ">=0",
     "scan": ">=1",
@@ -18,19 +18,21 @@
       "harpa",
       "monica",
       "sider",
-      "merlin"
+      "merlin",
+      "claude-desktop"
     ],
     "forbid": [
-      "claude-desktop",
       "claude-code"
     ]
   },
   "require_rows": [
     {"kind": "ext", "id": "fcoeoabgfenejglbffodgkkbkcdhcgfn", "extra": "chrome,sideloaded:"},
-    {"kind": "ext", "id": "fcoeoabgfenejglbffodgkkbkcdhcgfn", "perms": ["nativeMessaging", "<all_urls>"]}
+    {"kind": "ext", "id": "fcoeoabgfenejglbffodgkkbkcdhcgfn", "perms": ["nativeMessaging", "<all_urls>"]},
+    {"kind": "nmh", "id": "com.anthropic.claude_browser_extension.json", "loc": "\\Claude-NativeHost\\"}
   ],
-  "why": "chrome_extensions through the Windows uid list, on a profile at the path osquery reads for branded Chrome. An extension id is derived from its manifest key, so it is the same on every OS; this proves the Windows branch reads it, with the browser and the sideload token in `extra` and the `<all_urls>` flag in `perms`. Claude's extension talks to Claude Desktop over native messaging, so `forbid` keeps the extension's rows from being read as Claude Desktop or Claude Code.",
+  "why": "chrome_extensions through the Windows uid list, on a profile at the path osquery reads for branded Chrome. An extension id is derived from its manifest key, so it is the same on every OS; this proves the Windows branch reads it, with the browser and the sideload token in `extra` and the `<all_urls>` flag in `perms`. The bridge row proves the native-messaging route on Windows: Claude Desktop's registry key, followed to its manifest, gives the filename the route already carries for macOS. `forbid` keeps these rows from being read as Claude Code, the same vendor's CLI.",
   "known_gaps": [
-    "Chrome for Testing registers the extensions. Branded Chrome's own install and ExtensionInstallForcelist, which a Windows fleet uses, are untested."
+    "Chrome for Testing registers the extensions. Branded Chrome's own install and ExtensionInstallForcelist, which a Windows fleet uses, are untested.",
+    "Claude Desktop registered its bridge with this profile present and not without one, so the nmh row is proof for a machine with Chrome and the extension set up."
   ]
 }
