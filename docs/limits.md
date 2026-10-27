@@ -56,10 +56,8 @@ they are stated once. No amount of test coverage moves them.
 
 An identifier counts as covered once a CI scenario on any platform produces it,
 and it is claimed on each platform its agent is listed for that its route
-reads. These were produced on some of those platforms and not yet on the rest.
-The catalog does not yet say which platform a value belongs to, so a value that
-exists on one platform only, such as a Windows `.exe`, is listed against the
-others too.
+reads, unless `only_on:` in `catalog/agents.yaml` narrows it to where the value
+exists. These were produced on some of those platforms and not yet on the rest.
 
 | agent | route | identifier | proven on | not yet on |
 |---|---|---|---|---|
@@ -72,10 +70,7 @@ others too.
 | BLACKBOX AI | vscode_extensions | `blackboxapp.blackboxagent` | Linux | macOS |
 | Claude Code | npm | `@anthropic-ai/claude-code` | macOS, Windows | Linux |
 | Claude Code | vscode_extensions | `anthropic.claude-code` | Linux, Windows | macOS |
-| Claude Code | binary | `~/.local/bin/claude` | macOS, Linux | Windows |
-| Claude Code | binary | `~/.local/bin/claude.exe` | Windows | macOS, Linux |
-| Claude Code | process_paths | `~/.local/share/claude/versions/` | Linux | macOS, Windows |
-| Claude Code | process_paths | `~/.local/bin/claude.exe` | Windows | macOS, Linux |
+| Claude Code | process_paths | `~/.local/share/claude/versions/` | Linux | macOS |
 | Claude Desktop | native msg | `com.anthropic.claude_browser_extension.json` | Linux, Windows | macOS |
 | Claude in Chrome | extension id | `fcoeoabgfenejglbffodgkkbkcdhcgfn` | macOS, Windows | Linux |
 | Cline | npm | `cline` | macOS, Linux | Windows |
@@ -91,7 +86,6 @@ others too.
 | Continue | jetbrains_plugins | `continue-intellij-extension` | Linux | macOS |
 | GitHub Copilot | jetbrains_plugins | `github-copilot-intellij` | Linux | macOS |
 | Cursor | binary | `~/.local/bin/cursor-agent` | Linux | macOS, Windows |
-| Cursor | process_paths | `~/AppData/Local/Programs/cursor/` | Windows | macOS, Linux |
 | Gemini Code Assist | vscode_extensions | `google.geminicodeassist` | Linux | macOS |
 | Gemini Code Assist | jetbrains_plugins | `gemini` | Linux | macOS |
 | goose | image | `ghcr.io/block/goose` | Linux | macOS |
@@ -164,6 +158,7 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 78-linux-vscode | min-osquery for this branch is 5.15.0, for the vscode_edition column, above the 5.10.0 the rest of the repo declares. On an older endpoint the query returns [] and exits 1, which is why it is its own pack entry and its own composed branch. |
 | 78-linux-vscode | Neither agent's state directory is exercised. ~/.continue does not exist after `code --install-extension` -- verified on a real install -- because it appears on first activation in the editor, and nothing here opens a GUI session. So this proves the extension route and says nothing about the path routes for either. |
 | 78-linux-vscode | vscode_edition is reported but not asserted beyond the forbid: this installs into VS Code only, so the cursor, windsurf, vscodium and trae editions the column can report are unexercised. |
+| 79-linux-image | Linux only. The image routes are claimed on macOS too, where osquery reads a live Docker daemon's images the same way (osquery/queries/COST.md, Containers), and no scenario proves it there: the hosted macOS runners have no Docker to pull into. |
 | 79-linux-image | A pull proves the registry still serves this repository under this name. It does not prove the image is the vendor's: an image name is chosen by whoever tags it, so `docker tag alpine paulgauthier/aider` produces the same finding. The `image_labels` route is the answer to that for the agents whose vendors set labels, and aider and swe-agent are exactly the ones who do not -- so for those two the finding remains as forgeable as the tag. |
 | 79-linux-image | The container probe runs `sleep`, not the agent. It proves the daemon reports a running container from a catalogued image and that the route matches it; it proves nothing about an agent actually working, which would need credentials and a model endpoint this scenario deliberately does not hold. |
 | 79-linux-image | Nothing here reads processes inside the container. docker_container_processes requires a constraint on the container id and can be reached through a join, but the cmdline it returns can carry an API key, so it is not collected until redaction is designed. |

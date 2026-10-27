@@ -44,7 +44,9 @@ container image. A signature written for one route is blind to a fleet that used
   the value is compared to and, where one has happened, the trap that cost an identifier
   (`vscode_extensions` is `name`, never `publisher_id`; `jetbrains_plugins` is the directory,
   not the plugin.xml id). Each route's `platform:` is there too, and the agent's `platforms:`
-  must agree.
+  must agree. A value is claimed on every one of those its route reads; one that exists on
+  fewer, such as a Windows `.exe` on a route covering all three, gets an `only_on:` record
+  (`claude-code` has four), or `docs/limits.md` lists it as unproved on the others.
 - **Not identifiers**: a generic name (Cursor writes `~/.local/bin/agent`, Grok
   `~/.grok/bin/agent`), a listening port, a package a third party publishes for the vendor's
   tool (npm `hermes-agent`). Leave them out and say why in the entry's comment, as `hermes`

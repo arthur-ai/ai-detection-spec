@@ -39,8 +39,35 @@ def load_classify():
 
 
 REQUIRED = {"id", "name", "classification", "platforms"}
-OPTIONAL = {"superseded"}
+OPTIONAL = {"superseded", "only_on"}
 SUPERSEDED_REQUIRED = {"route", "value", "last_version", "last_proved", "by", "run"}
+ONLY_ON_FIELDS = {"route", "value", "platforms"}
+
+
+def only_on_errors(aid, agent, routes, route_platforms):
+    """`only_on` narrows where one value is CLAIMED, never where it matches: a value is
+    otherwise claimed on every platform its agent lists that its route reads, and
+    tools/agent_status.py reports where it is proved against that. Each record names a value
+    on its route and a strict, non-empty subset of those platforms, or it narrows nothing."""
+    errors, seen = [], set()
+    for rec in agent.get("only_on", []) or []:
+        if not isinstance(rec, dict) or set(rec) != ONLY_ON_FIELDS:
+            errors.append(f"{aid}: only_on entries are mappings of exactly "
+                          f"{sorted(ONLY_ON_FIELDS)}, got {rec!r}")
+            continue
+        route, value, plats = str(rec["route"]), str(rec["value"]), rec["platforms"]
+        if route not in routes or value not in {str(v) for v in agent.get(route, [])}:
+            errors.append(f"{aid}: only_on {route}:{value!r} is not a value on that route")
+            continue
+        if (route, value) in seen:
+            errors.append(f"{aid}: only_on {route}:{value!r} appears twice")
+        seen.add((route, value))
+        claimable = set(agent.get("platforms", [])) & route_platforms.get(route, set())
+        if not isinstance(plats, list) or not plats or not set(plats) < claimable:
+            errors.append(f"{aid}: only_on {route}:{value!r} platforms {plats!r} must be a "
+                          f"strict, non-empty subset of {sorted(claimable)}, where it is "
+                          f"otherwise claimed")
+    return errors
 
 
 def archived_match(aid, rec):
@@ -398,6 +425,7 @@ def main():
         errors.extend(route_value_errors(aid, agent, reg))
         errors.extend(image_errors(aid, agent, classify.image_repo, IMAGE_ROUTES))
         errors.extend(live_superseded_errors(aid, agent, live))
+        errors.extend(only_on_errors(aid, agent, ROUTES, route_platforms))
 
         routes = ROUTES & set(agent)
         if not routes:

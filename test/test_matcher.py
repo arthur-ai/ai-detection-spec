@@ -1505,6 +1505,32 @@ check("...and passes the same value under the route it borrows from",
 check("...and refuses the key empty too: present, it says the route is declared here",
       any("bundle_ids" in e for e in _bre("probe", {"running_apps": []}, _reg)))
 
+# --- only_on narrows a claim, and only to a strict subset of it ----------------------
+_groups = _reg.get("platform_groups", {})
+_rplat = {n: set(_groups.get(r["platform"], [r["platform"]])) for n, r in _reg["routes"].items()}
+_ooe = lambda oo: _vc.only_on_errors(
+    "probe", {"platforms": ["darwin", "linux", "windows"],
+              "binaries": ["~/.local/bin/x.exe"], "only_on": oo}, set(_reg["routes"]), _rplat)
+_oo = {"route": "binaries", "value": "~/.local/bin/x.exe", "platforms": ["windows"]}
+check("only_on passes a value narrowed to fewer of the platforms it is claimed on",
+      _ooe([_oo]) == [], str(_ooe([_oo])))
+check("...and refuses one narrowed to all of them, which narrows nothing",
+      any("strict" in e for e in _ooe([{**_oo, "platforms": ["darwin", "linux", "windows"]}])))
+check("...and a platform the value is not claimed on",
+      any("strict" in e for e in _ooe([{**_oo, "platforms": ["plan9"]}])))
+check("...and a value not on that route",
+      any("not a value" in e for e in _ooe([{**_oo, "value": "~/.local/bin/y"}])))
+check("...and a field it does not read",
+      any("exactly" in e for e in _ooe([{**_oo, "why": "x"}])))
+_cc = next(a for a in _st.collect()["agents"] if a["id"] == "claude-code")
+_exe = next(i for i in _cc["identifiers"]
+            if (i["route"], i["value"]) == ("binaries", "~/.local/bin/claude.exe"))
+_exe_plat = {json.loads((_st.SCENARIOS / s / "expected.json").read_text()).get("platform")
+             for s in _exe["asserted_by_ci"]}
+check("only_on narrows both the claim and the scenarios expected to produce the value",
+      _exe["claimed_on"] == ["windows"] and _exe_plat == {"windows"},
+      f"claimed {_exe['claimed_on']}, expected of {sorted(_exe_plat)}")
+
 # --- the registry, made true: each rule refuses its case and passes its control -------
 _rve = _vc.route_value_errors
 check("validate_catalog refuses a bare string where a list belongs, which iterates by letter",

@@ -545,15 +545,21 @@ def collect():
     for agent in catalog["agents"]:
         aid = agent["id"]
         idents = []
+        only_on = {(str(r["route"]), str(r["value"])): r["platforms"]
+                   for r in agent.get("only_on", []) or []}
         for route in ALL_ROUTES:
             # ONLY A SCENARIO ON ONE OF THE ROUTE'S PLATFORMS CAN PRODUCE ITS VALUE. A macOS
             # scenario that finds Cursor says nothing about Cursor's Windows Uninstall key,
             # and counting it read that key as tested-absent, failing every Windows value of
             # an agent macOS or Linux already proves.
-            reach = {s for s in asserted_by[aid]
-                     if platform_of.get(s) in route_platforms.get(route, ())}
+            route_reach = {s for s in asserted_by[aid]
+                           if platform_of.get(s) in route_platforms.get(route, ())}
             for value in agent.get(route, []):
                 value = str(value)
+                # Narrowed by `only_on` the same way: a macOS scenario cannot produce a
+                # Windows `.exe`, so it does not reach one.
+                narrow = only_on.get((route, value))
+                reach = {s for s in route_reach if narrow is None or platform_of.get(s) in narrow}
                 scens = sorted(seen_in.get((aid, route, value), ()))
                 ci_scens = [s for s in scens if s in in_ci]
                 # THE ORDER IS THE MEANING. A real install outranks everything, a superseded
@@ -590,9 +596,10 @@ def collect():
                 # PER PLATFORM, REPORTED AND NOT GATED. `state` asks for proof on one platform;
                 # an identifier is claimed on every platform its agent lists that its route
                 # reads, so a value proved on macOS alone also reads as covered on Linux.
-                # These two say where, and docs/limits.md lists the difference.
-                claimed = sorted(set(agent.get("platforms", []))
-                                 & route_platforms.get(route, set()))
+                # These two say where, and docs/limits.md lists the difference. `only_on`
+                # narrows the claim for a value that exists on fewer of them.
+                claimed = set(agent.get("platforms", [])) & route_platforms.get(route, set())
+                claimed = sorted(claimed if narrow is None else claimed & set(narrow))
                 proven = sorted({p for s, p in seen_on.get((aid, route, value), ())
                                  if s in in_ci})
                 idents.append({"route": route, "value": value,
@@ -950,10 +957,9 @@ def limits_markdown(data):
         out += ["## Proven on fewer platforms than claimed", "",
                 "An identifier counts as covered once a CI scenario on any platform produces it,",
                 "and it is claimed on each platform its agent is listed for that its route",
-                "reads. These were produced on some of those platforms and not yet on the rest.",
-                "The catalog does not yet say which platform a value belongs to, so a value that",
-                "exists on one platform only, such as a Windows `.exe`, is listed against the",
-                "others too.", "",
+                "reads, unless `only_on:` in `catalog/agents.yaml` narrows it to where the value",
+                "exists. These were produced on some of those platforms and not yet on the rest.",
+                "",
                 "| agent | route | identifier | proven on | not yet on |", "|---|---|---|---|---|"]
         out += [f"| {a['name']} | {ROUTE_LABEL.get(i['route'], i['route'])} | `{i['value']}` | "
                 f"{_platforms(i['proven_on'])} | {_platforms(missing)} |"
