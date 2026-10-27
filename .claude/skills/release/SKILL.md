@@ -21,6 +21,7 @@ and lead with the breaks either way.
 | removal | what breaks |
 |---|---|
 | an **entry** leaves | its findings stop appearing, and nothing errors |
+| a **platform** leaves an agent's `platforms` | matching is unchanged, since each route's own `platform:` decides where a value is read, but `fleet-policies.yml` holds one policy per agent per platform and drops that one. A deployer who loaded the old file still has it, so name it for deletion; a renamed entry leaves its old-named policy the same way. The coverage gate prompts this removal: an agent may list only the platforms a CI run proved |
 | a **classification** empties | a consumer mapping it to a UI loses a value |
 | a **route key** falls out of use | `validate_catalog.py` still accepts it with no entry carrying it, so the route never fires. `model_stores` is in that state; `ports` is `retired: true`, which is the visible case |
 | a **row kind** stops being emitted | a consumer reading that kind gets no rows, and nothing errors |
@@ -36,9 +37,14 @@ n = yaml.safe_load(open("catalog/agents.yaml"))["agents"]
 f = lambda a, g: sorted(set().union(*(g(e) for e in a)))
 print("entries   ", len(o), "->", len(n))
 for label, g in (("ids", lambda e: {e["id"]}), ("keys", set),
-                 ("classes", lambda e: {e.get("classification")})):
+                 ("classes", lambda e: {e.get("classification")}),
+                 ("platforms", lambda e: {(e["id"], p) for p in e.get("platforms", ())})):
     print(f"{label:10}", sorted(set(f(o,g)) - set(f(n,g))), "gone")
 EOF
+$ pols() { git show "$1:osquery/dist/fleet-policies.yml" | grep '^  name:'; }
+$ if o=$(pols <prev-tag>) && n=$(pols HEAD) && [ -n "$o" ] && [ -n "$n" ]; then
+    diff <(printf '%s\n' "$o") <(printf '%s\n' "$n") && echo "same Fleet policies"
+  else echo "pols: NOT COMPARED, see the error above"; fi
 $ art() {  # discovery-$2.sql at $1, comments stripped, one UNION ALL branch per line
     local sql
     sql=$(git show "$1:osquery/dist/discovery-$2.sql" 2>/dev/null \
@@ -283,8 +289,10 @@ State the change, then its consequence for someone running this on a fleet. Cove
 - **Payload and cost** if either moved, with the measured number and the machine. `osquery/queries/COST.md`
   must say so too, and if enumeration is pushing the payload toward the 30KB budget, that number
   belongs in the notes.
-- **Which platform a claim is about.** The coverage figure is all-or-nothing and says nothing about
-  where. For a platform claim, name the scenarios that proved it.
+- **Which platform a claim is about.** The gate holds each platform an agent lists to a CI run
+  there that produced one of its identifiers, so `platforms:` is a proved claim. The identifier
+  figure is not per platform: a value proved anywhere counts. For one route on one platform,
+  name the scenarios that proved it.
 - **A cold cost, where one is recorded.** `measure.py` reports the floor of three warm runs;
   `osquery/queries/COST.md` carries the cold number, which is what an endpoint's first scheduled scan pays.
 - **Known gaps** carried forward, with the reason each is a gap. A gap belonging to one query is
