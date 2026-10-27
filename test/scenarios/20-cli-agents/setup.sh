@@ -52,3 +52,14 @@ retry "the Pi installer" pi_once || true
 # The run records what actually appeared; if the directory shows up, coverage reports it,
 # and if it does not, the gap stays visible and honest.
 command -v codex >/dev/null 2>&1 && (codex --version >/dev/null 2>&1 || true)
+
+# CLAUDE CODE RUNNING, for process_paths: a running process reports where the
+# ~/.local/bin/claude link leads, under ~/.local/share/claude/versions/. 83-linux-claude-running
+# says why `claude mcp serve` and why a sleep holds its stdin open. nohup rather than setsid,
+# which macOS lacks; it lives until the job ends, past the step that queries it.
+if [ -x "$HOME/.local/bin/claude" ]; then
+  nohup bash -c 'sleep 3600 | "$HOME/.local/bin/claude" mcp serve' </dev/null >/tmp/claude-mcp.log 2>&1 &
+  for _ in {1..15}; do pgrep -f 'claude mcp serve' >/dev/null && break; sleep 2; done
+  pgrep -fl 'claude mcp serve' | sed 's/^/  running: /' \
+    || { echo "WARN: claude mcp serve is not running. It said:"; tail -15 /tmp/claude-mcp.log; }
+fi

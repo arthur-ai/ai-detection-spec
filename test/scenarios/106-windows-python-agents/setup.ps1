@@ -19,4 +19,7 @@ Remove-Item Env:PIPX_HOME, Env:PIPX_BIN_DIR -ErrorAction SilentlyContinue
   Invoke-Try 'uv tool install aider-chat' 'python' @('-m', 'uv', 'tool', 'install', '--force',
                                                      'aider-chat')
 })
+# `aider --just-check-update` is what writes ~\.aider, as 72-linux-python-agents runs it.
+[void](Invoke-Try 'aider --just-check-update' (Join-Path $env:USERPROFILE '.local\bin\aider.exe') @('--just-check-update'))
+Write-Host "~\.aider exists: $(Test-Path (Join-Path $env:USERPROFILE '.aider'))"
 exit 0

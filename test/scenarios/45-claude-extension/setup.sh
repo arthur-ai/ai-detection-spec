@@ -185,3 +185,22 @@ if [ $? != 0 ]; then
   grep -i 'extension\|load' /tmp/chrome.log | tail -15 | sed 's/^/      /' >&2
   exit 1
 fi
+
+# THE OTHER END OF CLAUDE'S BRIDGE, as 104-windows-browser proves it on Windows, where Claude
+# Desktop registered its native-messaging host once it ran with this profile present and not
+# without one. The cask is 10-desktop-apps'. `open -g` returns at once and the wait is
+# bounded here, so a launch that hangs costs two minutes rather than the job.
+BRIDGE="$UDD/NativeMessagingHosts/com.anthropic.claude_browser_extension.json"
+if need_brew && brew install --cask claude; then
+  open -g -a Claude || echo "WARN: Claude Desktop did not launch"
+  for i in {1..60}; do [ -f "$BRIDGE" ] && break; sleep 2; done
+  if [ -f "$BRIDGE" ]; then
+    echo "Claude Desktop registered its bridge after about $((2 * i))s"
+  else
+    echo "WARN: Claude Desktop registered no bridge in 120s. NativeMessagingHosts holds:"
+    ls "$UDD/NativeMessagingHosts" 2>&1 | sed 's/^/      /'
+  fi
+  pkill -x Claude || true
+else
+  echo "WARN: Claude Desktop did not install"
+fi

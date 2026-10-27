@@ -1,0 +1,63 @@
+{
+  "description": "Agents as VS Code extensions and JetBrains plugins on macOS, matched by extension id and plugin directory.",
+  "platform": "darwin",
+  "counts": {
+    "file": ">=0",
+    "npm": ">=0",
+    "app": ">=0",
+    "brew": ">=0",
+    "ext": ">=0",
+    "nmh": ">=0",
+    "daemon": ">=0",
+    "port": ">=0",
+    "vscodeext": ">=13",
+    "jbplugin": ">=6",
+    "proc": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "claude-code",
+      "codex-cli",
+      "cline",
+      "continue",
+      "roo-code",
+      "kilo-code",
+      "augment",
+      "gemini-code-assist",
+      "amazon-q",
+      "cody",
+      "codegpt",
+      "blackbox",
+      "copilot-cli"
+    ],
+    "forbid": [
+      "openclaw"
+    ]
+  },
+  "require_rows": [
+    {"kind": "vscodeext", "id": "anthropic.claude-code"},
+    {"kind": "vscodeext", "id": "openai.chatgpt"},
+    {"kind": "vscodeext", "id": "saoudrizwan.claude-dev"},
+    {"kind": "vscodeext", "id": "continue.continue"},
+    {"kind": "vscodeext", "id": "rooveterinaryinc.roo-cline"},
+    {"kind": "vscodeext", "id": "kilocode.kilo-code"},
+    {"kind": "vscodeext", "id": "augment.vscode-augment"},
+    {"kind": "vscodeext", "id": "google.geminicodeassist"},
+    {"kind": "vscodeext", "id": "amazonwebservices.amazon-q-vscode"},
+    {"kind": "vscodeext", "id": "sourcegraph.cody-ai"},
+    {"kind": "vscodeext", "id": "danielsanmedium.dscodegpt"},
+    {"kind": "vscodeext", "id": "blackboxapp.blackbox"},
+    {"kind": "vscodeext", "id": "blackboxapp.blackboxagent"},
+    {"kind": "jbplugin", "id": "continue-intellij-extension"},
+    {"kind": "jbplugin", "id": "cline"},
+    {"kind": "jbplugin", "id": "github-copilot-intellij"},
+    {"kind": "jbplugin", "id": "gemini"},
+    {"kind": "jbplugin", "id": "plugin-amazonq"},
+    {"kind": "jbplugin", "id": "Sourcegraph"}
+  ],
+  "why": "vscode.sql and jetbrains.sql on macOS, which no scenario reached before: every value here was proved on Linux only. Each identifier is pinned by its own row, because an agent with two values passes must_find on either. The values are the ones 78, 80, 85 and 86 read off real installs on Linux; an extension id and a plugin directory are the same on every platform.",
+  "known_gaps": [
+    "One host carries every extension, so the controls that keep Cline apart from Roo Code and Claude Code apart from Cline are held on Linux, by 78 and 85, not here.",
+    "JetBrains plugins are unpacked the way an IDE unpacks them, with no IDE installed, as on Linux in 80 and 86."
+  ]
+}

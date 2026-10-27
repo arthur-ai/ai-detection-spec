@@ -24,10 +24,11 @@
   },
   "require_rows": [
     {"kind": "file", "id": "\\AppData\\Local\\pipx\\pipx\\venvs\\aider-chat\\"},
-    {"kind": "file", "id": "\\AppData\\Roaming\\uv\\tools\\aider-chat\\"}
+    {"kind": "file", "id": "\\AppData\\Roaming\\uv\\tools\\aider-chat\\"},
+    {"kind": "file", "id": "\\.aider\\"}
   ],
-  "why": "The two Windows tool-dir layouts against real installs. aider installs as aider-chat, so a directory named for the command would match nothing; the row names the package, and the pypi route reads the name back under the Windows home root. Installed and never run, so ~\\.aider does not exist and the tool directories are the only witness. `forbid` names CLI agents whose launchers share ~\\.local\\bin with aider's.",
+  "why": "The two Windows tool-dir layouts against real installs. aider installs as aider-chat, so a directory named for the command would match nothing; the row names the package, and the pypi route reads the name back under the Windows home root. Run once with --just-check-update, which writes ~\\.aider, and each witness is pinned by its own row so none stands in for another. `forbid` names CLI agents whose launchers share ~\\.local\\bin with aider's.",
   "known_gaps": [
-    "Installed, never run, so aider's own state directory is not produced here."
+    "Run only for its update check: nothing exercises aider working on code."
   ]
 }

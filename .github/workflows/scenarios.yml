@@ -196,7 +196,10 @@ jobs:
           - 14-meta-muse
           - 20-cli-agents
           - 21-cli-agents-homebrew
+          - 22-cli-installers
+          - 23-pi-npm
           - 25-python-agents
+          - 30-ide-agents
           - 40-browser
           - 45-claude-extension
           - 50-autonomous
@@ -378,6 +381,9 @@ jobs:
           - 87-linux-pi
           - 88-linux-pi-legacy
           - 89-linux-claude-deb
+          - 92-linux-browser-agents
+          - 93-linux-openclaw-retired-names
+          - 94-linux-claude-npm
           # 77-linux-rpm and 91-linux-claude-rpm need dnf, which no ubuntu label has, so
           # they are under the container job only. A scenario listed where it can never
           # run spends a runner on exiting 3; tools/check_workflows.py still fails one
@@ -501,6 +507,7 @@ jobs:
           - 104-windows-browser
           - 105-windows-desktop-apps
           - 106-windows-python-agents
+          - 107-windows-npm-agents
         exclude: ${{ fromJSON(needs.scope.outputs.exclude_scenario_windows || '[]') }}
     steps:
       - uses: actions/checkout@v4

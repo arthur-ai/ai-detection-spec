@@ -1,0 +1,36 @@
+{
+  "description": "Claude Code installed from npm on Linux, found by package name.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "deb+rpm": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=0",
+    "jbplugin": ">=0",
+    "nmh": ">=0",
+    "npm": ">=1",
+    "port": ">=0",
+    "proc": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "claude-code"
+    ],
+    "forbid": [
+      "openclaw",
+      "cursor"
+    ]
+  },
+  "require_rows": [
+    {"kind": "npm", "id": "@anthropic-ai/claude-code"}
+  ],
+  "why": "The npm route on Linux for the package 21-cli-agents-homebrew and 101-windows-cli-agents prove on macOS and Windows. The row is pinned, so the native install the package may also lay down cannot stand in for it.",
+  "known_gaps": [
+    "Installed, never run: ~/.claude is not created here."
+  ]
+}

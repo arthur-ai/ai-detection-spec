@@ -1,0 +1,37 @@
+{
+  "description": "OpenClaw's retired npm names, clawdbot and moltbot, installed on Linux.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "deb+rpm": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=0",
+    "jbplugin": ">=0",
+    "nmh": ">=0",
+    "npm": ">=2",
+    "port": ">=0",
+    "proc": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "openclaw"
+    ],
+    "forbid": [
+      "pi",
+      "claude-code"
+    ]
+  },
+  "require_rows": [
+    {"kind": "npm", "id": "clawdbot"},
+    {"kind": "npm", "id": "moltbot"}
+  ],
+  "why": "The npm route on Linux for the two names 56-openclaw-retired-names proves on macOS. Each package is its own witness, pinned by its row. `pi` is forbidden because OpenClaw is built on Pi's libraries: npm -g nests them, so installing OpenClaw must not read as Pi.",
+  "known_gaps": [
+    "Installed with --ignore-scripts and never run: the rows prove the packages are present, not that the retired builds still start."
+  ]
+}

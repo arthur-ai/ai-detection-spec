@@ -1,9 +1,9 @@
 {
-  "description": "The Claude browser extension is collected as kind=ext and matched by id.",
+  "description": "The Claude browser extension is collected as kind=ext and matched by id, and Claude Desktop's bridge to it as kind=nmh.",
   "platform": "darwin",
   "counts": {
     "ext": ">=1",
-    "nmh": ">=0",
+    "nmh": ">=1",
     "app": ">=0",
     "brew": ">=0",
     "file": ">=0",
@@ -20,12 +20,14 @@
       "harpa",
       "monica",
       "sider",
-      "merlin"
+      "merlin",
+      "claude-desktop"
     ]
   },
   "why": "Verifies the ext route end to end: a real signed artifact, a real profile, and an identifier osquery derives from the manifest key rather than one we assert. The same method works on any Chromium browser -- osquery's chrome_extensions spans 11 browser_types and a Chromium extension id is key-derived, so it is identical in Brave, Edge and Chromium. The extension is then registered by Chrome for Testing's --load-extension, not from the store, so the row's `extra` carries sideloaded:<sha256 of manifest.json>. The hash changes with every release, so require_rows pins the token's prefix to the Claude row: every extension here is sideloaded, so any of them would satisfy a probe on its own.",
   "require_rows": [
-    {"kind": "ext", "id": "fcoeoabgfenejglbffodgkkbkcdhcgfn", "extra": ",sideloaded:"}
+    {"kind": "ext", "id": "fcoeoabgfenejglbffodgkkbkcdhcgfn", "extra": ",sideloaded:"},
+    {"kind": "nmh", "id": "com.anthropic.claude_browser_extension.json"}
   ],
   "must_contain": [
     "fcoeoabgfenejglbffodgkkbkcdhcgfn",
@@ -37,6 +39,7 @@
     "camppjleccjaphfdbohjdohecfnoikec"
   ],
   "known_gaps": [
-    "Chrome for Testing registers the extension, because branded Chrome 137 and later refuse --load-extension. Branded Chrome's own install, update and ExtensionInstallForcelist paths are untested, and whether the policy needs an MDM-delivered profile on macOS is UNVERIFIED."
+    "Chrome for Testing registers the extension, because branded Chrome 137 and later refuse --load-extension. Branded Chrome's own install, update and ExtensionInstallForcelist paths are untested, and whether the policy needs an MDM-delivered profile on macOS is UNVERIFIED.",
+    "Claude Desktop's bridge is proved with this profile and the extension present, as on Windows, where it registered with them and not without; which of the two it needs is not measured."
   ]
 }

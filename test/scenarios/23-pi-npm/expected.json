@@ -1,0 +1,34 @@
+{
+  "description": "Pi from npm on macOS, under its current and its earlier scope, never run.",
+  "platform": "darwin",
+  "counts": {
+    "file": ">=0",
+    "npm": ">=2",
+    "app": ">=0",
+    "brew": ">=0",
+    "ext": ">=0",
+    "nmh": ">=0",
+    "daemon": ">=0",
+    "port": ">=0",
+    "vscodeext": ">=0",
+    "jbplugin": ">=0",
+    "proc": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "pi"
+    ],
+    "forbid": [
+      "openclaw",
+      "claude-code"
+    ]
+  },
+  "require_rows": [
+    {"kind": "npm", "id": "@earendil-works/pi-coding-agent"},
+    {"kind": "npm", "id": "@mariozechner/pi-coding-agent"}
+  ],
+  "why": "The npm route on macOS for both scopes 87-linux-pi and 88-linux-pi-legacy prove on Linux. Each row is pinned, so one scope cannot pass for the other. openclaw is forbidden because it is built on Pi's libraries, and installing Pi must not read as it.",
+  "known_gaps": [
+    "Both scopes share one host, which no real machine would: the second install takes the `pi` link with --force. The rows are each package's own directory, which --force does not touch."
+  ]
+}

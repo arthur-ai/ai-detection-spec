@@ -43,30 +43,30 @@ Operates on a codebase, usually with shell access.
 | name | platforms | identifiers | scenarios |
 |---|---|---|---|
 | **aider** | macOS, Linux, Windows | **`aider`**, **`aider-chat`**, **`paulgauthier/aider`** ◐, **`~/.aider`** ◐ | 106-windows-python-agents, 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
-| **Amazon Q Developer** | macOS, Linux | **`amazonwebservices.amazon-q-vscode`** ◐, **`plugin-amazonq`** ◐ | 85-linux-vscode-agents, 86-linux-jetbrains-agents |
+| **Amazon Q Developer** | macOS, Linux | **`amazonwebservices.amazon-q-vscode`** ◐, **`plugin-amazonq`** ◐ | 30-ide-agents, 85-linux-vscode-agents, 86-linux-jetbrains-agents |
 | **Google Antigravity** | macOS | **`com.google.antigravity`**, **`com.google.antigravity-ide`**, **`antigravity`**, **`antigravity-ide`** | 10-desktop-apps |
-| **Augment Code** | macOS, Linux | **`@augmentcode/auggie`**, **`augment.vscode-augment`** ◐ | 20-cli-agents, 71-linux-cli-agents, 85-linux-vscode-agents |
-| **BLACKBOX AI** | macOS, Linux | **`blackboxapp.blackbox`** ◐, **`blackboxapp.blackboxagent`** ◐ | 85-linux-vscode-agents |
-| **Claude Code** | macOS, Linux, Windows | **`@anthropic-ai/claude-code`** ◐, **`anthropic.claude-code`** ◐, **`~/.claude`**, **`~/.local/bin/claude`** ◐, **`~/.local/bin/claude.exe`** ◐, **`~/.local/share/claude/versions/`** ◐, **`~/.local/bin/claude.exe`** ◐, **`claude-code`**, **`claude-code`** | 101-windows-cli-agents, 102-windows-claude-native, 103-windows-vscode-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 83-linux-claude-running, 85-linux-vscode-agents, 89-linux-claude-deb, 90-demo-fleet, 91-linux-claude-rpm |
-| **Cline** | macOS, Linux, Windows | **`cline`** ◐, **`saoudrizwan.claude-dev`** ◐, **`cline`** ◐ | 103-windows-vscode-agents, 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode, 80-linux-jetbrains |
-| **CodeGPT** | macOS, Linux | **`danielsanmedium.dscodegpt`** ◐ | 85-linux-vscode-agents |
-| **Codex CLI** | macOS, Linux, Windows | **`codex`**, **`@openai/codex`**, **`openai.chatgpt`** ◐, **`~/.codex`** ◐ | 101-windows-cli-agents, 103-windows-vscode-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 85-linux-vscode-agents, 90-demo-fleet |
-| **Cody** | macOS, Linux | **`sourcegraph.cody-ai`** ◐, **`Sourcegraph`** ◐ | 85-linux-vscode-agents, 86-linux-jetbrains-agents |
-| **Continue** | macOS, Linux, Windows | **`@continuedev/cli`** ◐, **`continue.continue`** ◐, **`continue-intellij-extension`** ◐ | 103-windows-vscode-agents, 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode, 80-linux-jetbrains |
-| **GitHub Copilot** | macOS, Linux, Windows | **`copilot-cli`**, **`@github/copilot`**, **`github-copilot-intellij`** ◐ | 101-windows-cli-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 86-linux-jetbrains-agents |
-| **Cursor** | macOS, Linux, Windows | **`com.todesktop.230313mzl4w4u92`**, **`cursor`**, **`cursor-cli`**, **`~/.local/bin/cursor-agent`** ◐, **`~/AppData/Local/Programs/cursor/`** ◐, **`cursor`**, **`cursor`**, **`cursor.desktop`**, **`{DADADADA-ADAD-ADAD-ADAD-ADADADADADAD}}_is1`** | 10-desktop-apps, 105-windows-desktop-apps, 21-cli-agents-homebrew, 73-linux-deb, 77-linux-rpm, 84-linux-installers, 90-demo-fleet |
+| **Augment Code** | macOS, Linux | **`@augmentcode/auggie`**, **`augment.vscode-augment`** ◐ | 20-cli-agents, 30-ide-agents, 71-linux-cli-agents, 85-linux-vscode-agents |
+| **BLACKBOX AI** | macOS, Linux | **`blackboxapp.blackbox`** ◐, **`blackboxapp.blackboxagent`** ◐ | 30-ide-agents, 85-linux-vscode-agents |
+| **Claude Code** | macOS, Linux, Windows | **`@anthropic-ai/claude-code`** ◐, **`anthropic.claude-code`** ◐, **`~/.claude`**, **`~/.local/bin/claude`** ◐, **`~/.local/bin/claude.exe`** ◐, **`~/.local/share/claude/versions/`** ◐, **`~/.local/bin/claude.exe`** ◐, **`claude-code`**, **`claude-code`** | 101-windows-cli-agents, 102-windows-claude-native, 103-windows-vscode-agents, 20-cli-agents, 21-cli-agents-homebrew, 30-ide-agents, 71-linux-cli-agents, 83-linux-claude-running, 85-linux-vscode-agents, 89-linux-claude-deb, 90-demo-fleet, 91-linux-claude-rpm, 94-linux-claude-npm |
+| **Cline** | macOS, Linux, Windows | **`cline`** ◐, **`saoudrizwan.claude-dev`** ◐, **`cline`** ◐ | 103-windows-vscode-agents, 107-windows-npm-agents, 20-cli-agents, 30-ide-agents, 71-linux-cli-agents, 78-linux-vscode, 80-linux-jetbrains |
+| **CodeGPT** | macOS, Linux | **`danielsanmedium.dscodegpt`** ◐ | 30-ide-agents, 85-linux-vscode-agents |
+| **Codex CLI** | macOS, Linux, Windows | **`codex`**, **`@openai/codex`**, **`openai.chatgpt`** ◐, **`~/.codex`** ◐ | 101-windows-cli-agents, 103-windows-vscode-agents, 20-cli-agents, 21-cli-agents-homebrew, 30-ide-agents, 71-linux-cli-agents, 85-linux-vscode-agents, 90-demo-fleet |
+| **Cody** | macOS, Linux | **`sourcegraph.cody-ai`** ◐, **`Sourcegraph`** ◐ | 30-ide-agents, 85-linux-vscode-agents, 86-linux-jetbrains-agents |
+| **Continue** | macOS, Linux, Windows | **`@continuedev/cli`** ◐, **`continue.continue`** ◐, **`continue-intellij-extension`** ◐ | 103-windows-vscode-agents, 107-windows-npm-agents, 20-cli-agents, 30-ide-agents, 71-linux-cli-agents, 78-linux-vscode, 80-linux-jetbrains |
+| **GitHub Copilot** | macOS, Linux, Windows | **`copilot-cli`**, **`@github/copilot`**, **`github-copilot-intellij`** ◐ | 101-windows-cli-agents, 20-cli-agents, 21-cli-agents-homebrew, 30-ide-agents, 71-linux-cli-agents, 86-linux-jetbrains-agents |
+| **Cursor** | macOS, Linux, Windows | **`com.todesktop.230313mzl4w4u92`**, **`cursor`**, **`cursor-cli`**, **`~/.local/bin/cursor-agent`** ◐, **`~/AppData/Local/Programs/cursor/`** ◐, **`cursor`**, **`cursor`**, **`cursor.desktop`**, **`{DADADADA-ADAD-ADAD-ADAD-ADADADADADAD}}_is1`** | 10-desktop-apps, 105-windows-desktop-apps, 21-cli-agents-homebrew, 22-cli-installers, 73-linux-deb, 77-linux-rpm, 84-linux-installers, 90-demo-fleet |
 | **Gemini CLI** | macOS, Linux, Windows | **`gemini-cli`**, **`@google/gemini-cli`** | 101-windows-cli-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 81-linux-bun |
-| **Gemini Code Assist** | macOS, Linux | **`google.geminicodeassist`** ◐, **`gemini`** ◐ | 85-linux-vscode-agents, 86-linux-jetbrains-agents |
-| **goose** | macOS, Linux | **`com.electron.goose`**, **`block-goose-cli`**, **`block-goose`**, **`ghcr.io/block/goose`** ◐, **`https://github.com/block/goose`** ◐, **`~/.local/bin/goose`** ◐ | 13-desktop-apps-more, 21-cli-agents-homebrew, 79-linux-image, 84-linux-installers |
-| **Grok Build** | macOS, Linux | **`~/.grok`** ◐ | 84-linux-installers |
-| **Kilo Code** | macOS, Linux, Windows | **`@kilocode/cli`** ◐, **`kilocode.kilo-code`** ◐ | 103-windows-vscode-agents, 20-cli-agents, 71-linux-cli-agents, 85-linux-vscode-agents |
+| **Gemini Code Assist** | macOS, Linux | **`google.geminicodeassist`** ◐, **`gemini`** ◐ | 30-ide-agents, 85-linux-vscode-agents, 86-linux-jetbrains-agents |
+| **goose** | macOS, Linux | **`com.electron.goose`**, **`block-goose-cli`**, **`block-goose`**, **`ghcr.io/block/goose`** ◐, **`https://github.com/block/goose`** ◐, **`~/.local/bin/goose`** ◐ | 13-desktop-apps-more, 21-cli-agents-homebrew, 22-cli-installers, 79-linux-image, 84-linux-installers |
+| **Grok Build** | macOS, Linux | **`~/.grok`** ◐ | 22-cli-installers, 84-linux-installers |
+| **Kilo Code** | macOS, Linux, Windows | **`@kilocode/cli`** ◐, **`kilocode.kilo-code`** ◐ | 103-windows-vscode-agents, 107-windows-npm-agents, 20-cli-agents, 30-ide-agents, 71-linux-cli-agents, 85-linux-vscode-agents |
 | **Kiro** | macOS | **`dev.kiro.desktop`**, **`kiro`** | 10-desktop-apps |
-| **Kiro CLI** | macOS, Linux | **`com.amazon.codewhisperer`**, **`kiro-cli`**, **`~/.local/bin/kiro-cli`** ◐ | 21-cli-agents-homebrew, 84-linux-installers |
+| **Kiro CLI** | macOS, Linux | **`com.amazon.codewhisperer`**, **`kiro-cli`**, **`~/.local/bin/kiro-cli`** ◐ | 21-cli-agents-homebrew, 22-cli-installers, 84-linux-installers |
 | **Muse Code** | macOS, Linux | **`muse-code`**, **`~/.local/bin/muse`** | 14-meta-muse, 21-cli-agents-homebrew, 84-linux-installers |
-| **opencode** | macOS, Linux | **`opencode`**, **`opencode-ai`**, **`~/.opencode`** ◐ | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 84-linux-installers |
+| **opencode** | macOS, Linux | **`opencode`**, **`opencode-ai`**, **`~/.opencode`** ◐ | 20-cli-agents, 21-cli-agents-homebrew, 22-cli-installers, 71-linux-cli-agents, 84-linux-installers |
 | **OpenHands** | macOS, Linux | **`ghcr.io/openhands/openhands`** ◐, **`ghcr.io/all-hands-ai/openhands`** ◐, **`https://github.com/OpenHands/OpenHands`** ◐ | 79-linux-image |
-| **Pi** | macOS, Linux | **`@earendil-works/pi-coding-agent`** ◐, **`@mariozechner/pi-coding-agent`** ◐, **`~/.pi`** | 20-cli-agents, 84-linux-installers, 87-linux-pi, 88-linux-pi-legacy |
-| **Roo Code** | macOS, Linux, Windows | **`rooveterinaryinc.roo-cline`** ◐ | 103-windows-vscode-agents, 85-linux-vscode-agents |
+| **Pi** | macOS, Linux | **`@earendil-works/pi-coding-agent`** ◐, **`@mariozechner/pi-coding-agent`** ◐, **`~/.pi`** | 20-cli-agents, 23-pi-npm, 84-linux-installers, 87-linux-pi, 88-linux-pi-legacy |
+| **Roo Code** | macOS, Linux, Windows | **`rooveterinaryinc.roo-cline`** ◐ | 103-windows-vscode-agents, 30-ide-agents, 85-linux-vscode-agents |
 | **SWE-agent** | macOS, Linux | **`sweagent/swe-agent`** ◐ | 79-linux-image |
 | **Trae** | macOS | **`com.trae.app`**, **`cn.trae.app`**, **`trae`**, **`trae-cn`** | 13-desktop-apps-more |
 | **Windsurf** | macOS, Windows | **`com.exafunction.windsurf`**, **`devin-desktop`**, **`{5A8B7D94-9B5F-4D1F-93FC-5609F7159349}_is1`** | 10-desktop-apps, 105-windows-desktop-apps |
@@ -79,7 +79,7 @@ General-purpose, and often bridged to messaging.
 |---|---|---|---|
 | **Hermes Agent** | macOS, Linux | **`hermes-agent`**, **`hermes-agent`**, **`~/.hermes`**, **`~/.local/bin/hermes`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents |
 | **Muse for Mac** | macOS | **`com.meta.endo`** | 14-meta-muse |
-| **OpenClaw** | macOS, Linux | **`ai.openclaw.mac`**, **`com.clawdbot.mac`**, **`openclaw`**, **`ai.openclaw.`**, **`openclaw`**, **`clawdbot`** ◐, **`moltbot`** ◐, **`~/.openclaw`** | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 57-clawdbot-era, 60-persistence, 82-linux-running, 90-demo-fleet |
+| **OpenClaw** | macOS, Linux | **`ai.openclaw.mac`**, **`com.clawdbot.mac`**, **`openclaw`**, **`ai.openclaw.`**, **`openclaw`**, **`clawdbot`** ◐, **`moltbot`** ◐, **`~/.openclaw`** | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 57-clawdbot-era, 60-persistence, 82-linux-running, 90-demo-fleet, 93-linux-openclaw-retired-names |
 
 ## AI browser
 
@@ -97,11 +97,11 @@ An extension that acts inside the browser on the user's behalf.
 
 | name | platforms | identifiers | scenarios |
 |---|---|---|---|
-| **Claude in Chrome** | macOS, Linux, Windows | **`fcoeoabgfenejglbffodgkkbkcdhcgfn`** ◐ | 104-windows-browser, 45-claude-extension |
-| **HARPA AI** | macOS, Linux, Windows | **`eanggfilgoajaocelnaflolkadkeghjp`** ◐ | 104-windows-browser, 45-claude-extension |
-| **Merlin** | macOS, Linux, Windows | **`camppjleccjaphfdbohjdohecfnoikec`** ◐ | 104-windows-browser, 45-claude-extension |
-| **Monica** | macOS, Linux, Windows | **`ofpnmcalabcbjgholdjcjblkibolbppb`** ◐ | 104-windows-browser, 45-claude-extension |
-| **Sider** | macOS, Linux, Windows | **`difoiogjjojoaoomphldepapgpbgkhkb`** ◐ | 104-windows-browser, 45-claude-extension |
+| **Claude in Chrome** | macOS, Linux, Windows | **`fcoeoabgfenejglbffodgkkbkcdhcgfn`** ◐ | 104-windows-browser, 45-claude-extension, 92-linux-browser-agents |
+| **HARPA AI** | macOS, Linux, Windows | **`eanggfilgoajaocelnaflolkadkeghjp`** ◐ | 104-windows-browser, 45-claude-extension, 92-linux-browser-agents |
+| **Merlin** | macOS, Linux, Windows | **`camppjleccjaphfdbohjdohecfnoikec`** ◐ | 104-windows-browser, 45-claude-extension, 92-linux-browser-agents |
+| **Monica** | macOS, Linux, Windows | **`ofpnmcalabcbjgholdjcjblkibolbppb`** ◐ | 104-windows-browser, 45-claude-extension, 92-linux-browser-agents |
+| **Sider** | macOS, Linux, Windows | **`difoiogjjojoaoomphldepapgpbgkhkb`** ◐ | 104-windows-browser, 45-claude-extension, 92-linux-browser-agents |
 
 ## Desktop assistant
 
@@ -110,7 +110,7 @@ A chat client that can run tools on the machine, for example through MCP.
 | name | platforms | identifiers | scenarios |
 |---|---|---|---|
 | **ChatGPT Desktop** | macOS | **`com.openai.codex`**, **`com.openai.chat`**, **`chatgpt`** | 10-desktop-apps, 12-chatgpt-pre-rename, 90-demo-fleet |
-| **Claude Desktop** | macOS, Windows | **`com.anthropic.claudefordesktop`**, **`claude`**, **`com.anthropic.claude_browser_extension.json`** ◐, **`Claude_pzs8sxrjxfjjc`** | 10-desktop-apps, 104-windows-browser, 105-windows-desktop-apps, 90-demo-fleet |
+| **Claude Desktop** | macOS, Windows | **`com.anthropic.claudefordesktop`**, **`claude`**, **`com.anthropic.claude_browser_extension.json`** ◐, **`Claude_pzs8sxrjxfjjc`** | 10-desktop-apps, 104-windows-browser, 105-windows-desktop-apps, 45-claude-extension, 90-demo-fleet |
 | **Perplexity** | macOS | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
 
 > **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = superseded: a run proved it and the current release no longer emits it. ∅ = no CI runner for its platform. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it. ◐ = proved on some of the platforms its agent is listed for ([which](limits.md#proven-on-fewer-platforms-than-claimed)).

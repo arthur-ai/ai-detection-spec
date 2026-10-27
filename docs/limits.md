@@ -127,7 +127,7 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 100-windows-baseline | The runner's npm global prefix is C:\npm\prefix, which osquery's npm_packages does not search, so `npm` is pinned at zero or more here. 101-windows-cli-agents moves the prefix back to npm's default. |
 | 100-windows-baseline | Windows Server 2025, not a client edition: no Microsoft Store, so no Store-installed lookalike is on the machine. |
 | 101-windows-cli-agents | A global prefix moved anywhere npm_packages does not search, as this runner's image does, is not read (docs/blind-spots.yaml). |
-| 101-windows-cli-agents | Installed, never run: nothing here creates a CLI's state directory. |
+| 101-windows-cli-agents | Only Codex is run, so ~\.codex is the one state directory proved here; the other three are installed and never run. |
 | 102-windows-claude-native | The installer may also create ~\.claude, which names the agent too, so must_find alone would pass with either new value wrong. require_rows pins both rows, and the coverage gate holds each value to a row it matched. |
 | 102-windows-claude-native | A launch through an 8.3 short path keeps the short name in processes.path, which no value matches. Nothing here launches one. |
 | 103-windows-vscode-agents | VS Code itself, from its user installer. Cursor and Windsurf read the same extension directories under their own names and are not exercised here. |
@@ -136,15 +136,21 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 105-windows-desktop-apps | Each per-user install is read while its user is signed in: HKEY_USERS holds loaded hives only, so the same install by a user who is signed out leaves no Uninstall or MSIX row (docs/blind-spots.yaml). |
 | 105-windows-desktop-apps | Windsurf is not launched, so its liveness is unproven. |
 | 105-windows-desktop-apps | Sign-in gated, as on macOS: nothing exercises behaviour that appears once a user signs in. |
-| 106-windows-python-agents | Installed, never run, so aider's own state directory is not produced here. |
+| 106-windows-python-agents | Run only for its update check: nothing exercises aider working on code. |
+| 107-windows-npm-agents | Installed, never run: none of the three creates a state directory here. |
 | 12-chatgpt-pre-rename | The bundle id only. A direct download leaves no Homebrew record, so the `chatgpt` brew route is not exercised here; 10-desktop-apps covers it. |
 | 13-desktop-apps-more | Trae and Trae CN were read off their dmgs' Info.plist rather than a local install: the VM this was developed in had no IPv4 route to their CDNs. CI is the first real install of both. |
 | 13-desktop-apps-more | Sign-in gated, like 10: nothing exercises behaviour that appears once a user signs in. |
 | 14-meta-muse | `~/.local/bin/muse` claims the launcher only. muse-bin-<version> beside it is read as unmatched evidence, not as a value: the launcher is always written with it, so the agent is found anyway, and claiming every `muse-<something>` would claim other vendors' tools. |
 | 14-meta-muse | Sign-in gated once installed, like 10: Muse for Mac is never launched, so its first-run permission prompts and whatever it writes under ~/Library go unobserved, and Muse Code is never run, so ~/.muse -- which the binary names for projects and worktrees -- is not produced here. |
 | 14-meta-muse | The DMG is whatever the production Sparkle channel serves on the day. A build that changes its bundle id shows up as a missing com.meta.endo, which is the point; a build that only bumps the version is recorded as that version. |
+| 22-cli-installers | Nothing is run after installing, so state that appears on first use is unexamined, as in 84. |
+| 23-pi-npm | Both scopes share one host, which no real machine would: the second install takes the `pi` link with --force. The rows are each package's own directory, which --force does not touch. |
+| 30-ide-agents | One host carries every extension, so the controls that keep Cline apart from Roo Code and Claude Code apart from Cline are held on Linux, by 78 and 85, not here. |
+| 30-ide-agents | JetBrains plugins are unpacked the way an IDE unpacks them, with no IDE installed, as on Linux in 80 and 86. |
 | 40-browser | The planted extension is unreferenced by construction, so the sideloaded token is exercised only by 45-claude-extension. |
 | 45-claude-extension | Chrome for Testing registers the extension, because branded Chrome 137 and later refuse --load-extension. Branded Chrome's own install, update and ExtensionInstallForcelist paths are untested, and whether the policy needs an MDM-delivered profile on macOS is UNVERIFIED. |
+| 45-claude-extension | Claude Desktop's bridge is proved with this profile and the extension present, as on Windows, where it registered with them and not without; which of the two it needs is not measured. |
 | 55-openclaw-npm | The gateway runs with --allow-unconfigured --auth none, which is not how a real deployment runs it: enough to open the listener and keep the process this scenario asserts running, with no channel connected and no model reachable. |
 | 56-openclaw-retired-names | The npm names only. The macOS side of this lineage is 57-clawdbot-era, which installs the Clawdbot-era app and proves its bundle id. |
 | 57-clawdbot-era | The bundle id only. com.clawdbot. as a launchd prefix is NOT asserted: the binary contains com.clawdbot.gateway, but a LaunchAgent is registered when the app RUNS and this scenario only installs. Unverified, so not in the catalog either. |
@@ -176,7 +182,7 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 82-linux-running | The gateway runs with a throwaway token and no channel or model. This proves what a running gateway looks like to osquery, not an agent at work. |
 | 83-linux-claude-running | `claude mcp serve` runs unauthenticated with no client connected, so this proves what a running Claude Code process looks like to osquery, not an agent at work. |
 | 83-linux-claude-running | Skips in a default container, where osquery cannot read another user's executable path. It runs for real on CI's ubuntu runner and under test/run-gce.sh and test/run-ec2.sh. |
-| 84-linux-installers | Only the installers' Linux branches run here. On macOS opencode, Cursor CLI, goose and Kiro CLI are proved through Homebrew in 21-cli-agents-homebrew, Muse Code by the same installer in 14-meta-muse, and Pi's installer runs in 20-cli-agents; Grok Build's macOS install is unexercised, though ~/.grok is a posix route. |
+| 84-linux-installers | Only the installers' Linux branches run here. 22-cli-installers runs the macOS branches of the first five, Muse Code's runs in 14-meta-muse and Pi's in 20-cli-agents. |
 | 84-linux-installers | Nothing is run after installing, so state that appears on first use -- ~/.config/goose, ~/.local/share/opencode, ~/.muse -- is unexamined. Only the last is a top-level directory the enumeration would reach, and it is not a catalog value. |
 | 85-linux-vscode-agents | Installed into VS Code only. Cursor, Windsurf, VSCodium and Trae keep their own extension directories, which osquery reports under vscode_edition, and none is exercised. |
 | 85-linux-vscode-agents | Blackbox's extensions are unpublished from the Marketplace and arrive here as the VSIX the Marketplace still serves by URL. If that URL stops answering, the two ids can no longer be produced, which is the cue to supersede them rather than drop them. |
@@ -187,6 +193,10 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 89-linux-claude-deb | Anthropic's apk repository cannot be exercised, and no route could read it: osquery has no apk_packages table at any version, and osquery's own builds are glibc-linked and do not load on musl, so an Alpine host cannot run the collector at all. Measured 2026-10-20 on alpine:3.22; docs/blind-spots.yaml carries it. 91-linux-claude-rpm carries the dnf repository. |
 | 91-linux-claude-rpm | Runs in Rocky 9, Fedora 41 and Amazon Linux 2023 containers on an ubuntu runner, because GitHub offers no RPM-distro runner. A container has no systemd, so `unit` is 0 here and the systemd marker reports absent, correctly. |
 | 91-linux-claude-rpm | Anthropic's apk repository cannot be exercised, and no route could read it: osquery has no apk_packages table at any version, and osquery's own builds are glibc-linked and do not load on musl, so an Alpine host cannot run the collector at all. Measured 2026-10-20 on alpine:3.22; docs/blind-spots.yaml carries it. |
+| 92-linux-browser-agents | Chrome for Testing registers the extensions. Branded Chrome's own install and ExtensionInstallForcelist, which a managed fleet uses, are untested. |
+| 92-linux-browser-agents | x86_64 only: Google ships no Linux arm64 Chrome, so the arm64 runner skips this. |
+| 93-linux-openclaw-retired-names | Installed with --ignore-scripts and never run: the rows prove the packages are present, not that the retired builds still start. |
+| 94-linux-claude-npm | Installed, never run: ~/.claude is not created here. |
 
 `14-meta-muse` needs macOS 14 or newer, so CI skips it on older runners rather than failing it. Its `requires.json` carries the reason.
 

@@ -30,11 +30,12 @@
     {"kind": "npm", "id": "@anthropic-ai/claude-code", "loc": "\\AppData\\Roaming\\npm\\node_modules\\"},
     {"kind": "npm", "id": "@openai/codex"},
     {"kind": "npm", "id": "@google/gemini-cli"},
-    {"kind": "npm", "id": "@github/copilot"}
+    {"kind": "npm", "id": "@github/copilot"},
+    {"kind": "file", "id": "\\.codex\\"}
   ],
   "why": "npm_packages on Windows, under the npm prefix it searches. The rows carry the package names the catalog already holds for macOS and Linux, so this proves the Windows branch reads them in the form the npm route compares, with no path separator inside a scoped name. `forbid` names agents whose npm packages share a vendor or a word with these.",
   "known_gaps": [
     "A global prefix moved anywhere npm_packages does not search, as this runner's image does, is not read (docs/blind-spots.yaml).",
-    "Installed, never run: nothing here creates a CLI's state directory."
+    "Only Codex is run, so ~\\.codex is the one state directory proved here; the other three are installed and never run."
   ]
 }

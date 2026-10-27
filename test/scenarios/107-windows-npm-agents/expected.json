@@ -1,0 +1,35 @@
+{
+  "description": "Cline, Continue and Kilo Code installed as npm globals on Windows, found by package name.",
+  "platform": "windows",
+  "counts": {
+    "ext": ">=0",
+    "file": ">=1",
+    "msix": ">=1",
+    "nmh": ">=1",
+    "npm": ">=3",
+    "proc": ">=0",
+    "scan": ">=1",
+    "uninstall": ">=1",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "cline",
+      "continue",
+      "kilo-code"
+    ],
+    "forbid": [
+      "claude-code",
+      "roo-code"
+    ]
+  },
+  "require_rows": [
+    {"kind": "npm", "id": "cline"},
+    {"kind": "npm", "id": "@continuedev/cli"},
+    {"kind": "npm", "id": "@kilocode/cli"}
+  ],
+  "why": "The npm route on Windows for the three CLIs 20-cli-agents and 71-linux-cli-agents prove on macOS and Linux. Each package is the only witness for its agent here. `forbid` names Claude Code, whose extension id Cline's carries, and Roo Code, the fork Kilo Code descends from.",
+  "known_gaps": [
+    "Installed, never run: none of the three creates a state directory here."
+  ]
+}

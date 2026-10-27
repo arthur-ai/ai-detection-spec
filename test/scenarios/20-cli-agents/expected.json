@@ -53,5 +53,11 @@
       "kind": "npm",
       "id": "@mariozechner/pi-coding-agent"
     }
+  ],
+  "require_rows": [
+    {
+      "kind": "proc",
+      "loc": "/.local/share/claude/versions/"
+    }
   ]
 }

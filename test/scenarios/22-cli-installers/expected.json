@@ -1,0 +1,42 @@
+{
+  "description": "CLI agents from their vendors' own installers on macOS, found by the paths those write.",
+  "platform": "darwin",
+  "counts": {
+    "file": ">=5",
+    "npm": ">=0",
+    "app": ">=0",
+    "brew": ">=0",
+    "ext": ">=0",
+    "nmh": ">=0",
+    "daemon": ">=0",
+    "port": ">=0",
+    "vscodeext": ">=0",
+    "jbplugin": ">=0",
+    "proc": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "opencode",
+      "grok",
+      "cursor",
+      "goose",
+      "kiro-cli"
+    ],
+    "forbid": [
+      "claude-code",
+      "codex-cli",
+      "openclaw"
+    ]
+  },
+  "must_contain": [
+    "/.opencode/",
+    "/.grok/",
+    "/.local/bin/cursor-agent",
+    "/.local/bin/goose",
+    "/.local/bin/kiro-cli"
+  ],
+  "why": "The installers' macOS branches, which 84-linux-installers runs on Linux. Each path is the only witness for its agent here: nothing installs these through Homebrew on this host, so the catalog's path values, not a cask or formula, are what match. must_contain pins each path, so one agent found another way cannot pass for its path.",
+  "known_gaps": [
+    "Nothing is run after installing, so state that appears on first use is unexamined, as in 84."
+  ]
+}
