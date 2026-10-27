@@ -1265,6 +1265,34 @@ check("an identifier unproved on one claimed platform stays covered and is short
       and f"`{_full[2]}`" in _st.limits_markdown(_data).split("## Proven on fewer")[-1],
       f"{_full[:3]} without {_drop}: state {_after['state']}, short of {_st.short_of(_after)}")
 
+# THE RECORD'S PLATFORM, NOT THE SCENARIO'S: proven_on is what tools/observations.py reads,
+# the platform tools/export.py publishes, which falls back to the scenario's only when a
+# record has none. Retag every record of one identifier and proven_on must follow it.
+_tmp = pathlib.Path(_tf2.mkdtemp())
+try:
+    _sh.copytree(_st.SCENARIOS, _tmp / "scenarios")
+    _files = sorted((_tmp / "scenarios").glob("*/observed.json"))
+    _key = next((r["agent"], r["route"], str(r["value"])) for _p in _files
+                for r in json.loads(_p.read_text()).get("identifiers", [])
+                if r.get("run") and r.get("platform") == "linux")
+    for _p in _files:
+        _d = json.loads(_p.read_text())
+        for r in _d.get("identifiers", []):
+            if (r["agent"], r["route"], str(r["value"])) == _key:
+                r["platform"] = "plan9"
+        _p.write_text(json.dumps(_d))
+    old, _st.SCENARIOS = _st.SCENARIOS, _tmp / "scenarios"
+    try:
+        _data = _st.collect()
+    finally:
+        _st.SCENARIOS = old
+finally:
+    _sh.rmtree(_tmp, ignore_errors=True)
+_retag = next(i for a in _data["agents"] if a["id"] == _key[0] for i in a["identifiers"]
+              if (i["route"], i["value"]) == _key[1:])
+check("proven_on is each record's own platform, not its scenario's declared one",
+      _retag["proven_on"] == ["plan9"], f"{_key}: proven_on {_retag['proven_on']}")
+
 # --- running containers and vendor labels ------------------------------------------
 # The two routes added beside `images`, and the reason both exist: a tag is chosen by
 # whoever ran `docker tag`, a label is written by the vendor, and a running container says

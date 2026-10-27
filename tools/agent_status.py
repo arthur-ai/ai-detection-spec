@@ -469,14 +469,8 @@ def collect():
     catalog = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
 
     scenarios = collections.defaultdict(set)
-    # A scenario's platform is declared in its own expected.json, which is also what
-    # test/lint.sh and tools/check_workflows.py read. Taken from there rather than from an
-    # observation's `os` field, because "24.04" names a platform family only to a reader
-    # who already knows whose numbering that is.
-    scenario_platform = {}
     for path in sorted(SCENARIOS.glob("*/expected.json")):
         doc = json.loads(path.read_text())
-        scenario_platform[path.parent.name] = doc.get("platform")
         block = doc.get("classified", {})
         for aid in block.get("must_find", []):
             scenarios[aid].add(path.parent.name)
@@ -492,6 +486,9 @@ def collect():
     # Keyed by scenario, so an identifier proved only outside CI can be told apart from
     # one a pull request would catch.
     seen_in = collections.defaultdict(set)      # (agent, route, value) -> {scenario}
+    # The platform each record carries as tools/observations.py reads it, which is the one
+    # tools/export.py publishes as proof: not re-derived here, or the two could disagree.
+    seen_on = collections.defaultdict(set)      # (agent, route, value) -> {(scen, platform)}
     observed_os = set()
     # Only observations tools/export.py could publish as proof; see observations.provable().
     live = {k: [r for r in recs if _observations.provable(r)]
@@ -499,6 +496,7 @@ def collect():
     for key, recs in live.items():
         for rec in recs:
             seen_in[key].add(rec["scenario"])
+            seen_on[key].add((rec["scenario"], rec["platform"]))
             if rec.get("os"):
                 observed_os.add(rec["os"])
     in_ci = ci_scenarios()
@@ -512,6 +510,9 @@ def collect():
     # identifier of such an agent that the run did NOT produce was reached by the suite and
     # failed to appear -- worth naming separately from one nothing has ever tried.
     asserted_by = collections.defaultdict(set)      # agent id -> {scenario}
+    # Declared in each scenario's expected.json, as test/lint.sh and check_workflows.py read
+    # it, not taken from a record's `os`: "24.04" names a platform only to a reader who
+    # already knows whose numbering that is.
     platform_of = {}                                # scenario -> its declared platform
     for path in sorted(SCENARIOS.glob("*/expected.json")):
         name = path.parent.name
@@ -592,8 +593,8 @@ def collect():
                 # These two say where, and docs/limits.md lists the difference.
                 claimed = sorted(set(agent.get("platforms", []))
                                  & route_platforms.get(route, set()))
-                proven = sorted({scenario_platform[s] for s in ci_scens
-                                 if scenario_platform.get(s)})
+                proven = sorted({p for s, p in seen_on.get((aid, route, value), ())
+                                 if s in in_ci})
                 idents.append({"route": route, "value": value,
                                "claimed_on": claimed, "proven_on": proven,
                                "scenarios": scens,
