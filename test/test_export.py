@@ -195,6 +195,13 @@ def main():
     except ImportError:
         schema = None                       # said once, under "the document" above
     doc_catalog, doc_routes = classify.from_document(doc, schema=schema)
+    # A `format` of any JSON type is refused as a format, before anything hashes it or the
+    # schema runs. A list once raised TypeError: a consumer that turns a refusal into "fix the
+    # catalog" reported it as a crash.
+    for fmt in ([], {}, [doc["format"]], 2, None):
+        check(f"classify refuses a catalog whose format is {fmt!r}",
+              raises(classify.from_document, {**doc, "format": fmt}, expected=SystemExit,
+                     message=f"is format {fmt!r}"))
     if schema is not None:
         # A status the schema does not allow would otherwise read as current (SPEC.md 4).
         bad = json.loads(json.dumps(doc))
