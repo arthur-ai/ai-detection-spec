@@ -38,8 +38,10 @@ specification, so that any tool can use them.
 
 ## What the spec guarantees
 
-**An empty result is never ambiguous.** A binding that could not read a source says so, so
-"nothing was found" and "nothing was looked at" are different answers.
+**An empty result is never ambiguous.** No findings can mean a clean machine, or a scan that
+could not look everywhere. The spec keeps those apart: a collector that cannot read something,
+such as a Docker daemon that does not answer, must report that in its output. So a reader
+never mistakes a scan that failed for a machine that is clean.
 
 **Every identifier carries its proof.** An identifier enters a catalog only after an
 installation of the real software produced it, and the catalog records which. In this
@@ -48,9 +50,11 @@ generated from what the runs recorded.
 
 ## What counts as an agent
 
-Software that acts on your behalf. Libraries, gateways, model runners, container runtimes and
-completion engines do not count, however easy they are to detect, because counting them
-overstates what was found. [SPEC.md §3](SPEC.md#3-scope-what-counts-as-an-agent) is the test.
+An agent is software that acts on your behalf. That is the whole test, and
+[SPEC.md §3](SPEC.md#3-scope-what-counts-as-an-agent) states it. A library an agent is built
+with, a gateway it calls through, a model runner, a container runtime or a code-completion
+engine is not an agent, even when it is easy to detect. Listing one of those as an agent found
+on a machine would claim more than the scan saw.
 
 ## Adopting it
 
