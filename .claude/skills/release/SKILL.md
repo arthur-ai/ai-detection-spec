@@ -41,7 +41,7 @@ for label, g in (("ids", lambda e: {e["id"]}), ("keys", set),
                  ("platforms", lambda e: {(e["id"], p) for p in e.get("platforms", ())})):
     print(f"{label:10}", sorted(set(f(o,g)) - set(f(n,g))), "gone")
 EOF
-$ pols() { git show "$1:osquery/dist/fleet-policies.yml" | grep '^  name:'; }
+$ pols() { git show "$1:osquery/dist/fleet-policies.yml" | grep '^  name:' | sort; }
 $ if o=$(pols <prev-tag>) && n=$(pols HEAD) && [ -n "$o" ] && [ -n "$n" ]; then
     diff <(printf '%s\n' "$o") <(printf '%s\n' "$n") && echo "same Fleet policies"
   else echo "pols: NOT COMPARED, see the error above"; fi
