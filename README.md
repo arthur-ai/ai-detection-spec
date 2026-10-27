@@ -18,12 +18,13 @@ catalog comes from installing the real software.**
 
 </div>
 
-Teams taking stock of the AI tools on their machines keep rediscovering the same facts the hard
-way. Cursor's bundle id is an opaque ToDesktop string. ChatGPT's desktop app is
-`com.openai.codex` on current builds and `com.openai.chat` on the ones before, so a fleet needs
-both. One agent ships as a Homebrew cask *and* an npm package *and* a curl installer. This
-repository writes those facts down, keeps them true, and publishes them as an open
-specification, so that any tool can use them.
+Anyone taking stock of the AI tools on a fleet runs into the same surprises. Cursor's bundle
+id is `com.todesktop.230313mzl4w4u92`, which you cannot guess from the product's name.
+ChatGPT's desktop app renamed its bundle id from `com.openai.chat` to `com.openai.codex`, so a
+fleet with old and new builds needs both. A single agent can arrive as a Homebrew cask, an npm
+package or a curl installer, and each leaves a different trace. This repository records those
+facts, checks each one against a real install, and publishes them as an open specification
+that any tool can use.
 
 ## What is here
 
