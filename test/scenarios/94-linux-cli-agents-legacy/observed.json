@@ -1,0 +1,40 @@
+{
+  "scenario": "94-linux-cli-agents-legacy",
+  "identifiers": [
+    {
+      "agent": "amp",
+      "route": "npm",
+      "value": "@sourcegraph/amp",
+      "agent_version": "0.0.1793203246-g5eab6d",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64"
+    },
+    {
+      "agent": "factory-droid",
+      "route": "npm",
+      "value": "droid",
+      "agent_version": "0.251.0",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64"
+    },
+    {
+      "agent": "junie",
+      "route": "binaries",
+      "value": "~/.local/bin/junie",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64"
+    },
+    {
+      "agent": "junie",
+      "route": "npm",
+      "value": "@jetbrains/junie-cli",
+      "agent_version": "1468.30.0",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64"
+    }
+  ]
+}

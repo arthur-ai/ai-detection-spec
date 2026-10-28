@@ -1419,6 +1419,33 @@ check("the JetBrains plugin directories resolve to their agents",
 check("...and matched with the vendor's case (`sourcegraph` is not Cody's directory)",
       "sourcegraph" in _u, "exact means exact; a case-folded route would claim it")
 
+# THE TERMINAL AGENTS ADDED 2026-10-28 have unscoped npm namesakes from unrelated maintainers,
+# each the row a looser match would claim: `amp` (a 2013 messaging protocol), `crush` (a
+# MediaCrush client), `jules` (a JSON tool) and `qwen-code` (a 0.0.5 whose bin is gemini.js).
+_c, _u = _claims(_kind("npm", "@ampcode/cli", "@sourcegraph/amp", "amp", "@charmland/crush",
+                       "crush", "@google/jules", "jules", "@qwen-code/qwen-code", "qwen-code",
+                       "@factory/cli", "droid", "@jetbrains/junie", "@jetbrains/junie-cli"))
+check("the new terminal agents' npm names resolve to them, both names where a scope moved",
+      _c == {"@ampcode/cli": "amp", "@sourcegraph/amp": "amp", "@charmland/crush": "crush",
+             "@google/jules": "jules", "@qwen-code/qwen-code": "qwen-code",
+             "@factory/cli": "factory-droid", "droid": "factory-droid",
+             "@jetbrains/junie": "junie", "@jetbrains/junie-cli": "junie"}, f"got {_c}")
+check("...and their unscoped namesakes claim nothing (amp, crush, jules, qwen-code)",
+      {"amp", "crush", "jules", "qwen-code"} <= set(_u), f"got {_c}")
+_c, _u = _claims(_kind("file", "/root/.local/bin/junie", "/home/dana/.local/bin/vibe",
+                       "/home/dana/.local/share/uv/tools/mistral-vibe/",
+                       "/home/dana/.local/share/uv/tools/vibe/", "/home/dana/.vibe/",
+                       "/home/dana/.qwen/", "/home/dana/.factory/", "/home/dana/.jules/"))
+check("Vibe is its tool directory and ~/.vibe; the short `vibe` binary is not a value",
+      _c.get("/home/dana/.local/share/uv/tools/mistral-vibe/") == "mistral-vibe"
+      and _c.get("/home/dana/.vibe/") == "mistral-vibe"
+      and {"/home/dana/.local/bin/vibe", "/home/dana/.local/share/uv/tools/vibe/"} <= set(_u),
+      f"got {_c}")
+check("the new state directories and Junie's shim resolve to their agents",
+      _c.get("/root/.local/bin/junie") == "junie" and _c.get("/home/dana/.qwen/") == "qwen-code"
+      and _c.get("/home/dana/.factory/") == "factory-droid"
+      and _c.get("/home/dana/.jules/") == "jules", f"got {_c}")
+
 # META'S TWO MUSE PRODUCTS, read off real installs on 2026-10-19 and told apart by route: a
 # bundle id for the desktop agent, a ~/.local/bin launcher for the coding agent. The launcher
 # fetches the binary beside it under a versioned name, and the launcher alone finds it.

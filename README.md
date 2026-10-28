@@ -7,7 +7,7 @@ catalog comes from installing the real software.**
 
 [![CI](https://github.com/arthur-ai/ai-detection-spec/actions/workflows/ci.yml/badge.svg)](https://github.com/arthur-ai/ai-detection-spec/actions/workflows/ci.yml)
 [![Scenarios](https://github.com/arthur-ai/ai-detection-spec/actions/workflows/scenarios.yml/badge.svg)](https://github.com/arthur-ai/ai-detection-spec/actions/workflows/scenarios.yml)
-[![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-119%2F119-2E7D57)](docs/agents.md)
+[![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-119%2F140-A26A16)](docs/agents.md)
 [![osquery](https://img.shields.io/badge/osquery-5.23.1-1D4E89)](https://osquery.io)
 [![macOS](https://img.shields.io/badge/macOS-shipping-2E7D57)](osquery/README.md#requirements)
 [![Linux](https://img.shields.io/badge/Linux-shipping-2E7D57)](osquery/README.md#requirements)
@@ -33,7 +33,7 @@ that any tool can use.
 | [**`SPEC.md`**](SPEC.md) | **The specification.** What a catalog of agents contains, what evidence a collector reports (the spec calls a collector a *binding*), and how the two are matched, so that tools written by different people give the same answer about the same machine |
 | [`schema/`](schema) | JSON Schemas for a catalog and for the evidence a binding reports |
 | [`conformance/`](conformance) | The test vectors a matcher must pass |
-| [`catalog/`](catalog) | This repository's catalog: **42 agents and 119 identifiers**, each one seen on a real install in CI |
+| [`catalog/`](catalog) | This repository's catalog: **49 agents and 140 identifiers**, each one seen on a real install in CI |
 | [`bin/classify`](bin/classify) | The reference matcher. It reads collected evidence and names the agents the evidence proves |
 | [`osquery/`](osquery) | **The first binding:** osquery queries for macOS, Linux and Windows, and the scripts that run them on a Mac or a Linux machine. [Start here](osquery/README.md) to find the agents on your own machine |
 

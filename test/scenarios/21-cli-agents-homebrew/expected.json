@@ -26,7 +26,10 @@
       "goose",
       "cursor",
       "kiro-cli",
-      "muse-code"
+      "muse-code",
+      "factory-droid",
+      "qwen-code",
+      "mistral-vibe"
     ],
     "forbid": [
       "kiro"
@@ -41,6 +44,9 @@
     "block-goose-cli",
     "cursor-cli",
     "com.amazon.codewhisperer",
-    "muse-code"
+    "muse-code",
+    "qwen-code",
+    "mistral-vibe",
+    "\"id\": \"droid\""
   ]
 }

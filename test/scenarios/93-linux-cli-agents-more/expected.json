@@ -1,0 +1,57 @@
+{
+  "description": "Seven terminal coding agents through their npm and PyPI names, each run once so it writes its state directory.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "deb+rpm": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=6",
+    "jbplugin": ">=0",
+    "nmh": ">=0",
+    "npm": ">=6",
+    "port": ">=0",
+    "proc": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "amp",
+      "factory-droid",
+      "crush",
+      "qwen-code",
+      "jules",
+      "junie",
+      "mistral-vibe"
+    ],
+    "forbid": [
+      "gemini-cli",
+      "opencode",
+      "claude-code",
+      "codex-cli"
+    ]
+  },
+  "why": "Most of these agents have two witnesses here, a package and a state directory, so must_contain names each. Amp and Crush write no top-level directory, so their npm row is the only witness. Qwen Code is a Gemini CLI fork and Crush was opencode-ai/opencode before its rename, so gemini-cli and opencode are forbidden; claude-code and codex-cli are forbidden because ~/.local/bin and top-level home directories are their routes too.",
+  "must_contain": [
+    "@ampcode/cli",
+    "@factory/cli",
+    "@charmland/crush",
+    "@qwen-code/qwen-code",
+    "@google/jules",
+    "@jetbrains/junie",
+    "/home/dana/.factory/",
+    "/home/dana/.qwen/",
+    "/home/dana/.jules/",
+    "/root/.local/bin/junie",
+    "/root/.junie/",
+    "/uv/tools/mistral-vibe/",
+    "/home/dana/.vibe/"
+  ],
+  "known_gaps": [
+    "Amp's and Droid's curl installers (ampcode.com/install.sh, app.factory.ai/cli), Junie's (junie.jetbrains.com/install.sh) and Charm's apt and yum repositories are not exercised, and no value was read from them.",
+    "Editor extensions are not installed: Amp's VS Code extension, Qwen Code's IDE companion and Junie's JetBrains plugin."
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "scenario": "95-linux-crush-packages",
+  "identifiers": [
+    {
+      "agent": "crush",
+      "route": "deb_packages",
+      "value": "crush",
+      "agent_version": "0.98.2",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64"
+    }
+  ]
+}
