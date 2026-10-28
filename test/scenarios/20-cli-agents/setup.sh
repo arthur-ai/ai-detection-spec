@@ -9,7 +9,8 @@ source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest.sh"
 curl --retry 3 -fsSL https://claude.ai/install.sh | bash || echo "WARN: claude code install failed"
 # Codex CLI is a genuine npm global. 22 for Pi's installer, below.
 need_node 22
-npm install -g @openai/codex || echo "WARN: codex install failed"
+retry "npm install -g @openai/codex" npm install -g @openai/codex \
+  || echo "WARN: codex install failed"
 
 # Four more agents that ship on npm. Installed here rather than left as catalog
 # exceptions, because a real install is the standard and every one of these had an
@@ -33,7 +34,7 @@ npm install -g @openai/codex || echo "WARN: codex install failed"
 # agent, while an aborted setup names nothing.
 for pkg in @google/gemini-cli @github/copilot cline \
            opencode-ai @continuedev/cli @kilocode/cli @augmentcode/auggie; do
-  npm install -g "$pkg" || echo "WARN: $pkg install failed"
+  retry "npm install -g $pkg" npm install -g "$pkg" || echo "WARN: $pkg install failed"
 done
 
 # Pi's own installer, the route pi.dev lists first. It runs npm ci into ~/.pi/agent/install,

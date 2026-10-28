@@ -58,4 +58,5 @@ brew list --versions 2>/dev/null | sed 's/^/  /'
 # claude-code was catalogued and never produced. This machine has no native install to
 # collide with.
 need_node
-npm install -g @anthropic-ai/claude-code || echo "WARN: claude-code npm install failed"
+retry "npm install -g @anthropic-ai/claude-code" npm install -g @anthropic-ai/claude-code \
+  || echo "WARN: claude-code npm install failed"

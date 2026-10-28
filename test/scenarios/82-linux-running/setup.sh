@@ -12,7 +12,8 @@ source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest-linux.sh"
 need_curl
 need_node 24 || echo "WARN: Node 24 did not install; openclaw needs it"
 need_user
-try "npm install -g openclaw" sudo_maybe npm install -g --no-fund --no-audit openclaw || true
+retry "npm install -g openclaw" try "npm install -g openclaw" \
+  sudo_maybe npm install -g --no-fund --no-audit openclaw || true
 
 # AS THE USER, detached: setsid so the gateway outlives the shell that started it, and
 # its own log so a gateway that refuses to start says why.

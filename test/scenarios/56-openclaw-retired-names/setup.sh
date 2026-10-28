@@ -31,9 +31,10 @@ need_node
 
 # --allow-scripts is refused by older npm, and these packages predate it. Fall back
 # rather than fail: the postinstall is not what is being tested, the package NAME is.
+retired_once() {
+  npm install -g "$1" --allow-scripts="$1" 2>/dev/null || npm install -g "$1" --ignore-scripts
+}
 for pkg in clawdbot moltbot; do
-  npm install -g "$pkg" --allow-scripts="$pkg" 2>/dev/null \
-    || npm install -g "$pkg" --ignore-scripts \
-    || echo "WARN: $pkg install failed"
+  retry "npm install -g $pkg" retired_once "$pkg" || echo "WARN: $pkg install failed"
 done
 npm ls -g --depth=0 2>/dev/null | sed 's/^/  /'

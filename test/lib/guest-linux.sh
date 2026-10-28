@@ -175,8 +175,12 @@ try_user() {
 
 # retry <label> <cmd> [args...]: THREE ATTEMPTS, 15s then 45s apart, judged by the exit.
 # CDNs reset and truncate transfers mid-download -- `curl: (18)`, `Connection reset by
-# peer` -- and curl's own --retry covers neither. Messages go to stderr, so a caller can
-# capture the command's stdout. lib/guest.sh carries a byte-identical copy for the zsh
+# peer` -- and curl's own --retry covers neither. npm's registry can list a version
+# before it serves it: on 2026-10-28 four cline installs failed on @ai-sdk packages
+# published seconds to minutes earlier. Every scenario's `npm install -g` goes through
+# this, as Windows's through Invoke-Retry, but it rides out only a short gap: one tarball
+# still 404'd 138s after publication, past these 60s. Messages go to stderr, so a caller
+# can capture the command's stdout. lib/guest.sh carries a byte-identical copy for the zsh
 # scenarios, and test/lint.sh holds the two together.
 #
 # RUNNING OUT IS A FAILURE, NOT A SKIP. 79 set the rule: skip only on a cause identified as
