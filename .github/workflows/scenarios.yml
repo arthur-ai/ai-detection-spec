@@ -63,6 +63,11 @@ concurrency:
   group: scenarios-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# Declared rather than left to the repository default. collect pushes with a deploy key,
+# not this token.
+permissions:
+  contents: read
+
 env:
   # One version for all three package names below.
   OSQUERY_VERSION: 5.23.1
@@ -679,15 +684,15 @@ jobs:
     if: always() && needs.scope.outputs.runtime == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    # Read only: the commit is pushed with the deploy key, the one actor the ruleset on
-    # main lets push directly, and only a main run is handed it. With no key, checkout
-    # falls back to the token.
-    permissions:
-      contents: read
+    # The commit is pushed with DEPLOY_KEY, the one actor the ruleset on main lets push
+    # directly. It is a secret of the main-push environment, which only main may deploy
+    # to (docs.yml says why). Any other ref runs with no environment, so no key, and
+    # checkout falls back to the read-only token.
+    environment: ${{ github.ref == 'refs/heads/main' && 'main-push' || '' }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ssh-key: ${{ github.ref == 'refs/heads/main' && secrets.DEPLOY_KEY || '' }}
+          ssh-key: ${{ secrets.DEPLOY_KEY }}
       - name: Install pyyaml
         run: pip install --quiet pyyaml
       - name: Download every observation

@@ -45,6 +45,10 @@ jobs:
     name: Regenerate and commit
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # DEPLOY_KEY is a secret of this environment, which only main may deploy to. As a
+    # repository secret it would reach any branch's workflow, and so let anyone with write
+    # access push to main past the ruleset. A dispatch on another branch fails here.
+    environment: main-push
     # Read only: the push goes through the deploy key, not the token.
     permissions:
       contents: read
