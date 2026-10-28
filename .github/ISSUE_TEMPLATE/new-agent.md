@@ -32,11 +32,12 @@ $ osqueryi "SELECT name, version, status FROM deb_packages WHERE status LIKE '%o
 $ osqueryi "SELECT name, version, vendor FROM rpm_packages WHERE name LIKE '%NAME%'"
 $ osqueryi "SELECT filename, path FROM file WHERE path LIKE '/usr/share/applications/%.desktop'"
 
-# Windows, from cmd. The identifier is the Uninstall KEY's last component, never its
-# DisplayName, or an MSIX package family name. Per-user keys sit under HKEY_USERS and
-# 32-bit ones under WOW6432Node; the shipped query reads all three.
-> osqueryi "SELECT key, data FROM registry WHERE key LIKE 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\%' AND name = 'DisplayName' AND data LIKE '%NAME%'"
-> osqueryi "SELECT package_family_name, version, install_location FROM programs WHERE package_family_name LIKE '%NAME%'"
+# Windows, from cmd. A Win32 installer's identifier is the last component of its Uninstall
+# key, never the DisplayName. An MSIX package's identifier is its package family name. Run
+# the shipped query, which reads all three Uninstall roots (HKLM, WOW6432Node, HKEY_USERS),
+# and filter by the product name: in an uninstall row, extra is the DisplayName and id is
+# the identifier, and in an msix row, id is the family name.
+> "C:\Program Files\osquery\osqueryi.exe" --json < osquery\dist\discovery-windows.sql | findstr /i NAME
 
 # Any platform
 $ osqueryi "SELECT name, version FROM npm_packages WHERE name LIKE '%NAME%'"

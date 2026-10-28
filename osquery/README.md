@@ -26,19 +26,20 @@ $ python3 -m pip install pyyaml        # for bin/classify only; the endpoint nee
 $ sudo osqueryi --json < osquery/dist/agents-darwin.sql
 $ sudo osquery/bin/discover --names                   # the same as one line, for a Jamf Extension Attribute
 
-# Match off the machine: evidence out, classify wherever you keep it
-$ sudo osqueryi --json < osquery/dist/discovery-darwin.sql | bin/classify
+# Match off the machine: evidence out, classify wherever you keep it. discover prints
+# nothing and exits 1 when osqueryi fails, so a failed run cannot pass for a clean machine
+$ sudo osquery/bin/discover | bin/classify
 $ sudo osquery/bin/discover --deep | bin/classify     # the same, plus container images
 
-# On Linux, osquery/bin/discover picks the platform itself; osqueryi takes the -linux files
+# On Linux, osquery/bin/discover picks the platform itself, and osqueryi takes agents-linux.sql
 $ sudo apt install ./osquery_5.23.1-1.linux_amd64.deb
 $ sudo osqueryi --json < osquery/dist/agents-linux.sql
-$ sudo osqueryi --json < osquery/dist/discovery-linux.sql | bin/classify
 
 # On Windows there is no osquery/bin/discover, which is bash. Run osqueryi.exe from cmd,
-# because Windows PowerShell 5.1's > writes UTF-16
+# because Windows PowerShell 5.1's > writes UTF-16. Keep the || del: on a table it lacks,
+# osqueryi.exe prints valid empty JSON and exits 1, which classify would call a clean machine
 > "C:\Program Files\osquery\osqueryi.exe" --json < osquery\dist\agents-windows.sql
-> "C:\Program Files\osquery\osqueryi.exe" --json < osquery\dist\discovery-windows.sql > inventory.json
+> "C:\Program Files\osquery\osqueryi.exe" --json < osquery\dist\discovery-windows.sql > inventory.json || del inventory.json
 $ bin/classify < inventory.json                       # off the machine, as above
 ```
 

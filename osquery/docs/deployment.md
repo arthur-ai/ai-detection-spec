@@ -186,11 +186,12 @@ there are three ways to run them:
   because Windows PowerShell 5.1's `>` writes UTF-16, which nothing here reads:
 
   ```console
-  > "C:\Program Files\osquery\osqueryi.exe" --json < dist\discovery-windows.sql > inventory.json
+  > "C:\Program Files\osquery\osqueryi.exe" --json < dist\discovery-windows.sql > inventory.json || del inventory.json
   ```
 
-  Check the exit status. Given one table it lacks, `osqueryi.exe` prints `[\n\n]`, valid
-  empty JSON, and exits 1, and that file is not a clean machine.
+  The `|| del` stands in for the check `bin/discover` makes elsewhere. Given one table it
+  lacks, `osqueryi.exe` prints `[\n\n]`, valid empty JSON, and exits 1. Without the `del`,
+  that file would pass for a clean machine.
 
 There is no status line, so the outcome travels in the payload. The inventory carries a
 `containers` marker, because osquery reads no container on Windows: it names an engine found
