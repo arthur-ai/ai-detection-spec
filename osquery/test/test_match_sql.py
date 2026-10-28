@@ -187,10 +187,11 @@ def assert_mode(argv):
         found_by[agent].add(kind)
     want_c = expected.get("classified") or {}
     for agent in want_c.get("must_find", []):
-        # NOT FOUND AT ALL IS NOT A BLIND SPOT, and the two may not share a line: this once
-        # called an uninstalled cline "found only through nothing; covered by the parity
-        # check", which compares rows and says nothing about an absent agent. test/assert.sh
-        # runs assert_classified first on the same payload, and its must_find fails.
+        # NOT FOUND AT ALL IS NOT A BLIND SPOT, and the two may not share a line: when npm
+        # failed to install cline, this called it "found only through nothing; covered by
+        # the parity check", which compares rows and says nothing about an absent agent.
+        # test/assert.sh runs assert_classified first on the same payload, and its
+        # must_find is what fails.
         if agent not in found_by:
             print(f"  (dist/agents-{plat}.sql not checked for {agent!r}: the classifier "
                   f"found no evidence of it here, which `classified must_find` reports)")
