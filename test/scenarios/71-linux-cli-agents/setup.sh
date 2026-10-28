@@ -23,7 +23,8 @@ try_user "the Claude Code native installer" \
 # too: 329 rows unbounded, 1 with it.
 for pkg in @openai/codex @google/gemini-cli @github/copilot cline \
            opencode-ai @continuedev/cli @kilocode/cli @augmentcode/auggie; do
-  try "npm install -g $pkg" sudo_maybe npm install -g --no-fund --no-audit "$pkg" || true
+  retry "npm install -g $pkg" try "npm install -g $pkg" \
+    sudo_maybe npm install -g --no-fund --no-audit "$pkg" || true
 done
 
 # INVOKED, NOT JUST INSTALLED. A state directory does not exist until the agent runs

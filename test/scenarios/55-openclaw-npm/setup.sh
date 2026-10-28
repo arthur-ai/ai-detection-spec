@@ -19,8 +19,10 @@ source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest.sh"
 # this scenario twice: 2026.9.3 dropped the runners' Node 22, and 2026.10.6 refused the
 # 26.8.1 they ship now, which a major floor passed. test/lib/guest.sh has both.
 need_node 26.12.1
-npm install -g openclaw@latest --allow-scripts=openclaw \
-  || npm install -g openclaw@latest \
+openclaw_once() {
+  npm install -g openclaw@latest --allow-scripts=openclaw || npm install -g openclaw@latest
+}
+retry "npm install -g openclaw" openclaw_once \
   || { echo "FAIL: could not install openclaw from npm" >&2; exit 1; }
 npm ls -g --depth=0 2>/dev/null | sed 's/^/  /'
 

@@ -175,9 +175,12 @@ try_user() {
 
 # retry <label> <cmd> [args...]: THREE ATTEMPTS, 15s then 45s apart, judged by the exit.
 # CDNs reset and truncate transfers mid-download -- `curl: (18)`, `Connection reset by
-# peer` -- and curl's own --retry covers neither. Messages go to stderr, so a caller can
-# capture the command's stdout. lib/guest.sh carries a byte-identical copy for the zsh
-# scenarios, and test/lint.sh holds the two together.
+# peer` -- and curl's own --retry covers neither. npm fails the same way mid-release: on
+# 2026-10-28 cline's installs needed @ai-sdk versions that a dependency already required
+# and the registry did not yet serve. A short gap only: one tarball still 404'd 138s after
+# it was published, past these 60s. Messages go to stderr, so a caller can capture the
+# command's stdout. lib/guest.sh carries a byte-identical copy for the zsh scenarios, and
+# test/lint.sh holds the two together.
 #
 # RUNNING OUT IS A FAILURE, NOT A SKIP. 79 set the rule: skip only on a cause identified as
 # nobody's here to fix, because a moved or renamed download is exactly what a scenario
