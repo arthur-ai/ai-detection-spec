@@ -19,6 +19,10 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
+# Declared rather than left to the repository default. No job here writes.
+permissions:
+  contents: read
+
 # THE COLD-RUN GATES, defined once for the four steps that time a query. Each warns above
 # the self-imposed 10s budget (a convention, not a Jamf limit) and FAILS only above
 # QUERY_FAIL_S, which is for a query that blocks rather than a slow runner. The limit was
@@ -43,8 +47,12 @@ jobs:
   #
   # The rule itself is in tools/ci_scope.py, in ONE place, because three workflows ask
   # this question and three copies of the answer would be three lists that have to agree.
+  #
+  # (CI) IN THE NAME because this is a required check on main and scenarios.yml has a job
+  # of the same name. If this job fails, the Runtime jobs report SKIPPED, which a required
+  # check counts as passing; only this job's own result shows the failure.
   scope:
-    name: What this diff can move
+    name: What this diff can move (CI)
     runs-on: ubuntu-latest
     timeout-minutes: 10
     outputs:
