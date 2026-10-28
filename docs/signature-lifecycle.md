@@ -3,8 +3,7 @@
 An identifier is a fact about one build of one product, and products change theirs. When a
 vendor does, the fact does not become false; it stops being **current**. Machines on the old
 build still report the old identifier, and they are the machines an inventory most wants to
-name. So the old identifier keeps matching, and what changes is the claim the tree makes about
-it.
+name. So the old identifier keeps matching. Only the tree's claim about it changes.
 
 [SPEC.md §7](../SPEC.md#7-provenance) defines the two statuses. This page is how this
 repository runs them.

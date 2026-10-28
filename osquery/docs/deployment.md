@@ -1,6 +1,7 @@
 # Running it on a fleet
 
-What only matters at fleet scale. [The README](../README.md) covers one machine.
+This page covers what matters only at fleet scale. [The README](../README.md) covers one
+machine.
 
 Paths on this page are the release layout, `bin/`, `dist/` and `catalog/` side by side, as a
 deployment unpacks them. In a clone, `discover`, `container-scan` and `dist/` are under
@@ -133,8 +134,9 @@ routes need.
 
 Policies report no versions; use the JSON for those. They never look at containers, because
 osqueryd cannot bound one query, so an agent that ships only as an image has no policy, and
-the file lists those at the top. `dist/agents-darwin.sql` and `dist/agents-linux.sql` do the
-same matching as one `osqueryi` query, one row per agent, with the same container limit.
+the file lists those at the top. `dist/agents-darwin.sql`, `dist/agents-linux.sql` and
+`dist/agents-windows.sql` do the same matching as one `osqueryi` query, one row per agent,
+with the same container limit.
 
 ## Linux
 
@@ -170,6 +172,44 @@ on Ubuntu runners. A container has no systemd or OS Login, so `test/run-gce.sh` 
   credit mode, can take the composed artifact past the 10s convention, while every branch
   of `--write` stays inside its own 30s bound. [COST.md](../queries/COST.md) has the
   figures, and the reason to prefer the scheduled writer.
+
+## Windows
+
+`bin/discover` is bash, so Windows has no `--write`, no `status.txt`, no `--names` and no
+bundle. The queries and the rendered match are the same files as on the other platforms, and
+there are three ways to run them:
+
+- **osqueryd**, with `dist/ai-detection-spec.conf`. The pack schedules each query on its own,
+  so one unavailable table costs one query, which is what `--write` arranges elsewhere.
+- **Fleet**, with `dist/fleet-policies.yml`, which carries a policy per agent for Windows.
+- **A scheduled task** that runs the composed query and writes the file. The task's action
+  is `cmd.exe` with the arguments `/d /c "<the line below>"`, and its *Start in* directory
+  is the directory the release was unpacked into. The action has to be `cmd.exe`, because
+  the redirections and the `||` are `cmd` syntax and Task Scheduler starts a program
+  without a shell. *Start in* has to be set, because `dist\` and `inventory.json` are
+  relative to it, and an empty field does not mean that directory. The `/d` keeps an
+  AutoRun command in the registry from running first under the task's account. Do not use
+  PowerShell here, even by hand: Windows PowerShell 5.1's `>` writes UTF-16, which nothing
+  here reads.
+
+  ```console
+  > "C:\Program Files\osquery\osqueryi.exe" --json < dist\discovery-windows.sql > inventory.json || del inventory.json
+  ```
+
+  The `|| del` stands in for the check `bin/discover` makes elsewhere. Given one table it
+  lacks, `osqueryi.exe` prints `[\n\n]`, valid empty JSON, and exits 1. Without the `del`,
+  that file would pass for a clean machine.
+
+There is no status line, so the outcome travels in the payload. The inventory carries a
+`containers` marker, because osquery reads no container on Windows: it names an engine found
+on disk (`unreadable:docker`, `:podman` or `:rancher-desktop`) and says `absent` only where
+none is. `bin/classify` sorts it with the other markers
+([SPEC.md §6.7](../../SPEC.md#67-scans-absences-and-gaps)).
+
+Two limits are Windows's own, and [limits.md](../../docs/limits.md#what-osquery-cannot-see)
+has both. A user who is not signed in has no registry hive loaded, so their per-user installs
+are seen only while they are signed in. A profile outside `<drive>:\Users\` is outside the
+spec's home root.
 
 ## What a deployment supplies
 

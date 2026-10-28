@@ -22,8 +22,9 @@ The distinction is between *"you missed this tool"* and *"here is how to hide an
 ## What this project is not
 
 It has **no runtime and no service**. What it puts on an endpoint is the osquery binding: SQL
-that osquery executes and the bash scripts that run it, none of which makes a network call.
-There is no agent to compromise and no endpoint to attack.
+that osquery executes and the bash scripts that run it. None of it makes a network call; the
+one `curl` in it probes the local Docker socket. There is no agent to compromise and no
+endpoint to attack.
 
 One part does talk to the network, off the endpoint: `bin/classify` sends one anonymous usage
 event per run. [`docs/telemetry.md`](docs/telemetry.md) lists every field and how to turn it

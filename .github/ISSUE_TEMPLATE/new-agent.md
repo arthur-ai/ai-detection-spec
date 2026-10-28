@@ -10,10 +10,11 @@ Name, vendor, link.
 
 **Which platform, and how you installed it**
 
-macOS or Linux, and by which route: Homebrew cask, npm global, `.deb`, `.rpm`, AppImage, a
-`curl | bash` installer, a direct download, a VS Code extension? If several are possible, say
-which you used, since each lands somewhere different — and a single agent commonly needs an
-entry for each.
+macOS, Linux or Windows, and by which route: Homebrew cask, npm global, `.deb`, `.rpm`,
+AppImage, an installer that writes an Uninstall key, an MSIX package, a `curl | bash`
+installer, a direct download, a VS Code extension? If several are possible, say which you
+used, since each lands somewhere different — and a single agent commonly needs an entry for
+each.
 
 **What it looks like on disk**
 
@@ -31,7 +32,14 @@ $ osqueryi "SELECT name, version, status FROM deb_packages WHERE status LIKE '%o
 $ osqueryi "SELECT name, version, vendor FROM rpm_packages WHERE name LIKE '%NAME%'"
 $ osqueryi "SELECT filename, path FROM file WHERE path LIKE '/usr/share/applications/%.desktop'"
 
-# Either platform
+# Windows, from cmd. A Win32 installer's identifier is the last component of its Uninstall
+# key, never the DisplayName. An MSIX package's identifier is its package family name. Run
+# the shipped query, which reads all three Uninstall roots (HKLM, WOW6432Node, HKEY_USERS),
+# and filter by the product name: in an uninstall row, extra is the DisplayName and id is
+# the identifier, and in an msix row, id is the family name.
+> "C:\Program Files\osquery\osqueryi.exe" --json < osquery\dist\discovery-windows.sql | findstr /i NAME
+
+# Any platform
 $ osqueryi "SELECT name, version FROM npm_packages WHERE name LIKE '%NAME%'"
 $ osqueryi "SELECT name, version, vscode_edition FROM users CROSS JOIN vscode_extensions USING (uid)"
 $ osqueryi "SELECT name, vendor, version, path FROM users CROSS JOIN jetbrains_plugins USING (uid)"

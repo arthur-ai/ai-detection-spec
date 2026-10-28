@@ -1,9 +1,9 @@
 # The osquery binding
 
 The first binding of [ai-detection-spec](../SPEC.md): osquery queries that collect agent
-evidence on macOS, Linux and Windows, and the scripts that run them on a machine. Which of
-those things are agents is the repository's [catalog](../catalog/agents.yaml) to say, and
-what counts as one, and how every identifier is proved, is in [the README](../README.md).
+evidence on macOS, Linux and Windows, and the scripts that run them on a machine. The
+repository's [catalog](../catalog/agents.yaml) says which of those things are agents. [The
+root README](../README.md) says what counts as an agent and how every identifier is proved.
 
 - **It is SQL you can read.** `osquery/dist/discovery-darwin.sql`,
   `osquery/dist/discovery-linux.sql` and `osquery/dist/discovery-windows.sql` are everything
@@ -26,14 +26,21 @@ $ python3 -m pip install pyyaml        # for bin/classify only; the endpoint nee
 $ sudo osqueryi --json < osquery/dist/agents-darwin.sql
 $ sudo osquery/bin/discover --names                   # the same as one line, for a Jamf Extension Attribute
 
-# Match off the machine: evidence out, classify wherever you keep it
-$ sudo osqueryi --json < osquery/dist/discovery-darwin.sql | bin/classify
+# Match off the machine: evidence out, classify wherever you keep it. discover prints
+# nothing and exits 1 when osqueryi fails, so a failed run cannot pass for a clean machine
+$ sudo osquery/bin/discover | bin/classify
 $ sudo osquery/bin/discover --deep | bin/classify     # the same, plus container images
 
-# On Linux, osquery/bin/discover picks the platform itself; osqueryi takes the -linux files
+# On Linux, osquery/bin/discover picks the platform itself, and osqueryi takes agents-linux.sql
 $ sudo apt install ./osquery_5.23.1-1.linux_amd64.deb
 $ sudo osqueryi --json < osquery/dist/agents-linux.sql
-$ sudo osqueryi --json < osquery/dist/discovery-linux.sql | bin/classify
+
+# On Windows there is no osquery/bin/discover, which is bash. Run osqueryi.exe from cmd,
+# because Windows PowerShell 5.1's > writes UTF-16. Keep the || del: on a table it lacks,
+# osqueryi.exe prints valid empty JSON and exits 1, which classify would call a clean machine
+> "C:\Program Files\osquery\osqueryi.exe" --json < osquery\dist\agents-windows.sql
+> "C:\Program Files\osquery\osqueryi.exe" --json < osquery\dist\discovery-windows.sql > inventory.json || del inventory.json
+$ bin/classify < inventory.json                       # off the machine, as above
 ```
 
 `osquery/dist/` is committed, so a clone has nothing to build. Pin a tagged release in
@@ -67,14 +74,15 @@ The inventory alone is the evidence rows ([SPEC.md §5.1](../SPEC.md#51-evidence
 
 ## Two ways to match
 
-- **Off the machine.** The endpoint runs the inventory and `bin/classify` matches it wherever
-  you keep the JSON. A new signature re-matches evidence you already have.
-- **On the machine.** `agents-darwin.sql` or `agents-linux.sql` returns agent names from
-  osquery, `fleet-policies.yml` loads into Fleet, and `osquery/bin/discover --names` prints one
-  line for a Jamf Extension Attribute. A new signature reaches these when you redeploy them.
+- **Off the machine.** The endpoint runs the inventory, and `bin/classify` matches the JSON
+  wherever you keep it. A new signature re-matches evidence you already have.
+- **On the machine.** osquery runs `agents-darwin.sql`, `agents-linux.sql` or
+  `agents-windows.sql` and returns one row per agent. Fleet loads `fleet-policies.yml`. A Jamf
+  Extension Attribute runs `osquery/bin/discover --names`, which prints one line. A new
+  signature reaches these files only when you redeploy them.
 
-Both are generated from `catalog/agents.yaml`, and CI holds them to the same answer on the
-same evidence.
+Both ways read the same `catalog/agents.yaml`: `bin/classify` at run time, the on-machine
+files when they are rendered. CI holds the two to the same answer on the same evidence.
 
 ## What a release attaches
 
@@ -84,13 +92,14 @@ same evidence.
 `classify`, `agents.yaml`, `routes.yaml`, `catalog.json`, `catalog.schema.json`,
 `evidence.schema.json`, `ai-detection-spec-darwin.sh`, `ai-detection-spec-linux.sh`.
 
-Which you need depends on where each runs.
+Each asset runs on the endpoint or off it. The tables below group them that way, so take the
+ones for the place you deploy to.
 
 **On the endpoint: the inventory**
 
 | | |
 |---|---|
-| `discovery-darwin.sql`<br>`discovery-linux.sql`<br>`discovery-windows.sql` | The query for each platform. `discover` picks between the first two by `uname -s`, so you can ship both. Windows has no `discover`; run the third [with `osqueryi`](#running-it-on-a-fleet) |
+| `discovery-darwin.sql`<br>`discovery-linux.sql`<br>`discovery-windows.sql` | The query for each platform. `discover` picks between the first two by `uname -s`, so you can ship both. Windows has no `discover`; run the third with `osqueryi` ([quickstart](#quickstart)) |
 | `discovery-deep.sql` | The container query, a supplement rather than a superset. Only `container-scan` runs it, because the wall-clock bound lives there |
 | `ai-detection-spec.conf` | The osqueryd pack, every platform's queries with osqueryd's per-query `platform` field. Take it *instead of* the `.sql` files if you schedule through osqueryd |
 | `discover` | Runs the query for its platform and prints one JSON array |
@@ -135,9 +144,10 @@ prints it and `AI_DETECTION_SPEC_TELEMETRY=0` turns it off
 
 ## What it cannot see
 
-Anything inside a VM or container other than Docker images, snap and Flatpak packages,
-AppImage installs, and what an agent *does* as opposed to what it may do. These are limits of
-the platform and of osquery's tables, not of the tests:
+It cannot see inside a VM. Inside a container it sees only what `--deep` reads: images,
+running containers and their labels. It cannot see snap and Flatpak packages or AppImage
+installs. It reports what an agent *may* do, never what it does. These are limits of the
+platform and of osquery's tables, not of the tests:
 [docs/limits.md](../docs/limits.md#what-osquery-cannot-see) has the list.
 
 ## Containers
@@ -158,17 +168,9 @@ own pipeline, store the JSON and run `bin/classify` over it.
 [docs/deployment.md](docs/deployment.md) has the schedule, the status line, the one-file
 bundle and what a deployment supplies.
 
-**On Windows there is no `bin/discover`**, which is bash. Schedule the pack in osqueryd, load
-`fleet-policies.yml` into Fleet, or run the composed query yourself. From `cmd`, because
-Windows PowerShell 5.1's `>` writes UTF-16:
-
-```console
-> "C:\Program Files\osquery\osqueryi.exe" --json < osquery\dist\discovery-windows.sql > inventory.json
-```
-
-The inventory carries a `containers` marker, since osquery reads no container on Windows; it
-names an engine on disk (`unreadable:docker`, `:podman` or `:rancher-desktop`) and says
-`absent` only where none is.
+**On Windows there is no `bin/discover`**, which is bash. The [quickstart](#quickstart) has
+the one-machine command, and [docs/deployment.md](docs/deployment.md#windows) has what to
+schedule on a fleet and how to read what comes back.
 
 ## Scope, so you know what you are getting
 

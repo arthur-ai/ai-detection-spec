@@ -25,14 +25,15 @@ find are the ones nobody registered.
 
 This specification answers that question from evidence the machine already holds: an
 application's bundle identifier, a package in a package manager's database, a browser
-extension's id, a directory an agent creates when it first runs. A catalog lists those identifiers for each agent
-and says how each one is matched. A collector, called a binding, reports what it found as rows.
-A matcher pairs the rows with the catalog.
+extension's id, a directory an agent creates when it first runs. A catalog lists those
+identifiers for each agent and says how each one is matched. A collector, called a binding,
+reports what it found as rows. A matcher pairs the rows with the catalog.
 
 Two properties shape everything else:
 
-1. **An empty result is never ambiguous.** A binding that could not read a source says so, so
-   "nothing found" and "nothing looked at" are different answers (§5.2).
+1. **An empty result is never ambiguous.** A binding that could not read a source reports
+   that in its output (§5.2). A reader can then tell a clean machine from a scan that could
+   not look everywhere.
 2. **Every identifier carries its proof.** An identifier enters a catalog only after an
    installation of the real software produced it, and the catalog records which installation
    (§7).

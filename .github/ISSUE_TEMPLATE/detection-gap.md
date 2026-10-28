@@ -15,6 +15,7 @@ Tool, version, and how it was installed.
 
 ```console
 $ sudo osqueryi --json < osquery/dist/discovery-darwin.sql    # or discovery-linux.sql
+> "C:\Program Files\osquery\osqueryi.exe" --json < osquery\dist\discovery-windows.sql
 ```
 
 **What you expected**

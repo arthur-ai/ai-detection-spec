@@ -157,8 +157,9 @@ rows, because bun hoists a global's dependencies.
 ### Hosted runner
 
 GitHub-hosted `windows-2025`, Windows Server 2025 build 26100, x86_64, osquery 5.23.1, the
-stock image with no agents, 2026-10-27. `osquery/tools/measure.py --check` in CI's Windows
-runtime job, which uploads it as `performance-windows`.
+stock image with no agents, 2026-10-27. CI's Windows runtime job runs
+`osquery/tools/measure.py --check` and uploads the result as the `performance-windows`
+artifact.
 
 | query | band | seconds | rows |
 |---|---|---|---|
@@ -313,7 +314,7 @@ payload: macOS and the runner image are most of it.
 
 ### Where the cap binds
 
-**Catalog growth is free**: growing `catalog/agents.yaml` from 21 agents to 221 left the <!--fixed-number-->
+**Catalog growth is free**: 21 agents to 221 in `catalog/agents.yaml` left the <!--fixed-number-->
 composed artifact byte-identical and the payload unchanged.
 
 **Inventory growth is not.** Extending the loaded Mac with application rows:

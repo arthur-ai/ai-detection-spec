@@ -33,10 +33,10 @@ scenario, not only reading the diff. Contributions are accepted under the
      npm: [openclaw, clawdbot, moltbot]
      state_dirs: ["~/.openclaw"]
    ```
-4. **Prove it in a scenario** under `test/scenarios/`: a `setup.sh` that installs it and an
-   `expected.json` that puts it in `classified.must_find`. Under `classified.forbid`, list any
-   agent the new rows could be mistaken for: Roo Code's extension id,
-   `rooveterinaryinc.roo-cline`, contains Cline's name. Add the scenario to the matrix in
+4. **Prove it in a scenario** under `test/scenarios/`: a `setup.sh` (`setup.ps1` on Windows)
+   that installs it and an `expected.json` that puts it in `classified.must_find`. Under
+   `classified.forbid`, list any agent the new rows could be mistaken for: Roo Code's extension
+   id, `rooveterinaryinc.roo-cline`, contains Cline's name. Add the scenario to the matrix in
    `.github/workflows/scenarios.yml`.
 5. **Regenerate and check**:
    ```console
@@ -77,8 +77,9 @@ $ python3 tools/agent_status.py --record /tmp/out.json test/scenarios/<name> \
 
 A run proving fewer identifiers than the committed record is refused, because that is also what
 a broken query looks like. `--allow-shrink` overrides it for an identifier genuinely removed.
-When an identifier stops appearing, [the triage](docs/signature-lifecycle.md#triage-why-did-it-stop-appearing)
-tells a wrong identifier from one that is no longer installable.
+When an identifier stops appearing,
+[the triage](docs/signature-lifecycle.md#triage-why-did-it-stop-appearing) tells a wrong
+identifier from one that is no longer installable.
 
 ### The `images` route
 
@@ -193,11 +194,11 @@ one, dispatch `scenarios.yml` with its name in `scenarios`. `test/lint.sh` parse
 with `pwsh` when it is installed, and CI's lint requires it.
 
 You do not need to run scenarios locally. **CI runs the ones a pull request's diff can move**,
-on macOS, Linux and Windows, and all of them weekly. `tools/ci_scope.py` decides, and when it cannot tell
-it runs every scenario; the scope job's summary says what ran and why. A `workflow_dispatch`
-runs everything, or only the scenarios named in its `scenarios` input. A new identifier
-over-matching rows in an unrelated scenario is the one thing scoping can miss, and the weekly
-run catches it.
+on macOS, Linux and Windows, and all of them weekly. `tools/ci_scope.py` decides, and when it
+cannot tell it runs every scenario; the scope job's summary says what ran and why. A
+`workflow_dispatch` runs everything, or only the scenarios named in its `scenarios` input. A
+new identifier over-matching rows in an unrelated scenario is the one thing scoping can miss,
+and the weekly run catches it.
 
 Assert on **counts and specific identifiers**, and on what must **not** match. Every defect
 found here produced plausible output with the wrong number of rows, and none errored.
