@@ -5,11 +5,11 @@
       "agent": "claude-desktop",
       "route": "msix_families",
       "value": "Claude_pzs8sxrjxfjjc",
-      "agent_version": "3.6556.2.0",
+      "agent_version": "4.29.0.0",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "40536154538"
+      "run": "40745708482"
     },
     {
       "agent": "cursor",
@@ -18,7 +18,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "40536154538"
+      "run": "40745708482"
     },
     {
       "agent": "cursor",
@@ -28,7 +28,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "40536154538"
+      "run": "40745708482"
     },
     {
       "agent": "windsurf",
@@ -38,7 +38,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "40536154538"
+      "run": "40745708482"
     }
   ]
 }
