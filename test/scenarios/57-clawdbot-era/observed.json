@@ -9,7 +9,7 @@
       "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
-      "run": "40745708482"
+      "run": "40764483708"
     },
     {
       "agent": "openclaw",
@@ -19,7 +19,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40745708482"
+      "run": "40764483708"
     }
   ]
 }
