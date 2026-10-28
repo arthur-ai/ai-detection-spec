@@ -182,8 +182,15 @@ there are three ways to run them:
 - **osqueryd**, with `dist/ai-detection-spec.conf`. The pack schedules each query on its own,
   so one unavailable table costs one query, which is what `--write` arranges elsewhere.
 - **Fleet**, with `dist/fleet-policies.yml`, which carries a policy per agent for Windows.
-- **A scheduled task** that runs the composed query and writes the file. Run it from `cmd`,
-  because Windows PowerShell 5.1's `>` writes UTF-16, which nothing here reads:
+- **A scheduled task** that runs the composed query and writes the file. The task's action
+  is `cmd.exe` with the arguments `/d /c "<the line below>"`, and its *Start in* directory
+  is the directory the release was unpacked into. The action has to be `cmd.exe`, because
+  the redirections and the `||` are `cmd` syntax and Task Scheduler starts a program
+  without a shell. *Start in* has to be set, because `dist\` and `inventory.json` are
+  relative to it, and an empty field does not mean that directory. The `/d` keeps an
+  AutoRun command in the registry from running first under the task's account. Do not use
+  PowerShell here, even by hand: Windows PowerShell 5.1's `>` writes UTF-16, which nothing
+  here reads.
 
   ```console
   > "C:\Program Files\osquery\osqueryi.exe" --json < dist\discovery-windows.sql > inventory.json || del inventory.json
