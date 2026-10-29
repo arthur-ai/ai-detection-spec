@@ -1,0 +1,7 @@
+{
+  "description": "Throwaway probe.",
+  "platform": "linux",
+  "counts": {},
+  "classified": {"must_find": [], "forbid": []},
+  "why": "probe"
+}
