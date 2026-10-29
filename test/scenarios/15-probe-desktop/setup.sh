@@ -1,7 +1,9 @@
 #!/bin/zsh
 # THROWAWAY PROBE, never merged: installs candidates and prints what they ship, so the
 # catalog values can be read off a real install before the real scenario is written.
-source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest.sh"
+HERE="$(cd "$(dirname "$0")" && pwd)"
+main() {
+source "$HERE/../../lib/guest.sh"
 need_brew
 touch /tmp/probe-marker
 echo "=== brew install --cask manus"
@@ -35,4 +37,8 @@ ls -la "$(brew --prefix)/bin/agy" 2>&1
 "$(brew --prefix)/bin/agy" --version 2>&1 | head -5
 echo "=== files under ~ newer than the marker"
 find ~ -mindepth 1 -maxdepth 3 -newer /tmp/probe-marker -not -path '*/Library/Caches/*' 2>/dev/null | grep -v -E '/Library/(Logs|Caches)|\.cache|/work/' | head -60
+
+}
+main 2>&1 | tee /tmp/probe.out
+python3 "$HERE/emit.py" /tmp/probe.out
 exit 0

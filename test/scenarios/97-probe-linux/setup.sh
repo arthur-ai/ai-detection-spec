@@ -1,6 +1,8 @@
 #!/bin/bash
 # THROWAWAY PROBE, never merged: runs candidate installers and prints what they write.
 lib="$(cd "$(dirname "$0")/../../lib" && pwd)"
+HERE="$(cd "$(dirname "$0")" && pwd)"
+main() {
 source "$lib/guest-linux.sh"
 need_curl
 need_user
@@ -46,4 +48,8 @@ def tr(v):
 print(sys.argv[2], json.dumps({k: tr(m.get(k)) for k in ("name", "short_name", "version", "author", "homepage_url", "description", "permissions", "host_permissions")}, indent=1))
 PY
 done
+
+}
+main 2>&1 | tee /tmp/probe.out
+python3 "$HERE/emit.py" /tmp/probe.out
 exit 0
