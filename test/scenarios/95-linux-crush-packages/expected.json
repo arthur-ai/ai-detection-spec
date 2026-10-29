@@ -1,0 +1,35 @@
+{
+  "description": "Crush from its release's .deb or .rpm, found through the package name.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "deb+rpm": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=0",
+    "jbplugin": ">=0",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "port": ">=0",
+    "proc": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "crush"
+    ],
+    "forbid": [
+      "opencode"
+    ]
+  },
+  "why": "The package installs /usr/bin/crush and nothing under a home directory, and nothing else on this host names Crush, so the deb or rpm row is the only witness and removing the value turns must_find red. opencode is forbidden because Crush was opencode-ai/opencode before its rename.",
+  "must_contain": [
+    "\"id\": \"crush\""
+  ],
+  "known_gaps": [
+    "Charm's apt and yum repositories (repo.charm.sh) are not used; the release assets carry the same package name."
+  ]
+}

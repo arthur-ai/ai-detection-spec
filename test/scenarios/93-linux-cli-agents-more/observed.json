@@ -1,0 +1,115 @@
+{
+  "scenario": "93-linux-cli-agents-more",
+  "identifiers": [
+    {
+      "agent": "amp",
+      "route": "npm",
+      "value": "@ampcode/cli",
+      "agent_version": "0.0.1793203246-g5eab6d",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64"
+    },
+    {
+      "agent": "crush",
+      "route": "npm",
+      "value": "@charmland/crush",
+      "agent_version": "0.98.2",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64"
+    },
+    {
+      "agent": "factory-droid",
+      "route": "npm",
+      "value": "@factory/cli",
+      "agent_version": "0.251.0",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64"
+    },
+    {
+      "agent": "factory-droid",
+      "route": "state_dirs",
+      "value": "~/.factory",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64"
+    },
+    {
+      "agent": "jules",
+      "route": "npm",
+      "value": "@google/jules",
+      "agent_version": "0.1.42",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64"
+    },
+    {
+      "agent": "jules",
+      "route": "state_dirs",
+      "value": "~/.jules",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64"
+    },
+    {
+      "agent": "junie",
+      "route": "binaries",
+      "value": "~/.local/bin/junie",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64"
+    },
+    {
+      "agent": "junie",
+      "route": "npm",
+      "value": "@jetbrains/junie",
+      "agent_version": "3110.7.0",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64"
+    },
+    {
+      "agent": "junie",
+      "route": "state_dirs",
+      "value": "~/.junie",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64"
+    },
+    {
+      "agent": "mistral-vibe",
+      "route": "pypi",
+      "value": "mistral-vibe",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64"
+    },
+    {
+      "agent": "mistral-vibe",
+      "route": "state_dirs",
+      "value": "~/.vibe",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64"
+    },
+    {
+      "agent": "qwen-code",
+      "route": "npm",
+      "value": "@qwen-code/qwen-code",
+      "agent_version": "0.26.3",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64"
+    },
+    {
+      "agent": "qwen-code",
+      "route": "state_dirs",
+      "value": "~/.qwen",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64"
+    }
+  ]
+}

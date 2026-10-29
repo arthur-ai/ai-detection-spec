@@ -124,6 +124,9 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 91-linux-claude-rpm | Anthropic's apk repository cannot be exercised, and no route could read it: osquery has no apk_packages table at any version, and osquery's own builds are glibc-linked and do not load on musl, so an Alpine host cannot run the collector at all. Measured 2026-10-20 on alpine:3.22; docs/blind-spots.yaml carries it. |
 | 92-linux-browser-agents | Chrome for Testing registers the extensions. Branded Chrome's own install and ExtensionInstallForcelist, which a managed fleet uses, are untested. |
 | 92-linux-browser-agents | x86_64 only: Google ships no Linux arm64 Chrome, so the arm64 runner skips this. |
+| 93-linux-cli-agents-more | Amp's and Droid's curl installers (ampcode.com/install.sh, app.factory.ai/cli) and Junie's (junie.jetbrains.com/install.sh) are not exercised, and no value was read from them. |
+| 93-linux-cli-agents-more | Editor extensions are not installed: Amp's VS Code extension, Qwen Code's IDE companion and Junie's JetBrains plugin. |
+| 95-linux-crush-packages | Charm's apt and yum repositories (repo.charm.sh) are not used; the release assets carry the same package name. |
 
 `14-meta-muse` needs macOS 14 or newer, so CI skips it on older runners rather than failing it. Its `requires.json` carries the reason.
 

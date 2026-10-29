@@ -11,14 +11,16 @@
 # second wins, and the row for the loser is whatever the winner left behind. Two machines
 # is the only way to test two routes honestly.
 #
-# Tokens verified against the Homebrew API before being written here -- two are casks and
-# three are formulae, which is not guessable from the product name:
+# Tokens verified against the Homebrew API before being written here. Some are casks and
+# some are formulae, which is not guessable from the product name:
 #
 #     codex        cask        copilot-cli      cask
 #     aider        formula     gemini-cli       formula
 #     hermes-agent formula     opencode         formula
 #     cursor-cli   cask        block-goose-cli  formula
 #     kiro-cli     cask, with an app whose bundle id is com.amazon.codewhisperer
+#     qwen-code    formula     mistral-vibe     formula
+#     droid        cask, binary-only, Factory's
 #
 # cursor-cli's binary is cursor-agent and block-goose-cli's is goose, so none of the four
 # collides with a command already installed here.
@@ -33,12 +35,12 @@ need_brew
 
 # WARN rather than exit: a download failing is a network fact, and the assertion is where a
 # missing agent should be reported, because it names WHICH one.
-for f in aider gemini-cli hermes-agent opencode block-goose-cli; do
+for f in aider gemini-cli hermes-agent opencode block-goose-cli qwen-code mistral-vibe; do
   brew install "$f" || echo "WARN: formula $f failed"
 done
 # muse-code is binary-only and links `muse`, which 14-meta-muse's installer also writes --
 # the same two-routes-one-name reason this scenario exists, so it is here and not there.
-for c in codex copilot-cli cursor-cli kiro-cli muse-code; do
+for c in codex copilot-cli cursor-cli kiro-cli muse-code droid; do
   brew install --cask "$c" || echo "WARN: cask $c failed"
 done
 brew list --versions 2>/dev/null | sed 's/^/  /'

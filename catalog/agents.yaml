@@ -932,3 +932,126 @@ agents:
     classification: Browser agent
     platforms: [darwin, linux, windows]
     extension_ids: [camppjleccjaphfdbohjdohecfnoikec]
+
+  # ---------------------------------------------------------------------------------------
+  # FROM HERE, terminal coding agents added 2026-10-28. Each value was read off a real install
+  # by the scenario named. The npm, PyPI, deb and path values came from a run on Ubuntu 24.04
+  # (x86_64, osquery 5.23.1, npm 10.9.4, uv 0.11.32). The rpm and Homebrew values came from
+  # CI run 40761736977 the same day.
+  # ---------------------------------------------------------------------------------------
+
+  # Amp, from Amp (spun out of Sourcegraph). The npm package moved scope and both names are
+  # live: @sourcegraph/amp is now a wrapper whose only dependency is @ampcode/cli, so a
+  # machine that installed by the old instructions still reports the old name.
+  #
+  # NOT HERE: npm's unscoped `amp` ("Abstract messaging protocol", 2013) and homebrew-core's
+  # `amp` formula, a terminal text editor from amp.rs; test_matcher asserts the first is
+  # declined. ampcode.com/install.sh is unread: this environment could not reach it.
+  - id: amp
+    name: Amp
+    classification: Coding agent
+    platforms: [linux]
+    # 93-linux-cli-agents-more, 2026-10-28: @ampcode/cli 0.0.1793203246-g5eab6d under
+    # /usr/local/lib/node_modules. 94-linux-cli-agents-legacy, same day and version:
+    # @sourcegraph/amp, with @ampcode/cli nested beneath it and not reported as a global.
+    npm: ["@ampcode/cli", "@sourcegraph/amp"]
+
+  # Factory's Droid. Both npm names are published by Factory's own maintainers at the same
+  # version, 0.251.0 on 2026-10-28, each shipping a `droid` binary. Factory's separate
+  # desktop app (cask `factory`) is a different install and is not carried here.
+  - id: factory-droid
+    name: Factory Droid
+    classification: Coding agent
+    platforms: [darwin, linux]
+    # 93-linux-cli-agents-more: @factory/cli 0.251.0. 94-linux-cli-agents-legacy: droid 0.251.0.
+    npm: ["@factory/cli", droid]
+    # Written by `droid exec`, which fails at authentication after creating it; --help and
+    # --version write nothing. Read off 93-linux-cli-agents-more as /home/dana/.factory/.
+    state_dirs: ["~/.factory"]
+    # A binary-only cask. 21-cli-agents-homebrew in CI run 40761736977: droid 0.245.1 on
+    # macOS 26 and 0.213.0 on macOS 15.
+    homebrew: [droid]
+
+  # Charm's Crush. The Go project that was opencode-ai/opencode before the rename, which is
+  # why the scenarios forbid `opencode`: the two must not be read as each other.
+  #
+  # NOT HERE: npm's unscoped `crush` is a 2014 MediaCrush client; test_matcher asserts it is
+  # declined. Charm's apt and yum repositories (repo.charm.sh) are unread here; the release's
+  # own .deb and .rpm are what 95 installs.
+  - id: crush
+    name: Crush
+    classification: Coding agent
+    platforms: [linux]
+    # 93-linux-cli-agents-more, 2026-10-28: @charmland/crush 0.98.2.
+    npm: ["@charmland/crush"]
+    # 95-linux-crush-packages, same day: the v0.98.2 release's crush_0.98.2_amd64.deb, dpkg
+    # rendering `crush 0.98.2`, maintainer kujtim@charm.sh. The rpm_packages row is from the
+    # same scenario in CI run 40761736977: crush 0.98.2 off the release's .rpm on Fedora 41,
+    # Rocky 9 and Amazon Linux 2023.
+    deb_packages: [crush]
+    rpm_packages: [crush]
+
+  # Alibaba's Qwen Code, a fork of Gemini CLI, so the scenarios forbid gemini-cli.
+  # NOT HERE: npm's unscoped `qwen-code` is a 0.0.5 from an unrelated maintainer whose bin is
+  # bundle/gemini.js; test_matcher asserts it is declined.
+  - id: qwen-code
+    name: Qwen Code
+    classification: Coding agent
+    platforms: [darwin, linux]
+    # 93-linux-cli-agents-more, 2026-10-28: @qwen-code/qwen-code 0.26.3.
+    npm: ["@qwen-code/qwen-code"]
+    # Written by `qwen -p hi`, which then fails for want of credentials; --help writes
+    # nothing. Read off 93-linux-cli-agents-more as /home/dana/.qwen/.
+    state_dirs: ["~/.qwen"]
+    # A homebrew-core formula built from the npm tarball. 21-cli-agents-homebrew in CI run
+    # 40761736977: 0.25.3 on macOS 26 and 0.23.0 on macOS 15.
+    homebrew: [qwen-code]
+
+  # Google's Jules CLI. It drives Jules's cloud VMs, and `jules remote pull --apply` writes
+  # the resulting patch into the local checkout, so it acts on the user's behalf.
+  # NOT HERE: npm's unscoped `jules` is a 2017 JSON tool; test_matcher asserts it is declined.
+  - id: jules
+    name: Jules CLI
+    classification: Coding agent
+    platforms: [linux]
+    # 93-linux-cli-agents-more, 2026-10-28: @google/jules 0.1.42.
+    npm: ["@google/jules"]
+    # Written by `jules version`, which needs no sign-in. Read off the same run.
+    state_dirs: ["~/.jules"]
+
+  # JetBrains' Junie CLI. The npm package is a launcher: its postinstall writes a shim to the
+  # INSTALLING user's ~/.local/bin/junie and the binary to ~/.local/share/junie/versions/,
+  # both read off its postinstall.js, so an `npm -g` as root puts both under /root.
+  # @jetbrains/junie-cli is the previous name, last published 2026-04-27.
+  #
+  # NOT HERE: Junie inside JetBrains IDEs is a Marketplace plugin, unread because this
+  # environment could not reach the Marketplace; junie.jetbrains.com/install.sh, likewise.
+  - id: junie
+    name: Junie CLI
+    classification: Coding agent
+    platforms: [linux]
+    # 93-linux-cli-agents-more, 2026-10-28: @jetbrains/junie 3110.7.0 (Junie 26.9.7).
+    # 94-linux-cli-agents-legacy, same day: @jetbrains/junie-cli 1468.30.0.
+    npm: ["@jetbrains/junie", "@jetbrains/junie-cli"]
+    # The shim, marked `# JUNIE_MANAGED_SHIM` on its second line. Read off
+    # 93-linux-cli-agents-more as /root/.local/bin/junie.
+    binaries: ["~/.local/bin/junie"]
+    # Written by `junie --version`. Read off the same run as /root/.junie/.
+    state_dirs: ["~/.junie"]
+
+  # Mistral's Vibe. Installs as `mistral-vibe` and runs as `vibe`, beside vibe-acp and
+  # vibe-app-server. ~/.local/bin/vibe is not a value: a name that short is someone else's
+  # too, and the tool directory already names the package.
+  - id: mistral-vibe
+    name: Mistral Vibe
+    classification: Coding agent
+    platforms: [darwin, linux]
+    # 93-linux-cli-agents-more, 2026-10-28: `uv tool install mistral-vibe`, 3.0.3, read as
+    # /home/dana/.local/share/uv/tools/mistral-vibe/.
+    pypi: [mistral-vibe]
+    # Written by `vibe -p hi`, which then stops at the missing MISTRAL_API_KEY; --version
+    # writes nothing. Read off the same run as /home/dana/.vibe/.
+    state_dirs: ["~/.vibe"]
+    # A homebrew-core formula, a Python virtualenv build. 21-cli-agents-homebrew in CI run
+    # 40761736977: 3.0.0 on macOS 26 and 2.25.0 on macOS 15.
+    homebrew: [mistral-vibe]
