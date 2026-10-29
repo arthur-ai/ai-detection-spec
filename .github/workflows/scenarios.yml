@@ -199,6 +199,7 @@ jobs:
           - 12-chatgpt-pre-rename
           - 13-desktop-apps-more
           - 14-meta-muse
+          - 15-manus-atlas
           - 20-cli-agents
           - 21-cli-agents-homebrew
           - 25-python-agents

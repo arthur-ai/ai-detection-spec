@@ -1055,3 +1055,31 @@ agents:
     # A homebrew-core formula, a Python virtualenv build. 21-cli-agents-homebrew in CI run
     # 40761736977: 3.0.0 on macOS 26 and 2.25.0 on macOS 15.
     homebrew: [mistral-vibe]
+
+  # Manus's desktop agent, which runs tasks on the local machine through computer-use and
+  # screen-capture helpers. Renamed Manus.app -> Manus Studio.app; the bundle id held.
+  - id: manus
+    name: Manus
+    classification: Personal agent
+    platforms: [darwin]
+    # Read off CI run 40914014884 on 2026-10-29, osquery 5.23.1's apps rows:
+    # /Applications/Manus Studio.app 2.0.6 on macOS 26 and /Applications/Manus.app 1.7.4 on
+    # macOS 15, both installed by the cask. 15-manus-atlas.
+    bundle_ids: [im.manus.desktop]
+    # The same run's homebrew_packages rows: manus 2.0.6 and 1.7.4, type cask.
+    homebrew: [manus]
+
+  # OpenAI's ChatGPT Atlas. RETIRED on 2026-08-09 and kept, because machines that installed
+  # it still carry it; its Sparkle feed's newest build is from 2026-07-24. Its agent mode
+  # moved to ChatGPT's Chrome extension, which is not catalogued: its Web Store id has not
+  # been read off an install.
+  - id: chatgpt-atlas
+    name: ChatGPT Atlas
+    classification: AI browser
+    platforms: [darwin]
+    # Read off CI run 40914014884 on 2026-10-29: ChatGPT Atlas.app/Contents/Info.plist and
+    # osquery's apps row, 1.2026.189.1 on macOS 15 and 26, from OpenAI's last DMG.
+    # 15-manus-atlas. NOT `homebrew: [chatgpt-atlas]`: the cask is disabled, so no run can
+    # produce the token.
+    bundle_ids: [com.openai.atlas]
+

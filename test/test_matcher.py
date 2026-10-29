@@ -1446,6 +1446,18 @@ check("the new state directories and Junie's shim resolve to their agents",
       and _c.get("/home/dana/.factory/") == "factory-droid"
       and _c.get("/home/dana/.jules/") == "jules", f"got {_c}")
 
+# MANUS AND ATLAS, read off CI run 40914014884. Atlas shares ChatGPT's com.openai. namespace,
+# and each app's helpers extend its id, so exact means neither claims the other's or a helper.
+_c, _u = _claims(_kind("app", "com.openai.atlas", "com.openai.chat", "com.openai.codex",
+                       "com.openai.atlas.update-helper", "im.manus.desktop",
+                       "im.manus.desktop.computer-use"))
+check("Atlas, ChatGPT and Manus are told apart by their bundle ids",
+      _c == {"com.openai.atlas": "chatgpt-atlas", "com.openai.chat": "chatgpt-desktop",
+             "com.openai.codex": "chatgpt-desktop", "im.manus.desktop": "manus"}, f"got {_c}")
+check("...and an id one of them prefixes claims nothing",
+      {"com.openai.atlas.update-helper", "im.manus.desktop.computer-use"} <= set(_u),
+      f"got {_c}")
+
 # META'S TWO MUSE PRODUCTS, read off real installs on 2026-10-19 and told apart by route: a
 # bundle id for the desktop agent, a ~/.local/bin launcher for the coding agent. The launcher
 # fetches the binary beside it under a versioned name, and the launcher alone finds it.

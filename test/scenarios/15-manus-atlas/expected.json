@@ -1,0 +1,39 @@
+{
+  "description": "Manus's desktop agent through its cask, and ChatGPT Atlas's last build from OpenAI's own URL.",
+  "platform": "darwin",
+  "counts": {
+    "app": ">=2",
+    "brew": ">=1",
+    "npm": ">=0",
+    "file": ">=0",
+    "ext": ">=0",
+    "nmh": ">=0",
+    "daemon": ">=0",
+    "port": ">=0",
+    "vscodeext": ">=0",
+    "jbplugin": ">=0",
+    "proc": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "manus",
+      "chatgpt-atlas"
+    ],
+    "forbid": [
+      "chatgpt-desktop",
+      "perplexity-comet",
+      "dia",
+      "orion"
+    ]
+  },
+  "why": "Atlas's bundle id is its only witness, since a direct download leaves no Homebrew record. Manus also matches on the brew route, so must_find would pass with its bundle id broken; must_contain names im.manus.desktop for that reason. chatgpt-desktop is forbidden because Atlas shares its com.openai. namespace, and the AI browsers already catalogued because Atlas is another Chromium browser.",
+  "must_contain": [
+    "im.manus.desktop",
+    "com.openai.atlas"
+  ],
+  "known_gaps": [
+    "Neither app is launched: Manus's computer-use and capture helpers, which its cask's uninstall stanza names as launchd jobs, and Atlas's update helper are never registered, so no launchd value is read.",
+    "The chatgpt-atlas cask is disabled, so its Homebrew token, which machines that installed it before 2026-08-26 still report, cannot be produced and is not catalogued.",
+    "Manus's Windows build is not installed anywhere."
+  ]
+}
