@@ -6,7 +6,7 @@
     "deb+rpm": ">=1",
     "desktop": ">=0",
     "ext": ">=0",
-    "file": ">=7",
+    "file": ">=11",
     "jbplugin": ">=0",
     "nmh": ">=0",
     "npm": ">=0",
@@ -25,15 +25,19 @@
       "goose",
       "kiro-cli",
       "muse-code",
-      "pi"
+      "pi",
+      "antigravity",
+      "kimi-code",
+      "qoder"
     ],
     "forbid": [
       "claude-code",
       "codex-cli",
-      "openclaw"
+      "openclaw",
+      "gemini-cli"
     ]
   },
-  "why": "Each installer's own script names where it writes, and each of those places is already enumerated: a file directly under ~/.local/bin, or a top-level ~/.<dir>/. So these agents were invisible for want of a catalog value, not a query. Nothing else on this host can name any of them -- no npm global, no package, no editor -- so removing a value turns its must_find red. Pi's installer runs npm ci into ~/.pi/agent/install, which npm_packages does not read; forbid_rows holds both its npm names absent, so an installer that starts writing an npm global fails here rather than adding a second witness unseen. claude-code and codex-cli are forbidden because their own routes are ~/.local/bin and top-level home directories too, and new neighbours there must not be read as either. openclaw is forbidden because it is built on Pi's libraries.",
+  "why": "Each installer's own script names where it writes, and each of those places is already enumerated: a file directly under ~/.local/bin, or a top-level ~/.<dir>/. So these agents were invisible for want of a catalog value, not a query. Nothing else on this host can name any of them -- no npm global, no package, no editor -- so removing a value turns its must_find red. Qoder CLI is the exception, with two values here, ~/.local/bin/qodercli and ~/.qoder, so must_contain names both. Pi's installer runs npm ci into ~/.pi/agent/install, which npm_packages does not read; forbid_rows holds both its npm names absent, so an installer that starts writing an npm global fails here rather than adding a second witness unseen. claude-code and codex-cli are forbidden because their own routes are ~/.local/bin and top-level home directories too, and new neighbours there must not be read as either. openclaw is forbidden because it is built on Pi's libraries, and gemini-cli because the Antigravity CLI replaced it.",
   "must_contain": [
     "/.opencode/",
     "/.grok/",
@@ -42,7 +46,11 @@
     "/.local/bin/kiro-cli",
     "/.local/bin/muse",
     "/.local/bin/muse-bin-",
-    "/.pi/"
+    "/.pi/",
+    "/.local/bin/agy",
+    "/.kimi-code/",
+    "/.local/bin/qodercli",
+    "/.qoder/"
   ],
   "forbid_rows": [
     {
@@ -55,7 +63,7 @@
     }
   ],
   "known_gaps": [
-    "Only the installers' Linux branches run here. On macOS opencode, Cursor CLI, goose and Kiro CLI are proved through Homebrew in 21-cli-agents-homebrew, Muse Code by the same installer in 14-meta-muse, and Pi's and Grok Build's installers run in 20-cli-agents.",
+    "Only the installers' Linux branches run here. On macOS opencode, Cursor CLI, goose and Kiro CLI are proved through Homebrew in 21-cli-agents-homebrew, Muse Code by the same installer in 14-meta-muse, and Pi's and Grok Build's installers run in 20-cli-agents. The Antigravity CLI's macOS witness is its cask in 21-cli-agents-homebrew; the macOS branches of the Kimi Code and Qoder installers are not run anywhere.",
     "Nothing is run after installing, so state that appears on first use -- ~/.config/goose, ~/.local/share/opencode, ~/.muse -- is unexamined. Only the last is a top-level directory the enumeration would reach, and it is not a catalog value."
   ]
 }

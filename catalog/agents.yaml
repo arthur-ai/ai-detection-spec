@@ -372,14 +372,21 @@ agents:
   # com.google.antigravity-ide: it is legal under routes.yaml's bundle_ids value_pattern
   # and it is what the artifact says, so it is not tidied to a dot.
   #
-  # antigravity-cli is a third cask, binary-only with no app. Not carried: it would need a
-  # binaries route nothing here exercises yet.
+  # The Antigravity CLI, `agy`, is the third edition, and the successor to Gemini CLI.
   - id: antigravity
     name: Google Antigravity
     classification: Coding agent
-    platforms: [darwin]
+    platforms: [darwin, linux]
     bundle_ids: [com.google.antigravity, com.google.antigravity-ide]
-    homebrew: [antigravity, antigravity-ide]
+    # antigravity-cli is binary-only: it links /opt/homebrew/bin/agy, a path no route reads,
+    # so the cask token is its macOS witness. Read off a probe run on 2026-10-29, CI run
+    # 40914014884: antigravity-cli 1.3.3 on macOS 26 and 1.1.27 on macOS 15. Proved in
+    # 21-cli-agents-homebrew.
+    homebrew: [antigravity, antigravity-ide, antigravity-cli]
+    # Google's installer, antigravity.google/cli/install.sh, writes the binary here and
+    # nothing else under the home. Read off the same probe run on Ubuntu 24.04, a 231MB ELF.
+    # Proved in 84-linux-installers.
+    binaries: ["~/.local/bin/agy"]
 
   - id: aider
     name: aider
@@ -1055,3 +1062,68 @@ agents:
     # A homebrew-core formula, a Python virtualenv build. 21-cli-agents-homebrew in CI run
     # 40761736977: 3.0.0 on macOS 26 and 2.25.0 on macOS 15.
     homebrew: [mistral-vibe]
+
+  # Moonshot AI's Kimi Code CLI, a TypeScript rewrite of the Python Kimi CLI, whose PyPI
+  # summary now reads "[Archived] Legacy Python Kimi CLI, no longer maintained".
+  #
+  # NOT HERE: npm's unscoped `kimi-code` is a third party's wrapper that runs Claude Code
+  # against Kimi's API, and `kimi` is a state-machine library; test_matcher asserts both are
+  # declined. ~/.kimi-code/bin/kimi is one level below what the enumeration reads, so the
+  # directory is the curl installer's value.
+  - id: kimi-code
+    name: Kimi Code
+    classification: Coding agent
+    platforms: [linux]
+    # Read on 2026-10-29 off an `npm install -g` on an Ubuntu 24.04 host, osquery 5.23.1's
+    # npm_packages row: @moonshot-ai/kimi-code 2.4.0. 96-linux-cli-agents-npm.
+    npm: ["@moonshot-ai/kimi-code"]
+    # The previous, Python generation: kimi-cli 1.52.0, last uploaded 2026-09-22, as a uv
+    # tool directory. 94-linux-cli-agents-legacy; pending CI.
+    pypi: [kimi-cli]
+    # code.kimi.com/kimi-code/install.sh puts the binary at ~/.kimi-code/bin/kimi beside a
+    # `region` file. Read off a probe run on Ubuntu 24.04 on 2026-10-29, CI run 40914014884.
+    # Proved in 84-linux-installers.
+    state_dirs: ["~/.kimi-code"]
+
+  # Tencent's CodeBuddy Code. Its package ships five bins (codebuddy, cbc, codebuddy-code,
+  # cbc-prewarm, codebuddy-lowmem), so the package name is the value, not a binary.
+  #
+  # NOT HERE: npm's unscoped `codebuddy` and `codebuddy-code` are a third party's "Hello,
+  # World!" packages; test_matcher asserts both are declined. The CodeBuddy IDE and its
+  # editor extensions are not installed anywhere here.
+  - id: codebuddy-code
+    name: CodeBuddy Code
+    classification: Coding agent
+    platforms: [linux]
+    # The same install's npm_packages row: @tencent-ai/codebuddy-code 2.178.1.
+    # 96-linux-cli-agents-npm.
+    npm: ["@tencent-ai/codebuddy-code"]
+
+  # Alibaba's Qoder CLI. One entry for Qoder, as Antigravity is one entry for its editions:
+  # the Qoder IDE is not installed anywhere here, and its bundle id would join this entry.
+  - id: qoder
+    name: Qoder
+    classification: Coding agent
+    platforms: [linux]
+    # The same install's npm_packages row: @qoder-ai/qodercli 1.1.81. 96-linux-cli-agents-npm.
+    npm: ["@qoder-ai/qodercli"]
+    # Written at install time by both routes. The npm postinstall wrote /root/.qoder/ (entry/,
+    # logs/, .auth/), read off that host by osquery's `file` table. qoder.com/install wrote ~/.qoder/bin/qodercli/
+    # qodercli-1.1.81 and ~/.qoder/entry/, read off the CI probe run 40914014884.
+    state_dirs: ["~/.qoder"]
+    # qoder.com/install links this to ~/.qoder/bin/qodercli/qodercli-<version>. Same probe run.
+    # Proved in 84-linux-installers.
+    binaries: ["~/.local/bin/qodercli"]
+
+  # Letta's Letta Code, a coding agent built on Letta's stateful agents.
+  #
+  # NOT HERE: npm's unscoped `letta` is an unrelated promisify library; test_matcher asserts it
+  # is declined. Letta also publishes `letta-code`, a 1.0.0 that only points at the scoped
+  # package and is not carried: no run installed it.
+  - id: letta-code
+    name: Letta Code
+    classification: Coding agent
+    platforms: [linux]
+    # The same install's npm_packages row: @letta-ai/letta-code 0.34.23.
+    # 96-linux-cli-agents-npm.
+    npm: ["@letta-ai/letta-code"]

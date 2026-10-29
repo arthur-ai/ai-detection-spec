@@ -9,9 +9,9 @@
 Every AI agent this repo finds, every identifier it is matched on,
 and the CI test behind each one.
 
-![agents](https://img.shields.io/badge/agents-49-1D4E89)
-![identifiers](https://img.shields.io/badge/identifiers-140-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-140%2F140-2E7D57)
+![agents](https://img.shields.io/badge/agents-53-1D4E89)
+![identifiers](https://img.shields.io/badge/identifiers-150-1D4E89)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-140%2F150-A26A16)
 ![real install](https://img.shields.io/badge/by_real_install-140-2E7D57)
 
 </div>
@@ -19,7 +19,7 @@ and the CI test behind each one.
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 140 of 140. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
+**Every identifier is proved by a real install in CI** — 140 of 150. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
 
 ## 🧪 Why a real install is the bar
 
@@ -32,7 +32,9 @@ Proof is counted **per identifier**, not per agent. Installing an agent vouches
 only for the identifiers that run actually matched, so a sibling identifier on the
 same agent is not covered by association.
 
-# Agents (49)
+> **This number is a floor.** `00-baseline`, `100-windows-baseline`, `70-linux-baseline`, `74-linux-dpkg-removed`, `76-linux-systemd`, `96-linux-cli-agents-npm` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
+
+# Agents (53)
 
 Software that acts on the user's behalf. This is what the catalog is for.
 
@@ -45,11 +47,12 @@ Operates on a codebase, usually with shell access.
 | **aider** | macOS, Linux, Windows | **`aider`**, **`aider-chat`**, **`paulgauthier/aider`**, **`~/.aider`** | 106-windows-python-agents, 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
 | **Amazon Q Developer** | macOS, Linux | **`amazonwebservices.amazon-q-vscode`**, **`plugin-amazonq`** | 30-ide-agents, 85-linux-vscode-agents, 86-linux-jetbrains-agents |
 | **Amp** | Linux | **`@ampcode/cli`**, **`@sourcegraph/amp`** | 93-linux-cli-agents-more, 94-linux-cli-agents-legacy |
-| **Google Antigravity** | macOS | **`com.google.antigravity`**, **`com.google.antigravity-ide`**, **`antigravity`**, **`antigravity-ide`** | 10-desktop-apps |
+| **Google Antigravity** | macOS, Linux | **`com.google.antigravity`**, **`com.google.antigravity-ide`**, **`antigravity`**, **`antigravity-ide`**, antigravity-cli ⚠, ~/.local/bin/agy ⚠ | 10-desktop-apps, 21-cli-agents-homebrew, 84-linux-installers |
 | **Augment Code** | macOS, Linux | **`@augmentcode/auggie`**, **`augment.vscode-augment`** | 20-cli-agents, 71-linux-cli-agents, 85-linux-vscode-agents |
 | **BLACKBOX AI** | macOS, Linux | **`blackboxapp.blackbox`**, **`blackboxapp.blackboxagent`** | 30-ide-agents, 85-linux-vscode-agents |
 | **Claude Code** | macOS, Linux, Windows | **`@anthropic-ai/claude-code`**, **`anthropic.claude-code`**, **`~/.claude`**, **`~/.local/bin/claude`**, **`~/.local/bin/claude.exe`**, **`~/.local/share/claude/versions/`**, **`~/.local/bin/claude.exe`**, **`claude-code`**, **`claude-code`** | 101-windows-cli-agents, 102-windows-claude-native, 103-windows-vscode-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 83-linux-claude-running, 85-linux-vscode-agents, 89-linux-claude-deb, 90-demo-fleet, 91-linux-claude-rpm |
 | **Cline** | macOS, Linux, Windows | **`cline`**, **`saoudrizwan.claude-dev`**, **`cline`** | 103-windows-vscode-agents, 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode, 80-linux-jetbrains |
+| **CodeBuddy Code** | Linux | @tencent-ai/codebuddy-code | 96-linux-cli-agents-npm |
 | **CodeGPT** | macOS, Linux | **`danielsanmedium.dscodegpt`** | 30-ide-agents, 85-linux-vscode-agents |
 | **Codex CLI** | macOS, Linux, Windows | **`codex`**, **`@openai/codex`**, **`openai.chatgpt`**, **`~/.codex`** | 101-windows-cli-agents, 103-windows-vscode-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 85-linux-vscode-agents, 90-demo-fleet |
 | **Cody** | macOS, Linux | **`sourcegraph.cody-ai`**, **`Sourcegraph`** | 30-ide-agents, 85-linux-vscode-agents, 86-linux-jetbrains-agents |
@@ -65,13 +68,16 @@ Operates on a codebase, usually with shell access.
 | **Jules CLI** | Linux | **`@google/jules`**, **`~/.jules`** | 93-linux-cli-agents-more |
 | **Junie CLI** | Linux | **`@jetbrains/junie`**, **`@jetbrains/junie-cli`**, **`~/.junie`**, **`~/.local/bin/junie`** | 93-linux-cli-agents-more, 94-linux-cli-agents-legacy |
 | **Kilo Code** | macOS, Linux, Windows | **`@kilocode/cli`**, **`kilocode.kilo-code`** | 103-windows-vscode-agents, 20-cli-agents, 71-linux-cli-agents, 85-linux-vscode-agents |
+| **Kimi Code** | Linux | @moonshot-ai/kimi-code ⚠, kimi-cli ⚠, ~/.kimi-code ⚠ | 84-linux-installers, 94-linux-cli-agents-legacy, 96-linux-cli-agents-npm |
 | **Kiro** | macOS | **`dev.kiro.desktop`**, **`kiro`** | 10-desktop-apps |
 | **Kiro CLI** | macOS, Linux | **`com.amazon.codewhisperer`**, **`kiro-cli`**, **`~/.local/bin/kiro-cli`** | 21-cli-agents-homebrew, 84-linux-installers |
+| **Letta Code** | Linux | @letta-ai/letta-code | 96-linux-cli-agents-npm |
 | **Mistral Vibe** | macOS, Linux | **`mistral-vibe`**, **`mistral-vibe`**, **`~/.vibe`** | 21-cli-agents-homebrew, 93-linux-cli-agents-more |
 | **Muse Code** | macOS, Linux | **`muse-code`**, **`~/.local/bin/muse`** | 14-meta-muse, 21-cli-agents-homebrew, 84-linux-installers |
 | **opencode** | macOS, Linux | **`opencode`**, **`opencode-ai`**, **`~/.opencode`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 84-linux-installers |
 | **OpenHands** | Linux | **`ghcr.io/openhands/openhands`**, **`ghcr.io/all-hands-ai/openhands`**, **`https://github.com/OpenHands/OpenHands`** | 79-linux-image |
 | **Pi** | macOS, Linux | **`@earendil-works/pi-coding-agent`**, **`@mariozechner/pi-coding-agent`**, **`~/.pi`** | 20-cli-agents, 84-linux-installers, 87-linux-pi, 88-linux-pi-legacy |
+| **Qoder** | Linux | @qoder-ai/qodercli ⚠, ~/.qoder ⚠, ~/.local/bin/qodercli ⚠ | 84-linux-installers, 96-linux-cli-agents-npm |
 | **Qwen Code** | macOS, Linux | **`qwen-code`**, **`@qwen-code/qwen-code`**, **`~/.qwen`** | 21-cli-agents-homebrew, 93-linux-cli-agents-more |
 | **Roo Code** | macOS, Linux, Windows | **`rooveterinaryinc.roo-cline`** | 103-windows-vscode-agents, 30-ide-agents, 85-linux-vscode-agents |
 | **SWE-agent** | Linux | **`sweagent/swe-agent`** | 79-linux-image |
@@ -121,6 +127,23 @@ A chat client that can run tools on the machine, for example through MCP.
 | **Perplexity** | macOS | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
 
 > **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = superseded: a run proved it and the current release no longer emits it. ∅ = no CI runner for its platform. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it.
+
+## ⚠️ Identifiers that did not pass
+
+Every one is work, and the middle column says what kind. **did not appear** means a scenario installed the agent and this identifier never showed up — the suite reached it and it did not reproduce, usually because the scenario installs by a different route, or because the artifact only exists once the agent has run.
+
+| agent | route | identifier | state | reached by |
+|---|---|---|---|---|
+| Google Antigravity | homebrew | `antigravity-cli` | did not appear | 10-desktop-apps, 21-cli-agents-homebrew |
+| Google Antigravity | binary | `~/.local/bin/agy` | did not appear | 10-desktop-apps, 21-cli-agents-homebrew, 84-linux-installers |
+| CodeBuddy Code | npm | `@tencent-ai/codebuddy-code` | no test | -- |
+| Kimi Code | npm | `@moonshot-ai/kimi-code` | did not appear | 84-linux-installers, 94-linux-cli-agents-legacy |
+| Kimi Code | PyPI | `kimi-cli` | did not appear | 84-linux-installers, 94-linux-cli-agents-legacy |
+| Kimi Code | state dir | `~/.kimi-code` | did not appear | 84-linux-installers, 94-linux-cli-agents-legacy |
+| Letta Code | npm | `@letta-ai/letta-code` | no test | -- |
+| Qoder | npm | `@qoder-ai/qodercli` | did not appear | 84-linux-installers |
+| Qoder | state dir | `~/.qoder` | did not appear | 84-linux-installers |
+| Qoder | binary | `~/.local/bin/qodercli` | did not appear | 84-linux-installers |
 
 **What it cannot see is a separate page.** [`docs/limits.md`](limits.md) carries what osquery cannot see on any machine and what each scenario leaves unproved after its install succeeds -- rendered from the same inputs, gated the same way.
 
