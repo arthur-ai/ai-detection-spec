@@ -199,6 +199,7 @@ jobs:
           - 12-chatgpt-pre-rename
           - 13-desktop-apps-more
           - 14-meta-muse
+          - 15-probe-desktop
           - 20-cli-agents
           - 21-cli-agents-homebrew
           - 25-python-agents
@@ -388,6 +389,7 @@ jobs:
           - 93-linux-cli-agents-more
           - 94-linux-cli-agents-legacy
           - 95-linux-crush-packages
+          - 97-probe-linux
           # 77-linux-rpm and 91-linux-claude-rpm need dnf, which no ubuntu label has, so
           # they are under the container job only. A scenario listed where it can never
           # run spends a runner on exiting 3; tools/check_workflows.py still fails one

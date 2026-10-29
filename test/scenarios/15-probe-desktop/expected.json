@@ -1,0 +1,7 @@
+{
+  "description": "Throwaway probe.",
+  "platform": "darwin",
+  "counts": {},
+  "classified": {"must_find": [], "forbid": []},
+  "why": "probe"
+}
