@@ -1446,6 +1446,32 @@ check("the new state directories and Junie's shim resolve to their agents",
       and _c.get("/home/dana/.factory/") == "factory-droid"
       and _c.get("/home/dana/.jules/") == "jules", f"got {_c}")
 
+# THE AGENTS ADDED 2026-10-29, and the unrelated npm names beside them: `kimi-code` (a wrapper
+# that runs Claude Code against Kimi), `kimi` (a state machine), `codebuddy` and
+# `codebuddy-code` (a "Hello, World!"), and `letta` (a promisify helper).
+_c, _u = _claims(_kind("npm", "@moonshot-ai/kimi-code", "kimi-code", "kimi",
+                       "@tencent-ai/codebuddy-code", "codebuddy", "codebuddy-code",
+                       "@qoder-ai/qodercli", "@letta-ai/letta-code", "letta"))
+check("the 2026-10-29 agents' npm names resolve to them",
+      _c == {"@moonshot-ai/kimi-code": "kimi-code",
+             "@tencent-ai/codebuddy-code": "codebuddy-code",
+             "@qoder-ai/qodercli": "qoder", "@letta-ai/letta-code": "letta-code"}, f"got {_c}")
+check("...and their unscoped namesakes claim nothing",
+      {"kimi-code", "kimi", "codebuddy", "codebuddy-code", "letta"} <= set(_u), f"got {_c}")
+_c, _u = _claims(_kind("file", "/home/dana/.local/bin/agy", "/home/dana/.local/bin/agy-old",
+                       "/home/dana/.kimi-code/", "/home/dana/.kimi/",
+                       "/home/dana/.local/share/uv/tools/kimi-cli/",
+                       "/home/dana/.local/bin/qodercli", "/home/dana/.local/bin/qoder",
+                       "/home/dana/.qoder/"))
+check("the curl installers' paths and the legacy Kimi tool directory resolve to their agents",
+      _c == {"/home/dana/.local/bin/agy": "antigravity", "/home/dana/.kimi-code/": "kimi-code",
+             "/home/dana/.local/share/uv/tools/kimi-cli/": "kimi-code",
+             "/home/dana/.local/bin/qodercli": "qoder", "/home/dana/.qoder/": "qoder"},
+      f"got {_c}")
+check("...while agy-old, ~/.kimi and a bare `qoder` claim nothing",
+      {"/home/dana/.local/bin/agy-old", "/home/dana/.kimi/",
+       "/home/dana/.local/bin/qoder"} <= set(_u), f"got {_c}")
+
 # META'S TWO MUSE PRODUCTS, read off real installs on 2026-10-19 and told apart by route: a
 # bundle id for the desktop agent, a ~/.local/bin launcher for the coding agent. The launcher
 # fetches the binary beside it under a versioned name, and the launcher alone finds it.

@@ -13,11 +13,16 @@
 #                                           so the route is ~/.pi. Read on 2026-10-19
 #   Muse Code   ~/.local/bin/muse           a launcher; the binary lands beside it as
 #                                           muse-bin-<version>. Read 2026-10-19
+#   Antigravity ~/.local/bin/agy            the binary itself. Read 2026-10-29
+#   Kimi Code   ~/.kimi-code/bin/kimi       the route is ~/.kimi-code, as opencode's is
+#   Qoder CLI   ~/.local/bin/qodercli       a link into ~/.qoder/bin/qodercli/, so ~/.qoder
+#                                           is a value as well
 #
 # Cursor and Grok also write ~/.local/bin/agent and ~/.grok/bin/agent. A name that generic
 # identifies nothing, so neither is catalogued.
 #
-# SEPARATE from 71-linux-cli-agents, which installs opencode from npm: two routes for one
+# SEPARATE from 71-linux-cli-agents, which installs opencode from npm, and from
+# 96-linux-cli-agents-npm, which installs Kimi Code and Qoder CLI from npm: two routes for one
 # binary name cannot share a host.
 set -e
 source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest-linux.sh"
@@ -54,6 +59,12 @@ vendor "the Pi installer" '~/.pi/agent/bin/pi' \
 # refused download leaves the launcher behind and would otherwise count as an install.
 vendor "the Muse Code installer" '~/.local/bin/muse-bin-*' \
   'curl --retry 3 -fsSL https://dev.meta.ai/install.sh | bash' || true
+vendor "the Antigravity CLI installer" '~/.local/bin/agy' \
+  'curl --retry 3 -fsSL https://antigravity.google/cli/install.sh | bash' || true
+vendor "the Kimi Code installer" '~/.kimi-code/bin/kimi' \
+  'curl --retry 3 -fsSL https://code.kimi.com/kimi-code/install.sh | bash' || true
+vendor "the Qoder CLI installer" '~/.local/bin/qodercli' \
+  'curl --retry 3 -fsSL https://qoder.com/install | bash' || true
 
 echo "--- what landed in the user's home:"
 as_user 'ls -1d ~/.*/ ~/.local/bin/* 2>&1' | sed 's/^/      /'

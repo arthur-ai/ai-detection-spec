@@ -1,0 +1,45 @@
+{
+  "description": "Four terminal coding agents through their npm names: Kimi Code, CodeBuddy Code, Qoder CLI and Letta Code.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "deb+rpm": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=1",
+    "jbplugin": ">=0",
+    "nmh": ">=0",
+    "npm": ">=4",
+    "port": ">=0",
+    "proc": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "kimi-code",
+      "codebuddy-code",
+      "qoder",
+      "letta-code"
+    ],
+    "forbid": [
+      "claude-code",
+      "codex-cli",
+      "gemini-cli"
+    ]
+  },
+  "why": "Each npm row is its agent's only witness except Qoder's, whose postinstall also writes ~/.qoder, so must_contain names both. Kimi Code, CodeBuddy Code and Qoder CLI follow Claude Code's and Gemini CLI's shape, and Qoder's postinstall carries Google's licence header, so those agents and codex-cli are forbidden: a new terminal agent must not be read as one already catalogued.",
+  "must_contain": [
+    "@moonshot-ai/kimi-code",
+    "@tencent-ai/codebuddy-code",
+    "@qoder-ai/qodercli",
+    "@letta-ai/letta-code",
+    "/root/.qoder/"
+  ],
+  "known_gaps": [
+    "No agent is run, so state that appears on first use is unexamined: Kimi Code's ~/.kimi-code is proved by its curl installer in 84-linux-installers instead, and CodeBuddy Code and Letta Code carry no state directory.",
+    "Editor surfaces are not installed: the CodeBuddy IDE and extensions, and the Qoder IDE."
+  ]
+}

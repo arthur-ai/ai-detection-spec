@@ -111,7 +111,7 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 82-linux-running | The gateway runs with a throwaway token and no channel or model. This proves what a running gateway looks like to osquery, not an agent at work. |
 | 83-linux-claude-running | `claude mcp serve` runs unauthenticated with no client connected, so this proves what a running Claude Code process looks like to osquery, not an agent at work. |
 | 83-linux-claude-running | Skips in a default container, where osquery cannot read another user's executable path. It runs for real on CI's ubuntu runner and under test/run-gce.sh and test/run-ec2.sh. |
-| 84-linux-installers | Only the installers' Linux branches run here. On macOS opencode, Cursor CLI, goose and Kiro CLI are proved through Homebrew in 21-cli-agents-homebrew, Muse Code by the same installer in 14-meta-muse, and Pi's and Grok Build's installers run in 20-cli-agents. |
+| 84-linux-installers | Only the installers' Linux branches run here. On macOS opencode, Cursor CLI, goose and Kiro CLI are proved through Homebrew in 21-cli-agents-homebrew, Muse Code by the same installer in 14-meta-muse, and Pi's and Grok Build's installers run in 20-cli-agents. The Antigravity CLI's macOS witness is its cask in 21-cli-agents-homebrew; the macOS branches of the Kimi Code and Qoder installers are not run anywhere. |
 | 84-linux-installers | Nothing is run after installing, so state that appears on first use -- ~/.config/goose, ~/.local/share/opencode, ~/.muse -- is unexamined. Only the last is a top-level directory the enumeration would reach, and it is not a catalog value. |
 | 85-linux-vscode-agents | Installed into VS Code only. Cursor, Windsurf, VSCodium and Trae keep their own extension directories, which osquery reports under vscode_edition, and none is exercised. |
 | 85-linux-vscode-agents | Blackbox's extensions are unpublished from the Marketplace and arrive here as the VSIX the Marketplace still serves by URL. If that URL stops answering, the two ids can no longer be produced, which is the cue to supersede them rather than drop them. |
@@ -126,7 +126,10 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 92-linux-browser-agents | x86_64 only: Google ships no Linux arm64 Chrome, so the arm64 runner skips this. |
 | 93-linux-cli-agents-more | Amp's and Droid's curl installers (ampcode.com/install.sh, app.factory.ai/cli) and Junie's (junie.jetbrains.com/install.sh) are not exercised, and no value was read from them. |
 | 93-linux-cli-agents-more | Editor extensions are not installed: Amp's VS Code extension, Qwen Code's IDE companion and Junie's JetBrains plugin. |
+| 94-linux-cli-agents-legacy | kimi-cli is never run, so whatever state directory the Python CLI wrote is unexamined. |
 | 95-linux-crush-packages | Charm's apt and yum repositories (repo.charm.sh) are not used; the release assets carry the same package name. |
+| 96-linux-cli-agents-npm | No agent is run, so state that appears on first use is unexamined: Kimi Code's ~/.kimi-code is proved by its curl installer in 84-linux-installers instead, and CodeBuddy Code and Letta Code carry no state directory. |
+| 96-linux-cli-agents-npm | Editor surfaces are not installed: the CodeBuddy IDE and extensions, and the Qoder IDE. |
 
 `14-meta-muse` needs macOS 14 or newer, so CI skips it on older runners rather than failing it. Its `requires.json` carries the reason.
 
