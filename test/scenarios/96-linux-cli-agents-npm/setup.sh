@@ -17,6 +17,14 @@ source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest-linux.sh"
 need_curl
 # 22 because @moonshot-ai/kimi-code declares node >=22.19 and @letta-ai/letta-code ^22.23.4.
 need_node 22 || echo "WARN: Node 22 did not install"
+# A COMPILER, for Letta: its node-pty ships no linux prebuild, so npm falls back to node-gyp,
+# which needs make and a C++ compiler. A hosted runner has both; the Debian, Rocky, Fedora
+# and Amazon Linux images have neither, and there the install failed with `not found: make`
+# (CI run 40918177229). A fleet machine without a toolchain cannot install Letta from npm.
+case "$(pm)" in
+  apt) need_pkgs make g++ || echo "WARN: make and g++ did not install" ;;
+  dnf) need_pkgs make gcc-c++ || echo "WARN: make and gcc-c++ did not install" ;;
+esac
 
 for pkg in @moonshot-ai/kimi-code @tencent-ai/codebuddy-code @letta-ai/letta-code; do
   retry "npm install -g $pkg" try "npm install -g $pkg" \
