@@ -934,9 +934,10 @@ agents:
     extension_ids: [camppjleccjaphfdbohjdohecfnoikec]
 
   # ---------------------------------------------------------------------------------------
-  # FROM HERE, terminal coding agents added 2026-10-28, each read off a real install on
-  # Ubuntu 24.04 (x86_64, osquery 5.23.1, npm 10.9.4, uv 0.11.32) by the scenario named. A
-  # value whose comment names no such run is pending its scenario's first CI run.
+  # FROM HERE, terminal coding agents added 2026-10-28. Each value was read off a real install
+  # by the scenario named. The npm, PyPI, deb and path values came from a run on Ubuntu 24.04
+  # (x86_64, osquery 5.23.1, npm 10.9.4, uv 0.11.32). The rpm and Homebrew values came from
+  # CI run 40761736977 the same day.
   # ---------------------------------------------------------------------------------------
 
   # Amp, from Amp (spun out of Sourcegraph). The npm package moved scope and both names are
@@ -967,7 +968,8 @@ agents:
     # Written by `droid exec`, which fails at authentication after creating it; --help and
     # --version write nothing. Read off 93-linux-cli-agents-more as /home/dana/.factory/.
     state_dirs: ["~/.factory"]
-    # A binary-only cask. Pending 21-cli-agents-homebrew's first run.
+    # A binary-only cask. 21-cli-agents-homebrew in CI run 40761736977: droid 0.245.1 on
+    # macOS 26 and 0.213.0 on macOS 15.
     homebrew: [droid]
 
   # Charm's Crush. The Go project that was opencode-ai/opencode before the rename, which is
@@ -983,8 +985,9 @@ agents:
     # 93-linux-cli-agents-more, 2026-10-28: @charmland/crush 0.98.2.
     npm: ["@charmland/crush"]
     # 95-linux-crush-packages, same day: the v0.98.2 release's crush_0.98.2_amd64.deb, dpkg
-    # rendering `crush 0.98.2`, maintainer kujtim@charm.sh. The .rpm's header names the
-    # package `crush` too; its rpm_packages row is pending the dnf images in CI.
+    # rendering `crush 0.98.2`, maintainer kujtim@charm.sh. The rpm_packages row is from the
+    # same scenario in CI run 40761736977: crush 0.98.2 off the release's .rpm on Fedora 41,
+    # Rocky 9 and Amazon Linux 2023.
     deb_packages: [crush]
     rpm_packages: [crush]
 
@@ -1000,7 +1003,8 @@ agents:
     # Written by `qwen -p hi`, which then fails for want of credentials; --help writes
     # nothing. Read off 93-linux-cli-agents-more as /home/dana/.qwen/.
     state_dirs: ["~/.qwen"]
-    # A homebrew-core formula built from the npm tarball. Pending 21-cli-agents-homebrew.
+    # A homebrew-core formula built from the npm tarball. 21-cli-agents-homebrew in CI run
+    # 40761736977: 0.25.3 on macOS 26 and 0.23.0 on macOS 15.
     homebrew: [qwen-code]
 
   # Google's Jules CLI. It drives Jules's cloud VMs, and `jules remote pull --apply` writes
@@ -1048,5 +1052,6 @@ agents:
     # Written by `vibe -p hi`, which then stops at the missing MISTRAL_API_KEY; --version
     # writes nothing. Read off the same run as /home/dana/.vibe/.
     state_dirs: ["~/.vibe"]
-    # A homebrew-core formula, a Python virtualenv build. Pending 21-cli-agents-homebrew.
+    # A homebrew-core formula, a Python virtualenv build. 21-cli-agents-homebrew in CI run
+    # 40761736977: 3.0.0 on macOS 26 and 2.25.0 on macOS 15.
     homebrew: [mistral-vibe]

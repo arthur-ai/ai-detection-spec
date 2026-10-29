@@ -11,8 +11,8 @@
 # second wins, and the row for the loser is whatever the winner left behind. Two machines
 # is the only way to test two routes honestly.
 #
-# Tokens verified against the Homebrew API before being written here -- two are casks and
-# three are formulae, which is not guessable from the product name:
+# Tokens verified against the Homebrew API before being written here. Some are casks and
+# some are formulae, which is not guessable from the product name:
 #
 #     codex        cask        copilot-cli      cask
 #     aider        formula     gemini-cli       formula

@@ -33,7 +33,7 @@ that any tool can use.
 | [**`SPEC.md`**](SPEC.md) | **The specification.** What a catalog of agents contains, what evidence a collector reports (the spec calls a collector a *binding*), and how the two are matched, so that tools written by different people give the same answer about the same machine |
 | [`schema/`](schema) | JSON Schemas for a catalog and for the evidence a binding reports |
 | [`conformance/`](conformance) | The test vectors a matcher must pass |
-| [`catalog/`](catalog) | This repository's catalog: **49 agents and 140 identifiers**, each one seen on a real install in CI |
+| [`catalog/`](catalog) | This repository's catalog: **49 agents and 140 identifiers**. CI must see each identifier on a real install, and the coverage badge above counts the ones it has seen |
 | [`bin/classify`](bin/classify) | The reference matcher. It reads collected evidence and names the agents the evidence proves |
 | [`osquery/`](osquery) | **The first binding:** osquery queries for macOS, Linux and Windows, and the scripts that run them on a Mac or a Linux machine. [Start here](osquery/README.md) to find the agents on your own machine |
 

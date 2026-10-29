@@ -13,9 +13,10 @@ need_curl
 need_node 20 || echo "WARN: Node 20 did not install"
 
 for pkg in @sourcegraph/amp droid; do
-  try "npm install -g $pkg" sudo_maybe npm install -g --no-fund --no-audit "$pkg" || true
+  retry "npm install -g $pkg" try "npm install -g $pkg" \
+    sudo_maybe npm install -g --no-fund --no-audit "$pkg" || true
 done
-try "npm install -g @jetbrains/junie-cli" \
+retry "npm install -g @jetbrains/junie-cli" try "npm install -g @jetbrains/junie-cli" \
   sudo_maybe env HOME=/root npm install -g --no-fund --no-audit @jetbrains/junie-cli || true
 echo "--- the globals npm recorded:"
 npm ls -g --depth=0 2>/dev/null | sed 's/^/      /'

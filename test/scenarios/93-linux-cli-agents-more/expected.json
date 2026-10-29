@@ -51,7 +51,7 @@
     "/home/dana/.vibe/"
   ],
   "known_gaps": [
-    "Amp's and Droid's curl installers (ampcode.com/install.sh, app.factory.ai/cli), Junie's (junie.jetbrains.com/install.sh) and Charm's apt and yum repositories are not exercised, and no value was read from them.",
+    "Amp's and Droid's curl installers (ampcode.com/install.sh, app.factory.ai/cli) and Junie's (junie.jetbrains.com/install.sh) are not exercised, and no value was read from them.",
     "Editor extensions are not installed: Amp's VS Code extension, Qwen Code's IDE companion and Junie's JetBrains plugin."
   ]
 }

@@ -16,16 +16,18 @@
 set -e
 source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest-linux.sh"
 need_curl
-need_node 20 || echo "WARN: Node 20 did not install"
+# 22 because @qwen-code/qwen-code declares node >=22. The other packages accept 20.
+need_node 22 || echo "WARN: Node 22 did not install"
 need_user
 need_pkgs python3 || true
 
 for pkg in @ampcode/cli @factory/cli @charmland/crush @qwen-code/qwen-code @google/jules; do
-  try "npm install -g $pkg" sudo_maybe npm install -g --no-fund --no-audit "$pkg" || true
+  retry "npm install -g $pkg" try "npm install -g $pkg" \
+    sudo_maybe npm install -g --no-fund --no-audit "$pkg" || true
 done
 # Junie's postinstall writes its shim under os.homedir(), so HOME is pinned: whether sudo
 # resets it is the host's choice, and the assertion names /root.
-try "npm install -g @jetbrains/junie" \
+retry "npm install -g @jetbrains/junie" try "npm install -g @jetbrains/junie" \
   sudo_maybe env HOME=/root npm install -g --no-fund --no-audit @jetbrains/junie || true
 try "junie --version, which is what writes ~/.junie" \
   sudo_maybe env HOME=/root /root/.local/bin/junie --version || true

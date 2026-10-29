@@ -21,14 +21,19 @@ tag=$(curl --retry 3 -fsS -o /dev/null -w '%{redirect_url}' \
 [ -n "$tag" ] || { echo "FAIL: the latest Crush release did not resolve"; exit 1; }
 v="${tag#v}"
 base="https://github.com/charmbracelet/crush/releases/download/$tag"
+# mktemp, keeping the suffix dnf keys on, for need_chrome's reason in lib/guest-linux.sh: a
+# fixed /tmp name can be planted before the privileged install.
 case "$(pm)" in
-  apt) retry "the Crush .deb" curl --retry 3 -fsSLo /tmp/crush.deb "$base/crush_${v}_${deb_arch}.deb" \
-         || { echo "FAIL: the Crush .deb did not download"; exit 1; }
-       try "dpkg -i crush" sudo_maybe dpkg -i /tmp/crush.deb || echo "WARN: crush did not install" ;;
-  dnf) retry "the Crush .rpm" curl --retry 3 -fsSLo /tmp/crush.rpm "$base/crush-${v}-1.${rpm_arch}.rpm" \
-         || { echo "FAIL: the Crush .rpm did not download"; exit 1; }
-       try "dnf install crush" sudo_maybe dnf -q -y install /tmp/crush.rpm || echo "WARN: crush did not install" ;;
+  apt) pkg=$(mktemp /tmp/crush.XXXXXX.deb)
+       retry "the Crush .deb" curl --retry 3 -fsSLo "$pkg" "$base/crush_${v}_${deb_arch}.deb" \
+         || { rm -f "$pkg"; echo "FAIL: the Crush .deb did not download"; exit 1; }
+       try "dpkg -i crush" sudo_maybe dpkg -i "$pkg" || echo "WARN: crush did not install" ;;
+  dnf) pkg=$(mktemp /tmp/crush.XXXXXX.rpm)
+       retry "the Crush .rpm" curl --retry 3 -fsSLo "$pkg" "$base/crush-${v}-1.${rpm_arch}.rpm" \
+         || { rm -f "$pkg"; echo "FAIL: the Crush .rpm did not download"; exit 1; }
+       try "dnf install crush" sudo_maybe dnf -q -y install "$pkg" || echo "WARN: crush did not install" ;;
   *)   echo "SKIP: neither dpkg nor rpm here"; exit 3 ;;
 esac
+rm -f "$pkg"
 echo "--- where the package put the binary:"
 ls -la /usr/bin/crush 2>/dev/null || echo "      no /usr/bin/crush"
