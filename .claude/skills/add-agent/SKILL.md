@@ -66,8 +66,13 @@ is why.
   `aider` installs as `aider-chat`.
 - **A `state_dirs` value usually needs the agent run**, not just installed. `hermes`'s comment
   records which install routes create its directory and which leave it for first run.
+  `--help` and `--version` often write nothing. A one-line prompt without credentials usually
+  does, and fails harmlessly at authentication: 93's header names the command that worked for
+  each agent, such as `qwen -p` and `droid exec`.
 - **Comment each value with where it was read**: scenario, date, version and path, as the
-  entries after `opencode` do. That comment is the provenance a reviewer checks.
+  entries after `opencode` do. That comment is the provenance a reviewer checks. A value only
+  CI can read is commented as pending until the PR's run reads it, and then the comment cites
+  that run's id, as `crush`'s rpm value does.
 - **If the local macOS guest cannot reach a download**, read the bundle id off the shipped
   dmg's `Info.plist` on the host, and leave what the local run could not prove for CI — then
   say so in the commit (step 6). A hang rather than an error is the usual sign: on 2026-10-07
@@ -93,22 +98,31 @@ What makes the scenario prove the identifier rather than the agent:
   installing Cline. `test/lib/assert.sh` reads the other keys (`must_contain`, `require_rows`,
   `forbid_rows`, `forbid_evidence`).
 - **Add a lookalike to `test/test_matcher.py`** and assert it is declined, where one exists — a
-  generic sibling binary, an id another id contains.
+  generic sibling binary, an id another id contains, or the same name on another registry.
+  npm's unscoped `amp`, `crush`, `jules` and `qwen-code` are other people's packages, and
+  homebrew-core's `amp` is a text editor.
 - **Break it once.** Remove the value from the catalog and confirm the matcher check or the
   scenario goes red. If it stays green, it proves nothing.
 
 Mechanics:
 
 - `setup.sh` sources `test/lib/guest.sh` (macOS: `need_brew`, `need_node`) or
-  `test/lib/guest-linux.sh` (`need_user`, `try_user`, `install_vscode_ext`,
-  `install_jb_plugin`); both carry `retry`. Wrap every download and install in it; the
-  helpers already do. Running out should `WARN` and continue, so the assertion names which agent is
+  `test/lib/guest-linux.sh` (`need_user`, `try`, `try_user`, `install_vscode_ext`,
+  `install_jb_plugin`); both carry `retry`. Wrap every download and install in it, npm
+  included; the helpers already do. On Linux an npm install is
+  `retry "<label>" try "<label>" npm install -g …`, so each failed attempt prints npm's reason
+  (93). Running out should `WARN` and continue, so the assertion names which agent is
   missing, or `exit 1` when nothing after it can run.
+- **`need_node <major>` follows the package's declared `engines.node`**, not the version a run
+  happened to pass on. Qwen Code declares 22 and passed on 20.
+- **Download a package installed as root to `mktemp`**, keeping the suffix dnf keys on, as 95
+  and `need_chrome` do. A fixed `/tmp` name can be planted before the install.
 - **A Windows scenario is `setup.ps1`**, Windows PowerShell 5.1 and ASCII only, dot-sourcing
   `test/lib/guest-windows.ps1` (`Invoke-Retry`, `Invoke-Try`, `Get-Download`, `Install-Exe`,
-  `Reset-NpmPrefix`, `Install-VSCodeExtension`, `Exit-Skip`), and it ends in an explicit `exit`.
-  A Windows path in `expected.json` is asserted with `require_rows`, whose values are
-  substrings of one field: `must_contain` matches the JSON text, where every `\` is doubled.
+  `Reset-NpmPrefix`, `Install-NpmGlobal`, `Install-VSCodeExtension`, `Exit-Skip`), and it ends
+  in an explicit `exit`. A Windows path in `expected.json` is asserted with `require_rows`,
+  whose values are substrings of one field: `must_contain` matches the JSON text, where every
+  `\` is doubled.
 - `exit 3` is SKIP, for an environment that cannot host the scenario — a missing package
   family or architecture, never a failed download. Be slow to conclude even that (`CLAUDE.md`,
   *Testing*).
@@ -119,11 +133,12 @@ Mechanics:
   because Ubuntu never has rpm. Windows goes in `scenario-windows`. `tools/check_workflows.py`
   fails until it is listed.
 - Run it: `test/run-linux.sh <name>` (Docker; `LINUX_IMAGE=quay.io/rockylinux/rockylinux:9`
-  for the rpm family) or `test/run.sh <name>` (Tart). Both write `observed.json` on a pass.
-  Windows has no local harness: its job uploads `observed-<name>--windows-2025`, and
-  `tools/merge_observations.py` merges a downloaded run's artifacts into the tree.
-  **Commit it** — `collect` only commits on `main`, so without it `docs/agents.md` reports the
-  new values as uncovered until the merge.
+  for the rpm family) or `test/run.sh <name>` (Tart). Windows has no local harness, so its CI
+  job is the run. **A local pass leaves nothing to commit**: its record lands under
+  `test/artifacts/`, and only CI's `collect` job writes `observed.json` (`CONTRIBUTING.md`,
+  **Recording the observation**).
+- **Run in the container or VM, not on a host.** A host has agents of its own: its
+  `~/.claude` tripped `forbid claude-code` when 93, 94 and 95 were first run on one.
 
 ## 5. Regenerate and run the gates
 
@@ -163,3 +178,5 @@ The body is what `.claude/skills/release` writes the notes from, so it says:
 - Don't delete a removed entry's fixture rows. Invert the assertion to *must not match*.
 - Don't write a count into a comment, a scenario header or `expected.json`'s prose. Nothing keeps
   it current.
+- Don't spell out GitHub's skip-ci marker in a commit message, even to describe it. GitHub
+  honours it anywhere in the head commit's message and skips the pull request's CI.
