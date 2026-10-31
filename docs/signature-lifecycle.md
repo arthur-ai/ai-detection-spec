@@ -54,8 +54,9 @@ a maintainer's machine catches nothing on a pull request.
 
 **Proof is recorded beside the scenario**, in `test/scenarios/<name>/observed.json`: agent
 version, platform, OS, arch, and the CI **run** that produced it. The run is what lets proof
-outlive it. Off CI the field is absent, because a local run has no run to name. It is outside
-the merge key, so two runs on one `(platform, os, arch)` are one observation re-proved.
+outlive it. It is outside the merge key, so two runs on one `(platform, os, arch)` are one
+observation re-proved. A local run has no run to name, so it records under `test/artifacts/`
+and never here: the collect job is this file's one writer.
 
 **Credit is keyed by `(route, value)`, never by value alone.** OpenClaw ships an npm package
 and a Homebrew cask both named `openclaw`, and a value-keyed credit let an npm-only scenario
@@ -126,11 +127,13 @@ script says where its reader will see it.
 ## Superseding
 
 ```console
-$ python3 tools/agent_status.py --record /tmp/out.json test/scenarios/<scenario> --supersede
+$ python3 tools/agent_status.py --record /tmp/out.json test/scenarios/<scenario> --supersede \
+    --platform <platform> --os <os> --arch <arch>
 ```
 
-This **moves** the lost observation into the `archived` list of that `observed.json` and
-prints the record to paste under the agent:
+Pass the refused run's platform, OS and arch, the key the shrink guard compared on. This
+**moves** the lost observation into the `archived` list of that `observed.json` and prints the
+record to paste under the agent:
 
 ```yaml
 superseded:

@@ -686,7 +686,7 @@ _rows = [{"kind": "file", "id": "/Users/x/.local/share/uv/tools/aider-chat/", "v
 with _tf2.NamedTemporaryFile("w", suffix=".json", delete=False) as _fh:
     json.dump(_rows, _fh)
 with _tf2.TemporaryDirectory() as _d:
-    _st.record(_fh.name, _d)
+    _st.record(_fh.name, _d, out=pathlib.Path(_d) / "observed.json")
     _rec = json.loads((pathlib.Path(_d) / "observed.json").read_text())["identifiers"]
 _got = {(r["route"], r["value"]) for r in _rec}
 
@@ -714,7 +714,7 @@ _mixed = [{"kind": "file", "id": "/Users/x/.local/pipx/venvs/not-an-agent/", "ve
 with _tf2.NamedTemporaryFile("w", suffix=".json", delete=False) as _fm:
     json.dump(_mixed, _fm)
 with _tf2.TemporaryDirectory() as _d:
-    _st.record(_fm.name, _d)
+    _st.record(_fm.name, _d, out=pathlib.Path(_d) / "observed.json")
     _got = {(r["route"], r["value"]) for r in
             json.loads((pathlib.Path(_d) / "observed.json").read_text())["identifiers"]}
 check("recording credits a tool dir named by `loc` when `id` names an unlisted one",
@@ -732,10 +732,10 @@ check("recording credits a tool dir named by `loc` when `id` names an unlisted o
 # CI run, and the catalog entry standing on it would cite a run that never happened.
 with _tf2.TemporaryDirectory() as _d:
     _st.record(_fh.name, _d, os_version="24.04", arch="arm64", platform="linux",
-               run_id="33702118455")
+               run_id="33702118455", out=pathlib.Path(_d) / "observed.json")
     _with_run = json.loads((pathlib.Path(_d) / "observed.json").read_text())["identifiers"]
 with _tf2.TemporaryDirectory() as _d:
-    _st.record(_fh.name, _d)
+    _st.record(_fh.name, _d, out=pathlib.Path(_d) / "observed.json")
     _no_run = json.loads((pathlib.Path(_d) / "observed.json").read_text())["identifiers"]
 
 check("an observation records the run that produced it",
@@ -915,9 +915,9 @@ with _tf2.TemporaryDirectory() as _d:
         "identifiers": [_rec("openclaw", "15.7.9")],
         "archived": [_rec("moltbot", "14.8.9")]}, indent=2))
 
-    # Two runners upload. macos-14 still carries the archived record verbatim, because
-    # record()'s `kept` copies every other platform key's records into each job's upload --
-    # which is exactly how a resurrection happens.
+    # Two runners upload, and macos-14's still carries the archived record: the shape every
+    # upload had while record() copied other keys' records in, and the shape a job re-run
+    # after the supersede still has.
     _artifact(_art, "zz-merge", "15.7.9", [_rec("openclaw", "15.7.9")])
     _artifact(_art, "zz-merge", "14.8.9", [_rec("openclaw", "15.7.9"), _rec("moltbot", "14.8.9")])
 
@@ -932,12 +932,12 @@ check("the merge carries the archived list through",
       "it rebuilt the document from scratch, so an archive survived until the next main run")
 check("...and does NOT resurrect an archived record from another runner's upload",
       "moltbot" not in _live,
-      "record()'s `kept` re-uploads other platforms' records verbatim, and the union "
-      "handed them straight back to identifiers")
+      "an upload carrying the archived key, and the union handed it straight back to "
+      "identifiers")
 check("a live record still merges normally", _live == {"openclaw"}, f"got {sorted(_live)}")
 
-# The 26.0 artifact sorts LAST and carries a stale copy of the 15.7.9 record, as every
-# upload does for the other runner's keys. The 15.7.9 runner's own record must win.
+# The 26.0 artifact sorts LAST and carries a stale copy of the 15.7.9 record, as uploads
+# did while record() copied other keys in. The 15.7.9 runner's own record must win.
 with _tf2.TemporaryDirectory() as _d:
     _art, _scen = pathlib.Path(_d) / "art", pathlib.Path(_d) / "scen"
     (_scen / "zz-merge").mkdir(parents=True)
@@ -1010,8 +1010,12 @@ _pypi_only = [{"kind": "file", "id": "/home/dana/.local/share/uv/tools/aider-cha
                "ver": "", "loc": "/home/dana/.local/share/uv/tools/aider-chat/",
                "extra": "", "perms": ""}]
 
-def _try_record(arch, committed):
-    """Run record() against a committed file, in a fake scenarios root."""
+def _try_record(arch, committed, dest="beside", allow_shrink=False):
+    """Run record() against a committed file, in a fake scenarios root.
+
+    (exit code, stdout, the committed document after, the run's own record or None).
+    `dest` is where --out points: "beside" the run, "tree" for the committed file, or None.
+    """
     tmp = pathlib.Path(_tf2.mkdtemp())
     try:
         scen = tmp / "scenarios" / "zz-fixture"
@@ -1019,17 +1023,22 @@ def _try_record(arch, committed):
         (scen / "observed.json").write_text(json.dumps(committed))
         art = tmp / "art.json"
         art.write_text(json.dumps(_pypi_only))
+        run = {"beside": tmp / "run" / "observed.json", "tree": scen / "observed.json",
+               None: None}[dest]
         old_root, _st.SCENARIOS = _st.SCENARIOS, tmp / "scenarios"
         out, rc = _io.StringIO(), 0
         try:
             with _ctx.redirect_stdout(out):
-                _st.record(str(art), str(scen), "24.04", arch, "linux")
+                _st.record(str(art), str(scen), "24.04", arch, "linux", out=run,
+                           allow_shrink=allow_shrink)
         except SystemExit as e:
             rc = e.code or 0
         finally:
             _st.SCENARIOS = old_root
-        after = json.loads((scen / "observed.json").read_text())["identifiers"]
-        return rc, out.getvalue(), after
+        after = json.loads((scen / "observed.json").read_text())
+        own = (json.loads(run.read_text())
+               if dest == "beside" and run.exists() else None)
+        return rc, out.getvalue(), after, own
     finally:
         _sh.rmtree(tmp, ignore_errors=True)
 
@@ -1040,7 +1049,7 @@ _two_key = _observed(
     ("aider", "pypi", "aider-chat", "x86_64"),
     ("aider", "state_dirs", "~/.aider", "x86_64"))
 
-_rc, _out, _after = _try_record("x86_64", _two_key)
+_rc, _out, _after, _own = _try_record("x86_64", _two_key)
 check("a run proving less on ITS OWN key is refused",
       _rc == 1 and "aider state_dirs:~/.aider" in _out,
       f"rc={_rc} out={_out.strip()[:160]!r}")
@@ -1049,14 +1058,41 @@ check("...and the refusal names the key it compared, and the file's keys",
       "naming only WHAT was lost, and not which key it was compared against, is what sent "
       "me looking for a bug in the guard")
 
-_rc, _out, _after = _try_record("riscv64", _two_key)
-_keys = {(r.get("arch")) for r in _after}
+_rc, _out, _after, _own = _try_record("riscv64", _two_key)
 check("a run on a DIFFERENT key is not judged against the others",
       _rc == 0, f"rc={_rc} out={_out.strip()[:160]!r}")
-check("...and it leaves every other key's records alone",
-      {"aarch64", "x86_64"} <= _keys,
-      f"kept arches {sorted(k for k in _keys if k)} -- overwriting would let the last job "
-      f"to finish decide what the scenario had ever proved")
+
+# --- the committed record has one writer: collect --------------------------------
+#
+# record() wrote into test/scenarios/ in place, so every local pass dirtied a committed file
+# and every CI upload carried a copy of every other runner's records. It writes beside the run
+# now, and the committed file is merged by tools/merge_observations.py alone.
+check("a plain record leaves the committed file exactly as it was",
+      _after == _two_key, f"got {_after}")
+check("...and writes this run's records, and only those, beside the run",
+      _own is not None and _own["scenario"] == "zz-fixture"
+      and {r["arch"] for r in _own["identifiers"]} == {"riscv64"}
+      and "archived" not in _own,
+      f"got {_own}")
+
+_rc, _out, _after, _own = _try_record("riscv64", _two_key, dest="tree")
+check("an --out inside test/scenarios/ is refused",
+      isinstance(_rc, str) and "refusing --out" in _rc and _after == _two_key,
+      f"rc={_rc!r}")
+_rc, _out, _after, _own = _try_record("riscv64", _two_key, dest=None)
+check("a plain record with no --out is refused rather than written somewhere",
+      isinstance(_rc, str) and "--out" in _rc and _after == _two_key, f"rc={_rc!r}")
+
+# --allow-shrink is the other maintainer mode beside --supersede: it takes the lost records
+# out of the committed file and keeps nothing of them. Without it, an identifier removed
+# from a scenario would leave the shrink guard refusing that scenario's CI job for good.
+_rc, _out, _after, _own = _try_record("x86_64", _two_key, allow_shrink=True)
+_left = {(r["value"], r["arch"]) for r in _after["identifiers"]}
+check("--allow-shrink drops what this run lost, on its own key only",
+      _rc == 0 and ("~/.aider", "x86_64") not in _left and ("~/.aider", "aarch64") in _left
+      and ("aider-chat", "x86_64") in _left,
+      f"rc={_rc} left={sorted(_left)}")
+check("...and archives none of it", not _after.get("archived"), f"got {_after.get('archived')}")
 
 # --- superseding MOVES the evidence; --allow-shrink destroys it -------------------
 #
@@ -1184,7 +1220,8 @@ try:
     _gout = _io.StringIO()
     try:
         with _ctx.redirect_stdout(_gout):
-            _st.record(str(_a), str(_s), "24.04", "aarch64", "linux", run_id="222")
+            _st.record(str(_a), str(_s), "24.04", "aarch64", "linux", run_id="222",
+                       out=_tmp / "run.json")
     except SystemExit:
         pass
     finally:

@@ -7,14 +7,6 @@
       "value": "~/.local/bin/cursor-agent",
       "platform": "linux",
       "os": "amzn-2023",
-      "arch": "aarch64"
-    },
-    {
-      "agent": "cursor",
-      "route": "binaries",
-      "value": "~/.local/bin/cursor-agent",
-      "platform": "linux",
-      "os": "amzn-2023",
       "arch": "x86_64",
       "run": "41467114205"
     },
@@ -35,14 +27,6 @@
       "os": "fedora-41",
       "arch": "x86_64",
       "run": "41467114205"
-    },
-    {
-      "agent": "cursor",
-      "route": "binaries",
-      "value": "~/.local/bin/cursor-agent",
-      "platform": "linux",
-      "os": "rocky-9.8",
-      "arch": "aarch64"
     },
     {
       "agent": "cursor",
@@ -77,14 +61,6 @@
       "value": "~/.local/bin/goose",
       "platform": "linux",
       "os": "amzn-2023",
-      "arch": "aarch64"
-    },
-    {
-      "agent": "goose",
-      "route": "binaries",
-      "value": "~/.local/bin/goose",
-      "platform": "linux",
-      "os": "amzn-2023",
       "arch": "x86_64",
       "run": "41467114205"
     },
@@ -105,14 +81,6 @@
       "os": "fedora-41",
       "arch": "x86_64",
       "run": "41467114205"
-    },
-    {
-      "agent": "goose",
-      "route": "binaries",
-      "value": "~/.local/bin/goose",
-      "platform": "linux",
-      "os": "rocky-9.8",
-      "arch": "aarch64"
     },
     {
       "agent": "goose",
@@ -147,14 +115,6 @@
       "value": "~/.grok",
       "platform": "linux",
       "os": "amzn-2023",
-      "arch": "aarch64"
-    },
-    {
-      "agent": "grok",
-      "route": "state_dirs",
-      "value": "~/.grok",
-      "platform": "linux",
-      "os": "amzn-2023",
       "arch": "x86_64",
       "run": "41467114205"
     },
@@ -175,14 +135,6 @@
       "os": "fedora-41",
       "arch": "x86_64",
       "run": "41467114205"
-    },
-    {
-      "agent": "grok",
-      "route": "state_dirs",
-      "value": "~/.grok",
-      "platform": "linux",
-      "os": "rocky-9.8",
-      "arch": "aarch64"
     },
     {
       "agent": "grok",
@@ -217,14 +169,6 @@
       "value": "~/.local/bin/kiro-cli",
       "platform": "linux",
       "os": "amzn-2023",
-      "arch": "aarch64"
-    },
-    {
-      "agent": "kiro-cli",
-      "route": "binaries",
-      "value": "~/.local/bin/kiro-cli",
-      "platform": "linux",
-      "os": "amzn-2023",
       "arch": "x86_64",
       "run": "41467114205"
     },
@@ -252,14 +196,6 @@
       "value": "~/.local/bin/kiro-cli",
       "platform": "linux",
       "os": "rocky-9.8",
-      "arch": "aarch64"
-    },
-    {
-      "agent": "kiro-cli",
-      "route": "binaries",
-      "value": "~/.local/bin/kiro-cli",
-      "platform": "linux",
-      "os": "rocky-9.8",
       "arch": "x86_64",
       "run": "41467114205"
     },
@@ -280,14 +216,6 @@
       "os": "ubuntu-24.04",
       "arch": "x86_64",
       "run": "41467114205"
-    },
-    {
-      "agent": "muse-code",
-      "route": "binaries",
-      "value": "~/.local/bin/muse",
-      "platform": "linux",
-      "os": "amzn-2023",
-      "arch": "aarch64"
     },
     {
       "agent": "muse-code",
@@ -349,14 +277,6 @@
       "value": "~/.opencode",
       "platform": "linux",
       "os": "amzn-2023",
-      "arch": "aarch64"
-    },
-    {
-      "agent": "opencode",
-      "route": "state_dirs",
-      "value": "~/.opencode",
-      "platform": "linux",
-      "os": "amzn-2023",
       "arch": "x86_64",
       "run": "41467114205"
     },
@@ -377,14 +297,6 @@
       "os": "fedora-41",
       "arch": "x86_64",
       "run": "41467114205"
-    },
-    {
-      "agent": "opencode",
-      "route": "state_dirs",
-      "value": "~/.opencode",
-      "platform": "linux",
-      "os": "rocky-9.8",
-      "arch": "aarch64"
     },
     {
       "agent": "opencode",
@@ -419,14 +331,6 @@
       "value": "~/.pi",
       "platform": "linux",
       "os": "amzn-2023",
-      "arch": "aarch64"
-    },
-    {
-      "agent": "pi",
-      "route": "state_dirs",
-      "value": "~/.pi",
-      "platform": "linux",
-      "os": "amzn-2023",
       "arch": "x86_64",
       "run": "41467114205"
     },
@@ -447,14 +351,6 @@
       "os": "fedora-41",
       "arch": "x86_64",
       "run": "41467114205"
-    },
-    {
-      "agent": "pi",
-      "route": "state_dirs",
-      "value": "~/.pi",
-      "platform": "linux",
-      "os": "rocky-9.8",
-      "arch": "aarch64"
     },
     {
       "agent": "pi",

@@ -5,29 +5,11 @@
       "agent": "gemini-cli",
       "route": "npm",
       "value": "@google/gemini-cli",
-      "agent_version": "0.65.0",
-      "platform": "linux",
-      "os": "amzn-2023",
-      "arch": "aarch64"
-    },
-    {
-      "agent": "gemini-cli",
-      "route": "npm",
-      "value": "@google/gemini-cli",
       "agent_version": "0.66.0",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
       "run": "41467114205"
-    },
-    {
-      "agent": "gemini-cli",
-      "route": "npm",
-      "value": "@google/gemini-cli",
-      "agent_version": "0.63.0",
-      "platform": "linux",
-      "os": "debian-12",
-      "arch": "aarch64"
     },
     {
       "agent": "gemini-cli",
@@ -43,29 +25,11 @@
       "agent": "gemini-cli",
       "route": "npm",
       "value": "@google/gemini-cli",
-      "agent_version": "0.63.0",
-      "platform": "linux",
-      "os": "fedora-41",
-      "arch": "aarch64"
-    },
-    {
-      "agent": "gemini-cli",
-      "route": "npm",
-      "value": "@google/gemini-cli",
       "agent_version": "0.66.0",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
       "run": "41467114205"
-    },
-    {
-      "agent": "gemini-cli",
-      "route": "npm",
-      "value": "@google/gemini-cli",
-      "agent_version": "0.63.0",
-      "platform": "linux",
-      "os": "rocky-9.8",
-      "arch": "aarch64"
     },
     {
       "agent": "gemini-cli",

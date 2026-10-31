@@ -39,11 +39,10 @@
 #   GCE_SSH_FLAGS             extra flags for ssh and scp, e.g. --tunnel-through-iap
 #
 # Everything the guest produces comes back to test/artifacts/gce/<family>/<scenario>/: the
-# payload, status.txt, the facts file. Observations are recorded INTO THE TREE FROM THE
-# HOST, with tools/agent_status.py --record against the fetched payload, the way the CI
-# collect job records from uploaded artifacts -- so two families running at once cannot
-# overwrite each other's records. A VM run is real-install evidence of the same grade as
-# a CI run; it carries no run id because it is nobody's CI.
+# payload, status.txt, the facts file, and observed.json, recorded from the host with
+# tools/agent_status.py --record against the fetched payload. Never into test/scenarios/: a
+# VM run carries no run id because it is nobody's CI, so no tool counts it as coverage
+# (tools/observations.py), and only CI's collect job writes the committed record.
 #
 # BASH 3.2, because this runs on the Mac that drives it.
 set -uo pipefail
@@ -326,7 +325,8 @@ run_vm() {
     local gos garch
     gos="$(sed -n 1p "$out/ai-detection-spec-out/meta")"; garch="$(sed -n 2p "$out/ai-detection-spec-out/meta")"
     python3 "$ROOT/tools/agent_status.py" --record "$out/ai-detection-spec-out/payload.json" \
-      "$HERE/scenarios/$sc" --platform linux --os "$gos" --arch "$garch" || rc=1
+      "$HERE/scenarios/$sc" --platform linux --os "$gos" --arch "$garch" \
+      --out "$out/observed.json" || rc=1
   fi
   return "$rc"
 }

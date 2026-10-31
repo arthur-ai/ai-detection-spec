@@ -267,20 +267,20 @@ jobs:
           test/assert.sh /tmp/out.json test/scenarios/${{ matrix.scenario }}/expected.json
 
       # These runners install the REAL software, so this job's output is real-install
-      # evidence -- the same grade test/run.sh records from a VM. Recording it here keeps
-      # docs/agents.md's per-identifier coverage current without anyone remembering to run
-      # VMs locally and commit the result.
+      # evidence, and the only kind coverage counts: it names its run. A local run records
+      # beside itself and proves nothing the tree keeps.
       #
-      # Uploaded rather than committed: eleven matrix jobs pushing to the same branch would
-      # race, and the loser's observation would be lost silently. The collect job below
-      # merges them and commits once.
+      # Written outside the tree and uploaded, never committed: eleven matrix jobs pushing
+      # to the same branch would race, and the loser's observation would be lost silently.
+      # The collect job below merges them and commits once.
       - name: Record which identifiers this run matched
         if: steps.runnable.outputs.runnable == 'true'
         run: |
           python3 tools/agent_status.py --record /tmp/out.json \
             test/scenarios/${{ matrix.scenario }} \
             --platform darwin --os "$(sw_vers -productVersion)" --arch "$(uname -m)" \
-            --run-id "${{ github.run_id }}"
+            --run-id "${{ github.run_id }}" \
+            --out "$RUNNER_TEMP/observed-${{ matrix.scenario }}/observed.json"
       - name: Upload the observation
         if: steps.runnable.outputs.runnable == 'true'
         uses: actions/upload-artifact@v4
@@ -289,7 +289,7 @@ jobs:
           # outright on a duplicate name -- so without this the second platform's upload
           # errors and its evidence is lost.
           name: observed-${{ matrix.scenario }}--${{ matrix.os }}
-          path: test/scenarios/${{ matrix.scenario }}/observed.json
+          path: ${{ runner.temp }}/observed-${{ matrix.scenario }}/observed.json
           if-no-files-found: error
 
       # Enumeration trades payload for not being wrong about the catalog, so the payload
@@ -466,13 +466,14 @@ jobs:
           python3 tools/agent_status.py --record /tmp/out.json \
             test/scenarios/${{ matrix.scenario }} \
             --platform linux --os "$(. /etc/os-release && echo "$ID-$VERSION_ID")" \
-            --arch "$(uname -m)" --run-id "${{ github.run_id }}"
+            --arch "$(uname -m)" --run-id "${{ github.run_id }}" \
+            --out "$RUNNER_TEMP/observed-${{ matrix.scenario }}/observed.json"
       - name: Upload the observation
         if: steps.provision.outputs.runnable == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: observed-${{ matrix.scenario }}--${{ matrix.os }}
-          path: test/scenarios/${{ matrix.scenario }}/observed.json
+          path: ${{ runner.temp }}/observed-${{ matrix.scenario }}/observed.json
           if-no-files-found: error
 
   # WINDOWS, on GitHub's hosted Server 2025, one scenario per runner as on macOS. The
@@ -571,13 +572,14 @@ jobs:
         run: |
           python3 tools/agent_status.py --record "$(cygpath -u "$RUNNER_TEMP")/out.json" \
             test/scenarios/${{ matrix.scenario }} \
-            --platform windows --os "$WIN_OS" --arch "$WIN_ARCH" --run-id "${{ github.run_id }}"
+            --platform windows --os "$WIN_OS" --arch "$WIN_ARCH" --run-id "${{ github.run_id }}" \
+            --out "$(cygpath -u "$RUNNER_TEMP")/observed-${{ matrix.scenario }}/observed.json"
       - name: Upload the observation
         if: steps.provision.outputs.runnable == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: observed-${{ matrix.scenario }}--${{ matrix.os }}
-          path: test/scenarios/${{ matrix.scenario }}/observed.json
+          path: ${{ runner.temp }}/observed-${{ matrix.scenario }}/observed.json
           if-no-files-found: error
 
   # THE OTHER FAMILIES, in containers on an ubuntu runner, because GitHub offers no Debian
@@ -774,7 +776,7 @@ jobs:
             fi
             git commit -q \
               -m "docs: record identifier coverage observed by the scenario run" \
-              -m "Written by tools/agent_status.py --record from each scenario's own output. Triggered by ${{ github.sha }}." \
+              -m "Merged by tools/merge_observations.py from each scenario's own upload. Triggered by ${{ github.sha }}." \
               -m "[skip ci]"
             if git push -q origin main; then
               python3 tools/agent_status.py | tail -5 >> "$GITHUB_STEP_SUMMARY"

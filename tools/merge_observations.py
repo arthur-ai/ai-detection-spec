@@ -14,9 +14,10 @@ observed.json. Copying meant whichever landed last decided what the scenario had
 proved, and the other platform's evidence vanished -- the exact thing the OS axis exists to
 make visible.
 
-THE KEY AND THE SORT MUST MATCH record() EXACTLY. That function writes these files locally
-and this one writes them in CI, so a different ordering means the committed file and a local
-`--record` run disagree about a file neither of them changed. Two records could not collide
+THE ONE WRITER OF test/scenarios/*/observed.json. record() in tools/agent_status.py writes
+each run's own records beside the run, and only its --supersede and --allow-shrink touch
+these files, to take records out. Those keep this file's order, so the key and the sort here
+match agent_status._obs_sort. Two records could not collide
 on the key today, because `os` holds "14.8.7" against "24.04", but that is a coincidence of
 version numbering rather than a property worth relying on.
 """
@@ -63,12 +64,11 @@ def merge(artifacts, scenarios):
 
     Returns {scenario: record count} for the files it wrote.
     """
-    # THE NEWEST RUN WINS A KEY, NOT THE LAST ARTIFACT. Every upload carries verbatim copies
-    # of the other runners' committed records, and artifacts arrive in name order -- so the
-    # label that sorted last overwrote the other runner's fresh records with stale copies.
-    # Run 37118799385: macos-14 uploaded its 14.8.9 records with that run id, and the
-    # committed file kept macos-15's copies, which had none. GitHub run ids only increase,
-    # so a runner's own record outranks any copy of an older one; no run ranks lowest.
+    # THE NEWEST RUN WINS A KEY, NOT THE LAST ARTIFACT. Uploads once carried copies of the
+    # other runners' committed records, and the label that sorted last overwrote fresh
+    # records with stale copies (run 37118799385). An upload holds only its own run's
+    # records now, and two artifacts can still name one key. GitHub run ids only increase,
+    # so a newer run outranks an older one; no run ranks lowest.
     incoming = collections.defaultdict(dict)
     for scen, doc in uploaded(artifacts):
         for rec in doc.get("identifiers", []):
@@ -106,12 +106,11 @@ def merge(artifacts, scenarios):
             if held is None or int(r.get("run") or 0) >= int(held.get("run") or 0):
                 live[k] = r
 
-        # AND A RESURRECTED RECORD IS WORSE THAN A LOST ONE. record() copies every OTHER
-        # (platform, os, arch) key's records verbatim into each job's upload, so a record
-        # archived on the macos-15 runner is re-uploaded intact by macos-14 and the union
-        # above hands it straight back to `identifiers`. The archive could never take
-        # effect in CI. An archived key wins: it is the decision a maintainer committed,
-        # and another runner's stale copy does not get to overturn it.
+        # AND A RESURRECTED RECORD IS WORSE THAN A LOST ONE. When uploads carried other
+        # runners' records, macos-14 re-uploaded a record archived on macos-15, and the
+        # union above handed it straight back to `identifiers`. An upload of the archived
+        # key itself can still do that, from a job re-run after the supersede. An archived
+        # key wins: it is the decision a maintainer committed.
         live = {k: r for k, r in live.items() if k not in archived}
 
         doc = {"scenario": scen, "identifiers": sorted(live.values(), key=_sort_key)}
