@@ -1446,6 +1446,37 @@ check("the new state directories and Junie's shim resolve to their agents",
       and _c.get("/home/dana/.factory/") == "factory-droid"
       and _c.get("/home/dana/.jules/") == "jules", f"got {_c}")
 
+# THE AGENTS HERDR RUNS, added 2026-11-02. Each has a namesake a looser match would claim:
+# Pi's own package beside its fork's, npm placeholders and unrelated unscoped names, the
+# renamed Windsurf cask beside Devin CLI's, and the two curl-installer leftovers that are
+# evidence rather than values.
+_c, _u = _claims(_kind("npm", "@oh-my-pi/pi-coding-agent", "@earendil-works/pi-coding-agent",
+                       "omp", "oh-my-pi", "devin", "devin-cli", "mastracode", "command-code"))
+check("Oh My Pi and Pi are told apart by package, though one forks the other",
+      _c.get("@oh-my-pi/pi-coding-agent") == "oh-my-pi"
+      and _c.get("@earendil-works/pi-coding-agent") == "pi", f"got {_c}")
+check("...and the herdr agents' npm names resolve to them",
+      _c.get("devin") == "devin-cli" and _c.get("mastracode") == "mastracode"
+      and _c.get("command-code") == "command-code", f"got {_c}")
+check("npm's `omp`, `oh-my-pi` and `devin-cli` claim nothing",
+      {"omp", "oh-my-pi", "devin-cli"} <= set(_u), f"got {_c}")
+_c, _u = _claims(_kind("brew", "devin-cli", "devin-desktop", "maki"))
+check("Devin CLI's cask is not Windsurf's devin-desktop",
+      _c == {"devin-cli": "devin-cli", "devin-desktop": "windsurf", "maki": "maki"}, f"got {_c}")
+_c, _u = _claims(_kind("file", "/home/dana/.local/bin/devin", "/home/dana/.local/bin/maki",
+                       "/home/dana/.local/bin/prime-agent", "/home/dana/.local/bin/omp",
+                       "/home/dana/.omp/", "/home/dana/.prime/", "/home/dana/.commandcode/",
+                       "/home/dana/.local/bin/cmd", "/home/dana/.local/bin/devinx"))
+check("the curl installers' paths and the state directories resolve to their agents",
+      _c == {"/home/dana/.local/bin/devin": "devin-cli", "/home/dana/.local/bin/maki": "maki",
+             "/home/dana/.local/bin/prime-agent": "prime-agent",
+             "/home/dana/.omp/": "oh-my-pi", "/home/dana/.commandcode/": "command-code"},
+      f"got {_c}")
+check("~/.local/bin/omp, ~/.prime and Command Code's `cmd` are evidence, not values",
+      {"/home/dana/.local/bin/omp", "/home/dana/.prime/", "/home/dana/.local/bin/cmd"} <= set(_u),
+      "three letters, a vendor directory shared with Prime Intellect's other CLI, and a "
+      "command name every shell user knows")
+
 # META'S TWO MUSE PRODUCTS, read off real installs on 2026-10-19 and told apart by route: a
 # bundle id for the desktop agent, a ~/.local/bin launcher for the coding agent. The launcher
 # fetches the binary beside it under a versioned name, and the launcher alone finds it.

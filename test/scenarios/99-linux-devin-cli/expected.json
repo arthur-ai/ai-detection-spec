@@ -1,0 +1,33 @@
+{
+  "description": "Devin CLI through Cognition's curl installer, which writes ~/.local/bin/devin.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "deb+rpm": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=1",
+    "jbplugin": ">=0",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "port": ">=0",
+    "proc": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "devin-cli"
+    ],
+    "forbid": [
+      "windsurf",
+      "claude-code"
+    ]
+  },
+  "why": "~/.local/bin/devin is the only witness: --version writes no state directory, so removing the value turns must_find red. windsurf is forbidden because its cask is devin-desktop and its Windows uninstall entry reads Devin; claude-code because ~/.local/bin is its route too.",
+  "must_contain": [
+    "/home/dana/.local/bin/devin"
+  ]
+}

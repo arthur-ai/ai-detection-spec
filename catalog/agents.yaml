@@ -79,6 +79,8 @@ removed:
 #             one more than a Chrome id can be
 #   MCP configs, instruction files, sockets
 #             ai_tools' other types, which describe what an agent USES
+#   herdr     not from ai_tools: a terminal multiplexer that hosts agents. It runs no model and
+#             acts on nothing itself; each agent in its panes is found by that agent's own values
 
 # THE DEFINITIONS ARE DATA, not comments, because a catalog read by someone else's tool has
 # to explain its own words. Every one acts on the user's behalf; what does not is in
@@ -1055,3 +1057,99 @@ agents:
     # A homebrew-core formula, a Python virtualenv build. 21-cli-agents-homebrew in CI run
     # 40761736977: 3.0.0 on macOS 26 and 2.25.0 on macOS 15.
     homebrew: [mistral-vibe]
+
+  # ---------------------------------------------------------------------------------------
+  # FROM HERE, terminal coding agents added 2026-11-02, the ones herdr (a terminal
+  # multiplexer, in the considered block above) lists as agents it runs and this catalog did
+  # not carry. Each value was read off a real install by the scenario named, in CI run
+  # RUN_ID on Ubuntu 24.04 x86_64 and arm64 and on the four container images, osquery
+  # 5.23.1, and on macOS 15 and 26 for the Homebrew values.
+  # ---------------------------------------------------------------------------------------
+
+  # Cognition's Devin CLI, "Devin for Terminal". Not windsurf's `devin-desktop` cask, which is
+  # the renamed Windsurf editor: the scenarios forbid windsurf, and test_matcher holds the two
+  # tokens apart.
+  #
+  # NOT HERE: npm's `devin-cli` is a 0.0.1 placeholder with no bin; test_matcher asserts it is
+  # declined. ~/.devin is in the cask's zap stanza, but neither route wrote it on --version,
+  # so it is unread. Windows ships through winget (CognitionAI.DevinCLI) and npm; no Windows
+  # scenario installs either, so the entry claims darwin and linux only.
+  - id: devin-cli
+    name: Devin CLI
+    classification: Coding agent
+    platforms: [darwin, linux]
+    # 99-linux-devin-cli: cli.devin.ai/install.sh wrote /home/dana/.local/bin/devin, DEVIN_VER,
+    # on every Linux image and both architectures.
+    binaries: ["~/.local/bin/devin"]
+    # 97-linux-cli-agents-npm-more: devin DEVIN_NPM_VER, published by Cognition from
+    # CognitionAI/devin-cli, its binary in a per-platform optional dependency.
+    npm: [devin]
+    # A binary-only cask. 22-cli-agents-homebrew-more in CI run 41509960461: 3000.11.92 on
+    # macOS 26 and 3000.11.228 on macOS 15.
+    homebrew: [devin-cli]
+
+  # Oh My Pi (omp.sh), can1357's fork of Pi with its own package, binary and ~/.omp. A fork,
+  # so the scenarios forbid pi, and test_matcher holds the two packages apart.
+  #
+  # NOT HERE: ~/.local/bin/omp, which the curl installer writes. Three letters is someone
+  # else's name too, as `vibe` is for mistral-vibe, and ~/.omp names the agent once it has
+  # run. npm's unscoped `omp` (a 1.0.0 "new" from an unrelated maintainer) and `oh-my-pi` (a
+  # third-party add-on for Pi) are not it; test_matcher asserts both are declined. The
+  # can1357/tap Homebrew tap is unread.
+  - id: oh-my-pi
+    name: Oh My Pi
+    classification: Coding agent
+    platforms: [linux]
+    # 97-linux-cli-agents-npm-more: `bun install -g @oh-my-pi/pi-coding-agent`, the route its
+    # README recommends, OMP_VER, read from ~/.bun/install/global.
+    npm: ["@oh-my-pi/pi-coding-agent"]
+    # 98-linux-installers-more: written by the omp.sh/install binary on `omp --version` and
+    # `omp -p hi`, which fails without credentials after creating it. Read as /home/dana/.omp/.
+    state_dirs: ["~/.omp"]
+
+  # Mastra's MastraCode. NOT HERE: ~/.mastracode, where herdr's integration writes its hook;
+  # neither --version nor `-p hi` created it, so it is unread.
+  - id: mastracode
+    name: MastraCode
+    classification: Coding agent
+    platforms: [linux]
+    # 97-linux-cli-agents-npm-more: mastracode 0.48.2 under /usr/local/lib/node_modules.
+    npm: [mastracode]
+
+  # Command Code (commandcode.ai). Its package installs four commands, cmd, cmdc,
+  # commandcode and command-code; `cmd` identifies nothing, and none is a ~/.local/bin value.
+  - id: command-code
+    name: Command Code
+    classification: Coding agent
+    platforms: [linux]
+    # 97-linux-cli-agents-npm-more: command-code 1.88.2 under /usr/local/lib/node_modules.
+    npm: [command-code]
+    # Written by `command-code --version` and `-p hi`, run in that order. Read off the same
+    # scenario as /home/dana/.commandcode/.
+    state_dirs: ["~/.commandcode"]
+
+  # tontinton's Maki (maki.sh). NOT HERE: npm's `maki` is a cartography icon set, and this
+  # entry carries no npm value. Its state lives under XDG directories, below the depth the
+  # enumeration reads, so there is no state_dirs value.
+  - id: maki
+    name: Maki
+    classification: Coding agent
+    platforms: [darwin, linux]
+    # 98-linux-installers-more: maki.sh/install.sh wrote /home/dana/.local/bin/maki, MAKI_VER.
+    binaries: ["~/.local/bin/maki"]
+    # A homebrew-core formula. 22-cli-agents-homebrew-more in CI run 41509960461: 0.6.4 on
+    # macOS 26 and 0.6.5 on macOS 15.
+    homebrew: [maki]
+
+  # Prime Intellect's Prime Agent. NOT HERE: ~/.prime, which its installer creates. Prime
+  # Intellect's separate `prime` CLI and its sandboxes SDK keep their config.json there
+  # (prime-sandboxes core/config.py), and Prime Agent's own state is ~/.prime/agent, a level
+  # deeper than the enumeration reads. Its Homebrew formula and cask are sketches in its
+  # repository's packaging/, not published taps.
+  - id: prime-agent
+    name: Prime Agent
+    classification: Coding agent
+    platforms: [linux]
+    # 98-linux-installers-more: app.primeintellect.ai/prime-agent/install.sh wrote
+    # /home/dana/.local/bin/prime-agent, PRIME_VER.
+    binaries: ["~/.local/bin/prime-agent"]
