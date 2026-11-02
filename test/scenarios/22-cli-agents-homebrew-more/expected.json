@@ -1,0 +1,22 @@
+{
+  "description": "probe",
+  "platform": "darwin",
+  "counts": {
+    "brew": ">=0",
+    "app": ">=0",
+    "npm": ">=0",
+    "file": ">=0",
+    "ext": ">=0",
+    "nmh": ">=0",
+    "daemon": ">=0",
+    "port": ">=0",
+    "vscodeext": ">=0",
+    "jbplugin": ">=0",
+    "proc": ">=0"
+  },
+  "classified": {
+    "must_find": [],
+    "forbid": []
+  },
+  "why": "probe"
+}
