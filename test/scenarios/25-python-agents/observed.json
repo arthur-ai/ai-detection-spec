@@ -39,9 +39,18 @@
       "route": "pypi",
       "value": "aider-chat",
       "platform": "darwin",
+      "os": "15.8.2",
+      "arch": "arm64",
+      "run": "41467114205"
+    },
+    {
+      "agent": "aider",
+      "route": "pypi",
+      "value": "aider-chat",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "aider",
@@ -81,9 +90,18 @@
       "route": "state_dirs",
       "value": "~/.aider",
       "platform": "darwin",
+      "os": "15.8.2",
+      "arch": "arm64",
+      "run": "41467114205"
+    },
+    {
+      "agent": "aider",
+      "route": "state_dirs",
+      "value": "~/.aider",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "hermes",
@@ -123,9 +141,18 @@
       "route": "binaries",
       "value": "~/.local/bin/hermes",
       "platform": "darwin",
+      "os": "15.8.2",
+      "arch": "arm64",
+      "run": "41467114205"
+    },
+    {
+      "agent": "hermes",
+      "route": "binaries",
+      "value": "~/.local/bin/hermes",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "hermes",
@@ -165,9 +192,18 @@
       "route": "pypi",
       "value": "hermes-agent",
       "platform": "darwin",
+      "os": "15.8.2",
+      "arch": "arm64",
+      "run": "41467114205"
+    },
+    {
+      "agent": "hermes",
+      "route": "pypi",
+      "value": "hermes-agent",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "hermes",
@@ -207,9 +243,18 @@
       "route": "state_dirs",
       "value": "~/.hermes",
       "platform": "darwin",
+      "os": "15.8.2",
+      "arch": "arm64",
+      "run": "41467114205"
+    },
+    {
+      "agent": "hermes",
+      "route": "state_dirs",
+      "value": "~/.hermes",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40764483708"
+      "run": "41467114205"
     }
   ]
 }

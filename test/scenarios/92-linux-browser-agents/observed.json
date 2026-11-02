@@ -5,101 +5,101 @@
       "agent": "claude-in-chrome",
       "route": "extension_ids",
       "value": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
-      "agent_version": "1.0.102",
+      "agent_version": "1.0.104",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "claude-in-chrome",
       "route": "extension_ids",
       "value": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
-      "agent_version": "1.0.102",
+      "agent_version": "1.0.104",
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "claude-in-chrome",
       "route": "extension_ids",
       "value": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
-      "agent_version": "1.0.102",
+      "agent_version": "1.0.104",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "claude-in-chrome",
       "route": "extension_ids",
       "value": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
-      "agent_version": "1.0.102",
+      "agent_version": "1.0.104",
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "claude-in-chrome",
       "route": "extension_ids",
       "value": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
-      "agent_version": "1.0.102",
+      "agent_version": "1.0.104",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "harpa",
       "route": "extension_ids",
       "value": "eanggfilgoajaocelnaflolkadkeghjp",
-      "agent_version": "16.2.0",
+      "agent_version": "16.2.1",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "harpa",
       "route": "extension_ids",
       "value": "eanggfilgoajaocelnaflolkadkeghjp",
-      "agent_version": "16.2.0",
+      "agent_version": "16.2.1",
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "harpa",
       "route": "extension_ids",
       "value": "eanggfilgoajaocelnaflolkadkeghjp",
-      "agent_version": "16.2.0",
+      "agent_version": "16.2.1",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "harpa",
       "route": "extension_ids",
       "value": "eanggfilgoajaocelnaflolkadkeghjp",
-      "agent_version": "16.2.0",
+      "agent_version": "16.2.1",
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "harpa",
       "route": "extension_ids",
       "value": "eanggfilgoajaocelnaflolkadkeghjp",
-      "agent_version": "16.2.0",
+      "agent_version": "16.2.1",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "merlin",
@@ -109,7 +109,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "merlin",
@@ -119,7 +119,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "merlin",
@@ -129,7 +129,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "merlin",
@@ -139,7 +139,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "merlin",
@@ -149,57 +149,57 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "monica",
       "route": "extension_ids",
       "value": "ofpnmcalabcbjgholdjcjblkibolbppb",
-      "agent_version": "9.0.23",
+      "agent_version": "9.0.24",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "monica",
       "route": "extension_ids",
       "value": "ofpnmcalabcbjgholdjcjblkibolbppb",
-      "agent_version": "9.0.23",
+      "agent_version": "9.0.24",
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "monica",
       "route": "extension_ids",
       "value": "ofpnmcalabcbjgholdjcjblkibolbppb",
-      "agent_version": "9.0.23",
+      "agent_version": "9.0.24",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "monica",
       "route": "extension_ids",
       "value": "ofpnmcalabcbjgholdjcjblkibolbppb",
-      "agent_version": "9.0.23",
+      "agent_version": "9.0.24",
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "monica",
       "route": "extension_ids",
       "value": "ofpnmcalabcbjgholdjcjblkibolbppb",
-      "agent_version": "9.0.23",
+      "agent_version": "9.0.24",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "sider",
@@ -209,7 +209,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "sider",
@@ -219,7 +219,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "sider",
@@ -229,7 +229,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "sider",
@@ -239,7 +239,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "40764483708"
+      "run": "41467114205"
     },
     {
       "agent": "sider",
@@ -249,7 +249,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "40764483708"
+      "run": "41467114205"
     }
   ]
 }
