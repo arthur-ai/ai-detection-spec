@@ -1,5 +1,5 @@
 #!/bin/bash
-# Seven terminal coding agents through their current npm or PyPI names, each run once the
+# Terminal coding agents through their current npm or PyPI names, each run once the
 # way that writes its state directory without credentials. Read off this script's run on
 # 2026-10-28; catalog/agents.yaml carries the versions.
 #
@@ -10,6 +10,7 @@
 #   Jules CLI     @google/jules           ~/.jules on `jules version`
 #   Junie CLI     @jetbrains/junie        postinstall writes ~/.local/bin/junie; ~/.junie on --version
 #   Mistral Vibe  mistral-vibe (uv tool)  ~/.vibe on `vibe -p`, not on --version
+#   DeepSeek dsh  @deepseek-ai/dsh        ~/.dsh on `dsh --profile headless`, not catalogued
 #
 # SEPARATE from 94-linux-cli-agents-legacy, which installs the previous npm names: Amp's,
 # Droid's and Junie's ship the same binary as these.
@@ -18,10 +19,17 @@ source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest-linux.sh"
 need_curl
 # 22 because @qwen-code/qwen-code declares node >=22. The other packages accept 20.
 need_node 22 || echo "WARN: Node 22 did not install"
+# A COMPILER, for DeepSeek Harness's node-pty: it ships no linux prebuild, so npm 10 falls back
+# to node-gyp, and the container images have no make (`not found: make`, CI run 40918177229).
+case "$(pm)" in
+  apt) need_pkgs make g++ || echo "WARN: make and g++ did not install" ;;
+  dnf) need_pkgs make gcc-c++ || echo "WARN: make and gcc-c++ did not install" ;;
+esac
 need_user
 need_pkgs python3 || true
 
-for pkg in @ampcode/cli @factory/cli @charmland/crush @qwen-code/qwen-code @google/jules; do
+for pkg in @ampcode/cli @factory/cli @charmland/crush @qwen-code/qwen-code @google/jules \
+           @deepseek-ai/dsh; do
   retry "npm install -g $pkg" try "npm install -g $pkg" \
     sudo_maybe npm install -g --no-fund --no-audit "$pkg" || true
 done
@@ -42,5 +50,6 @@ as_user 'droid exec hi </dev/null' >/dev/null 2>&1 || true
 as_user 'qwen -p hi </dev/null' >/dev/null 2>&1 || true
 try_user "jules version" 'jules version' || true
 as_user '$HOME/.local/bin/vibe -p hi </dev/null' >/dev/null 2>&1 || true
+as_user 'timeout 60 dsh --profile headless hi </dev/null' >/dev/null 2>&1 || true
 echo "--- what landed in the user's home:"
 as_user 'ls -1d ~/.*/ 2>&1' | sed 's/^/      /'

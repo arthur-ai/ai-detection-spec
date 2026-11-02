@@ -1410,6 +1410,23 @@ _c, _u = _claims(_kind("npm", "@kilocode/cli", "kilocode", "opencode-ai"))
 check("npm's unscoped `kilocode` is NOT Kilo Code",
       _c.get("@kilocode/cli") == "kilo-code" and "kilocode" in _u, f"got {_c}")
 
+# OPENAI'S TWO CHROME EXTENSIONS, read off their CRX manifests in CI: "ChatGPT" drives tabs,
+# "ChatGPT search" only sets the search engine.
+_c, _u = _claims(_kind("ext", "hehggadaopoacecdllhhajmbjkdcmajg",
+                       "ejcfepkfckglbgocfkanmcdngdijcgld"))
+check("the ChatGPT extension is a browser agent and ChatGPT search is not",
+      _c == {"hehggadaopoacecdllhhajmbjkdcmajg": "chatgpt-extension"}
+      and "ejcfepkfckglbgocfkanmcdngdijcgld" in _u, f"got {_c}")
+
+# DEEPSEEK HARNESS is its scoped package alone: the bin `dsh`, the dependency npm installs
+# beside it and the ~/.dsh its first run writes claim nothing.
+_c, _u = _claims(_kind("npm", "@deepseek-ai/dsh", "dsh", "@deepseek-ai/dsh-subprocess-local")
+                 + _kind("file", "/home/dana/.dsh/"))
+check("DeepSeek Harness is @deepseek-ai/dsh, and its namesakes are declined",
+      _c == {"@deepseek-ai/dsh": "deepseek-harness"}
+      and {"dsh", "@deepseek-ai/dsh-subprocess-local", "/home/dana/.dsh/"} <= set(_u),
+      f"got {_c}")
+
 _c, _u = _claims(_kind("jbplugin", "gemini", "plugin-amazonq", "github-copilot-intellij",
                        "Sourcegraph", "sourcegraph", "aws-toolkit-jetbrains-standalone"))
 check("the JetBrains plugin directories resolve to their agents",

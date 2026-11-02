@@ -933,6 +933,18 @@ agents:
     platforms: [darwin, linux, windows]
     extension_ids: [camppjleccjaphfdbohjdohecfnoikec]
 
+  # OpenAI's ChatGPT extension, which drives tabs in its Work mode. Read off the Web Store's
+  # CRX by a probe in CI run 41500293412 on 2026-11-02: name "ChatGPT", 1.26.1020.11845,
+  # "Control your browser with ChatGPT.", under a manifest asking for debugger, scripting,
+  # tabs, downloads, nativeMessaging and <all_urls>. 45, 92 and 104 install it. NOT
+  # ejcfepkfckglbgocfkanmcdngdijcgld, OpenAI's "ChatGPT search", which only sets the default
+  # search engine; test_matcher asserts it is declined.
+  - id: chatgpt-extension
+    name: ChatGPT browser extension
+    classification: Browser agent
+    platforms: [darwin, linux, windows]
+    extension_ids: [hehggadaopoacecdllhhajmbjkdcmajg]
+
   # ---------------------------------------------------------------------------------------
   # FROM HERE, terminal coding agents added 2026-10-28. Each value was read off a real install
   # by the scenario named. The npm, PyPI, deb and path values came from a run on Ubuntu 24.04
@@ -1006,6 +1018,18 @@ agents:
     # A homebrew-core formula built from the npm tarball. 21-cli-agents-homebrew in CI run
     # 40761736977: 0.25.3 on macOS 26 and 0.23.0 on macOS 15.
     homebrew: [qwen-code]
+
+  # DeepSeek Harness, DeepSeek's agent runtime: `dsh --profile headless "<job>"` runs a coding
+  # agent in the working directory. Read off a probe in CI run 41500293412 on 2026-11-02
+  # (Ubuntu 24.04, npm 11.19.1): @deepseek-ai/dsh 0.2.1-rc.5, bin `dsh`; installed by
+  # 93-linux-cli-agents-more. NOT `~/.dsh`, which the first headless
+  # run writes: the unrelated dsh distributed shell, packaged by Debian, reads ~/.dsh/dsh.conf
+  # by its man page (not read off an install).
+  - id: deepseek-harness
+    name: DeepSeek Harness
+    classification: Coding agent
+    platforms: [linux]
+    npm: ["@deepseek-ai/dsh"]
 
   # Google's Jules CLI. It drives Jules's cloud VMs, and `jules remote pull --apply` writes
   # the resulting patch into the local checkout, so it acts on the user's behalf.

@@ -53,8 +53,10 @@ set -u
 #   ofpnmcalabcbjgholdjcjblkibolbppb  Monica
 #   difoiogjjojoaoomphldepapgpbgkhkb  Sider
 #   camppjleccjaphfdbohjdohecfnoikec  Merlin
+#   hehggadaopoacecdllhhajmbjkdcmajg  ChatGPT
 EXT_IDS=(fcoeoabgfenejglbffodgkkbkcdhcgfn eanggfilgoajaocelnaflolkadkeghjp ofpnmcalabcbjgholdjcjblkibolbppb
-         difoiogjjojoaoomphldepapgpbgkhkb camppjleccjaphfdbohjdohecfnoikec)
+         difoiogjjojoaoomphldepapgpbgkhkb camppjleccjaphfdbohjdohecfnoikec
+         hehggadaopoacecdllhhajmbjkdcmajg)
 UDD="$HOME/Library/Application Support/Google/Chrome"
 
 # python3 below, and /usr/bin/python3 is a stub until the Command Line Tools are installed.
