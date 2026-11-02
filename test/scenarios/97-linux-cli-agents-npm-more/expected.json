@@ -1,0 +1,50 @@
+{
+  "description": "Four terminal coding agents herdr runs, through their npm names: three by npm -g, Oh My Pi by bun install -g.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "deb+rpm": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=1",
+    "jbplugin": ">=0",
+    "nmh": ">=0",
+    "npm": ">=4",
+    "port": ">=0",
+    "proc": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "mastracode",
+      "command-code",
+      "devin-cli",
+      "oh-my-pi"
+    ],
+    "forbid": [
+      "pi",
+      "openclaw",
+      "claude-code",
+      "codex-cli",
+      "windsurf"
+    ],
+    "forbid_evidence": [
+      "/.omp/"
+    ]
+  },
+  "why": "Devin CLI and Oh My Pi are installed and not run, so their package is the only witness and removing it from the catalog turns must_find red; forbid_evidence holds ~/.omp absent, so a release that starts writing it on install fails here rather than adding a second witness unseen. MastraCode writes no top-level directory, so its npm row is its only witness. Command Code has two, its package and ~/.commandcode, so must_contain names both. Oh My Pi is a fork of Pi and bun hoists its dependencies beside it, so pi and openclaw (built on Pi's libraries) are forbidden; windsurf because its cask is devin-desktop; claude-code and codex-cli because top-level home directories are their routes too.",
+  "must_contain": [
+    "\"id\": \"mastracode\"",
+    "\"id\": \"command-code\"",
+    "\"id\": \"devin\"",
+    "\"id\": \"@oh-my-pi/pi-coding-agent\"",
+    "/home/dana/.commandcode/"
+  ],
+  "known_gaps": [
+    "MastraCode's ~/.mastracode, where herdr's integration writes its hook, is not created by --version or -p and is unread.",
+    "Command Code's and Devin CLI's npm packages on Windows, and Devin CLI's winget package, are not exercised."
+  ]
+}
