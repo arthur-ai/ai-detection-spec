@@ -24,8 +24,8 @@ Three things. Each can be taken on its own.
 
 | | What it is | Who takes it |
 |---|---|---|
-| **The spec** [`SPEC.md`](SPEC.md), [`schema/`](schema), [`conformance/`](conformance) | What a catalog of agents contains, what a collector reports, how an identifier matches a row, and how a scan reports what it could not read, so that tools written by different people give the same answer about the same machine. [`bin/classify`](bin/classify) is the reference matcher | People building it into an MDM, an EDR or an inventory tool |
-| **The catalog** [`catalog/`](catalog) | **51 agents and 143 identifiers**, written to the spec. CI must see each identifier on a real install, and [the coverage page](docs/agents.md) is generated from what those runs recorded | Anyone who needs the facts |
+| **The spec** [`SPEC.md`](SPEC.md), [`schema/`](schema), [`conformance/`](conformance) | The contract between a catalog, a collector and a matcher, [defined below](#what-the-spec-is). [`bin/classify`](bin/classify) is the reference matcher | People building it into an MDM, an EDR or an inventory tool |
+| **The catalog** [`catalog/`](catalog) | **51 agents and 143 identifiers**, written to the spec. CI must see each identifier on a real install, in a job called a scenario, and [the coverage page](docs/agents.md) is generated from what those jobs recorded | Anyone who needs the facts |
 | **The osquery implementation** [`osquery/`](osquery) | The catalog rendered as queries for macOS, Linux and Windows, and the scripts that run them. The spec calls a collector a *binding*, and this is the first one | Security and IT teams who want to run it on a fleet this week |
 
 ## Run it
@@ -70,8 +70,7 @@ Inventory tools can read a machine, but they do not know what an agent looks lik
 Agent standards know what an agent is, but only for agents someone chose to register. This
 repository is the in-between: a proven list of what each agent leaves on a machine, a rule for
 what counts as an agent, and a way to say *could not look* that is different from *nothing
-there*. It does not replace osquery, an MDM or an EDR. It tells them what to look for and how
-to report what they could not see.
+there*. It does not replace osquery, an MDM or an EDR. It tells them what to look for.
 
 | Existing | Answers | Cannot answer |
 |---|---|---|
@@ -79,17 +78,29 @@ to report what they could not see.
 | A2A Agent Cards, OASF, the CSA Agent Registry | What a registered agent is | Whether an unregistered one is installed |
 | CycloneDX AI-BOM, SPDX AI | What an agent is built from | Whether it is on any machine |
 
-## What the spec guarantees
+## What the spec is
 
-**An empty result is never ambiguous.** No findings can mean a clean machine, or a scan that
-could not look everywhere. The spec keeps those apart: a collector that cannot read something,
-such as a Docker daemon that does not answer, must report that in its output. So a reader
-never mistakes a scan that failed for a machine that is clean.
+The spec is the written contract that lets a catalog, a collector and a matcher built by three
+different people give the same answer about the same machine. It fixes three things the parties
+exchange, and one rule for each.
 
-**Every identifier carries its proof.** An identifier enters a catalog only after an
-installation of the real software produced it, and the catalog records which installation. In
-this repository every such installation is a CI job, called a scenario, and
-[the coverage report](docs/agents.md) is generated from what those jobs recorded.
+| What is exchanged | Defined in | The rule attached to it |
+|---|---|---|
+| A **catalog document**: agents, the routes their identifiers sit on, each identifier's status, and the proof a catalog distributed for others to use must carry for every current identifier | [§4](SPEC.md#4-catalog), [`schema/catalog.schema.json`](schema/catalog.schema.json) | Only agents go in ([§3](SPEC.md#3-scope-what-counts-as-an-agent)), and only identifiers a real install has produced ([§7](SPEC.md#7-provenance)). No two agents may claim the same row |
+| **Evidence rows** from a collector, six defined members each and any a binding adds, plus scan markers with a closed vocabulary of outcomes | [§5](SPEC.md#5-evidence), [`schema/evidence.schema.json`](schema/evidence.schema.json) | A source the collector could not read is reported as such. *Could not look* never shares a word with *nothing there* |
+| **Findings** from a matcher, with the rows that prove each one, and the markers sorted into scans, absences and gaps | [§6](SPEC.md#6-matching) | Rows are compared by the named match modes in the named order. A row of an unregistered kind is counted, not lost. Findings are never presented as complete while a gap is open |
+
+The match modes, the home roots that let a `~/` value match a Windows profile path, and the
+evaluation order are what make *the same answer* literal, and
+[`conformance/vectors.json`](conformance/vectors.json) pins them: two matchers agree on every
+vector, or one of them does not conform.
+
+**So an empty result is never ambiguous.** No findings can mean a clean machine or a scan that
+could not look everywhere, and the output says which.
+
+The spec is not the catalog, osquery or `bin/classify`. Those are one document written to it,
+one collector bound to it and one matcher that passes its vectors. It names no implementation
+path, and `test/test_conformance.py` fails if one appears.
 
 ## What counts as an agent
 
@@ -114,8 +125,7 @@ one you need.
   source it could not read. It declares its fields on each route it feeds, and it proves
   identifiers from its own rows. Any conforming matcher then reads its output.
 - **To match in your own tool**, implement [§6](SPEC.md#6-matching) and pass
-  [`conformance/vectors.json`](conformance/vectors.json). The vectors are the contract.
-  `bin/classify` is one implementation of them, not the definition of conformance.
+  [`conformance/vectors.json`](conformance/vectors.json).
 - **To use only the catalog**, take `catalog.json` from a release. It is a catalog document
   that validates against [`schema/catalog.schema.json`](schema/catalog.schema.json), with each
   identifier's status, package URL and the CI runs that proved it. The YAML files under
