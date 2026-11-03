@@ -18,7 +18,7 @@ export AI_DETECTION_SPEC_TELEMETRY=0
 assert_counts() {
   local actual_json="$1" expected_json="$2"
   python3 - "$actual_json" "$expected_json" <<'PY'
-import json, sys, collections
+import json, re, sys, collections
 # A BARE ARRAY IS THE ONLY SHAPE ANY PRODUCER EMITS -- `osqueryi --json`, osquery/bin/discover and
 # osquery/bin/container-scan alike. This used to unwrap a `findings` envelope as well, from an
 # endpoint script that predates this repo: nothing in the tree could produce a dict, and
@@ -85,10 +85,21 @@ for spec in expected.get("forbid_rows", []):
 # field, or a list of substrings that must all be in it: substrings, because a sideload hash
 # and a permission list vary by run. must_contain cannot say "on the same row", and a
 # scenario that sideloads five extensions satisfies `,sideloaded:` with any of them.
+#
+# A value {"tail_of": "loc"} must EQUAL the last path component of that field on the same
+# row. A release read off a path changes with every install, so no literal holds it, and the
+# substring `.` that stood in for it passed any dotted version.
+def field_ok(r, k, v):
+    got = str(r.get(k, ""))
+    if isinstance(v, dict):
+        if set(v) != {"tail_of"}:
+            sys.exit(f"require_rows: unknown value form {v}")
+        return got != "" and got == re.split(r"[\\/]", str(r.get(v["tail_of"], "")))[-1]
+    return all(s in got for s in (v if isinstance(v, list) else [v]))
+
 for spec in expected.get("require_rows", []):
     def matches(r, spec=spec):
-        return all(all(s in str(r.get(k, "")) for s in (v if isinstance(v, list) else [v]))
-                   for k, v in spec.items())
+        return all(field_ok(r, k, v) for k, v in spec.items())
     ok = any(matches(r) for r in actual)
     label = ", ".join(f"{k}~{v}" for k, v in spec.items())
     print(f"  require_rows {label}: {'ok' if ok else 'FAIL'}")
