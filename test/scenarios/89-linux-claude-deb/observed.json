@@ -5,31 +5,31 @@
       "agent": "claude-code",
       "route": "deb_packages",
       "value": "claude-code",
-      "agent_version": "2.1.309-1",
+      "agent_version": "2.1.311-1",
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "41467114205"
+      "run": "41687070537"
     },
     {
       "agent": "claude-code",
       "route": "deb_packages",
       "value": "claude-code",
-      "agent_version": "2.1.309-1",
+      "agent_version": "2.1.311-1",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "41467114205"
+      "run": "41687070537"
     },
     {
       "agent": "claude-code",
       "route": "deb_packages",
       "value": "claude-code",
-      "agent_version": "2.1.309-1",
+      "agent_version": "2.1.311-1",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41467114205"
+      "run": "41687070537"
     }
   ]
 }

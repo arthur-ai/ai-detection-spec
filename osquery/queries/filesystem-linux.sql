@@ -18,11 +18,21 @@
 -- have homes like /usr/sbin and /nonexistent, so anchoring on /home/ and /root/ selects
 -- real users.
 
--- CLI shims, every entry.
-SELECT 'file' AS kind, path AS id, '' AS ver, path AS loc, '' AS extra, '' AS perms
-  FROM file
-  WHERE path LIKE '/home/%/.local/bin/%'
-     OR path LIKE '/root/.local/bin/%'
+-- CLI shims, every entry, with the release a shim runs as filesystem.sql reads it.
+SELECT 'file' AS kind, s.path AS id, coalesce(max(v.ver), '') AS ver, s.path AS loc,
+       '' AS extra, '' AS perms
+  FROM file s
+  LEFT JOIN (SELECT path, inode, regex_match(path, '/versions/([^/]+)$', 1) AS ver
+               FROM file
+              WHERE (path LIKE '/home/%/.local/share/%/versions/%'
+                     OR path LIKE '/root/.local/share/%/versions/%')
+                AND symlink = 0) v
+    ON v.inode = s.inode
+   AND substr(v.path, 1, instr(s.path, '/.local/bin/'))
+       = substr(s.path, 1, instr(s.path, '/.local/bin/'))
+  WHERE s.path LIKE '/home/%/.local/bin/%'
+     OR s.path LIKE '/root/.local/bin/%'
+  GROUP BY s.path
 UNION ALL
 -- STATE DIRECTORIES. The trailing slash is load-bearing, and `.` and `..` are excluded,
 -- as in filesystem.sql.
