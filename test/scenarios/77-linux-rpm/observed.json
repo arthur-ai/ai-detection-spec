@@ -8,7 +8,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "41679268245"
+      "run": "41687070537"
     },
     {
       "agent": "cursor",
@@ -17,7 +17,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "41679268245"
+      "run": "41687070537"
     },
     {
       "agent": "cursor",
@@ -26,7 +26,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "41679268245"
+      "run": "41687070537"
     },
     {
       "agent": "cursor",
@@ -36,7 +36,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "41679268245"
+      "run": "41687070537"
     },
     {
       "agent": "cursor",
@@ -46,17 +46,17 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "41679268245"
+      "run": "41687070537"
     },
     {
       "agent": "cursor",
       "route": "rpm_packages",
       "value": "cursor",
-      "agent_version": "3.27.22",
+      "agent_version": "3.28.7",
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "41679268245"
+      "run": "41687070537"
     }
   ]
 }
