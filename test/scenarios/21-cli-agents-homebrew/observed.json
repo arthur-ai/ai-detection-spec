@@ -7,33 +7,6 @@
       "value": "aider",
       "agent_version": "0.86.2",
       "platform": "darwin",
-      "os": "14.8.7",
-      "arch": "arm64"
-    },
-    {
-      "agent": "aider",
-      "route": "homebrew",
-      "value": "aider",
-      "agent_version": "0.86.2",
-      "platform": "darwin",
-      "os": "14.8.9",
-      "arch": "arm64"
-    },
-    {
-      "agent": "aider",
-      "route": "homebrew",
-      "value": "aider",
-      "agent_version": "0.86.2",
-      "platform": "darwin",
-      "os": "15.7.7",
-      "arch": "arm64"
-    },
-    {
-      "agent": "aider",
-      "route": "homebrew",
-      "value": "aider",
-      "agent_version": "0.86.2",
-      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40900003000"
@@ -57,33 +30,6 @@
       "os": "26.6.2",
       "arch": "arm64",
       "run": "41467114205"
-    },
-    {
-      "agent": "claude-code",
-      "route": "npm",
-      "value": "@anthropic-ai/claude-code",
-      "agent_version": "2.1.252",
-      "platform": "darwin",
-      "os": "14.8.7",
-      "arch": "arm64"
-    },
-    {
-      "agent": "claude-code",
-      "route": "npm",
-      "value": "@anthropic-ai/claude-code",
-      "agent_version": "2.1.259",
-      "platform": "darwin",
-      "os": "14.8.9",
-      "arch": "arm64"
-    },
-    {
-      "agent": "claude-code",
-      "route": "npm",
-      "value": "@anthropic-ai/claude-code",
-      "agent_version": "2.1.260",
-      "platform": "darwin",
-      "os": "15.7.7",
-      "arch": "arm64"
     },
     {
       "agent": "claude-code",
@@ -119,33 +65,6 @@
       "agent": "codex-cli",
       "route": "homebrew",
       "value": "codex",
-      "agent_version": "0.142.3",
-      "platform": "darwin",
-      "os": "14.8.7",
-      "arch": "arm64"
-    },
-    {
-      "agent": "codex-cli",
-      "route": "homebrew",
-      "value": "codex",
-      "agent_version": "0.151.0",
-      "platform": "darwin",
-      "os": "14.8.9",
-      "arch": "arm64"
-    },
-    {
-      "agent": "codex-cli",
-      "route": "homebrew",
-      "value": "codex",
-      "agent_version": "0.145.0",
-      "platform": "darwin",
-      "os": "15.7.7",
-      "arch": "arm64"
-    },
-    {
-      "agent": "codex-cli",
-      "route": "homebrew",
-      "value": "codex",
       "agent_version": "0.153.4",
       "platform": "darwin",
       "os": "15.7.9",
@@ -171,33 +90,6 @@
       "os": "26.6.2",
       "arch": "arm64",
       "run": "41467114205"
-    },
-    {
-      "agent": "copilot-cli",
-      "route": "homebrew",
-      "value": "copilot-cli",
-      "agent_version": "1.0.65",
-      "platform": "darwin",
-      "os": "14.8.7",
-      "arch": "arm64"
-    },
-    {
-      "agent": "copilot-cli",
-      "route": "homebrew",
-      "value": "copilot-cli",
-      "agent_version": "1.0.82",
-      "platform": "darwin",
-      "os": "14.8.9",
-      "arch": "arm64"
-    },
-    {
-      "agent": "copilot-cli",
-      "route": "homebrew",
-      "value": "copilot-cli",
-      "agent_version": "1.0.75",
-      "platform": "darwin",
-      "os": "15.7.7",
-      "arch": "arm64"
     },
     {
       "agent": "copilot-cli",
@@ -295,33 +187,6 @@
       "value": "gemini-cli",
       "agent_version": "0.46.0",
       "platform": "darwin",
-      "os": "14.8.7",
-      "arch": "arm64"
-    },
-    {
-      "agent": "gemini-cli",
-      "route": "homebrew",
-      "value": "gemini-cli",
-      "agent_version": "0.46.0",
-      "platform": "darwin",
-      "os": "14.8.9",
-      "arch": "arm64"
-    },
-    {
-      "agent": "gemini-cli",
-      "route": "homebrew",
-      "value": "gemini-cli",
-      "agent_version": "0.46.0",
-      "platform": "darwin",
-      "os": "15.7.7",
-      "arch": "arm64"
-    },
-    {
-      "agent": "gemini-cli",
-      "route": "homebrew",
-      "value": "gemini-cli",
-      "agent_version": "0.46.0",
-      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40900003000"
@@ -375,33 +240,6 @@
       "os": "26.6.2",
       "arch": "arm64",
       "run": "41467114205"
-    },
-    {
-      "agent": "hermes",
-      "route": "homebrew",
-      "value": "hermes-agent",
-      "agent_version": "2026.6.19",
-      "platform": "darwin",
-      "os": "14.8.7",
-      "arch": "arm64"
-    },
-    {
-      "agent": "hermes",
-      "route": "homebrew",
-      "value": "hermes-agent",
-      "agent_version": "2026.8.27",
-      "platform": "darwin",
-      "os": "14.8.9",
-      "arch": "arm64"
-    },
-    {
-      "agent": "hermes",
-      "route": "homebrew",
-      "value": "hermes-agent",
-      "agent_version": "2026.7.20",
-      "platform": "darwin",
-      "os": "15.7.7",
-      "arch": "arm64"
     },
     {
       "agent": "hermes",
