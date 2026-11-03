@@ -1062,11 +1062,11 @@ _rc, _out, _after, _own = _try_record("riscv64", _two_key)
 check("a run on a DIFFERENT key is not judged against the others",
       _rc == 0, f"rc={_rc} out={_out.strip()[:160]!r}")
 
-# --- the committed record has one writer: collect --------------------------------
+# --- only collect adds to the committed record ------------------------------------
 #
 # record() wrote into test/scenarios/ in place, so every local pass dirtied a committed file
 # and every CI upload carried a copy of every other runner's records. It writes beside the run
-# now, and the committed file is merged by tools/merge_observations.py alone.
+# now, and only tools/merge_observations.py adds to the committed file.
 check("a plain record leaves the committed file exactly as it was",
       _after == _two_key, f"got {_after}")
 check("...and writes this run's records, and only those, beside the run",

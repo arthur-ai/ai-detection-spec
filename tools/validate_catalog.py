@@ -332,8 +332,9 @@ def live_observations(root):
 
 def unprovable_observation_errors(root):
     """Every committed observation names its run and its platform. Only CI uploads reach the
-    collect job, the file's one writer, so a record lacking either came from somewhere that
-    should not write the tree, and no reader would ever count it (observations.provable)."""
+    collect job, the only writer that adds to the file, so a record lacking either came from
+    somewhere that should not write the tree, and no reader would ever count it
+    (observations.provable)."""
     live, archived = observations.read(root / "test" / "scenarios")
     return [f"test/scenarios/{r['scenario']}/observed.json: {r['agent']} "
             f"{r['route']}:{r['value']} names no {'run' if not r.get('run') else 'platform'}, "

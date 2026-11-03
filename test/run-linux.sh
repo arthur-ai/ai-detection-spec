@@ -70,7 +70,7 @@ LINUX_DOCKER_ARGS="${LINUX_DOCKER_ARGS:-}"
 OBSERVED_OUT="${OBSERVED_OUT:-}"
 OBSERVED_LABEL="${OBSERVED_LABEL:-$(printf '%s' "$LINUX_IMAGE" | tr '/:' '__')}"
 # Where each run's record lands, locally and in CI alike: beside the run, never in
-# test/scenarios/, whose observed.json only the collect job writes. A local run names no
+# test/scenarios/, whose observed.json only the collect job adds to. A local run names no
 # run id, so its record proves nothing coverage counts; it is here to be read.
 REC_DIR="$HERE/artifacts/observed/$OBSERVED_LABEL"
 mkdir -p "$REC_DIR"

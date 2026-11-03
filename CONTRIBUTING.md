@@ -65,8 +65,8 @@ build still report it. When no installable build produces the old one, supersede
 ### Recording the observation
 
 Coverage is counted from `test/scenarios/<name>/observed.json`, not from what `expected.json`
-asserts, and only from records that name the CI run that produced them. The `collect` job is
-the one writer of those files. It merges every scenario job's upload, and it commits only on
+asserts, and only from records that name the CI run that produced them. Only the `collect`
+job adds to those files. It merges every scenario job's upload, and it commits only on
 `main`, so a pull request cannot move its own recorded coverage. On a pull request, `collect`
 checks the new identifiers against that run's uploads instead, and the badge and
 `docs/agents.md` move after the merge. **A local run leaves nothing to commit**:

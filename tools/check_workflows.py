@@ -150,14 +150,14 @@ for _n, _at in enumerate(_steps, 1):
                   f"os matrix axis, and of being able to prove an identifier was once "
                   f"real after CI stops reproducing it.")
             failed = True
-    # --out, and never into test/scenarios/: collect is the committed record's one writer.
+    # --out, and never into test/scenarios/: only collect adds to the committed record.
     # agent_status refuses both at run time; this says so before a matrix is spent on it.
     # The rest of the line, not one word: Windows quotes a path that holds a space.
     _out = re.search(r'--out ([^\n]+)', _step)
     if not _out or "test/scenarios" in _out.group(1):
         print(f"FAIL: scenarios.yml recording step {_n} of {len(_steps)} "
               f"{'writes into test/scenarios/' if _out else 'omits --out'}. A run's record "
-              f"goes beside the run and is uploaded; only collect writes the committed one.")
+              f"goes beside the run and is uploaded; only collect adds to the committed one.")
         failed = True
 
 _doc = yaml.safe_load((root / "scenarios.yml").read_text())

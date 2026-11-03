@@ -187,8 +187,8 @@ def record(artifact, scenario_dir, os_version="", arch="", platform="", run_id="
     committed document. This is the compact, reviewable residue of a run -- the
     observations layer of docs/signature-lifecycle.md, at its smallest useful size.
 
-    IT NEVER ADDS TO test/scenarios/*/observed.json. tools/merge_observations.py, in the
-    collect job on main, is that file's one writer. This wrote in place, which dirtied a
+    IT NEVER ADDS TO test/scenarios/*/observed.json. Only tools/merge_observations.py, in
+    the collect job on main, adds to that file. This wrote in place, which dirtied a
     committed file on every local pass and put a copy of every other runner's records into
     each CI upload, copies the merge then had to outrank. --supersede and --allow-shrink
     still edit the committed file, and only to take records out of it.
@@ -205,7 +205,7 @@ def record(artifact, scenario_dir, os_version="", arch="", platform="", run_id="
     """
     if out is None and not (supersede or allow_shrink):
         sys.exit("--record needs --out <path>: a run's record goes beside the run, and only "
-                 "the collect job writes test/scenarios/*/observed.json")
+                 "the collect job adds to test/scenarios/*/observed.json")
     if out is not None and SCENARIOS.resolve() in pathlib.Path(out).resolve().parents:
         sys.exit(f"refusing --out {out}: test/scenarios/ holds the committed record, which "
                  f"only the collect job adds to")

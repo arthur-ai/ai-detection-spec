@@ -146,7 +146,7 @@ EOF
     "$ART/$s.agents.json" "$ART/$s.parity.json" || rc=1
 
   # Record WHICH IDENTIFIERS this run actually matched, beside the run in test/artifacts/.
-  # Never into test/scenarios/: only CI's collect job writes the committed observed.json,
+  # Never into test/scenarios/: only CI's collect job adds to the committed observed.json,
   # and a local run names no run id, so nothing it records counts as coverage.
   #
   # Only on success: a failed run's matches are not evidence of anything.

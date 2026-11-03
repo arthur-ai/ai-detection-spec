@@ -54,7 +54,7 @@
 # facts: the payload, status.txt, the facts file, and observed.json, recorded from the host
 # with tools/agent_status.py --record against the fetched payload, as test/run-gce.sh does.
 # Never into test/scenarios/: an instance run carries no run id because it is nobody's CI, so
-# no tool counts it as coverage (tools/observations.py), and only CI's collect job writes the
+# no tool counts it as coverage (tools/observations.py), and only CI's collect job adds to the
 # committed record.
 #
 # BASH 3.2, because this runs on the Mac that drives it.
