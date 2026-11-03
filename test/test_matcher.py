@@ -956,15 +956,15 @@ check("a runner's fresh record beats the stale copy in an upload that sorts afte
 
 # THE COMMITTED FILE IS THE BASE. collect re-merges onto the current main after a rejected
 # push, and by then main may hold what this run's uploads do not: a key a later collect
-# added, or a newer run of a key these uploads carry an older copy of -- a VM record with
-# no run id is the first shape, and the second is any parallel run that finished first.
+# added, or a newer run of a key these uploads carry an older copy of -- another runner's
+# record is the first shape, and the second is any parallel run that finished first.
 # Built from uploads alone, the merge erased the first and regressed the second, and the
 # only thing that had kept that from happening was the push being rejected.
 with _tf2.TemporaryDirectory() as _d:
     _art, _scen = pathlib.Path(_d) / "art", pathlib.Path(_d) / "scen"
     (_scen / "zz-merge").mkdir(parents=True)
     _committed = _scen / "zz-merge" / "observed.json"
-    _vm = dict(_rec("openclaw", "debian-12"), platform="linux", arch="x86_64"); del _vm["run"]
+    _vm = dict(_rec("openclaw", "debian-12", run="250"), platform="linux", arch="x86_64")
     _committed.write_text(json.dumps({
         "scenario": "zz-merge",
         "identifiers": [_rec("openclaw", "15.7.9", run="300"), _vm]}))
@@ -974,12 +974,35 @@ with _tf2.TemporaryDirectory() as _d:
     _got = {(r["os"], r.get("run")) for r in json.loads(_committed.read_text())["identifiers"]}
 
 check("a re-merge keeps a committed record the uploads never carried",
-      ("debian-12", None) in _got, f"got {sorted(_got, key=str)}: the VM record was erased")
+      ("debian-12", "250") in _got, f"got {sorted(_got, key=str)}: the other record was erased")
 check("...and keeps the committed copy when it is the newer run",
       ("15.7.9", "300") in _got and ("15.7.9", "200") not in _got,
       f"got {sorted(_got, key=str)}: an older upload regressed a newer committed record")
 check("...while still adding what the uploads bring",
       ("26.0", "200") in _got, f"got {sorted(_got, key=str)}")
+
+# AN UPLOAD CARRYING A RECORD WITH NO RUN is the old shape, a copy of the committed file from
+# before its runless records were deleted, and merging it put 22 of them back on main (run
+# 41675520427). It is refused and said, and the upload's provable records still merge.
+import contextlib as _ctx, io as _io
+with _tf2.TemporaryDirectory() as _d:
+    _art, _scen = pathlib.Path(_d) / "art", pathlib.Path(_d) / "scen"
+    (_scen / "zz-merge").mkdir(parents=True)
+    _committed = _scen / "zz-merge" / "observed.json"
+    _committed.write_text(json.dumps({"scenario": "zz-merge", "identifiers": []}))
+    _local = _rec("openclaw", "26.0"); del _local["run"]
+    _artifact(_art, "zz-merge", "15.7.9", [_rec("openclaw", "15.7.9", run="200"), _local])
+    _mout = _io.StringIO()
+    with _ctx.redirect_stdout(_mout):
+        _mo.merge(_art, _scen)
+    _got = {(r["os"], r.get("run")) for r in json.loads(_committed.read_text())["identifiers"]}
+
+check("an uploaded record naming no run is refused, not merged",
+      ("26.0", None) not in _got, f"got {sorted(_got, key=str)}")
+check("...and the refusal is said, naming the scenario",
+      "::warning::zz-merge: refused 1" in _mout.getvalue(), f"printed {_mout.getvalue()!r}")
+check("...while the same upload's provable record still merges",
+      _got == {("15.7.9", "200")}, f"got {sorted(_got, key=str)}")
 
 # --- the coverage shrink guard is scoped per (platform, os, arch) -----------------
 #
