@@ -19,7 +19,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "aider",
@@ -29,7 +29,27 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
+    },
+    {
+      "agent": "antigravity",
+      "route": "homebrew",
+      "value": "antigravity-cli",
+      "agent_version": "1.4.8,5447777392656384",
+      "platform": "darwin",
+      "os": "15.8.2",
+      "arch": "arm64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "antigravity",
+      "route": "homebrew",
+      "value": "antigravity-cli",
+      "agent_version": "1.4.7,5900205422411776",
+      "platform": "darwin",
+      "os": "26.6.2",
+      "arch": "arm64",
+      "run": "41717453987"
     },
     {
       "agent": "claude-code",
@@ -49,7 +69,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "claude-code",
@@ -59,7 +79,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "codex-cli",
@@ -79,7 +99,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "codex-cli",
@@ -89,7 +109,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "copilot-cli",
@@ -109,7 +129,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "copilot-cli",
@@ -119,7 +139,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "cursor",
@@ -139,7 +159,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "cursor",
@@ -149,7 +169,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "factory-droid",
@@ -169,7 +189,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "factory-droid",
@@ -179,7 +199,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "gemini-cli",
@@ -199,7 +219,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "gemini-cli",
@@ -209,7 +229,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "goose",
@@ -229,7 +249,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "goose",
@@ -239,7 +259,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "hermes",
@@ -259,7 +279,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "hermes",
@@ -269,7 +289,27 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
+    },
+    {
+      "agent": "kimi-code",
+      "route": "homebrew",
+      "value": "kimi-code",
+      "agent_version": "2.3.3",
+      "platform": "darwin",
+      "os": "15.8.2",
+      "arch": "arm64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "kimi-code",
+      "route": "homebrew",
+      "value": "kimi-code",
+      "agent_version": "2.3.2",
+      "platform": "darwin",
+      "os": "26.6.2",
+      "arch": "arm64",
+      "run": "41717453987"
     },
     {
       "agent": "kiro-cli",
@@ -289,7 +329,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "kiro-cli",
@@ -299,7 +339,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "kiro-cli",
@@ -319,7 +359,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "kiro-cli",
@@ -329,7 +369,27 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
+    },
+    {
+      "agent": "letta-code",
+      "route": "homebrew",
+      "value": "letta-code",
+      "agent_version": "0.34.24",
+      "platform": "darwin",
+      "os": "15.8.2",
+      "arch": "arm64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "letta-code",
+      "route": "homebrew",
+      "value": "letta-code",
+      "agent_version": "0.34.24",
+      "platform": "darwin",
+      "os": "26.6.2",
+      "arch": "arm64",
+      "run": "41717453987"
     },
     {
       "agent": "mistral-vibe",
@@ -349,7 +409,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "mistral-vibe",
@@ -359,7 +419,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "muse-code",
@@ -379,7 +439,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "muse-code",
@@ -389,7 +449,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "opencode",
@@ -409,7 +469,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "opencode",
@@ -419,7 +479,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "qwen-code",
@@ -439,7 +499,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     },
     {
       "agent": "qwen-code",
@@ -449,7 +509,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41687070537"
+      "run": "41717453987"
     }
   ]
 }
