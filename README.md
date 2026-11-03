@@ -34,7 +34,7 @@ Three things. Each can be taken on its own.
 $ git clone https://github.com/arthur-ai/ai-detection-spec && cd ai-detection-spec
 $ brew install --cask osquery          # or https://osquery.io/downloads
 $ python3 -m pip install pyyaml        # for bin/classify only; the endpoint needs nothing
-$ sudo osquery/bin/discover | bin/classify
+$ sudo osquery/bin/discover --deep | bin/classify  # --deep adds the container scan
 ```
 
 The findings below came off one Mac. The first two lines are what the same run prints when
