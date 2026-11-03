@@ -79,6 +79,29 @@ to report what they could not see.
 | A2A Agent Cards, OASF, the CSA Agent Registry | What a registered agent is | Whether an unregistered one is installed |
 | CycloneDX AI-BOM, SPDX AI | What an agent is built from | Whether it is on any machine |
 
+## What the spec is
+
+The spec is the written contract that lets a catalog, a collector and a matcher built by three
+different people give the same answer about the same machine. It fixes three things the parties
+exchange, and one rule for each.
+
+| What is exchanged | Defined in | The rule attached to it |
+|---|---|---|
+| A **catalog document**: agents, the routes their identifiers sit on, and each identifier's status and proof | [§4](SPEC.md#4-catalog), [`schema/catalog.schema.json`](schema/catalog.schema.json) | Only agents go in ([§3](SPEC.md#3-scope-what-counts-as-an-agent)), and only identifiers a real install has produced ([§7](SPEC.md#7-provenance)). No two agents may claim the same row |
+| **Evidence rows** from a collector, six columns each, plus scan markers with a closed vocabulary of outcomes | [§5](SPEC.md#5-evidence), [`schema/evidence.schema.json`](schema/evidence.schema.json) | A source the collector could not read is reported as such. *Could not look* never shares a word with *nothing there* |
+| **Findings** from a matcher, with the rows that prove each one, and the markers sorted into scans, absences and gaps | [§6](SPEC.md#6-matching) | Rows are compared by the named match modes in the named order. A row of an unregistered kind is counted, not lost. Findings are never presented as complete while a gap is open |
+
+The match modes, the home roots that let a `~/` value match a Windows profile path, and the
+evaluation order are what make *the same answer* literal, and
+[`conformance/vectors.json`](conformance/vectors.json) pins them: two matchers agree on every
+vector, or one of them does not conform.
+
+The spec is not the catalog, which is a document written to it. It is not osquery, which is one
+collector bound to it. It is not `bin/classify`, which is one matcher that passes its vectors.
+It names no implementation path, and `test/test_conformance.py` fails if one appears. A stranger
+can conform without reading this repository's code: the schemas say what to emit, the vectors
+say what to produce, and the document says why.
+
 ## What the spec guarantees
 
 **An empty result is never ambiguous.** No findings can mean a clean machine, or a scan that
