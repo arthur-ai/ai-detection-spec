@@ -43,11 +43,13 @@ function Invoke-Try([string]$Label, [string]$Exe, [string[]]$ArgList) {
   return ($rc -eq 0)
 }
 
-# curl.exe, the real one: in 5.1 `curl` is an alias for Invoke-WebRequest.
-function Get-Download([string]$Url, [string]$Dest) {
+# curl.exe, the real one: in 5.1 `curl` is an alias for Invoke-WebRequest. -Compressed for a
+# server that answers gzip unasked, as the Marketplace's VSIX URL does.
+function Get-Download([string]$Url, [string]$Dest, [switch]$Compressed) {
+  $flags = @('--retry', '2', '-fsSL', '-A', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)')
+  if ($Compressed) { $flags += '--compressed' }
   Invoke-Retry "downloading $Url" {
-    Invoke-Try "downloading $Url" 'curl.exe' @('--retry', '2', '-fsSL', '-A',
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', '-o', $Dest, $Url)
+    Invoke-Try "downloading $Url" 'curl.exe' ($flags + @('-o', $Dest, $Url))
   }
 }
 
