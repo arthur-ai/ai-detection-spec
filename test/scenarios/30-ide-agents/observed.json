@@ -19,7 +19,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41675520427"
+      "run": "41679268245"
     },
     {
       "agent": "amazon-q",
@@ -39,7 +39,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41675520427"
+      "run": "41679268245"
     },
     {
       "agent": "blackbox",
@@ -59,7 +59,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41675520427"
+      "run": "41679268245"
     },
     {
       "agent": "codegpt",
@@ -79,7 +79,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41675520427"
+      "run": "41679268245"
     },
     {
       "agent": "cody",
@@ -99,7 +99,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41675520427"
+      "run": "41679268245"
     },
     {
       "agent": "gemini-code-assist",
@@ -119,7 +119,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41675520427"
+      "run": "41679268245"
     },
     {
       "agent": "roo-code",
@@ -139,7 +139,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41675520427"
+      "run": "41679268245"
     }
   ]
 }

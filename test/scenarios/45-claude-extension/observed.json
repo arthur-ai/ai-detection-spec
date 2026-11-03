@@ -19,7 +19,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41467114205"
+      "run": "41679268245"
     },
     {
       "agent": "claude-in-chrome",
@@ -29,7 +29,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41467114205"
+      "run": "41679268245"
     },
     {
       "agent": "harpa",
@@ -49,7 +49,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41467114205"
+      "run": "41679268245"
     },
     {
       "agent": "harpa",
@@ -59,7 +59,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41467114205"
+      "run": "41679268245"
     },
     {
       "agent": "merlin",
@@ -75,21 +75,21 @@
       "agent": "merlin",
       "route": "extension_ids",
       "value": "camppjleccjaphfdbohjdohecfnoikec",
-      "agent_version": "8.3.2",
+      "agent_version": "8.4.1",
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41467114205"
+      "run": "41679268245"
     },
     {
       "agent": "merlin",
       "route": "extension_ids",
       "value": "camppjleccjaphfdbohjdohecfnoikec",
-      "agent_version": "8.3.2",
+      "agent_version": "8.4.1",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41467114205"
+      "run": "41679268245"
     },
     {
       "agent": "monica",
@@ -109,7 +109,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41467114205"
+      "run": "41679268245"
     },
     {
       "agent": "monica",
@@ -119,7 +119,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41467114205"
+      "run": "41679268245"
     },
     {
       "agent": "sider",
@@ -135,21 +135,21 @@
       "agent": "sider",
       "route": "extension_ids",
       "value": "difoiogjjojoaoomphldepapgpbgkhkb",
-      "agent_version": "5.35.3",
+      "agent_version": "5.35.5",
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41467114205"
+      "run": "41679268245"
     },
     {
       "agent": "sider",
       "route": "extension_ids",
       "value": "difoiogjjojoaoomphldepapgpbgkhkb",
-      "agent_version": "5.35.3",
+      "agent_version": "5.35.5",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41467114205"
+      "run": "41679268245"
     }
   ]
 }

@@ -5,31 +5,31 @@
       "agent": "claude-code",
       "route": "rpm_packages",
       "value": "claude-code",
-      "agent_version": "2.1.309",
+      "agent_version": "2.1.311",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "41467114205"
+      "run": "41679268245"
     },
     {
       "agent": "claude-code",
       "route": "rpm_packages",
       "value": "claude-code",
-      "agent_version": "2.1.309",
+      "agent_version": "2.1.311",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "41467114205"
+      "run": "41679268245"
     },
     {
       "agent": "claude-code",
       "route": "rpm_packages",
       "value": "claude-code",
-      "agent_version": "2.1.309",
+      "agent_version": "2.1.311",
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "41467114205"
+      "run": "41679268245"
     }
   ]
 }
