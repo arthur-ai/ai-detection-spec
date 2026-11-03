@@ -17,9 +17,19 @@
       "value": "com.clawdbot.mac",
       "agent_version": "2026.1.23",
       "platform": "darwin",
+      "os": "15.8.2",
+      "arch": "arm64",
+      "run": "41467114205"
+    },
+    {
+      "agent": "openclaw",
+      "route": "bundle_ids",
+      "value": "com.clawdbot.mac",
+      "agent_version": "2026.1.23",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40764483708"
+      "run": "41467114205"
     }
   ]
 }
