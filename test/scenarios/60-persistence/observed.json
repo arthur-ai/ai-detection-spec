@@ -39,9 +39,18 @@
       "route": "launchd_prefixes",
       "value": "ai.openclaw.",
       "platform": "darwin",
+      "os": "15.8.2",
+      "arch": "arm64",
+      "run": "41467114205"
+    },
+    {
+      "agent": "openclaw",
+      "route": "launchd_prefixes",
+      "value": "ai.openclaw.",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40764483708"
+      "run": "41467114205"
     }
   ]
 }

@@ -17,9 +17,19 @@
       "value": "com.openai.chat",
       "agent_version": "1.2026.160",
       "platform": "darwin",
+      "os": "15.8.2",
+      "arch": "arm64",
+      "run": "41467114205"
+    },
+    {
+      "agent": "chatgpt-desktop",
+      "route": "bundle_ids",
+      "value": "com.openai.chat",
+      "agent_version": "1.2026.160",
+      "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40764483708"
+      "run": "41467114205"
     }
   ]
 }

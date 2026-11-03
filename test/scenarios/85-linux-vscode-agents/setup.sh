@@ -16,20 +16,26 @@ source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest-linux.sh"
 need_curl
 need_user
 need_vscode
-install_vscode_ext anthropic.claude-code openai.chatgpt rooveterinaryinc.roo-cline \
+install_vscode_ext anthropic.claude-code openai.chatgpt \
   kilocode.kilo-code augment.vscode-augment google.geminicodeassist \
   amazonwebservices.amazon-q-vscode sourcegraph.cody-ai danielsanmedium.dscodegpt
 
-# BLACKBOX IS UNPUBLISHED, and still installed on the machines that took it: every one of
-# the publisher's extensions reads `unpublished` on the Marketplace (2026-10-07), so `code
-# --install-extension blackboxapp.blackbox` answers "not found" -- with 5.3M installs behind
-# blackbox and 2.9M behind blackboxagent. The Marketplace still serves each VSIX by URL, so
-# that is installed instead: the vendor's artifact, through VS Code's own installer. When
-# the URL stops answering, this goes red, and that is the supersession workflow's cue.
-for spec in blackbox/2.8.53 blackboxagent/3.7.0; do
-  vsix="/tmp/${spec%/*}.vsix"
-  try_user "downloading blackboxapp.${spec%/*}" \
-    "curl --retry 3 -fsSL --compressed -o $vsix https://marketplace.visualstudio.com/_apis/public/gallery/publishers/blackboxapp/vsextensions/$spec/vspackage" \
+# BLACKBOX AND ROO CODE ARE UNPUBLISHED, and still installed on the machines that took them.
+# Every one of Blackbox's extensions reads `unpublished` on the Marketplace (2026-10-07),
+# with 5.3M installs behind blackbox and 2.9M behind blackboxagent. Roo Code followed between
+# 2026-10-29 and 2026-11-02, with 2.1M installs and no release since 3.54.0 (2026-05-15); the
+# scheduled run 41467114205 is the first that failed on it. `code --install-extension <id>`
+# answers "not found" for each. The Marketplace still serves each VSIX by URL, so that is
+# installed instead: the vendor's artifact, through VS Code's own installer. --compressed
+# because that URL answers gzip whether or not the client asks. When the URL stops
+# answering, this goes red, and that is the supersession workflow's cue. 30-ide-agents and
+# 103-windows-vscode-agents install Roo Code the same way.
+for spec in blackboxapp/blackbox/2.8.53 blackboxapp/blackboxagent/3.7.0 \
+            RooVeterinaryInc/roo-cline/3.54.0; do
+  pub=${spec%%/*} rest=${spec#*/}
+  vsix="/tmp/${rest%/*}.vsix"
+  retry "downloading $pub.${rest%/*}" try_user "downloading $pub.${rest%/*}" \
+    "curl --retry 3 -fsSL --compressed -o $vsix https://marketplace.visualstudio.com/_apis/public/gallery/publishers/$pub/vsextensions/$rest/vspackage" \
     && install_vscode_ext "$vsix"
 done
 
