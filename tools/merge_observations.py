@@ -25,6 +25,10 @@ import argparse
 import collections
 import json
 import pathlib
+import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+from observations import provable  # noqa: E402
 
 # The merge key. `run` is deliberately NOT in it: two runs on the same (platform, os, arch)
 # are one observation re-proved, not two, so including the run id would append a duplicate
@@ -69,13 +73,26 @@ def merge(artifacts, scenarios):
     # records with stale copies (run 37118799385). An upload holds only its own run's
     # records now, and two artifacts can still name one key. GitHub run ids only increase,
     # so a newer run outranks an older one; no run ranks lowest.
+    #
+    # A RECORD WITH NO RUN IS REFUSED, NOT MERGED. Every CI recording step passes --run-id
+    # (tools/check_workflows.py), so an upload carrying one is the old shape: a copy of the
+    # committed file from before its runless records were deleted. Run 41675520427, queued
+    # before the change merged, put 22 back into 85-linux-vscode-agents.
+    # tools/validate_catalog.py refuses them in the tree; this keeps them from reaching it.
     incoming = collections.defaultdict(dict)
+    refused = collections.Counter()
     for scen, doc in uploaded(artifacts):
         for rec in doc.get("identifiers", []):
+            if not provable(rec):
+                refused[scen] += 1
+                continue
             k = _key(rec)
             held = incoming[scen].get(k)
             if held is None or int(rec.get("run") or 0) > int(held.get("run") or 0):
                 incoming[scen][k] = rec
+    for scen, n in sorted(refused.items()):
+        print(f"::warning::{scen}: refused {n} uploaded record(s) naming no run or platform. "
+              f"Only a CI run's own records are merged.")
 
     written = {}
     for scen, recs in sorted(incoming.items()):
@@ -92,14 +109,11 @@ def merge(artifacts, scenarios):
         archived = {_key(r): r for r in committed.get("archived", [])}
 
         # THE COMMITTED FILE IS THE BASE, AND AN UPLOAD REPLACES A KEY ONLY WITH A NEWER
-        # RUN. This used to build `identifiers` from the uploads alone, which was the same
-        # thing exactly as long as main had not moved since the run checked out -- every
-        # upload carries a verbatim copy of the committed file. Once collect re-merges onto
-        # the current main after a rejected push, that stops being true: a record another
-        # collect committed in the meantime is absent from these uploads, or present only
-        # as the older copy they were cut from, and uploads-only would erase or regress it.
-        # Starting from what is committed and letting only a newer run id win a key makes
-        # the merge the same files on any base, which is what re-merging relies on.
+        # RUN. An upload holds only its own run's records, so built from uploads alone the
+        # merge would erase every key this run did not prove, and on a re-merge onto a moved
+        # main, every record another collect committed in the meantime. Starting from what
+        # is committed and letting only a newer run id win a key makes the merge the same
+        # files on any base, which is what re-merging relies on.
         live = {_key(r): r for r in committed.get("identifiers", [])}
         for k, r in incoming[scen].items():
             held = live.get(k)
