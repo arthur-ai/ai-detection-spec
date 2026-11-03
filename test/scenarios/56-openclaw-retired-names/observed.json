@@ -7,33 +7,6 @@
       "value": "clawdbot",
       "agent_version": "2026.1.24-3",
       "platform": "darwin",
-      "os": "14.8.7",
-      "arch": "arm64"
-    },
-    {
-      "agent": "openclaw",
-      "route": "npm",
-      "value": "clawdbot",
-      "agent_version": "2026.1.24-3",
-      "platform": "darwin",
-      "os": "14.8.9",
-      "arch": "arm64"
-    },
-    {
-      "agent": "openclaw",
-      "route": "npm",
-      "value": "clawdbot",
-      "agent_version": "2026.1.24-3",
-      "platform": "darwin",
-      "os": "15.7.7",
-      "arch": "arm64"
-    },
-    {
-      "agent": "openclaw",
-      "route": "npm",
-      "value": "clawdbot",
-      "agent_version": "2026.1.24-3",
-      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40764483708"
@@ -57,33 +30,6 @@
       "os": "26.6.2",
       "arch": "arm64",
       "run": "41467114205"
-    },
-    {
-      "agent": "openclaw",
-      "route": "npm",
-      "value": "moltbot",
-      "agent_version": "0.1.0",
-      "platform": "darwin",
-      "os": "14.8.7",
-      "arch": "arm64"
-    },
-    {
-      "agent": "openclaw",
-      "route": "npm",
-      "value": "moltbot",
-      "agent_version": "0.1.0",
-      "platform": "darwin",
-      "os": "14.8.9",
-      "arch": "arm64"
-    },
-    {
-      "agent": "openclaw",
-      "route": "npm",
-      "value": "moltbot",
-      "agent_version": "0.1.0",
-      "platform": "darwin",
-      "os": "15.7.7",
-      "arch": "arm64"
     },
     {
       "agent": "openclaw",

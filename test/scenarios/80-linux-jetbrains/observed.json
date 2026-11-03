@@ -5,29 +5,11 @@
       "agent": "cline",
       "route": "jetbrains_plugins",
       "value": "cline",
-      "agent_version": "2.0.8",
-      "platform": "linux",
-      "os": "amzn-2023",
-      "arch": "aarch64"
-    },
-    {
-      "agent": "cline",
-      "route": "jetbrains_plugins",
-      "value": "cline",
       "agent_version": "2.0.9",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
       "run": "41467114205"
-    },
-    {
-      "agent": "cline",
-      "route": "jetbrains_plugins",
-      "value": "cline",
-      "agent_version": "2.0.6",
-      "platform": "linux",
-      "os": "debian-12",
-      "arch": "aarch64"
     },
     {
       "agent": "cline",
@@ -43,29 +25,11 @@
       "agent": "cline",
       "route": "jetbrains_plugins",
       "value": "cline",
-      "agent_version": "2.0.6",
-      "platform": "linux",
-      "os": "fedora-41",
-      "arch": "aarch64"
-    },
-    {
-      "agent": "cline",
-      "route": "jetbrains_plugins",
-      "value": "cline",
       "agent_version": "2.0.9",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
       "run": "41467114205"
-    },
-    {
-      "agent": "cline",
-      "route": "jetbrains_plugins",
-      "value": "cline",
-      "agent_version": "2.0.6",
-      "platform": "linux",
-      "os": "rocky-9.8",
-      "arch": "aarch64"
     },
     {
       "agent": "cline",
@@ -104,26 +68,8 @@
       "agent_version": "1.0.67",
       "platform": "linux",
       "os": "amzn-2023",
-      "arch": "aarch64"
-    },
-    {
-      "agent": "continue",
-      "route": "jetbrains_plugins",
-      "value": "continue-intellij-extension",
-      "agent_version": "1.0.67",
-      "platform": "linux",
-      "os": "amzn-2023",
       "arch": "x86_64",
       "run": "41467114205"
-    },
-    {
-      "agent": "continue",
-      "route": "jetbrains_plugins",
-      "value": "continue-intellij-extension",
-      "agent_version": "1.0.67",
-      "platform": "linux",
-      "os": "debian-12",
-      "arch": "aarch64"
     },
     {
       "agent": "continue",
@@ -142,26 +88,8 @@
       "agent_version": "1.0.67",
       "platform": "linux",
       "os": "fedora-41",
-      "arch": "aarch64"
-    },
-    {
-      "agent": "continue",
-      "route": "jetbrains_plugins",
-      "value": "continue-intellij-extension",
-      "agent_version": "1.0.67",
-      "platform": "linux",
-      "os": "fedora-41",
       "arch": "x86_64",
       "run": "41467114205"
-    },
-    {
-      "agent": "continue",
-      "route": "jetbrains_plugins",
-      "value": "continue-intellij-extension",
-      "agent_version": "1.0.67",
-      "platform": "linux",
-      "os": "rocky-9.8",
-      "arch": "aarch64"
     },
     {
       "agent": "continue",
