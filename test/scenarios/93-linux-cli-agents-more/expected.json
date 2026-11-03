@@ -33,6 +33,9 @@
       "opencode",
       "claude-code",
       "codex-cli"
+    ],
+    "forbid_evidence": [
+      "/home/dana/.dsh/"
     ]
   },
   "why": "Most of these agents have two witnesses here, a package and a state directory, so must_contain names each. Amp and Crush write no top-level directory, so their npm row is the only witness, as DeepSeek Harness's is: its ~/.dsh must arrive and be claimed by nothing, because another tool's dsh uses that name. Qwen Code is a Gemini CLI fork and Crush was opencode-ai/opencode before its rename, so gemini-cli and opencode are forbidden; claude-code and codex-cli are forbidden because ~/.local/bin and top-level home directories are their routes too.",
@@ -51,9 +54,6 @@
     "/uv/tools/mistral-vibe/",
     "/home/dana/.vibe/",
     "@deepseek-ai/dsh",
-    "/home/dana/.dsh/"
-  ],
-  "forbid_evidence": [
     "/home/dana/.dsh/"
   ],
   "known_gaps": [

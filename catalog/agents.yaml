@@ -1028,15 +1028,16 @@ agents:
     homebrew: [qwen-code]
 
   # DeepSeek Harness, DeepSeek's agent runtime: `dsh --profile headless "<job>"` runs a coding
-  # agent in the working directory. Read off a probe in CI run 41500293412 on 2026-11-02
-  # (Ubuntu 24.04, npm 11.19.1): @deepseek-ai/dsh 0.2.1-rc.5, bin `dsh`; installed by
-  # 93-linux-cli-agents-more. NOT `~/.dsh`, which the first headless
-  # run writes: the unrelated dsh distributed shell, packaged by Debian, reads ~/.dsh/dsh.conf
-  # by its man page (not read off an install).
+  # agent in the working directory. NOT `~/.dsh`, which the first headless run writes: the
+  # unrelated dsh distributed shell, packaged by Debian, reads ~/.dsh/dsh.conf by its man page
+  # (not read off an install). So only `npm -g` is found: `npx @deepseek-ai/dsh web`, the one
+  # command the vendor's README gives, leaves nothing a route reads (filesystem.sql's npx gap).
   - id: deepseek-harness
     name: DeepSeek Harness
     classification: Coding agent
     platforms: [linux]
+    # 93-linux-cli-agents-more in CI run 41718064984 on 2026-11-03: @deepseek-ai/dsh
+    # 0.2.1-rc.5, bin `dsh`, on Ubuntu 24.04 x86_64.
     npm: ["@deepseek-ai/dsh"]
 
   # Google's Jules CLI. It drives Jules's cloud VMs, and `jules remote pull --apply` writes

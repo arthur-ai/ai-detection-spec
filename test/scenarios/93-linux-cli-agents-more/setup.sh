@@ -19,12 +19,9 @@ source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest-linux.sh"
 need_curl
 # 22 because @qwen-code/qwen-code declares node >=22. The other packages accept 20.
 need_node 22 || echo "WARN: Node 22 did not install"
-# A COMPILER, for DeepSeek Harness's node-pty: it ships no linux prebuild, so npm 10 falls back
-# to node-gyp, and the container images have no make (`not found: make`, CI run 40918177229).
-case "$(pm)" in
-  apt) need_pkgs make g++ || echo "WARN: make and g++ did not install" ;;
-  dnf) need_pkgs make gcc-c++ || echo "WARN: make and gcc-c++ did not install" ;;
-esac
+# NO COMPILER, unlike 96's for Letta: DeepSeek Harness pins node-pty 1.2.0-beta.15, which ships
+# linux-x64 and linux-arm64 prebuilds, and installed without make or g++ in node:22-bookworm-slim
+# on both arches on 2026-11-03.
 need_user
 need_pkgs python3 || true
 

@@ -1478,8 +1478,9 @@ check("the ChatGPT extension is a browser agent and ChatGPT search is not",
       _c == {"hehggadaopoacecdllhhajmbjkdcmajg": "chatgpt-extension"}
       and "ejcfepkfckglbgocfkanmcdngdijcgld" in _u, f"got {_c}")
 
-# DEEPSEEK HARNESS is its scoped package alone: the bin `dsh`, the dependency npm installs
-# beside it and the ~/.dsh its first run writes claim nothing.
+# DEEPSEEK HARNESS is its scoped package alone: the bin `dsh`, the ~/.dsh its first run writes
+# and its dependency @deepseek-ai/dsh-subprocess-local, which shares its prefix, claim nothing.
+# npm -g nests that dependency, so only an install of its own would produce the row.
 _c, _u = _claims(_kind("npm", "@deepseek-ai/dsh", "dsh", "@deepseek-ai/dsh-subprocess-local")
                  + _kind("file", "/home/dana/.dsh/"))
 check("DeepSeek Harness is @deepseek-ai/dsh, and its namesakes are declined",
