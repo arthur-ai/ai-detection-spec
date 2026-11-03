@@ -39,6 +39,8 @@ blind_spots:
     why: "A WSL distribution is a Linux filesystem in a virtual disk, and osquery on the Windows host reads the host. Nothing names one yet: no distribution has been installed on a runner to read what its presence looks like, so there is no marker for it, and a Windows machine whose agents live in WSL reads as having none"
   - spot: "An npm global prefix moved on Windows"
     why: "`npm_packages` searches `%APPDATA%\\npm` and nvm's directories on Windows (npm_packages.cpp at 5.23.1). A prefix set anywhere else is not read: GitHub's own Windows image moves it to `C:\\npm\\prefix`, where four globals installed on 2026-10-26 produced no row"
+  - spot: "A Node installed under a prefix of its own on Linux"
+    why: "`npm_packages` reads a fixed list of global directories, and a Node unpacked anywhere else keeps its globals outside it. Measured on 2026-10-29: an Ubuntu 24.04 host whose Node lived at /opt/node22 held npm globals that osquery 5.23.1's `npm_packages` returned no row for. 96-linux-cli-agents-npm installs under a prefix the table searches"
   - spot: "A Windows process launched through an 8.3 short path"
     why: "`processes.path` reports the on-disk spelling even for a lowercase or `\\\\?\\` launch, but a launch through a short name keeps it (`C:\\PROGRA~1\\...`), measured on windows-2025. A short name for a home's own components would match no `~/` value"
   - spot: "MSIX packages on osquery below 5.17.0"

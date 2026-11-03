@@ -388,6 +388,7 @@ jobs:
           - 93-linux-cli-agents-more
           - 94-linux-cli-agents-legacy
           - 95-linux-crush-packages
+          - 96-linux-cli-agents-npm
           # 77-linux-rpm and 91-linux-claude-rpm need dnf, which no ubuntu label has, so
           # they are under the container job only. A scenario listed where it can never
           # run spends a runner on exiting 3; tools/check_workflows.py still fails one
