@@ -1,0 +1,407 @@
+{
+  "scenario": "96-linux-cli-agents-npm",
+  "identifiers": [
+    {
+      "agent": "codebuddy-code",
+      "route": "npm",
+      "value": "@tencent-ai/codebuddy-code",
+      "agent_version": "2.179.3",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "codebuddy-code",
+      "route": "npm",
+      "value": "@tencent-ai/codebuddy-code",
+      "agent_version": "2.179.3",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "codebuddy-code",
+      "route": "npm",
+      "value": "@tencent-ai/codebuddy-code",
+      "agent_version": "2.179.3",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "codebuddy-code",
+      "route": "npm",
+      "value": "@tencent-ai/codebuddy-code",
+      "agent_version": "2.179.3",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "codebuddy-code",
+      "route": "npm",
+      "value": "@tencent-ai/codebuddy-code",
+      "agent_version": "2.179.3",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "codebuddy-code",
+      "route": "npm",
+      "value": "@tencent-ai/codebuddy-code",
+      "agent_version": "2.179.3",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "codebuddy-code",
+      "route": "state_dirs",
+      "value": "~/.codebuddy",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "codebuddy-code",
+      "route": "state_dirs",
+      "value": "~/.codebuddy",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "codebuddy-code",
+      "route": "state_dirs",
+      "value": "~/.codebuddy",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "codebuddy-code",
+      "route": "state_dirs",
+      "value": "~/.codebuddy",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "codebuddy-code",
+      "route": "state_dirs",
+      "value": "~/.codebuddy",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "codebuddy-code",
+      "route": "state_dirs",
+      "value": "~/.codebuddy",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "kimi-code",
+      "route": "npm",
+      "value": "@moonshot-ai/kimi-code",
+      "agent_version": "2.4.1",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "kimi-code",
+      "route": "npm",
+      "value": "@moonshot-ai/kimi-code",
+      "agent_version": "2.4.1",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "kimi-code",
+      "route": "npm",
+      "value": "@moonshot-ai/kimi-code",
+      "agent_version": "2.4.1",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "kimi-code",
+      "route": "npm",
+      "value": "@moonshot-ai/kimi-code",
+      "agent_version": "2.4.1",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "kimi-code",
+      "route": "npm",
+      "value": "@moonshot-ai/kimi-code",
+      "agent_version": "2.4.1",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "kimi-code",
+      "route": "npm",
+      "value": "@moonshot-ai/kimi-code",
+      "agent_version": "2.4.1",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "kimi-code",
+      "route": "state_dirs",
+      "value": "~/.kimi-code",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "kimi-code",
+      "route": "state_dirs",
+      "value": "~/.kimi-code",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "kimi-code",
+      "route": "state_dirs",
+      "value": "~/.kimi-code",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "kimi-code",
+      "route": "state_dirs",
+      "value": "~/.kimi-code",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "kimi-code",
+      "route": "state_dirs",
+      "value": "~/.kimi-code",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "kimi-code",
+      "route": "state_dirs",
+      "value": "~/.kimi-code",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "letta-code",
+      "route": "npm",
+      "value": "@letta-ai/letta-code",
+      "agent_version": "0.34.39",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "letta-code",
+      "route": "npm",
+      "value": "@letta-ai/letta-code",
+      "agent_version": "0.34.39",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "letta-code",
+      "route": "npm",
+      "value": "@letta-ai/letta-code",
+      "agent_version": "0.34.39",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "letta-code",
+      "route": "npm",
+      "value": "@letta-ai/letta-code",
+      "agent_version": "0.34.39",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "letta-code",
+      "route": "npm",
+      "value": "@letta-ai/letta-code",
+      "agent_version": "0.34.39",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "letta-code",
+      "route": "npm",
+      "value": "@letta-ai/letta-code",
+      "agent_version": "0.34.39",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "qoder",
+      "route": "npm",
+      "value": "@qoder-ai/qodercli",
+      "agent_version": "1.1.82",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "qoder",
+      "route": "npm",
+      "value": "@qoder-ai/qodercli",
+      "agent_version": "1.1.82",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "qoder",
+      "route": "npm",
+      "value": "@qoder-ai/qodercli",
+      "agent_version": "1.1.82",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "qoder",
+      "route": "npm",
+      "value": "@qoder-ai/qodercli",
+      "agent_version": "1.1.82",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "qoder",
+      "route": "npm",
+      "value": "@qoder-ai/qodercli",
+      "agent_version": "1.1.82",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "qoder",
+      "route": "npm",
+      "value": "@qoder-ai/qodercli",
+      "agent_version": "1.1.82",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "qoder",
+      "route": "state_dirs",
+      "value": "~/.qoder",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "qoder",
+      "route": "state_dirs",
+      "value": "~/.qoder",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "qoder",
+      "route": "state_dirs",
+      "value": "~/.qoder",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "qoder",
+      "route": "state_dirs",
+      "value": "~/.qoder",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "x86_64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "qoder",
+      "route": "state_dirs",
+      "value": "~/.qoder",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "41717453987"
+    },
+    {
+      "agent": "qoder",
+      "route": "state_dirs",
+      "value": "~/.qoder",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "41717453987"
+    }
+  ]
+}
