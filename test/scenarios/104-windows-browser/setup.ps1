@@ -61,18 +61,28 @@ $msix = Join-Path $dl 'claude.msix'
 if (Get-Download 'https://claude.ai/api/desktop/win32/x64/msix/latest/redirect' $msix) {
   try { Add-AppxPackage -Path $msix } catch { Write-Host "WARN: Claude Desktop failed: $_" }
 }
+#
+# READY MEANS THE MANIFEST, NOT THE KEY: the query follows the key's default value to the file
+# it names. Waiting on the key alone, runs 41687070537 and 41691259793 logged it after 4s and
+# then found no nmh row for it; whether the value or the file was late went unrecorded.
 $bridge = 'HKCU:\Software\Google\Chrome\NativeMessagingHosts\com.anthropic.claude_browser_extension'
+function Get-BridgeManifest {
+  $m = (Get-ItemProperty $bridge -ErrorAction SilentlyContinue).'(default)'
+  if ($m -and (Test-Path -LiteralPath $m -PathType Leaf)) { $m }
+}
 $pkg = Get-AppxPackage Claude -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($pkg) {
   $app = (Get-AppxPackageManifest $pkg).Package.Applications.Application.Id | Select-Object -First 1
   Start-Process explorer.exe -ArgumentList "shell:AppsFolder\$($pkg.PackageFamilyName)!$app"
   foreach ($i in 1..60) {
-    if (Test-Path $bridge) { break }
+    if (Get-BridgeManifest) { break }
     Start-Sleep -Seconds 2
   }
-  if (Test-Path $bridge) { Write-Host "Claude Desktop registered its bridge after about $(2 * $i)s" }
+  $manifest = Get-BridgeManifest
+  if ($manifest) { Write-Host "Claude Desktop registered its bridge, $manifest, after about $(2 * $i)s" }
   else {
-    Write-Host 'WARN: Claude Desktop registered no bridge in 120s. Its processes:'
+    $value = (Get-ItemProperty $bridge -ErrorAction SilentlyContinue).'(default)'
+    Write-Host "WARN: Claude Desktop wrote no bridge manifest in 120s. Key: $(Test-Path $bridge), value: '$value'. Its processes:"
     Get-Process claude -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "      $($_.Path)" }
   }
 }
