@@ -34,7 +34,7 @@
       "cursor"
     ]
   },
-  "why": "THE POINT OF THE LINUX PORT IN ONE SCENARIO: not one identifier here was added for Linux. The npm route and the `~/`-rooted path routes were always portable, so what was missing was queries that look under /home and /root and a matcher whose HOME_ROOTS resolves them. If this passes, the portable half of the catalog works on Linux with no catalog edit at all. require_rows holds the ~/.local/bin/claude link to a release: it leads into ~/.local/share/claude/versions/<version>, and the shim branch reads that name as `ver`.",
+  "why": "THE POINT OF THE LINUX PORT IN ONE SCENARIO: not one identifier here was added for Linux. The npm route and the `~/`-rooted path routes were always portable, so what was missing was queries that look under /home and /root and a matcher whose HOME_ROOTS resolves them. If this passes, the portable half of the catalog works on Linux with no catalog edit at all. require_rows proves the ~/.local/bin/claude link carries a version. The link leads into ~/.local/share/claude/versions/<version>, and the shim branch reads that name as `ver`.",
   "must_contain": [
     "@openai/codex",
     "@google/gemini-cli",
@@ -50,6 +50,7 @@
     {"kind": "file", "id": "/.local/bin/claude", "ver": "."}
   ],
   "known_gaps": [
-    "Claude Code's npm identifier is not exercised here -- the native installer is its primary route and the two would fight over the same binary name. 21-cli-agents-homebrew makes the same argument on macOS."
+    "Claude Code's npm identifier is not exercised here -- the native installer is its primary route and the two would fight over the same binary name. 21-cli-agents-homebrew makes the same argument on macOS.",
+    "The shim's `ver` is checked for presence, not against the installed release: the shim's path names no release, and the release changes with every install, so expected.json cannot hold it. A join onto the wrong versions/ file would pass."
   ]
 }

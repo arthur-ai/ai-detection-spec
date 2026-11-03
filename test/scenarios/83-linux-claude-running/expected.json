@@ -31,7 +31,7 @@
     "\"kind\": \"proc\", \"loc\": \"/home/dana/.local/share/claude/versions/"
   ],
   "require_rows": [
-    {"kind": "proc", "loc": "/home/dana/.local/share/claude/versions/", "ver": "."}
+    {"kind": "proc", "loc": "/home/dana/.local/share/claude/versions/", "ver": {"tail_of": "loc"}}
   ],
   "known_gaps": [
     "`claude mcp serve` runs unauthenticated with no client connected, so this proves what a running Claude Code process looks like to osquery, not an agent at work.",
