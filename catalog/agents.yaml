@@ -800,8 +800,9 @@ agents:
     homebrew: [muse-code]
 
   # A Cline fork, and its id is the substring trap for cline's: `roo-cline`. Read off
-  # 85-linux-vscode-agents on 2026-10-07, v3.54.0, which also forbids cline. The Marketplace
-  # shows no release since 2026-05-15; installed machines keep it either way.
+  # 85-linux-vscode-agents on 2026-10-07, v3.54.0, which also forbids cline. Unpublished from
+  # the Marketplace by 2026-11-02, after no release since 2026-05-15. Installed machines keep
+  # it, and the scenarios install the VSIX the Marketplace still serves by URL (85 says why).
   - id: roo-code
     name: Roo Code
     classification: Coding agent
