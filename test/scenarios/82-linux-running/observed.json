@@ -5,29 +5,11 @@
       "agent": "openclaw",
       "route": "npm",
       "value": "openclaw",
-      "agent_version": "2026.10.5",
-      "platform": "linux",
-      "os": "amzn-2023",
-      "arch": "aarch64"
-    },
-    {
-      "agent": "openclaw",
-      "route": "npm",
-      "value": "openclaw",
       "agent_version": "2026.10.9",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
       "run": "41467114205"
-    },
-    {
-      "agent": "openclaw",
-      "route": "npm",
-      "value": "openclaw",
-      "agent_version": "2026.9.8",
-      "platform": "linux",
-      "os": "debian-12",
-      "arch": "aarch64"
     },
     {
       "agent": "openclaw",
@@ -43,29 +25,11 @@
       "agent": "openclaw",
       "route": "npm",
       "value": "openclaw",
-      "agent_version": "2026.9.8",
-      "platform": "linux",
-      "os": "fedora-41",
-      "arch": "aarch64"
-    },
-    {
-      "agent": "openclaw",
-      "route": "npm",
-      "value": "openclaw",
       "agent_version": "2026.10.9",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
       "run": "41467114205"
-    },
-    {
-      "agent": "openclaw",
-      "route": "npm",
-      "value": "openclaw",
-      "agent_version": "2026.9.8",
-      "platform": "linux",
-      "os": "rocky-9.8",
-      "arch": "aarch64"
     },
     {
       "agent": "openclaw",
@@ -103,24 +67,8 @@
       "value": "~/.openclaw",
       "platform": "linux",
       "os": "amzn-2023",
-      "arch": "aarch64"
-    },
-    {
-      "agent": "openclaw",
-      "route": "state_dirs",
-      "value": "~/.openclaw",
-      "platform": "linux",
-      "os": "amzn-2023",
       "arch": "x86_64",
       "run": "41467114205"
-    },
-    {
-      "agent": "openclaw",
-      "route": "state_dirs",
-      "value": "~/.openclaw",
-      "platform": "linux",
-      "os": "debian-12",
-      "arch": "aarch64"
     },
     {
       "agent": "openclaw",
@@ -137,24 +85,8 @@
       "value": "~/.openclaw",
       "platform": "linux",
       "os": "fedora-41",
-      "arch": "aarch64"
-    },
-    {
-      "agent": "openclaw",
-      "route": "state_dirs",
-      "value": "~/.openclaw",
-      "platform": "linux",
-      "os": "fedora-41",
       "arch": "x86_64",
       "run": "41467114205"
-    },
-    {
-      "agent": "openclaw",
-      "route": "state_dirs",
-      "value": "~/.openclaw",
-      "platform": "linux",
-      "os": "rocky-9.8",
-      "arch": "aarch64"
     },
     {
       "agent": "openclaw",

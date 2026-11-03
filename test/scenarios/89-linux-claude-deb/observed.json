@@ -5,15 +5,6 @@
       "agent": "claude-code",
       "route": "deb_packages",
       "value": "claude-code",
-      "agent_version": "2.1.304-1",
-      "platform": "linux",
-      "os": "debian-12",
-      "arch": "aarch64"
-    },
-    {
-      "agent": "claude-code",
-      "route": "deb_packages",
-      "value": "claude-code",
       "agent_version": "2.1.309-1",
       "platform": "linux",
       "os": "debian-12",

@@ -64,20 +64,21 @@ build still report it. When no installable build produces the old one, supersede
 
 ### Recording the observation
 
-Coverage is counted from what each run recorded in `test/scenarios/<name>/observed.json`, not
-from what `expected.json` asserts. The `collect` job writes those files only on `main`, so a
-pull request cannot move recorded coverage. **A pull request that adds an identifier's first
-real install should commit the observation**, or the generated page calls it uncovered until
-the merge lands:
+Coverage is counted from `test/scenarios/<name>/observed.json`, not from what `expected.json`
+asserts, and only from records that name the CI run that produced them. Only the `collect`
+job adds to those files. It merges every scenario job's upload, and it commits only on
+`main`, so a pull request cannot move its own recorded coverage. On a pull request, `collect`
+checks the new identifiers against that run's uploads instead, and the badge and
+`docs/agents.md` move after the merge. **A local run leaves nothing to commit**:
+`test/run-linux.sh` and `test/run.sh` write their records under `test/artifacts/`, and
+`tools/validate_catalog.py` refuses a committed record that names no run.
 
-```console
-$ python3 tools/agent_status.py --record /tmp/out.json test/scenarios/<name> \
-    --platform linux --os 24.04 --arch x86_64
-```
-
-A run proving fewer identifiers than the committed record is refused, because that is also what
-a broken query looks like. `--allow-shrink` overrides it for an identifier genuinely removed.
-When an identifier stops appearing,
+A CI run that proves fewer identifiers than the committed record on its own platform, OS and
+architecture is refused, because that is also what a broken query looks like. Two modes of
+`tools/agent_status.py --record` edit the committed record, and only to take records out:
+`--allow-shrink` drops them, for an identifier genuinely removed, and `--supersede` moves them
+to `archived`. Each takes the refused run's `--platform`, `--os` and `--arch`, because the
+guard compares on those. When an identifier stops appearing,
 [the triage](docs/signature-lifecycle.md#triage-why-did-it-stop-appearing) tells a wrong
 identifier from one that is no longer installable.
 
