@@ -46,9 +46,9 @@ COULD NOT LOOK: containers -- whatever answers at /var/run/docker.sock accepted 
   These are not findings and not an absence of them. That part of the machine was not read.
 
 Claude Code  [Coding agent]  running
-    file    /Users/dana/.local/bin/claude
+    file    /Users/dana/.local/bin/claude  2.1.314
     file    /Users/dana/.claude/
-    proc    /Users/dana/.local/share/claude/versions/2.1.314
+    proc    /Users/dana/.local/share/claude/versions/2.1.314  2.1.314
 
 Cursor  [Coding agent]
     app     com.todesktop.230313mzl4w4u92  3.22.7
