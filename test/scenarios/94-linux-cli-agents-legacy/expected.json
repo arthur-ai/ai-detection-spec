@@ -6,7 +6,7 @@
     "deb+rpm": ">=1",
     "desktop": ">=0",
     "ext": ">=0",
-    "file": ">=1",
+    "file": ">=2",
     "jbplugin": ">=0",
     "nmh": ">=0",
     "npm": ">=3",
@@ -29,12 +29,13 @@
       "codex-cli"
     ]
   },
-  "why": "The old names are what machines installed before each move still report. @sourcegraph/amp now installs @ampcode/cli as a nested dependency, and forbid_rows holds that nested copy absent as a global, so Amp here is found through the old name alone. Junie's postinstall also writes ~/.local/bin/junie, so must_contain pins the package row. kimi-cli's uv tool directory is Kimi Code's only witness here, and @moonshot-ai/kimi-code is held absent so the old name is what finds it.",
+  "why": "The old names are what machines installed before each move still report. @sourcegraph/amp now installs @ampcode/cli as a nested dependency, and forbid_rows holds that nested copy absent as a global, so Amp here is found through the old name alone. Junie's postinstall also writes ~/.local/bin/junie, so must_contain pins the package row. kimi-cli's uv tool directory and the ~/.kimi its first run writes are Kimi Code's witnesses here, so must_contain names both, and @moonshot-ai/kimi-code is held absent so the old generation is what finds it.",
   "must_contain": [
     "@sourcegraph/amp",
     "\"id\": \"droid\", \"kind\": \"npm\"",
     "@jetbrains/junie-cli",
-    "/uv/tools/kimi-cli/"
+    "/uv/tools/kimi-cli/",
+    "/.kimi/"
   ],
   "forbid_rows": [
     {
@@ -53,8 +54,5 @@
       "kind": "npm",
       "id": "@moonshot-ai/kimi-code"
     }
-  ],
-  "known_gaps": [
-    "kimi-cli is never run, so whatever state directory the Python CLI wrote is unexamined."
   ]
 }

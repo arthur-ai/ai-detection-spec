@@ -14,9 +14,10 @@
 #   Muse Code   ~/.local/bin/muse           a launcher; the binary lands beside it as
 #                                           muse-bin-<version>. Read 2026-10-19
 #   Antigravity ~/.local/bin/agy            the binary itself. Read 2026-10-29
-#   Kimi Code   ~/.kimi-code/bin/kimi       the route is ~/.kimi-code, as opencode's is
+#   Kimi Code   ~/.kimi-code/bin/kimi       the route is ~/.kimi-code, as opencode's is.
+#                                           Read 2026-10-29
 #   Qoder CLI   ~/.local/bin/qodercli       a link into ~/.qoder/bin/qodercli/, so ~/.qoder
-#                                           is a value as well
+#                                           is a value as well. Read 2026-10-29
 #
 # Cursor and Grok also write ~/.local/bin/agent and ~/.grok/bin/agent. A name that generic
 # identifies nothing, so neither is catalogued.

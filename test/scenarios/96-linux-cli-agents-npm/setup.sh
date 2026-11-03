@@ -1,13 +1,13 @@
 #!/bin/bash
-# Four terminal coding agents through their npm names. Read off an npm install on 2026-10-29;
-# catalog/agents.yaml carries the versions.
+# Terminal coding agents through their npm names, each run once the way that writes its state
+# directory without credentials. Read off an npm install on 2026-10-29 and a container run on
+# 2026-11-03; catalog/agents.yaml carries the versions.
 #
-#   Kimi Code       @moonshot-ai/kimi-code       no top-level state directory at install
-#   CodeBuddy Code  @tencent-ai/codebuddy-code   no install scripts
+#   Kimi Code       @moonshot-ai/kimi-code       ~/.kimi-code on `kimi -p hi`, not on --version
+#   CodeBuddy Code  @tencent-ai/codebuddy-code   ~/.codebuddy on --help, not on --version
 #   Qoder CLI       @qoder-ai/qodercli           postinstall writes ~/.qoder/entry/
-#   Letta Code      @letta-ai/letta-code         no top-level state directory at install
-#
-# Nothing is run after installing: the package rows and ~/.qoder are the claim.
+#   Letta Code      @letta-ai/letta-code         ~/.letta on --version, which is not a value:
+#                                                the Letta server writes it too
 #
 # SEPARATE from 84-linux-installers, whose curl installers put the same `kimi` and `qodercli`
 # on PATH, and from 94-linux-cli-agents-legacy, whose Python kimi-cli this package's
@@ -36,3 +36,11 @@ retry "npm install -g @qoder-ai/qodercli" try "npm install -g @qoder-ai/qodercli
   sudo_maybe env HOME=/root npm install -g --no-fund --no-audit @qoder-ai/qodercli || true
 echo "--- the globals npm recorded:"
 npm ls -g --depth=0 2>/dev/null | sed 's/^/      /'
+
+# `kimi -p hi` fails at sign-in AFTER writing ~/.kimi-code; that failure is the expected
+# outcome, so only the directory is checked.
+need_user
+as_user 'kimi -p hi </dev/null' >/dev/null 2>&1 || true
+try_user "codebuddy --help, which is what writes ~/.codebuddy" 'codebuddy --help >/dev/null' || true
+echo "--- what landed in the user's home:"
+as_user 'ls -1d ~/.*/ 2>&1' | sed 's/^/      /'

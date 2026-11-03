@@ -21,6 +21,8 @@
 #     kiro-cli     cask, with an app whose bundle id is com.amazon.codewhisperer
 #     qwen-code    formula     mistral-vibe     formula
 #     droid        cask, binary-only, Factory's
+#     kimi-code    formula     letta-code       formula
+#     antigravity-cli  cask, binary-only, Google's
 #
 # cursor-cli's binary is cursor-agent and block-goose-cli's is goose, so none of the four
 # collides with a command already installed here.
@@ -35,13 +37,14 @@ need_brew
 
 # WARN rather than exit: a download failing is a network fact, and the assertion is where a
 # missing agent should be reported, because it names WHICH one.
-for f in aider gemini-cli hermes-agent opencode block-goose-cli qwen-code mistral-vibe; do
-  brew install "$f" || echo "WARN: formula $f failed"
+for f in aider gemini-cli hermes-agent opencode block-goose-cli qwen-code mistral-vibe \
+         kimi-code letta-code; do
+  retry "brew install $f" brew install "$f" || true
 done
 # muse-code is binary-only and links `muse`, which 14-meta-muse's installer also writes --
 # the same two-routes-one-name reason this scenario exists, so it is here and not there.
 for c in codex copilot-cli cursor-cli kiro-cli muse-code droid antigravity-cli; do
-  brew install --cask "$c" || echo "WARN: cask $c failed"
+  retry "brew install --cask $c" brew install --cask "$c" || true
 done
 brew list --versions 2>/dev/null | sed 's/^/  /'
 

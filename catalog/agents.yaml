@@ -1068,30 +1068,40 @@ agents:
   # summary now reads "[Archived] Legacy Python Kimi CLI, no longer maintained".
   #
   # NOT HERE: npm's unscoped `kimi-code` is a third party's wrapper that runs Claude Code
-  # against Kimi's API, and `kimi` is a state-machine library; test_matcher asserts both are
-  # declined. ~/.kimi-code/bin/kimi is one level below what the enumeration reads, so the
-  # directory is the curl installer's value.
+  # against Kimi's API, `kimi` is a state-machine library and `kimi-cli` a front-end
+  # generator; test_matcher asserts all three are declined. ~/.kimi-code/bin/kimi is one
+  # level below what the enumeration reads, so the directory is the curl installer's value.
+  # Two legacy names no run installs are not carried: Homebrew's `kimi-cli` formula,
+  # deprecated upstream, and PyPI's archived `kimi-code`, built from the kimi-cli repository.
   - id: kimi-code
     name: Kimi Code
     classification: Coding agent
-    platforms: [linux]
+    platforms: [darwin, linux]
     # Read on 2026-10-29 off an `npm install -g` on an Ubuntu 24.04 host, osquery 5.23.1's
     # npm_packages row: @moonshot-ai/kimi-code 2.4.0. 96-linux-cli-agents-npm.
     npm: ["@moonshot-ai/kimi-code"]
-    # The previous, Python generation: kimi-cli 1.52.0, last uploaded 2026-09-22, as a uv
-    # tool directory. 94-linux-cli-agents-legacy; pending CI.
+    # A homebrew-core formula. 21-cli-agents-homebrew; pending CI.
+    homebrew: [kimi-code]
+    # The previous, Python generation, kimi-cli 1.52.0, as a uv tool directory.
+    # 94-linux-cli-agents-legacy in CI run 40920067535, Ubuntu 24.04 x86_64.
     pypi: [kimi-cli]
     # code.kimi.com/kimi-code/install.sh puts the binary at ~/.kimi-code/bin/kimi beside a
     # `region` file. Read off a probe run on Ubuntu 24.04 on 2026-10-29, CI run 40914014884.
-    # Proved in 84-linux-installers.
-    state_dirs: ["~/.kimi-code"]
+    # Proved in 84-linux-installers. The npm package writes it on `kimi -p hi`, which then
+    # fails for want of a login, and not on --version or --help: 2.4.1 in an Ubuntu 24.04
+    # container on 2026-11-03. 96 runs it.
+    #
+    # ~/.kimi is the Python generation's: kimi-cli 1.52.0 writes it on `kimi --version`, read
+    # in the same container. 94 runs it. Kimi Code 2.4.1 did not write it.
+    state_dirs: ["~/.kimi-code", "~/.kimi"]
 
-  # Tencent's CodeBuddy Code. Its package ships five bins (codebuddy, cbc, codebuddy-code,
-  # cbc-prewarm, codebuddy-lowmem), so the package name is the value, not a binary.
+  # Tencent's CodeBuddy Code. Its package ships several bins, `codebuddy` and `cbc` among
+  # them, so the package name is the value, not a binary.
   #
   # NOT HERE: npm's unscoped `codebuddy` and `codebuddy-code` are a third party's "Hello,
-  # World!" packages; test_matcher asserts both are declined. The CodeBuddy IDE and its
-  # editor extensions are not installed anywhere here.
+  # World!" packages, and PyPI's `codebuddy` searches Stack Overflow; test_matcher asserts all
+  # three are declined. Homebrew's `codebuddy` cask is the CodeBuddy IDE, which no run
+  # installs, and neither are its editor extensions.
   - id: codebuddy-code
     name: CodeBuddy Code
     classification: Coding agent
@@ -1099,9 +1109,14 @@ agents:
     # The same install's npm_packages row: @tencent-ai/codebuddy-code 2.178.1.
     # 96-linux-cli-agents-npm.
     npm: ["@tencent-ai/codebuddy-code"]
+    # Written on first run: `codebuddy --help` wrote it and --version did not, 2.179.3 in an
+    # Ubuntu 24.04 container on 2026-11-03. 96 runs it. Whether the CodeBuddy IDE writes it
+    # too is unexamined.
+    state_dirs: ["~/.codebuddy"]
 
   # Alibaba's Qoder CLI. One entry for Qoder, as Antigravity is one entry for its editions:
-  # the Qoder IDE is not installed anywhere here, and its bundle id would join this entry.
+  # the Qoder IDE, Homebrew's `qoder` cask, is not installed anywhere here, and its bundle id
+  # would join this entry.
   - id: qoder
     name: Qoder
     classification: Coding agent
@@ -1109,8 +1124,9 @@ agents:
     # The same install's npm_packages row: @qoder-ai/qodercli 1.1.81. 96-linux-cli-agents-npm.
     npm: ["@qoder-ai/qodercli"]
     # Written at install time by both routes. The npm postinstall wrote /root/.qoder/ (entry/,
-    # logs/, .auth/), read off that host by osquery's `file` table. qoder.com/install wrote ~/.qoder/bin/qodercli/
-    # qodercli-1.1.81 and ~/.qoder/entry/, read off the CI probe run 40914014884.
+    # logs/, .auth/), read off that host by osquery's `file` table. qoder.com/install wrote
+    # ~/.qoder/bin/qodercli/qodercli-1.1.81 and ~/.qoder/entry/, read off the CI probe run
+    # 40914014884.
     state_dirs: ["~/.qoder"]
     # qoder.com/install links this to ~/.qoder/bin/qodercli/qodercli-<version>. Same probe run.
     # Proved in 84-linux-installers.
@@ -1118,13 +1134,20 @@ agents:
 
   # Letta's Letta Code, a coding agent built on Letta's stateful agents.
   #
-  # NOT HERE: npm's unscoped `letta` is an unrelated promisify library; test_matcher asserts it
-  # is declined. Letta also publishes `letta-code`, a 1.0.0 that only points at the scoped
-  # package and is not carried: no run installed it.
+  # NOT HERE: npm's unscoped `letta` is an unrelated promisify library. Letta also publishes
+  # `letta-code`, a 1.0.0 that only points at the scoped package and is not carried: no run
+  # installed it. Two values Letta Code does produce are left out because the Letta server
+  # produced them first. PyPI's `letta` is Letta Code from 0.32.13 (2026-09-17) and was the
+  # server through 0.16.8, and a uv or pipx tool directory carries no version to tell them
+  # apart. ~/.letta, which `letta --version` writes (0.34.39 in an Ubuntu 24.04 container on
+  # 2026-11-03), is the server's LETTA_DIR in letta 0.16.8's constants.py. test_matcher
+  # asserts all three are declined.
   - id: letta-code
     name: Letta Code
     classification: Coding agent
-    platforms: [linux]
+    platforms: [darwin, linux]
     # The same install's npm_packages row: @letta-ai/letta-code 0.34.23.
     # 96-linux-cli-agents-npm.
     npm: ["@letta-ai/letta-code"]
+    # A homebrew-core formula. 21-cli-agents-homebrew; pending CI.
+    homebrew: [letta-code]
