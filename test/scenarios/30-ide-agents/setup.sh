@@ -18,15 +18,20 @@ CODE="$APP/Contents/Resources/app/bin/code"
 
 # Through retry, for the Marketplace's transient failures (lib/guest-linux.sh,
 # install_vscode_ext). Running out fails the assertion, which names the agent.
-for ext in rooveterinaryinc.roo-cline google.geminicodeassist amazonwebservices.amazon-q-vscode \
+for ext in google.geminicodeassist amazonwebservices.amazon-q-vscode \
            sourcegraph.cody-ai danielsanmedium.dscodegpt; do
   retry "installing $ext" "$CODE" --install-extension "$ext" --force || true
 done
-# BLACKBOX IS UNPUBLISHED and still served by URL; 85-linux-vscode-agents says why.
-retry "downloading blackboxapp.blackbox" curl --retry 3 -fsSL --compressed -o /tmp/blackbox.vsix \
-  https://marketplace.visualstudio.com/_apis/public/gallery/publishers/blackboxapp/vsextensions/blackbox/2.8.53/vspackage \
-  && retry "installing blackboxapp.blackbox" "$CODE" --install-extension /tmp/blackbox.vsix --force \
-  || true
+# BLACKBOX AND ROO CODE ARE UNPUBLISHED and still served by URL; 85-linux-vscode-agents says
+# why.
+for spec in blackboxapp/blackbox/2.8.53 RooVeterinaryInc/roo-cline/3.54.0; do
+  pub=${spec%%/*} rest=${spec#*/}
+  vsix="/tmp/${rest%/*}.vsix"
+  retry "downloading $pub.${rest%/*}" curl --retry 3 -fsSL --compressed -o "$vsix" \
+    "https://marketplace.visualstudio.com/_apis/public/gallery/publishers/$pub/vsextensions/$rest/vspackage" \
+    && retry "installing $pub.${rest%/*}" "$CODE" --install-extension "$vsix" --force \
+    || true
+done
 echo "--- extensions on disk:"
 ls -1 "$HOME/.vscode/extensions" 2>&1 | sed 's/^/      /'
 
