@@ -33,7 +33,7 @@
       "openclaw"
     ]
   },
-  "why": "file >= 2 because Claude Code shows up twice under enumeration: the ~/.local/bin/ shim and the ~/.claude/ state dotdir. Both come from product-free globs now, which is the point -- the old query named the file 'claude' outright. npm >= 4 covers the four npm globals; it is a floor rather than an equality because npm installs each package's dependencies globally too and the row count is not ours to predict. Pi comes from its own installer, which writes ~/.pi and no npm global; forbid_rows holds both its npm names absent, so ~/.pi is its only witness here.",
+  "why": "file >= 2 because Claude Code shows up twice under enumeration: the ~/.local/bin/ shim and the ~/.claude/ state dotdir. Both come from product-free globs now, which is the point -- the old query named the file 'claude' outright. npm >= 4 covers the four npm globals; it is a floor rather than an equality because npm installs each package's dependencies globally too and the row count is not ours to predict. Pi comes from its own installer, which writes ~/.pi and no npm global; forbid_rows holds both its npm names absent, so ~/.pi is its only witness here. require_rows proves the Claude Code shim carries a version. The shim branch reads it off the ~/.local/share/claude/versions/<version> file the shim links to.",
   "must_contain": [
     "/.local/bin/claude",
     "@openai/codex",
@@ -46,6 +46,9 @@
     "/.pi/",
     "/.grok/"
   ],
+  "require_rows": [
+    {"kind": "file", "id": "/.local/bin/claude", "ver": "."}
+  ],
   "forbid_rows": [
     {
       "kind": "npm",
@@ -55,5 +58,8 @@
       "kind": "npm",
       "id": "@mariozechner/pi-coding-agent"
     }
+  ],
+  "known_gaps": [
+    "The shim's `ver` is checked for presence, not against the installed release: the shim's path names no release, and the release changes with every install, so expected.json cannot hold it. A join onto the wrong versions/ file would pass."
   ]
 }

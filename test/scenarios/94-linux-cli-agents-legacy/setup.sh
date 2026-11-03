@@ -1,12 +1,15 @@
 #!/bin/bash
-# The previous npm names of three agents 93-linux-cli-agents-more installs current. Each
-# ships the binary its successor does, so they need their own host.
+# The previous names of agents that 93-linux-cli-agents-more and 96-linux-cli-agents-npm
+# install current. Each ships the binary its successor does, so they need their own host.
 #
 #   @sourcegraph/amp       now a wrapper depending on @ampcode/cli, still at `latest`
 #   droid                  Factory's unscoped name, published beside @factory/cli
 #   @jetbrains/junie-cli   Junie's name until @jetbrains/junie, last published 2026-04-27
+#   kimi-cli (uv tool)     Kimi Code's Python generation, archived on PyPI; installs `kimi`
+#                          as @moonshot-ai/kimi-code does, whose postinstall renames it
 #
-# Nothing is run: the package rows are the claim, and the directories are 93's.
+# Only kimi-cli is run, once, because `kimi --version` is what writes ~/.kimi. The npm package
+# rows are the other agents' claim, and their directories are 93's.
 set -e
 source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest-linux.sh"
 need_curl
@@ -20,3 +23,10 @@ retry "npm install -g @jetbrains/junie-cli" try "npm install -g @jetbrains/junie
   sudo_maybe env HOME=/root npm install -g --no-fund --no-audit @jetbrains/junie-cli || true
 echo "--- the globals npm recorded:"
 npm ls -g --depth=0 2>/dev/null | sed 's/^/      /'
+
+need_user
+retry "the uv installer" try_user "the uv installer" \
+  'curl --retry 3 -fsSL https://astral.sh/uv/install.sh | sh' || true
+retry "uv tool install kimi-cli" try_user "uv tool install kimi-cli" \
+  '$HOME/.local/bin/uv tool install --python 3.13 kimi-cli' || true
+try_user "kimi --version, which is what writes ~/.kimi" '$HOME/.local/bin/kimi --version' || true

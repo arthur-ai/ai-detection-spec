@@ -51,7 +51,7 @@ and read the file instead ([Running it on a fleet](#running-it-on-a-fleet)).
 
 ```
 Claude Code  [Coding agent]
-    file    /Users/dana/.local/bin/claude
+    file    /Users/dana/.local/bin/claude  2.1.314
     file    /Users/dana/.claude/
 
 OpenClaw  [Personal agent]
@@ -67,7 +67,7 @@ The inventory alone is the evidence rows ([SPEC.md §5.1](../SPEC.md#51-evidence
 [
   {"kind":"app",  "id":"com.anthropic.claudefordesktop","ver":"1.37937.2","loc":"/Applications/Claude.app"},
   {"kind":"npm",  "id":"@openai/codex",                "ver":"0.150.1"},
-  {"kind":"file", "id":"/Users/dana/.local/bin/claude"},
+  {"kind":"file", "id":"/Users/dana/.local/bin/claude", "ver":"2.1.314"},
   {"kind":"ext",  "id":"kbhkmjgjmpbaeoinipbngmmpjppjlkmm","perms":"tabs,cookies,nativeMessaging,<all_urls>"}
 ]
 ```

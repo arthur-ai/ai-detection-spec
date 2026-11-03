@@ -1506,6 +1506,52 @@ check("the new state directories and Junie's shim resolve to their agents",
       and _c.get("/home/dana/.factory/") == "factory-droid"
       and _c.get("/home/dana/.jules/") == "jules", f"got {_c}")
 
+# THE AGENTS ADDED 2026-10-29, and the unrelated names beside them. On npm: `kimi-code` (a
+# wrapper that runs Claude Code against Kimi), `kimi` (a state machine), `kimi-cli` (a
+# front-end generator), `codebuddy` and `codebuddy-code` (a "Hello, World!"), `letta` (a
+# promisify helper), and `antigravity`, `antigravity-cli` and `agy` (placeholders). On PyPI:
+# `kimi` (a tutoring library) and `codebuddy` (a Stack Overflow search).
+_c, _u = _claims(_kind("npm", "@moonshot-ai/kimi-code", "kimi-code", "kimi", "kimi-cli",
+                       "@tencent-ai/codebuddy-code", "codebuddy", "codebuddy-code",
+                       "@qoder-ai/qodercli", "@letta-ai/letta-code", "letta",
+                       "antigravity", "antigravity-cli", "agy"))
+check("the 2026-10-29 agents' npm names resolve to them",
+      _c == {"@moonshot-ai/kimi-code": "kimi-code",
+             "@tencent-ai/codebuddy-code": "codebuddy-code",
+             "@qoder-ai/qodercli": "qoder", "@letta-ai/letta-code": "letta-code"}, f"got {_c}")
+check("...and their unscoped namesakes claim nothing",
+      {"kimi-code", "kimi", "kimi-cli", "codebuddy", "codebuddy-code", "letta",
+       "antigravity", "antigravity-cli", "agy"} <= set(_u), f"got {_c}")
+_c, _u = _claims(_kind("brew", "kimi-code", "letta-code", "antigravity-cli"))
+check("the Homebrew tokens resolve to their agents",
+      _c == {"kimi-code": "kimi-code", "letta-code": "letta-code",
+             "antigravity-cli": "antigravity"}, f"got {_c}")
+_c, _u = _claims(_kind("file", "/home/dana/.local/bin/agy", "/home/dana/.local/bin/agy-old",
+                       "/home/dana/.kimi-code/", "/home/dana/.kimi/", "/home/dana/.codebuddy/",
+                       "/home/dana/.local/share/uv/tools/kimi-cli/",
+                       "/home/dana/.local/bin/qodercli", "/home/dana/.local/bin/qoder",
+                       "/home/dana/.qoder/", "/home/dana/.local/bin/kimi",
+                       "/home/dana/.local/share/uv/tools/kimi/",
+                       "/home/dana/.local/share/uv/tools/codebuddy/",
+                       "/home/dana/.local/share/uv/tools/letta/", "/home/dana/.letta/"))
+check("the installers' paths, the state directories and the legacy Kimi tool directory "
+      "resolve to their agents",
+      _c == {"/home/dana/.local/bin/agy": "antigravity", "/home/dana/.kimi-code/": "kimi-code",
+             "/home/dana/.kimi/": "kimi-code", "/home/dana/.codebuddy/": "codebuddy-code",
+             "/home/dana/.local/share/uv/tools/kimi-cli/": "kimi-code",
+             "/home/dana/.local/bin/qodercli": "qoder", "/home/dana/.qoder/": "qoder"},
+      f"got {_c}")
+# ~/.local/bin/kimi is what both Kimi generations name their command, and uv writes it for
+# kimi-cli. PyPI's `letta` and ~/.letta are the Letta server's as well as Letta Code's, which
+# is why catalog/agents.yaml leaves both out.
+check("...while agy-old, the generic `kimi` and `qoder`, PyPI's unrelated `kimi` and "
+      "`codebuddy`, and the Letta server's tool directory and ~/.letta claim nothing",
+      {"/home/dana/.local/bin/agy-old", "/home/dana/.local/bin/qoder",
+       "/home/dana/.local/bin/kimi", "/home/dana/.local/share/uv/tools/kimi/",
+       "/home/dana/.local/share/uv/tools/codebuddy/",
+       "/home/dana/.local/share/uv/tools/letta/", "/home/dana/.letta/"} <= set(_u),
+      f"got {_c}")
+
 # MANUS AND ATLAS, read off CI run 40914014884. Atlas shares ChatGPT's com.openai. namespace,
 # and each app's helpers extend its id, so exact means neither claims the other's or a helper.
 _c, _u = _claims(_kind("app", "com.openai.atlas", "com.openai.chat", "com.openai.codex",
@@ -1722,13 +1768,34 @@ check("a loaded copy speaks before a leftover even when only the leftover has a 
       _cl.primary([_exts[0], _loaded_blank], _rank) == 1)
 _old_new = [_r("app", "com.clawdbot.mac", "2026.1.1", "/Applications/Clawdbot.app"),
             _r("app", "ai.openclaw.mac", "2026.7.1", "/Applications/OpenClaw.app")]
-check("a current identifier speaks before one the vendor replaced",
+check("a current identifier speaks before one the vendor replaced, whichever is newer",
       _cl.primary(_old_new, _rank, [True, False]) == 1
-      and _cl.primary(_old_new, _rank) == 0)
+      and _cl.primary(_old_new, _rank, [False, True]) == 0)
 check("...but a replaced identifier still speaks when it is the only install record",
       _cl.primary([_r("file", "/Users/u/.openclaw/"), _old_new[0]], _rank, [False, True]) == 1)
 check("ties keep evidence order",
       _cl.primary([_r("file", "/home/u/.a/"), _r("file", "/home/u/.b/")], _rank) == 0)
+# A Mac running four versions of Claude Code, in the path order osquery lists them.
+_running = [_r("proc", f"/Users/u/.local/share/claude/versions/{v}", v,
+               f"/Users/u/.local/share/claude/versions/{v}")
+            for v in ("2.1.306", "2.1.312", "2.1.317", "2.1.314")]
+check("among rows otherwise tied, the newest release speaks",
+      _cl.primary(_running, _rank) == 2)
+check("...compared as numbers, so 2.1.100 is newer than 2.1.99",
+      _cl.primary([dict(_running[0], ver="2.1.99"), dict(_running[1], ver="2.1.100")],
+                  _rank) == 1)
+check("...and a suffix ties its numbers rather than being guessed newer or older",
+      _cl.release_key("2.1.292-1") == (2, 1, 292)
+      and _cl.primary([dict(_running[0], ver="2.0.0-beta2"), dict(_running[1], ver="2.0.0")],
+                      _rank) == 0)
+_shim = [_r("file", "/Users/u/.claude/", loc="/Users/u/.claude/"),
+         _r("file", "/Users/u/.local/bin/claude", "2.1.317", "/Users/u/.local/bin/claude")]
+check("a shim that carries its release speaks before a state directory listed ahead of it",
+      _cl.describe(_shim, _rank)
+      == {"primary": 1, "version": "2.1.317", "path": "/Users/u/.local/bin/claude"},
+      str(_cl.describe(_shim, _rank)))
+check("...and the release never outranks the kind: a running newer version stays behind it",
+      _cl.primary(_shim + [dict(_running[2], ver="2.1.320")], _rank) == 1)
 check("every kind that is an install record or carries a path is a registered kind",
       (_cl.INSTALL_KINDS | _cl.PATH_KINDS) <= set(_rank),
       str(sorted((_cl.INSTALL_KINDS | _cl.PATH_KINDS) - set(_rank))))
