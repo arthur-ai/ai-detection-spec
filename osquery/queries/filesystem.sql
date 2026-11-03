@@ -13,9 +13,23 @@
 -- product, '~/.local/bin/claude' would.
 
 -- CLI shims, every entry, so an agent nobody has catalogued still arrives.
-SELECT 'file' AS kind, path AS id, '' AS ver, path AS loc, '' AS extra, '' AS perms
-  FROM file
-  WHERE path LIKE '/Users/%/.local/bin/%'
+--
+-- `ver` IS THE RELEASE A SHIM RUNS, where a native installer keeps each one as
+-- ~/.local/share/<tool>/versions/<version> and links the shim to it, as Claude Code's does.
+-- `inode` is stat()'s, so a link reports its target's, and the join finds that file under
+-- the same home. Not `symlink_target_path`: it arrived in 5.17.0, and a column the table
+-- lacks fails the statement, every other shim with it. Empty for any other shim.
+SELECT 'file' AS kind, s.path AS id, coalesce(max(v.ver), '') AS ver, s.path AS loc,
+       '' AS extra, '' AS perms
+  FROM file s
+  LEFT JOIN (SELECT path, inode, regex_match(path, '/versions/([^/]+)$', 1) AS ver
+               FROM file
+              WHERE path LIKE '/Users/%/.local/share/%/versions/%' AND symlink = 0) v
+    ON v.inode = s.inode
+   AND substr(v.path, 1, instr(s.path, '/.local/bin/'))
+       = substr(s.path, 1, instr(s.path, '/.local/bin/'))
+  WHERE s.path LIKE '/Users/%/.local/bin/%'
+  GROUP BY s.path
 UNION ALL
 -- STATE DIRECTORIES, the signal least tied to an install route: a cask, an npm global, a
 -- curl installer and a source checkout all create the same dotdir on first run. Every

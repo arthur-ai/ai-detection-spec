@@ -26,9 +26,12 @@
       "cursor"
     ]
   },
-  "why": "The process_paths route's scenario. The proc row's loc is the executable a running Claude Code reports, under ~/.local/share/claude/versions/, which only osquery/queries/running.sql emits. must_find alone would pass on the presence routes, so the assertion is on the proc row itself.",
+  "why": "The process_paths route's scenario. The proc row's loc is the executable a running Claude Code reports, under ~/.local/share/claude/versions/, which only osquery/queries/running.sql emits. must_find alone would pass on the presence routes, so the assertion is on the proc row itself, and require_rows holds it to the release its path names.",
   "must_contain": [
     "\"kind\": \"proc\", \"loc\": \"/home/dana/.local/share/claude/versions/"
+  ],
+  "require_rows": [
+    {"kind": "proc", "loc": "/home/dana/.local/share/claude/versions/", "ver": {"tail_of": "loc"}}
   ],
   "known_gaps": [
     "`claude mcp serve` runs unauthenticated with no client connected, so this proves what a running Claude Code process looks like to osquery, not an agent at work.",

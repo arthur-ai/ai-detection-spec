@@ -49,8 +49,11 @@ UNION ALL
 -- RUNNING FROM A HOME DIRECTORY, by executable path: Claude Code's native install runs from
 -- ~/.local/share/claude/versions/<version>, not the ~/.local/bin/claude link `binaries`
 -- names, so process_paths carries its own value. `path` only: an unreadable path leaves
--- argv[0], the launcher a user typed, which no value names.
-SELECT 'proc', path, '', path, '', ''
+-- argv[0], the launcher a user typed, which no value names. `ver` is the release, read off
+-- that layout as queries/filesystem.sql reads a shim's, and empty elsewhere.
+SELECT 'proc', path,
+       coalesce(regex_match(path, '^(?:/Users/[^/]+|/home/[^/]+|/root)/\.local/share/[^/]+/versions/([^/]+)$', 1), ''),
+       path, '', ''
   FROM processes
   WHERE path LIKE '/Users/%/%' OR path LIKE '/home/%/%' OR path LIKE '/root/%'
   GROUP BY path

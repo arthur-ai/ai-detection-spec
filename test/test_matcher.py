@@ -1756,13 +1756,34 @@ check("a loaded copy speaks before a leftover even when only the leftover has a 
       _cl.primary([_exts[0], _loaded_blank], _rank) == 1)
 _old_new = [_r("app", "com.clawdbot.mac", "2026.1.1", "/Applications/Clawdbot.app"),
             _r("app", "ai.openclaw.mac", "2026.7.1", "/Applications/OpenClaw.app")]
-check("a current identifier speaks before one the vendor replaced",
+check("a current identifier speaks before one the vendor replaced, whichever is newer",
       _cl.primary(_old_new, _rank, [True, False]) == 1
-      and _cl.primary(_old_new, _rank) == 0)
+      and _cl.primary(_old_new, _rank, [False, True]) == 0)
 check("...but a replaced identifier still speaks when it is the only install record",
       _cl.primary([_r("file", "/Users/u/.openclaw/"), _old_new[0]], _rank, [False, True]) == 1)
 check("ties keep evidence order",
       _cl.primary([_r("file", "/home/u/.a/"), _r("file", "/home/u/.b/")], _rank) == 0)
+# A Mac running four versions of Claude Code, in the path order osquery lists them.
+_running = [_r("proc", f"/Users/u/.local/share/claude/versions/{v}", v,
+               f"/Users/u/.local/share/claude/versions/{v}")
+            for v in ("2.1.306", "2.1.312", "2.1.317", "2.1.314")]
+check("among rows otherwise tied, the newest release speaks",
+      _cl.primary(_running, _rank) == 2)
+check("...compared as numbers, so 2.1.100 is newer than 2.1.99",
+      _cl.primary([dict(_running[0], ver="2.1.99"), dict(_running[1], ver="2.1.100")],
+                  _rank) == 1)
+check("...and a suffix ties its numbers rather than being guessed newer or older",
+      _cl.release_key("2.1.292-1") == (2, 1, 292)
+      and _cl.primary([dict(_running[0], ver="2.0.0-beta2"), dict(_running[1], ver="2.0.0")],
+                      _rank) == 0)
+_shim = [_r("file", "/Users/u/.claude/", loc="/Users/u/.claude/"),
+         _r("file", "/Users/u/.local/bin/claude", "2.1.317", "/Users/u/.local/bin/claude")]
+check("a shim that carries its release speaks before a state directory listed ahead of it",
+      _cl.describe(_shim, _rank)
+      == {"primary": 1, "version": "2.1.317", "path": "/Users/u/.local/bin/claude"},
+      str(_cl.describe(_shim, _rank)))
+check("...and the release never outranks the kind: a running newer version stays behind it",
+      _cl.primary(_shim + [dict(_running[2], ver="2.1.320")], _rank) == 1)
 check("every kind that is an install record or carries a path is a registered kind",
       (_cl.INSTALL_KINDS | _cl.PATH_KINDS) <= set(_rank),
       str(sorted((_cl.INSTALL_KINDS | _cl.PATH_KINDS) - set(_rank))))
