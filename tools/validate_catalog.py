@@ -330,6 +330,19 @@ def live_observations(root):
     return {key: {o["scenario"] for o in recs} for key, recs in live.items()}
 
 
+def unprovable_observation_errors(root):
+    """Every committed observation names its run and its platform. Only CI uploads reach the
+    collect job, the only writer that adds to the file, so a record lacking either came from
+    somewhere that should not write the tree, and no reader would ever count it
+    (observations.provable)."""
+    live, archived = observations.read(root / "test" / "scenarios")
+    return [f"test/scenarios/{r['scenario']}/observed.json: {r['agent']} "
+            f"{r['route']}:{r['value']} names no {'run' if not r.get('run') else 'platform'}, "
+            f"so it proves nothing. Only CI's collect job adds to this file"
+            for recs in [*live.values(), *archived.values()] for r in recs
+            if not observations.provable(r)]
+
+
 def live_superseded_errors(aid, agent, live):
     """A superseded value is one the release CI installs no longer produces. One a run
     still produces is current, and marking it superseded would label live evidence as an
@@ -571,6 +584,7 @@ def main():
     errors.extend(version_errors(doc, classify.CATALOG_VERSION))
     errors.extend(classification_errors(doc))
     errors.extend(overlap_errors(doc["agents"], reg))
+    errors.extend(unprovable_observation_errors(ROOT))
 
     if errors:
         print("catalog: FAIL")

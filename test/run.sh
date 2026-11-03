@@ -145,11 +145,9 @@ EOF
   assert_match_sql "$ART/$s.json" "$dir/expected.json" "$HERE/.." \
     "$ART/$s.agents.json" "$ART/$s.parity.json" || rc=1
 
-  # Record WHICH IDENTIFIERS this run actually matched, into a committed observed.json.
-  # test/artifacts/ is gitignored and per-machine, so the raw output cannot back a
-  # document anyone else can check. Without this, coverage could only ever be reported per
-  # AGENT -- and expected.json names the agent, never the identifier that found it, so an
-  # entry could read as verified while carrying identifiers nothing had exercised.
+  # Record WHICH IDENTIFIERS this run actually matched, beside the run in test/artifacts/.
+  # Never into test/scenarios/: only CI's collect job adds to the committed observed.json,
+  # and a local run names no run id, so nothing it records counts as coverage.
   #
   # Only on success: a failed run's matches are not evidence of anything.
   # The GUEST's OS and arch, not the host's. An identifier is a fact about one build on
@@ -160,7 +158,8 @@ EOF
     guest_os=$(vm_ssh "$vm" "sw_vers -productVersion" 2>/dev/null | tr -d '\r')
     guest_arch=$(vm_ssh "$vm" "uname -m" 2>/dev/null | tr -d '\r')
     python3 "$HERE/../tools/agent_status.py" --record "$ART/$s.json" "$dir" \
-      --platform darwin --os "$guest_os" --arch "$guest_arch"
+      --platform darwin --os "$guest_os" --arch "$guest_arch" \
+      --out "$ART/$s.observed.json"
   fi
   echo
   return $rc

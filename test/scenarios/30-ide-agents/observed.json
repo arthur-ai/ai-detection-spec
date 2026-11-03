@@ -15,11 +15,11 @@
       "agent": "amazon-q",
       "route": "jetbrains_plugins",
       "value": "plugin-amazonq",
-      "agent_version": "4.9.262",
+      "agent_version": "4.10.262",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40764483708"
+      "run": "41675520427"
     },
     {
       "agent": "amazon-q",
@@ -35,11 +35,11 @@
       "agent": "amazon-q",
       "route": "vscode_extensions",
       "value": "amazonwebservices.amazon-q-vscode",
-      "agent_version": "2.8.0",
+      "agent_version": "2.9.0",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40764483708"
+      "run": "41675520427"
     },
     {
       "agent": "blackbox",
@@ -59,7 +59,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40764483708"
+      "run": "41675520427"
     },
     {
       "agent": "codegpt",
@@ -75,11 +75,11 @@
       "agent": "codegpt",
       "route": "vscode_extensions",
       "value": "danielsanmedium.dscodegpt",
-      "agent_version": "3.24.79",
+      "agent_version": "3.24.81",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40764483708"
+      "run": "41675520427"
     },
     {
       "agent": "cody",
@@ -99,7 +99,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40764483708"
+      "run": "41675520427"
     },
     {
       "agent": "gemini-code-assist",
@@ -115,11 +115,11 @@
       "agent": "gemini-code-assist",
       "route": "vscode_extensions",
       "value": "google.geminicodeassist",
-      "agent_version": "2.104.0",
+      "agent_version": "2.107.0",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40764483708"
+      "run": "41675520427"
     },
     {
       "agent": "roo-code",
@@ -139,7 +139,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "40764483708"
+      "run": "41675520427"
     }
   ]
 }
