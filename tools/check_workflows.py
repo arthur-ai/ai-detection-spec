@@ -152,7 +152,8 @@ for _n, _at in enumerate(_steps, 1):
             failed = True
     # --out, and never into test/scenarios/: collect is the committed record's one writer.
     # agent_status refuses both at run time; this says so before a matrix is spent on it.
-    _out = re.search(r'--out (\S+)', _step)
+    # The rest of the line, not one word: Windows quotes a path that holds a space.
+    _out = re.search(r'--out ([^\n]+)', _step)
     if not _out or "test/scenarios" in _out.group(1):
         print(f"FAIL: scenarios.yml recording step {_n} of {len(_steps)} "
               f"{'writes into test/scenarios/' if _out else 'omits --out'}. A run's record "

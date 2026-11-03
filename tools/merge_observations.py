@@ -17,9 +17,9 @@ make visible.
 THE ONE WRITER OF test/scenarios/*/observed.json. record() in tools/agent_status.py writes
 each run's own records beside the run, and only its --supersede and --allow-shrink touch
 these files, to take records out. Those keep this file's order, so the key and the sort here
-match agent_status._obs_sort. Two records could not collide
-on the key today, because `os` holds "14.8.7" against "24.04", but that is a coincidence of
-version numbering rather than a property worth relying on.
+match agent_status._obs_sort. Two records could not collide on the key today, because `os`
+holds "14.8.7" against "24.04", but that is a coincidence of version numbering rather than a
+property worth relying on.
 """
 import argparse
 import collections
