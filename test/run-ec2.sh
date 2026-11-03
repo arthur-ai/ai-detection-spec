@@ -51,13 +51,11 @@
 #
 # Everything the guest produces comes back to test/artifacts/ec2/<family>/<scenario>/ -- or
 # <family>-<credits>/ when EC2_CREDITS is set, so a timing run never overwrites a family run's
-# facts: the payload, status.txt, the facts file. Observations are recorded INTO THE TREE FROM
-# THE HOST, with tools/agent_status.py --record against the fetched payload, as
-# test/run-gce.sh does, one record at a time under a lock -- two families running from two
-# terminals record the same scenario's observed.json, and a read-modify-write without one can
-# drop the other's. An instance run is real-install evidence of the same grade as a CI run; it
-# carries no run id because it is nobody's CI, so where CI holds the same observation with
-# one, keep CI's.
+# facts: the payload, status.txt, the facts file, and observed.json, recorded from the host
+# with tools/agent_status.py --record against the fetched payload, as test/run-gce.sh does.
+# Never into test/scenarios/: an instance run carries no run id because it is nobody's CI, so
+# no tool counts it as coverage (tools/observations.py), and only CI's collect job adds to the
+# committed record.
 #
 # BASH 3.2, because this runs on the Mac that drives it.
 set -uo pipefail
@@ -217,20 +215,7 @@ drop_sg() {
   echo "run-ec2: WARNING: could not delete security group $OWN_SG. Delete it by hand:"
   echo "  aws ec2 delete-security-group --group-id $OWN_SG"
 }
-# ONE RECORD AT A TIME across every run-ec2.sh on this machine, since two families record the
-# same scenario's observed.json. mkdir is atomic, and the lock is released on every exit path.
-LOCK="$ART/.record.lock"; HOLDING_LOCK=0
-lock() {
-  local i
-  for i in $(seq 1 300); do
-    mkdir "$LOCK" 2>/dev/null && { HOLDING_LOCK=1; return 0; }
-    sleep 1
-  done
-  echo "run-ec2: $LOCK has been held for 5 minutes. If no run-ec2.sh is recording, remove it." >&2
-  return 1
-}
-unlock() { [ "$HOLDING_LOCK" = 1 ] && rmdir "$LOCK" 2>/dev/null; HOLDING_LOCK=0; }
-finish() { cleanup; drop_sg; unlock; rm -f "$TREE" "$GUEST" "$KEY" "$KEY.pub" "$USERDATA" "$ART/terminate-$$.err"; }
+finish() { cleanup; drop_sg; rm -f "$TREE" "$GUEST" "$KEY" "$KEY.pub" "$USERDATA" "$ART/terminate-$$.err"; }
 # A signal ENDS the run, and cleanup runs once, from EXIT. A handler that only cleaned up would
 # return into the loop, and the next scenario would launch without its key or security group.
 trap finish EXIT
@@ -466,13 +451,9 @@ run_vm() {
   if [ "$rc" = 0 ] && [ -s "$out/ai-detection-spec-out/payload.json" ]; then
     local gos garch
     gos="$(sed -n 1p "$out/ai-detection-spec-out/meta")"; garch="$(sed -n 2p "$out/ai-detection-spec-out/meta")"
-    if lock; then
-      python3 "$ROOT/tools/agent_status.py" --record "$out/ai-detection-spec-out/payload.json" \
-        "$HERE/scenarios/$sc" --platform linux --os "$gos" --arch "$garch" || rc=1
-      unlock
-    else
-      rc=1
-    fi
+    python3 "$ROOT/tools/agent_status.py" --record "$out/ai-detection-spec-out/payload.json" \
+      "$HERE/scenarios/$sc" --platform linux --os "$gos" --arch "$garch" \
+      --out "$out/observed.json" || rc=1
   fi
   return "$rc"
 }

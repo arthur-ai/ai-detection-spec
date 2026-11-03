@@ -3,7 +3,7 @@
 # 🔎 ai-detection-spec
 
 **An open specification for finding the AI agents on a machine. Every identifier in its
-catalog comes from installing the real software.**
+catalog comes from installing the real software, and it runs on osquery today.**
 
 [![CI](https://github.com/arthur-ai/ai-detection-spec/actions/workflows/ci.yml/badge.svg)](https://github.com/arthur-ai/ai-detection-spec/actions/workflows/ci.yml)
 [![Scenarios](https://github.com/arthur-ai/ai-detection-spec/actions/workflows/scenarios.yml/badge.svg)](https://github.com/arthur-ai/ai-detection-spec/actions/workflows/scenarios.yml)
@@ -18,24 +18,66 @@ catalog comes from installing the real software.**
 
 </div>
 
+## What is here
+
+Three things. Each can be taken on its own.
+
+| | What it is | Who takes it |
+|---|---|---|
+| **The spec** [`SPEC.md`](SPEC.md), [`schema/`](schema), [`conformance/`](conformance) | What a catalog of agents contains, what a collector reports, how an identifier matches a row, and how a scan reports what it could not read, so that tools written by different people give the same answer about the same machine. [`bin/classify`](bin/classify) is the reference matcher | People building it into an MDM, an EDR or an inventory tool |
+| **The catalog** [`catalog/`](catalog) | **51 agents and 142 identifiers**, written to the spec. CI must see each identifier on a real install, and [the coverage page](docs/agents.md) is generated from what those runs recorded | Anyone who needs the facts |
+| **The osquery implementation** [`osquery/`](osquery) | The catalog rendered as queries for macOS, Linux and Windows, and the scripts that run them. The spec calls a collector a *binding*, and this is the first one | Security and IT teams who want to run it on a fleet this week |
+
+## Run it
+
+```console
+$ git clone https://github.com/arthur-ai/ai-detection-spec && cd ai-detection-spec
+$ brew install --cask osquery          # or https://osquery.io/downloads
+$ python3 -m pip install pyyaml        # for bin/classify only; the endpoint needs nothing
+$ sudo osquery/bin/discover --deep | bin/classify  # --deep adds the container scan
+```
+
+The findings below came off one Mac. The first two lines are what the same run prints when
+the Docker daemon accepts the connection and then stalls, a state most inventories report as
+*no containers*.
+
+```
+COULD NOT LOOK: containers -- whatever answers at /var/run/docker.sock accepted the connection and then stalled; gave up at 6s
+  These are not findings and not an absence of them. That part of the machine was not read.
+
+Claude Code  [Coding agent]  running
+    file    /Users/dana/.local/bin/claude
+    file    /Users/dana/.claude/
+    proc    /Users/dana/.local/share/claude/versions/2.1.314
+
+Cursor  [Coding agent]
+    app     com.todesktop.230313mzl4w4u92  3.22.7
+            /Applications/Cursor.app
+```
+
+[The osquery README](osquery/README.md) has Linux and Windows, matching on the machine for a
+Jamf Extension Attribute or a Fleet policy, and running it across a fleet.
+
+## Why this exists
+
 Anyone taking stock of the AI tools on a fleet runs into the same surprises. Cursor's bundle
 id is `com.todesktop.230313mzl4w4u92`, which you cannot guess from the product's name.
 ChatGPT's desktop app renamed its bundle id from `com.openai.chat` to `com.openai.codex`, so a
 fleet with old and new builds needs both. A single agent can arrive as a Homebrew cask, an npm
-package or a curl installer, and each leaves a different trace. This repository records those
-facts, checks each one against a real install, and publishes them as an open specification
-that any tool can use.
+package or a curl installer, and each leaves a different trace.
 
-## What is here
+Inventory tools can read a machine, but they do not know what an agent looks like on it.
+Agent standards know what an agent is, but only for agents someone chose to register. This
+repository is the in-between: a proven list of what each agent leaves on a machine, a rule for
+what counts as an agent, and a way to say *could not look* that is different from *nothing
+there*. It does not replace osquery, an MDM or an EDR. It tells them what to look for and how
+to report what they could not see.
 
-| | |
-|---|---|
-| [**`SPEC.md`**](SPEC.md) | **The specification.** What a catalog of agents contains, what evidence a collector reports (the spec calls a collector a *binding*), and how the two are matched, so that tools written by different people give the same answer about the same machine |
-| [`schema/`](schema) | JSON Schemas for a catalog and for the evidence a binding reports |
-| [`conformance/`](conformance) | The test vectors a matcher must pass |
-| [`catalog/`](catalog) | This repository's catalog: **51 agents and 142 identifiers**. CI must see each identifier on a real install, and the coverage badge above counts the ones it has seen |
-| [`bin/classify`](bin/classify) | The reference matcher. It reads collected evidence and names the agents the evidence proves |
-| [`osquery/`](osquery) | **The first binding:** osquery queries for macOS, Linux and Windows, and the scripts that run them on a Mac or a Linux machine. [Start here](osquery/README.md) to find the agents on your own machine |
+| Existing | Answers | Cannot answer |
+|---|---|---|
+| osquery, MDM and EDR inventories | What is on the machine | Which of it is an agent, what Cursor's bundle id is, and whether a source it skipped was empty or unread |
+| A2A Agent Cards, OASF, the CSA Agent Registry | What a registered agent is | Whether an unregistered one is installed |
+| CycloneDX AI-BOM, SPDX AI | What an agent is built from | Whether it is on any machine |
 
 ## What the spec guarantees
 

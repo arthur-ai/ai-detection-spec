@@ -65,12 +65,15 @@ LINUX_IMAGE="${LINUX_IMAGE:-public.ecr.aws/ubuntu/ubuntu:24.04}"
 # 83-linux-claude-running needs and skips without.
 LINUX_DOCKER_ARGS="${LINUX_DOCKER_ARGS:-}"
 # Where CI collects what this run recorded: one observed-<scenario>--<label>/observed.json
-# per scenario that PASSED, copied out of the tree after its container exits. Only what
-# this run proved goes there: uploading every committed observed.json would make the
-# collect job count scenarios that never ran as reported. Unset locally; the tree is the
-# record.
+# per scenario that PASSED, copied after its container exits. Only what this run proved goes
+# there, or the collect job would count scenarios that never ran as reported. Unset locally.
 OBSERVED_OUT="${OBSERVED_OUT:-}"
 OBSERVED_LABEL="${OBSERVED_LABEL:-$(printf '%s' "$LINUX_IMAGE" | tr '/:' '__')}"
+# Where each run's record lands, locally and in CI alike: beside the run, never in
+# test/scenarios/, whose observed.json only the collect job adds to. A local run names no
+# run id, so its record proves nothing coverage counts; it is here to be read.
+REC_DIR="$HERE/artifacts/observed/$OBSERVED_LABEL"
+mkdir -p "$REC_DIR"
 
 command -v docker >/dev/null || { echo "run-linux: docker is required" >&2; exit 1; }
 case "$(uname -m)" in
@@ -79,9 +82,8 @@ case "$(uname -m)" in
   *) echo "run-linux: unsupported host arch $(uname -m)" >&2; exit 1 ;;
 esac
 
-# The repo is mounted READ-WRITE for one reason: agent_status.py --record writes
-# test/scenarios/<name>/observed.json, which is the whole output of a run. Nothing else in
-# the tree is written by a scenario.
+# The repo is mounted READ-ONLY, so a scenario cannot write into the tree. The record goes
+# to REC_DIR, mounted at /observed.
 scenarios=("$@")
 if [ ${#scenarios[@]} -eq 0 ]; then
   while IFS= read -r n; do scenarios+=("$n"); done < <(linux_scenarios)
@@ -144,7 +146,7 @@ stage() {
   # record() writes the file on every run that reaches it, so a missing one here is a
   # failure, not a scenario with nothing to say.
   local dst="$OBSERVED_OUT/observed-$1--$OBSERVED_LABEL"
-  mkdir -p "$dst" && cp "$HERE/scenarios/$1/observed.json" "$dst/observed.json"
+  mkdir -p "$dst" && cp "$REC_DIR/$1/observed.json" "$dst/observed.json"
 }
 
 pass=0 fail=0 skip=0
@@ -155,7 +157,7 @@ for s in "${scenarios[@]}"; do
 
   # LINUX_DOCKER_ARGS is a list of flags, split on purpose.
   # shellcheck disable=SC2086
-  docker run --rm $LINUX_DOCKER_ARGS -v "$ROOT:/repo" -w /repo "$prepped" bash -c "
+  docker run --rm $LINUX_DOCKER_ARGS -v "$ROOT:/repo:ro" -v "$REC_DIR:/observed" -w /repo "$prepped" bash -c "
 set -uo pipefail
 test/scenarios/$s/setup.sh
 rc=\$?
@@ -188,7 +190,7 @@ test/assert.sh /tmp/out.json test/scenarios/$s/expected.json || exit 1
 python3 tools/agent_status.py --record /tmp/out.json test/scenarios/$s \
   --platform linux \
   --os \"\$(. /etc/os-release && printf '%s-%s' \"\${ID:-linux}\" \"\${VERSION_ID:-unknown}\")\" \
-  --arch \"\$(uname -m)\" --run-id '${GITHUB_RUN_ID:-}'
+  --arch \"\$(uname -m)\" --run-id '${GITHUB_RUN_ID:-}' --out /observed/$s/observed.json
 "
   rc=$?
   in_actions && echo "::endgroup::"
