@@ -389,6 +389,7 @@ jobs:
           - 93-linux-cli-agents-more
           - 94-linux-cli-agents-legacy
           - 95-linux-crush-packages
+          - 96-linux-cli-agents-npm
           - 97-linux-cli-agents-npm-more
           - 98-linux-installers-more
           - 99-linux-prime-agent

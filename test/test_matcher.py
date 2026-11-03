@@ -1506,6 +1506,51 @@ check("the new state directories and Junie's shim resolve to their agents",
       and _c.get("/home/dana/.factory/") == "factory-droid"
       and _c.get("/home/dana/.jules/") == "jules", f"got {_c}")
 
+# THE AGENTS ADDED 2026-10-29, and the unrelated names beside them. On npm: `kimi-code` (a
+# wrapper that runs Claude Code against Kimi), `kimi` (a state machine), `kimi-cli` (a
+# front-end generator), `codebuddy` and `codebuddy-code` (a "Hello, World!"), `letta` (a
+# promisify helper), and `antigravity`, `antigravity-cli` and `agy` (placeholders). On PyPI:
+# `kimi` (a tutoring library) and `codebuddy` (a Stack Overflow search).
+_c, _u = _claims(_kind("npm", "@moonshot-ai/kimi-code", "kimi-code", "kimi", "kimi-cli",
+                       "@tencent-ai/codebuddy-code", "codebuddy", "codebuddy-code",
+                       "@qoder-ai/qodercli", "@letta-ai/letta-code", "letta",
+                       "antigravity", "antigravity-cli", "agy"))
+check("the 2026-10-29 agents' npm names resolve to them",
+      _c == {"@moonshot-ai/kimi-code": "kimi-code",
+             "@tencent-ai/codebuddy-code": "codebuddy-code",
+             "@qoder-ai/qodercli": "qoder", "@letta-ai/letta-code": "letta-code"}, f"got {_c}")
+check("...and their unscoped namesakes claim nothing",
+      {"kimi-code", "kimi", "kimi-cli", "codebuddy", "codebuddy-code", "letta",
+       "antigravity", "antigravity-cli", "agy"} <= set(_u), f"got {_c}")
+_c, _u = _claims(_kind("brew", "kimi-code", "letta-code", "antigravity-cli"))
+check("the Homebrew tokens resolve to their agents",
+      _c == {"kimi-code": "kimi-code", "letta-code": "letta-code",
+             "antigravity-cli": "antigravity"}, f"got {_c}")
+_c, _u = _claims(_kind("file", "/home/dana/.local/bin/agy", "/home/dana/.local/bin/agy-old",
+                       "/home/dana/.kimi-code/", "/home/dana/.kimi/", "/home/dana/.codebuddy/",
+                       "/home/dana/.local/share/uv/tools/kimi-cli/",
+                       "/home/dana/.local/bin/qodercli", "/home/dana/.local/bin/qoder",
+                       "/home/dana/.qoder/", "/home/dana/.local/bin/kimi",
+                       "/home/dana/.local/share/uv/tools/kimi/",
+                       "/home/dana/.local/share/uv/tools/codebuddy/",
+                       "/home/dana/.local/share/uv/tools/letta/", "/home/dana/.letta/"))
+check("the installers' paths, the state directories and the legacy Kimi tool directory "
+      "resolve to their agents",
+      _c == {"/home/dana/.local/bin/agy": "antigravity", "/home/dana/.kimi-code/": "kimi-code",
+             "/home/dana/.kimi/": "kimi-code", "/home/dana/.codebuddy/": "codebuddy-code",
+             "/home/dana/.local/share/uv/tools/kimi-cli/": "kimi-code",
+             "/home/dana/.local/bin/qodercli": "qoder", "/home/dana/.qoder/": "qoder"},
+      f"got {_c}")
+# ~/.local/bin/kimi is what both Kimi generations name their command, and uv writes it for
+# kimi-cli. PyPI's `letta` and ~/.letta are the Letta server's as well as Letta Code's, which
+# is why catalog/agents.yaml leaves both out.
+check("...while agy-old, the generic `kimi` and `qoder`, PyPI's unrelated `kimi` and "
+      "`codebuddy`, and the Letta server's tool directory and ~/.letta claim nothing",
+      {"/home/dana/.local/bin/agy-old", "/home/dana/.local/bin/qoder",
+       "/home/dana/.local/bin/kimi", "/home/dana/.local/share/uv/tools/kimi/",
+       "/home/dana/.local/share/uv/tools/codebuddy/",
+       "/home/dana/.local/share/uv/tools/letta/", "/home/dana/.letta/"} <= set(_u),
+      f"got {_c}")
 # THE AGENTS HERDR RUNS, added 2026-11-02. Each has a namesake a looser match would claim:
 # Pi's own package beside its fork's, npm placeholders and unrelated unscoped names, the
 # renamed Windsurf cask beside Devin CLI's, and the two curl-installer leftovers that are
