@@ -68,7 +68,7 @@ if (Get-Download 'https://claude.ai/api/desktop/win32/x64/msix/latest/redirect' 
 $bridge = 'HKCU:\Software\Google\Chrome\NativeMessagingHosts\com.anthropic.claude_browser_extension'
 function Get-BridgeManifest {
   $m = (Get-ItemProperty $bridge -ErrorAction SilentlyContinue).'(default)'
-  if ($m -and (Test-Path -LiteralPath $m)) { $m }
+  if ($m -and (Test-Path -LiteralPath $m -PathType Leaf)) { $m }
 }
 $pkg = Get-AppxPackage Claude -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($pkg) {
