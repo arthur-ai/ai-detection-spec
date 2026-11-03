@@ -66,6 +66,7 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 101-windows-cli-agents | Installed, never run: nothing here creates a CLI's state directory. |
 | 102-windows-claude-native | The installer may also create ~\.claude, which names the agent too, so must_find alone would pass with either new value wrong. require_rows pins both rows, and the coverage gate holds each value to a row it matched. |
 | 102-windows-claude-native | A launch through an 8.3 short path keeps the short name in processes.path, which no value matches. Nothing here launches one. |
+| 102-windows-claude-native | Neither row carries a version. Unlike macOS and Linux, the installer copies claude.exe into ~\.local\bin rather than linking a release under versions\, so no path names one. Whether the executable's version resource does, which the file table's product_version reads, is unmeasured. |
 | 103-windows-vscode-agents | VS Code itself, from its user installer. Cursor and Windsurf read the same extension directories under their own names and are not exercised here. |
 | 104-windows-browser | Chrome for Testing registers the extensions. Branded Chrome's own install and ExtensionInstallForcelist, which a Windows fleet uses, are untested. |
 | 104-windows-browser | Claude Desktop registered its bridge with this profile present and not without one, so the nmh row is proof for a machine with Chrome and the extension set up. |

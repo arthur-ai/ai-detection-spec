@@ -33,7 +33,7 @@
       "openclaw"
     ]
   },
-  "why": "file >= 2 because Claude Code shows up twice under enumeration: the ~/.local/bin/ shim and the ~/.claude/ state dotdir. Both come from product-free globs now, which is the point -- the old query named the file 'claude' outright. npm >= 4 covers the four npm globals; it is a floor rather than an equality because npm installs each package's dependencies globally too and the row count is not ours to predict. Pi comes from its own installer, which writes ~/.pi and no npm global; forbid_rows holds both its npm names absent, so ~/.pi is its only witness here.",
+  "why": "file >= 2 because Claude Code shows up twice under enumeration: the ~/.local/bin/ shim and the ~/.claude/ state dotdir. Both come from product-free globs now, which is the point -- the old query named the file 'claude' outright. npm >= 4 covers the four npm globals; it is a floor rather than an equality because npm installs each package's dependencies globally too and the row count is not ours to predict. Pi comes from its own installer, which writes ~/.pi and no npm global; forbid_rows holds both its npm names absent, so ~/.pi is its only witness here. require_rows holds the Claude Code shim to a release, read off the ~/.local/share/claude/versions/<version> file it links to.",
   "must_contain": [
     "/.local/bin/claude",
     "@openai/codex",
@@ -45,6 +45,9 @@
     "@augmentcode/auggie",
     "/.pi/",
     "/.grok/"
+  ],
+  "require_rows": [
+    {"kind": "file", "id": "/.local/bin/claude", "ver": "."}
   ],
   "forbid_rows": [
     {
