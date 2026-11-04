@@ -203,6 +203,7 @@ jobs:
           - 13-desktop-apps-more
           - 14-meta-muse
           - 15-manus
+          - 16-hermes-desktop
           - 20-cli-agents
           - 21-cli-agents-homebrew
           - 22-cli-agents-homebrew-more
@@ -501,7 +502,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     # The survey's slowest install, VS Code and five extensions, took under two minutes, so
     # this is a ceiling for a hang rather than a budget.
-    timeout-minutes: 30
+    timeout-minutes: 60
     defaults:
       run:
         shell: bash
@@ -524,6 +525,8 @@ jobs:
           - 104-windows-browser
           - 105-windows-desktop-apps
           - 106-windows-python-agents
+          - 107-windows-hermes-installer
+          - 108-windows-hermes-desktop
         exclude: ${{ fromJSON(needs.scope.outputs.exclude_scenario_windows || '[]') }}
     steps:
       - uses: actions/checkout@v4

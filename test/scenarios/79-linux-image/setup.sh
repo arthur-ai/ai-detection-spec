@@ -24,6 +24,13 @@ command -v docker >/dev/null 2>&1 || {
   exit 3
 }
 docker info >/dev/null 2>&1 || { echo "SKIP: docker client present, no reachable daemon"; exit 3; }
+# PROBE ONLY
+note() { python3 -c 'import sys;t,m=sys.argv[1],sys.stdin.read();print("::notice title="+t+"::"+m[:6000].replace("%","%25").replace("\r","").replace("\n","%0A"))' "$1"; }
+docker pull nousresearch/hermes-agent:latest 2>&1 | tail -5 | note pull
+{ docker image inspect nousresearch/hermes-agent:latest --format '{{json .RepoTags}} {{json .Config.Labels}} {{.Size}} {{.Architecture}}'; docker images; } 2>&1 | note inspect
+sudo -n osqueryi --json "SELECT d.tags, d.id FROM docker_images d" 2>&1 | head -40 | note osq-images
+sudo -n osqueryi --json "SELECT l.key, l.value FROM docker_image_labels l" 2>&1 | head -60 | note osq-labels
+exit 0
 
 # THE PULL IS THE INSTALL. Not `docker save`/`load` of something built here: the point is
 # that the registry still serves this repository under this name.
