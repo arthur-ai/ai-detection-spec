@@ -7,7 +7,7 @@ catalog comes from installing the real software, and it runs on osquery today.**
 
 [![CI](https://github.com/arthur-ai/ai-detection-spec/actions/workflows/ci.yml/badge.svg)](https://github.com/arthur-ai/ai-detection-spec/actions/workflows/ci.yml)
 [![Scenarios](https://github.com/arthur-ai/ai-detection-spec/actions/workflows/scenarios.yml/badge.svg)](https://github.com/arthur-ai/ai-detection-spec/actions/workflows/scenarios.yml)
-[![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-161%2F161-2E7D57)](docs/agents.md)
+[![Coverage](https://img.shields.io/badge/identifiers_covered_by_a_CI_test-161%2F172-A26A16)](docs/agents.md)
 [![osquery](https://img.shields.io/badge/osquery-5.23.1-1D4E89)](https://osquery.io)
 [![macOS](https://img.shields.io/badge/macOS-shipping-2E7D57)](osquery/README.md#requirements)
 [![Linux](https://img.shields.io/badge/Linux-shipping-2E7D57)](osquery/README.md#requirements)
@@ -25,7 +25,7 @@ Three things. Each can be taken on its own.
 | | What it is | Who takes it |
 |---|---|---|
 | **The spec** [`SPEC.md`](SPEC.md), [`schema/`](schema), [`conformance/`](conformance) | The contract between a catalog, a collector and a matcher, [defined below](#what-the-spec-is). [`bin/classify`](bin/classify) is the reference matcher | People building it into an MDM, an EDR or an inventory tool |
-| **The catalog** [`catalog/`](catalog) | **56 agents and 161 identifiers**, written to the spec. CI must see each identifier on a real install, in a job called a scenario, and [the coverage page](docs/agents.md) is generated from what those jobs recorded | Anyone who needs the facts |
+| **The catalog** [`catalog/`](catalog) | **62 agents and 172 identifiers**, written to the spec. CI must see each identifier on a real install, in a job called a scenario, and [the coverage page](docs/agents.md) is generated from what those jobs recorded | Anyone who needs the facts |
 | **The osquery implementation** [`osquery/`](osquery) | The catalog rendered as queries for macOS, Linux and Windows, and the scripts that run them. The spec calls a collector a *binding*, and this is the first one | Security and IT teams who want to run it on a fleet this week |
 
 ## Run it
