@@ -8,7 +8,9 @@
 #
 # EVERYTHING LANDS UNDER %LOCALAPPDATA%\hermes: the checkout, PM's tool store and the
 # launchers in its bin\. No ~\.hermes and nothing in ~\.local\bin, which are the two places
-# filesystem-windows.sql reads (probe run 41870942008). So the install is found RUNNING,
+# filesystem-windows.sql read when this was written (probe run 41870942008). Its per-app
+# bin\ branch now reads the launcher on disk, which 109-windows-hermes-idle proves; this
+# scenario is the install found RUNNING,
 # by the launcher's directory, and `hermes gateway run` is what keeps a process there: with
 # no messaging platform configured it logs a warning and stays up until it is stopped. The
 # first launch republishes the launchers and renames the running hermes.exe aside to

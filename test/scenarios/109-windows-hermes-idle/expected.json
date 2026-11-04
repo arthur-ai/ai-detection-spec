@@ -1,0 +1,32 @@
+{
+  "description": "Hermes Agent through the vendor's PowerShell installer, installed and never launched, found by the launcher it writes under %LOCALAPPDATA%.",
+  "platform": "windows",
+  "counts": {
+    "ext": ">=0",
+    "file": ">=1",
+    "msix": ">=1",
+    "nmh": ">=1",
+    "npm": ">=0",
+    "proc": ">=0",
+    "scan": ">=1",
+    "uninstall": ">=1",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "hermes"
+    ],
+    "forbid": [
+      "claude-code",
+      "codex-cli",
+      "aider"
+    ]
+  },
+  "require_rows": [
+    {"kind": "file", "id": "\\AppData\\Local\\hermes\\bin\\hermes.exe"}
+  ],
+  "why": "The idle twin of 107. Nothing is launched, so the launcher on disk is the only witness: filesystem-windows.sql's %LOCALAPPDATA%\\<app>\\bin\\*.exe branch reads it, and require_rows holds the file row to its path. setup prints the hermes process rows, which must be none. `forbid` matches 107's.",
+  "known_gaps": [
+    "Only a launcher one level under %LOCALAPPDATA% is read: an installer that keeps its commands deeper, or outside bin\\, is still invisible while idle."
+  ]
+}
