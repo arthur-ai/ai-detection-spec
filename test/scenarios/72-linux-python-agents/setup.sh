@@ -21,8 +21,10 @@ need_pkgs python3 || true
 # The installer also writes ~/.local/bin, which osquery/queries/filesystem-linux.sql globs, so uv
 # itself comes back as an unmatched `file` row -- correctly, being no kind of agent.
 try_user "the uv installer" 'curl --retry 3 -fsSL https://astral.sh/uv/install.sh | sh' || true
-for pkg in aider-chat hermes-agent litellm; do
-  try_user "uv tool install $pkg" \
+# Letta is installed and never run, so its tool directory is the only witness here: its first
+# run writes ~/.letta, a second value, which 96 proves.
+for pkg in aider-chat hermes-agent litellm letta; do
+  retry "uv tool install $pkg" try_user "uv tool install $pkg" \
     "\$HOME/.local/bin/uv tool install --python 3.12 $pkg" || true
 done
 

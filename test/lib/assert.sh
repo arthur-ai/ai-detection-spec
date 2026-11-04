@@ -46,8 +46,19 @@ assert_classified() {
 # Given <agents.json> and <parity.json> it runs no osqueryi: test/run.sh produces both in
 # the Tart guest and asserts on a host that may have none. Without them it runs osqueryi
 # itself, with `sudo -n` for the live artifact when not already root.
+#
+# The binding's test is handed the platform and the derived must_find rather than reading
+# the scenario, so nothing ci.yml's runtime jobs run names the scenario tree.
 assert_match_sql() {
   local actual_json="$1" expected_json="$2" root="$3" agents_json="${4:-}" parity_json="${5:-}"
-  python3 "$root/osquery/test/test_match_sql.py" --assert "$actual_json" "$expected_json" \
-    --root "$root/osquery" ${agents_json:+--agents "$agents_json"} ${parity_json:+--parity "$parity_json"}
+  local want
+  want=$(python3 "$SCENARIOS_PY" want "$expected_json") || { echo "$want"; return 1; }
+  # want is the platform, then each agent: words, split on purpose.
+  # shellcheck disable=SC2086
+  set -- $want
+  local plat="$1"; shift
+  # ${@+"$@"}: a control finds nothing, and bash 3.2 calls an empty "$@" unbound under -u.
+  python3 "$root/osquery/test/test_match_sql.py" --assert "$actual_json" --platform "$plat" \
+    --must-find ${@+"$@"} --root "$root/osquery" \
+    ${agents_json:+--agents "$agents_json"} ${parity_json:+--parity "$parity_json"}
 }

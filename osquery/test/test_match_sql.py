@@ -18,9 +18,11 @@ jobs that do have it. Extra arguments are payload files to check besides the fix
 Two more modes serve the scenario harness (test/lib/assert.sh's assert_match_sql):
 
     --wrapper <payload.json>     print the SQL bin/discover --names would run over it
-    --assert <actual> <expected> [--agents <json>] [--parity <json>] [--root <dir>]
+    --assert <actual> --platform <p> [--must-find <agent> ...]
+             [--agents <json>] [--parity <json>] [--root <dir>]
                                  parity over <actual>, then dist/agents-<platform>.sql's
-                                 findings against the scenario's must_find, and nothing else.
+                                 findings against must_find, and nothing else. The harness
+                                 passes both from the scenario, which this file never reads.
                                  Given the two json files it runs no osqueryi at all,
                                  which is how the Tart harness asserts on a host without one.
 """
@@ -138,18 +140,16 @@ def assert_mode(argv):
     import argparse
     ap = argparse.ArgumentParser(prog="test_match_sql.py --assert")
     ap.add_argument("actual")
-    ap.add_argument("expected")
+    # The scenario's platform and its must_find as derived from the catalog, which
+    # test/lib/assert.sh asks of the root's scenario reader and passes here.
+    ap.add_argument("--platform", required=True)
+    ap.add_argument("--must-find", nargs="*", default=[])
     ap.add_argument("--agents", help="dist/agents-<platform>.sql's output, already run")
     ap.add_argument("--parity", help="the --wrapper SQL's output, already run")
     ap.add_argument("--root", default=str(ROOT))
     a = ap.parse_args(argv)
     rows = json.load(open(a.actual))
-    # tools/scenarios.py reads the scenario, as test/assert.sh's other layers do, and gives
-    # must_find as derived from the catalog.
-    sys.path.insert(0, str(ROOT.parent / "tools"))
-    import scenarios
-    expected, must_find = scenarios.load(a.expected)
-    plat = expected["platform"]
+    plat, must_find = a.platform, set(a.must_find)
     frag = shipped_fragment()
     classify = R.load_classify()
     catalog = classify.load_catalog(R.CATALOG)

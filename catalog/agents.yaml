@@ -1122,23 +1122,31 @@ agents:
     # arm64. Kimi Code 2.4.1 did not write it.
     state_dirs: ["~/.kimi-code", "~/.kimi"]
 
-  # Tencent's CodeBuddy Code. Its package ships several bins, `codebuddy` and `cbc` among
-  # them, so the package name is the value, not a binary.
+  # Tencent's CodeBuddy: the CodeBuddy Code CLI and the CodeBuddy IDE. One entry, as Qoder is
+  # one, because the two share ~/.codebuddy: the IDE's product.json sets `dataFolderName` to
+  # `.codebuddy`, the folder a VS Code build keeps its extensions in, so the folder cannot say
+  # which wrote it. Read off the 4.12.2 cask's zip on 2026-11-03, without launching the IDE.
+  # The IDE is a coding agent too: its bundled extension runs terminal commands and writes
+  # files, with a setting to do so without asking. Its bundle id, com.tencent.codebuddy, and
+  # Homebrew's `codebuddy` cask would join this entry; no run installs either, nor its
+  # editor extensions.
+  #
+  # The CLI's package ships several bins, `codebuddy` and `cbc` among them, so the package
+  # name is the value, not a binary.
   #
   # NOT HERE: npm's unscoped `codebuddy` and `codebuddy-code` are a third party's "Hello,
   # World!" packages, and PyPI's `codebuddy` searches Stack Overflow; test_matcher asserts all
-  # three are declined. Homebrew's `codebuddy` cask is the CodeBuddy IDE, which no run
-  # installs, and neither are its editor extensions.
-  - id: codebuddy-code
-    name: CodeBuddy Code
+  # three are declined.
+  - id: codebuddy
+    name: CodeBuddy
     classification: Coding agent
     platforms: [linux]
     # The same install's npm_packages row: @tencent-ai/codebuddy-code 2.178.1.
     # 96-linux-cli-agents-npm.
     npm: ["@tencent-ai/codebuddy-code"]
-    # Written on first run: `codebuddy --help` wrote it and --version did not, 2.179.3 in an
-    # Ubuntu 24.04 container on 2026-11-03. 96 read it in CI run 41714485113, on Ubuntu
-    # 24.04 x86_64 and arm64. Whether the CodeBuddy IDE writes it too is unexamined.
+    # Written by the CLI on first run: `codebuddy --help` wrote it and --version did not,
+    # 2.179.3 in an Ubuntu 24.04 container on 2026-11-03. 96 read it in CI run 41714485113,
+    # on Ubuntu 24.04 x86_64 and arm64. The IDE's data folder is the same; see above.
     state_dirs: ["~/.codebuddy"]
 
   # Alibaba's Qoder CLI. One entry for Qoder, as Antigravity is one entry for its editions:
@@ -1159,18 +1167,28 @@ agents:
     # Proved in 84-linux-installers.
     binaries: ["~/.local/bin/qodercli"]
 
-  # Letta's Letta Code, a coding agent built on Letta's stateful agents.
+  # Letta: Letta Code, and the Letta server (formerly MemGPT), which hosts stateful agents and
+  # runs their tools. One entry, because Letta moved the server's names to Letta Code, and
+  # none of them carries the version that would tell the two apart:
   #
-  # NOT HERE: npm's unscoped `letta` is an unrelated promisify library. Letta also publishes
-  # `letta-code`, a 1.0.0 that only points at the scoped package and is not carried: no run
-  # installed it. Two values Letta Code does produce are left out because the Letta server
-  # produced them first. PyPI's `letta` is Letta Code from 0.32.13 (2026-09-17) and was the
-  # server through 0.16.8, and a uv or pipx tool directory carries no version to tell them
-  # apart. ~/.letta, which `letta --version` writes (0.34.39 in an Ubuntu 24.04 container on
-  # 2026-11-03), is the server's LETTA_DIR in letta 0.16.8's constants.py. test_matcher
-  # asserts all three are declined.
-  - id: letta-code
-    name: Letta Code
+  #   PyPI `letta`   the server through 0.16.8 (2026-05-14), Letta Code from 0.32.13
+  #   letta/letta    ran ./letta/server/startup.sh at 0.16.8, and at 0.34.39 its OCI `source`
+  #                  label is github.com/letta-ai/letta-code
+  #   ~/.letta       the server's LETTA_DIR in letta 0.16.8's constants.py, and what Letta
+  #                  Code's first run writes
+  #
+  # A coding agent, because everything published under these names today is Letta Code. A
+  # GUESS FOR THE SERVER: a machine whose only evidence is one of these values may run the
+  # server instead, and is classified a coding agent all the same, because no value here can
+  # say which it runs. The server's own image, which can, is `letta-server` below.
+  #
+  # NOT HERE: npm's unscoped `letta` is an unrelated promisify library, and Letta's SDKs, npm
+  # `@letta-ai/letta-client` and PyPI `letta-client`, are libraries an agent is built with;
+  # test_matcher asserts all three are declined. npm's `letta-code`, a 1.0.0 that only points
+  # at the scoped package, and PyPI's `letta-nightly`, the server's nightly channel, are not
+  # carried: no run installs either.
+  - id: letta
+    name: Letta
     classification: Coding agent
     platforms: [darwin, linux]
     # The same install's npm_packages row: @letta-ai/letta-code 0.34.23.
@@ -1179,3 +1197,32 @@ agents:
     # A homebrew-core formula. 21-cli-agents-homebrew in CI run 41714485113: 0.34.24 on
     # macOS 15 and 26.
     homebrew: [letta-code]
+    # `uv tool install letta` wrote the tool directory `letta`, 0.34.12, and no ~/.letta until
+    # the first run, in an Ubuntu 24.04 container on 2026-11-03. 72-linux-python-agents
+    # installs it without running it, and read it in CI run 41767347062 on every Linux image
+    # it runs on.
+    pypi: [letta]
+    # Written on first run: `letta --version` wrote it from npm's 0.34.39 and PyPI's 0.34.12,
+    # in Ubuntu 24.04 containers on 2026-11-03. 96 runs it, and read it in CI run 41767347062
+    # on every Linux image it runs on.
+    state_dirs: ["~/.letta"]
+    # 0.34.39 on 2026-11-02. 79-linux-image pulled it in CI run 41767347062, on Ubuntu 24.04
+    # x86_64 and arm64.
+    images: [letta/letta]
+    # org.opencontainers.image.source on letta/letta:0.34.39, read off its manifest on
+    # 2026-11-03. The server's images carry no labels. 79 read it in the same run.
+    image_labels: ["https://github.com/letta-ai/letta-code"]
+
+  # The Letta server's first image, from before Letta moved the server's names to Letta Code.
+  # Its own entry because this value names the server and nothing else, so it can be classified
+  # as what it is rather than as `letta`'s guess: the server hosts general-purpose stateful
+  # agents and runs their tools, a personal agent's shape, not a coding agent's.
+  - id: letta-server
+    name: Letta server
+    classification: Personal agent
+    platforms: [linux]  # as openhands: an image route, which no macOS runner can prove
+    # The server from 0.1.4 to 0.5.1, amd64 only, last pushed 2024-10-29; its CMD is
+    # ./letta/server/startup.sh, and its Docker Hub organisation names itself Letta, with
+    # letta.com as its profile. 79-linux-image read it in CI run 41769159813, on Ubuntu 24.04
+    # x86_64 and arm64.
+    images: [lettaai/letta]

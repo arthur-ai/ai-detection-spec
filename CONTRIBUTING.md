@@ -201,7 +201,10 @@ with `pwsh` when it is installed, and CI's lint requires it.
 
 You do not need to run scenarios locally. **CI runs the ones a pull request's diff can move**,
 on macOS, Linux and Windows, and all of them weekly. `tools/ci_scope.py` decides, and when it
-cannot tell it runs every scenario; the scope job's summary says what ran and why. A
+cannot tell it runs every scenario; the scope job's summary says what ran and why. A pull
+request runs one macOS label, and the push to main after the merge runs every label and
+records what each produced. The three runtime jobs in `ci.yml` run only when a changed path
+can reach one, so a scenario's own files or a lint-only check boot no runner there. A
 `workflow_dispatch` runs everything, or only the scenarios named in its `scenarios` input. A
 new identifier over-matching rows in an unrelated scenario is the one thing scoping can miss,
 and the weekly run catches it.

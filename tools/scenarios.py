@@ -6,6 +6,7 @@ what the catalog derives. Every tool that reads a scenario reads it through this
     python3 tools/scenarios.py --write                     regenerate each extension-ids.txt
     python3 tools/scenarios.py field <scenario> <key>      one value, for a shell harness
     python3 tools/scenarios.py list <platform>             one platform's scenarios
+    python3 tools/scenarios.py want <expected.json>        its platform, then each must_find
     python3 tools/scenarios.py assert-counts <rows.json> <expected.json>
     python3 tools/scenarios.py assert-classified <rows.json> <expected.json>
 
@@ -500,6 +501,14 @@ def main(argv):
         return 0
     if argv[:1] == ["list"] and len(argv) == 2:
         print("\n".join(on_platform(argv[1])))
+        return 0
+    if argv[:1] == ["want"] and len(argv) == 2:
+        try:
+            exp, found = load(argv[1])
+        except ValueError as exc:
+            print(f"  FAIL: the scenario's files are refused:\n{exc}")
+            return 1
+        print(" ".join([exp["platform"]] + sorted(found)))
         return 0
     if argv[:1] in (["assert-counts"], ["assert-classified"]) and len(argv) == 3:
         return _assert(argv[0][7:], argv[1], argv[2])

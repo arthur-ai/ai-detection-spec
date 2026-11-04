@@ -249,6 +249,40 @@ for _job, _names in sorted(_jobs.items()):
                   f"{_plat}. It would skip on every run while looking scheduled.")
             failed = True
 
+# THE FIRST macOS LABEL MUST HOST EVERY macOS SCENARIO. A pull request runs that label
+# alone (tools/ci_scope.py, `--event pull_request`), and the job's runnable gate SKIPS,
+# green, a scenario whose requires.json `min_macos` the runner cannot meet. So a scenario
+# whose floor only a later label clears would never run on a pull request while looking
+# scheduled: the failure the pairing above exists to catch, one axis over. A label this
+# cannot read as a version is not known to host anything, and fails the same way.
+for _job, _names in sorted(_jobs.items()):
+    _spec = _doc["jobs"][_job]
+    _labels = [str(_l) for _l in (((_spec.get("strategy") or {}).get("matrix") or {}).get("os") or [])
+               if "macos" in str(_l)]
+    if not _labels:
+        continue
+    _m = re.fullmatch(r"macos-(\d+)", _labels[0])
+    if not _m:
+        print(f"FAIL: scenarios.yml job {_job!r} lists {_labels[0]!r} first, which this check "
+              f"cannot read as a macOS version, and a pull request runs the first label alone.")
+        failed = True
+        continue
+    for _name in sorted(_names & _on_disk):
+        # THROUGH tools/scenarios.py, which refuses a floor that is not an integer macOS
+        # version: the job's runnable gate and test/run.sh compare it with the shell's `-lt`,
+        # which errors on anything else and reads as "runnable". A `false` or `null` floor
+        # is refused there rather than read as none.
+        try:
+            _need = scenarios.field(_name, "requires.min_macos", repo / "test" / "scenarios")
+        except (ValueError, OSError) as exc:
+            print(f"FAIL: {exc}")
+            failed = True
+            continue
+        if _need > int(_m.group(1)):
+            print(f"FAIL: {_name} needs macOS {_need}, and a pull request runs job {_job!r} on "
+                  f"{_labels[0]} alone, where it would skip. List a label that hosts it first.")
+            failed = True
+
 # A `deep: true` SCENARIO MUST BE UNDER A JOB THAT RUNS THE DEEP ARTIFACT, and a job that
 # runs it must have one.
 #

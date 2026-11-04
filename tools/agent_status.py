@@ -843,7 +843,7 @@ def markdown(data):  # noqa: C901
             if i["state"] in ("none", "local-only", "tested-absent")]
     if unex:
         out += ["## ⚠️ Identifiers that did not pass", "",
-                "Every one is work, and the middle column says what kind. **did not appear** "
+                "Each one needs work, and the state column says what kind. **did not appear** "
                 "means a scenario installed the agent and this identifier never showed up — "
                 "the suite reached it and it did not reproduce, usually because the scenario "
                 "installs by a different route, or because the artifact only exists once the "

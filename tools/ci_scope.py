@@ -18,13 +18,17 @@ a new directory nobody added to it would be SKIPPED rather than unmatched. That 
 question asked here is the other one, `is every changed path documentation`, and anything
 unrecognised answers no and runs the suite.
 
-WHY `.md` AND NOTHING ELSE. Every gate that READS a Markdown file -- check_doc_numbers,
+WHY `.md`, AND WHAT ELSE. Every gate that READS a Markdown file -- check_doc_numbers,
 check_workflows, agent_status, test_telemetry -- runs in the lint job, and lint is NOT
 gated by this: it runs on every pull request as it always has, so documentation drift is
 still caught on the commit that causes it. What is gated is the three things that need a
-runner with osquery on it, and none of them opens a `.md`. In this form
-`docs/blind-spots.yaml` is NOT documentation despite living under docs/: it is data that
-tools/agent_status.py reads.
+runner with osquery on it. runtime_inert() names the other paths none of those three
+reaches -- a scenario's own files, the recorders, the scenario harnesses, the lint-only
+checks, another workflow -- and test/test_ci_scope.py proves each against what the
+runtime jobs actually run, the way it proves INERT for the scenario jobs.
+`docs/blind-spots.yaml` is among them: tools/agent_status.py reads it, under lint. Until
+2026-11-03 a one-file change to a Windows scenario's setup.ps1 booted all three runtime
+VMs, twice.
 
 NO DIFF MEANS RUN. A force-push, a new branch, a shallow clone that cannot reach the base
 -- every one of them lands here as "cannot tell", and cannot-tell runs the suite. An
@@ -43,6 +47,11 @@ selected by every rule that would have consulted them. The rules, and what each 
   test/scenarios/<s>/    that scenario.
   SETUP_LIBS             the scenarios whose setup.sh sources it.
   HARNESS                the scenarios of the jobs that run it: a platform's whole tree.
+  RECORDERS              one scenario per job, the one naming the most agents. They run
+                         after a scenario's assertion and in collect, and decide what a
+                         run records, never what it finds.
+  SCOPER                 nothing. This file decides what runs and runs in no scenario;
+                         test/test_ci_scope.py proves it under lint, and a matrix cannot.
   catalog/agents.yaml    the scenarios that must find a changed agent (must_find, as
                          tools/scenarios.py derives it), hold its lookalikes (forbid), or
                          observed it (observed.json); those carrying forbid_evidence, which
@@ -55,11 +64,14 @@ selected by every rule that would have consulted them. The rules, and what each 
                          that reads them.
   composed artifacts,    the platform that runs them. A query's platform is its own
   osquery/queries/*.sql  `-- platform:` line; `posix` and an unreadable one run both.
-  deep artifact, pack    the `deep: true` scenarios, the only ones that run osquery/bin/discover.
-  scenarios.yml          every scenario when a job changed; the scenarios added when only
-                         its lists did; nothing when only `on:`, `name:` or `concurrency:`
-                         did, which decide when a run starts and never what a job does.
-                         Compared parsed, so a comment runs none.
+  deep artifact, pack,   the `deep: true` scenarios, the only ones that run osquery/bin/discover.
+  osquery/bin/*
+  scenarios.yml          compared parsed, job by job: a scenario job that changed runs its
+                         list; a job that needs every scenario job, which only consumes
+                         their uploads, one scenario per job; a job the scenario jobs need,
+                         a job added or removed, or anything outside `jobs:` but `on:`,
+                         `name:` and `concurrency:`, every scenario. A comment runs none;
+                         a scenario added to a list runs alone.
   ci.yml                 every scenario when its lint job changed, which holds the gates the
                          catalog and rendered-SQL rules lean on; nothing otherwise, since
                          its other jobs define only themselves.
@@ -68,6 +80,16 @@ selected by every rule that would have consulted them. The rules, and what each 
                          osquery/dist/fleet-policies.yml is checked under lint. No scenario reads
                          either.
   INERT                  nothing. test/test_ci_scope.py proves no scenario job reaches one.
+
+ONE macOS LABEL ON A PULL REQUEST, the first its matrix lists, passed as `--event
+pull_request`: the other labels are excluded by `os`, the push to main that follows the
+merge runs every label and records what each produced, and so does the weekly run. A
+pull request proves an identifier on a real install; which macOS versions carry it is
+the observation's business, and observations are committed from main alone.
+tools/check_workflows.py holds the first label to every scenario's `min_macos`, since
+the job skips, green, a scenario its runner cannot host. The org's
+plan allows five macOS jobs at once, and on 2026-11-03 a catalog pull request's two
+macOS jobs waited 35 minutes behind full matrices for about a minute of work each.
 
 WHAT THIS FORM CANNOT SEE, and the one thing it gives up: a changed signature that matches
 rows -- in the classifier or in the rendered SQL its parity check compares against -- in a
@@ -109,6 +131,9 @@ INERT = frozenset({
     "test/run-gce.sh", "test/run.sh", "test/test_ci_scope.py", "test/test_matcher.py",
     # test/run-linux.sh is NOT here: scenarios.yml's container job runs it. See HARNESS.
     "test/test_telemetry.py", "osquery/tools/bundle.py", "tools/check_doc_numbers.py",
+    # The spec's vectors: test/test_conformance.py reads them under lint, and bin/classify
+    # is held to them there, never on a runner.
+    "conformance/vectors.json",
     "osquery/tools/check_no_catalog.py", "osquery/tools/check_output.py", "osquery/tools/check_pack.py",
     "tools/check_workflows.py", "tools/gates.sh", "tools/validate_catalog.py",
 })
@@ -131,6 +156,40 @@ SETUP_LIBS = ("test/lib/guest.sh", "test/lib/guest-linux.sh", "test/lib/guest-wi
 HARNESS_ENV = "SCENARIO_PLATFORM"
 HARNESS = {"linux": "test/run-linux.sh"}
 
+# Run by every scenario job AFTER its assertion, and by collect: they decide what a run
+# RECORDS -- which identifiers, merged how, gated how -- and never what osqueryi finds or
+# whether test/assert.sh passes, which test/test_ci_scope.py holds them to. So one scenario
+# per job proves a change to them end to end: record, upload, merge, gate. The one naming
+# the most agents, so the recorder meets real identifiers rather than a baseline's none;
+# the weekly run records the rest. Both fell through to EVERY until 2026-11-03, when three
+# pull requests to them each ran the full matrix on the branch and again on main: 204
+# macOS jobs against the org's cap of five concurrent, and every catalog pull request that
+# day queued behind them.
+RECORDERS = ("tools/agent_status.py", "tools/merge_observations.py", "tools/observations.py")
+
+# Decides what runs, and runs in no scenario: the scope job calls it before any matrix is
+# spent, and test/test_ci_scope.py proves it under lint. A matrix run on a change to it
+# proves nothing about it, since no scenario calls it -- and it forced the full matrix on
+# 8 of 39 pushes to main between 2026-10-20 and 11-03 for that nothing.
+SCOPER = "tools/ci_scope.py"
+
+# Read by no runtime job in ci.yml, directly or through anything those jobs run, so a
+# change to one decides `runtime` the way documentation does. NOT INERT: that set is what
+# the SCENARIO jobs cannot reach, and the runtime jobs run several of its members
+# (osquery/tools/bundle.py, check_pack.py). A scenario's own files and the other workflows
+# are excused by rule in runtime_inert() rather than listed. Checked by a tool, not by
+# eye: test/test_ci_scope.py seeds its reachability analysis from the runtime jobs' steps
+# and fails on any member they reach.
+RUNTIME_INERT = frozenset({
+    SCOPER, *RECORDERS, *SETUP_LIBS, *HARNESS.values(), "docs/blind-spots.yaml",
+    "test/assert.sh", "test/lib/assert.sh", "test/lib/vm.sh", "test/lib/fake_amplitude.py",
+    "test/run.sh", "test/run-ec2.sh", "test/run-gce.sh", "test/lint.sh", "osquery/test/lint.sh",
+    "test/test_ci_scope.py", "test/test_matcher.py", "test/test_telemetry.py",
+    "test/test_export.py", "tools/export.py", "osquery/tools/check_no_catalog.py",
+    "tools/check_workflows.py", "tools/validate_catalog.py", "tools/check_doc_numbers.py",
+    "tools/gates.sh", "tools/scenarios.py",
+})
+
 # Rendered from the catalog by osquery/tools/render_match.py. `None` is every platform.
 RENDERED = {"osquery/dist/signatures.sql": None,
             "osquery/dist/agents-darwin.sql": "darwin", "osquery/dist/agents-linux.sql": "linux",
@@ -138,15 +197,26 @@ RENDERED = {"osquery/dist/signatures.sql": None,
 # Which platform's jobs run a composed artifact.
 COMPOSED = {"osquery/dist/discovery-darwin.sql": "darwin", "osquery/dist/discovery-linux.sql": "linux",
             "osquery/dist/discovery-windows.sql": "windows"}
-# Read only by osquery/bin/discover, which only a `deep: true` scenario runs. It reads the pack only
-# under --write today; the deep scenarios are the bound, not that flag.
-DEEP_ONLY = {"osquery/dist/discovery-deep.sql", "osquery/dist/ai-detection-spec.conf"}
+# Run or read only by a `deep: true` scenario: osquery/bin/discover, the scanner it calls, and
+# what it reads. ci.yml runs discover on every push, which is that workflow's own business;
+# in scenarios.yml and test/run-linux.sh only the deep branch does. discover reads the pack
+# only under --write today; the deep scenarios are the bound, not that flag.
+DEEP_ONLY = {"osquery/bin/discover", "osquery/bin/container-scan",
+             "osquery/dist/discovery-deep.sql", "osquery/dist/ai-detection-spec.conf"}
 
 EVERY = None  # a selection of every scenario, which an empty set must never be mistaken for
 
 
 def is_doc(path):
     return path.endswith(DOC_SUFFIXES) or path in DOC_PATHS
+
+
+def runtime_inert(path):
+    """True when no ci.yml runtime job can read `path`: documentation, a scenario's own
+    files, a workflow other than ci.yml, or a RUNTIME_INERT member. Anything else runs."""
+    return (is_doc(path) or path in RUNTIME_INERT
+            or re.fullmatch(r"test/scenarios/[^/]+/.+", path) is not None
+            or (path.startswith(".github/workflows/") and path != CI_WORKFLOW))
 
 
 def changed(base, head):
@@ -181,13 +251,13 @@ def decide(paths):
     if paths is None:
         return True, "no diff could be computed, so the runtime gates run"
     if not paths:
-        return True, "the diff is empty, which is not the same as documentation-only"
-    code = [p for p in paths if not is_doc(p)]
+        return True, "the diff is empty, which is not the same as nothing a runtime job reads"
+    code = [p for p in paths if not runtime_inert(p)]
     if code:
         shown = ", ".join(sorted(code)[:3])
         more = f" (+{len(code) - 3} more)" if len(code) > 3 else ""
-        return True, f"{len(code)} of {len(paths)} changed paths are not documentation: {shown}{more}"
-    return False, f"all {len(paths)} changed paths are documentation; lint still runs"
+        return True, f"{len(code)} of {len(paths)} changed paths can reach a runtime job: {shown}{more}"
+    return False, f"no runtime job reads any of the {len(paths)} changed paths; lint still runs"
 
 
 # --- which scenarios ----------------------------------------------------------------------
@@ -275,6 +345,7 @@ class Scope:
     def __init__(self, paths, read, yaml):
         self.paths, self.read, self.yaml = paths, read, yaml
         doc = yaml.safe_load(read("head", SCENARIOS_WORKFLOW) or "")
+        self.doc = doc or {}
         self.jobs = job_scenarios(doc or {})
         self.harness = harness_jobs(doc or {})
         self.listed = set().union(*self.jobs.values()) if self.jobs else set()
@@ -309,6 +380,7 @@ class Scope:
         return {"platform": exp["platform"], "deep": bool(exp.get("deep")),
                 "control": bool(exp.get("control")),
                 "agents": found | set(cls.get("forbid") or []) | seen,
+                "must_find": found,
                 "any_agent": bool(cls.get("forbid_evidence"))}
 
     def where(self, test):
@@ -318,6 +390,27 @@ class Scope:
 
     def on(self, platform):
         return self.where(lambda i: platform is None or i["platform"] == platform)
+
+    def macos_labels(self, job):
+        """The macOS labels on a matrix job's `os` axis, in the order listed."""
+        spec = (self.doc.get("jobs") or {}).get(job) or {}
+        labels = ((spec.get("strategy") or {}).get("matrix") or {}).get("os") or []
+        return [str(l) for l in labels if "macos" in str(l)]
+
+    def one_per_job(self):
+        """One scenario from each job's list: the one with the most agents in must_find,
+        ties broken by name. must_find and not the facts' `agents`, which a baseline's long
+        forbid list would win while giving --record nothing to write. Every scenario of a
+        job in which any facts could not be read: could-not-look must not read as
+        nothing-to-run."""
+        picked = set()
+        for names in self.jobs.values():
+            facts = {n: self.info.get(n) for n in names}
+            if any(f is None for f in facts.values()):
+                picked |= set(names)
+            elif names:
+                picked.add(sorted(names, key=lambda n: (-len(facts[n]["must_find"]), n))[0])
+        return frozenset(picked)
 
     def sources(self, name, lib):
         # setup.sh, or setup.ps1 on Windows; `#` comments in both. Neither readable is
@@ -344,6 +437,11 @@ class Scope:
             return frozenset(), "a check no scenario job runs"
         if path in NOT_ASSERTED:
             return frozenset(), NOT_ASSERTED[path]
+        if path in RECORDERS:
+            return (self.one_per_job(),
+                    "a recorder, run after every job's assertion: one scenario per job proves it")
+        if path == SCOPER:
+            return frozenset(), "the scoper itself, which no scenario runs; lint proves it"
         m = re.fullmatch(r"test/scenarios/([^/]+)/.+", path)
         if m:
             name = m.group(1)
@@ -373,7 +471,7 @@ class Scope:
         if path in COMPOSED:
             return self.on(COMPOSED[path]), f"run only by {COMPOSED[path]} scenarios"
         if path in DEEP_ONLY:
-            return self.where(lambda i: i["deep"]), "read only by osquery/bin/discover --deep"
+            return self.where(lambda i: i["deep"]), "run or read only by a `deep: true` scenario"
         if re.fullmatch(r"osquery/queries/[^/]+\.sql", path):
             text = self.read("head", path) or self.read("base", path) or ""
             plat = re.search(r"^-- platform:\s*(\w+)", text, re.M)
@@ -397,22 +495,48 @@ class Scope:
             return EVERY, "scenarios.yml has no base to compare against"
         b, h = sides
 
-        def jobs(doc):
-            # WHAT A JOB DOES, and nothing about when a run starts or what it is called:
-            # `on` (PyYAML reads the key as the boolean True), `name` and `concurrency`
-            # are dropped. A cron edit (PR #104, 2026-10-20) ran all 156 jobs twice.
-            doc = {k: copy.deepcopy(v) for k, v in doc.items()
-                   if k not in ("on", True, "name", "concurrency")}
-            for spec in (doc.get("jobs") or {}).values():
+        def outside_jobs(doc):
+            # WHEN A RUN STARTS AND WHAT IT IS CALLED are not what a job does: `on` (PyYAML
+            # reads the key as the boolean True), `name` and `concurrency` are dropped. A
+            # cron edit (PR #104, 2026-10-20) ran all 156 jobs twice. What is left -- `env`,
+            # `permissions`, `defaults` -- every job reads.
+            return {k: v for k, v in doc.items()
+                    if k not in ("on", True, "name", "concurrency", "jobs")}
+
+        def job(doc, name):
+            # WHAT A JOB DOES, without its scenario list, which is scoped below.
+            spec = copy.deepcopy((doc.get("jobs") or {}).get(name))
+            if isinstance(spec, dict):
                 ((spec.get("strategy") or {}).get("matrix") or {}).pop("scenario", None)
-            return doc
-        if jobs(b) != jobs(h):
-            return EVERY, "scenarios.yml changed beyond its scenario lists"
+            return spec
+        if outside_jobs(b) != outside_jobs(h):
+            return EVERY, "scenarios.yml changed outside its jobs, which every job reads"
+        b_jobs, h_jobs = b.get("jobs") or {}, h.get("jobs") or {}
+        if set(b_jobs) != set(h_jobs):
+            return EVERY, "scenarios.yml gained or lost a job"
         was = matrix_lists(b)
-        added = {n for job, names in matrix_lists(h).items()
-                 for n in names if n not in was.get(job, [])}
-        return frozenset(added), ("scenarios added to a matrix" if added
-                                  else "scenarios.yml parses unchanged")
+        sel = frozenset(n for jb, names in matrix_lists(h).items()
+                        for n in names if n not in was.get(jb, []))
+        changed = sorted(n for n in h_jobs if job(b, n) != job(h, n))
+        if not changed:
+            return sel, ("scenarios added to a matrix" if sel
+                         else "scenarios.yml parses unchanged")
+        # JOB BY JOB, placed by structure rather than by name, which is a list that has
+        # to agree with the tree. A job that runs scenarios runs its list. A job that
+        # needs every scenario job consumes their uploads and runs none, so one scenario
+        # per job proves it: collect, 2026-11-03, ran all 34 macOS jobs twice for a change
+        # to its own merge step. Any other job -- scope, which the scenario jobs need and
+        # which decides what they run -- is every scenario.
+        for n in changed:
+            needs = (h_jobs[n] or {}).get("needs") or []
+            needs = {needs} if isinstance(needs, str) else set(needs)
+            if n in self.jobs:
+                sel |= frozenset(self.jobs[n])
+            elif self.jobs and set(self.jobs) <= needs:
+                sel |= self.one_per_job()
+            else:
+                return EVERY, f"scenarios.yml job {n!r} changed, and the scenario jobs depend on it"
+        return sel, f"scenarios.yml jobs changed: {', '.join(changed)}"
 
     def _ci(self):
         # ONLY THE LINT JOB REACHES A SCENARIO, and only by proxy: it runs the gates the
@@ -469,11 +593,12 @@ class Scope:
         return total, lines
 
 
-def scenarios_outputs(paths, read, only=None):
+def scenarios_outputs(paths, read, only=None, event=None):
     """(GITHUB_OUTPUT lines, report lines). Raises ImportError without PyYAML, which the
     workflow turns into a red scope job rather than a guess. `only` is a dispatch that
     named its scenarios: exactly those run, and a name no job lists is an error rather
-    than a run of nothing."""
+    than a run of nothing. `event` is GitHub's event name; a pull request runs one macOS
+    label (see the module docstring), and every other event every label."""
     import yaml
     scope = Scope(paths or [], read, yaml)
     every_because = named = None
@@ -508,6 +633,14 @@ def scenarios_outputs(paths, read, only=None):
             out.append(f"{output_key('run', job)}={' '.join(keep)}")
         else:
             drop = [{"scenario": n} for n in names if n not in run]
+            # By `os`, which GitHub matches on that key alone, so every cell on a spare
+            # label goes. Only when something runs: an empty matrix needs no label.
+            spare = scope.macos_labels(job)[1:] if event == "pull_request" and keep else []
+            drop += [{"os": label} for label in spare]
+            if spare:
+                report.append(f"{job}: a pull request runs one macOS label, "
+                              f"{scope.macos_labels(job)[0]}; {', '.join(spare)} "
+                              f"runs on the push to main")
             out.append(f"{output_key('exclude', job)}={json.dumps(drop, separators=(',', ':'))}")
         report.append(f"{job}: runs {len(keep)} of {len(names)}"
                       + (f": {', '.join(keep)}" if keep and len(keep) < len(names) else ""))
@@ -525,6 +658,8 @@ def main():
     ap.add_argument("--summary", help="with --scenarios: append the reasons here as Markdown")
     ap.add_argument("--only", nargs="+", metavar="SCENARIO",
                     help="with --scenarios: run exactly these, as a dispatch that named them")
+    ap.add_argument("--event", help="with --scenarios: GitHub's event name; a pull request "
+                                    "runs one macOS label")
     args = ap.parse_args()
     if args.only is not None and not args.scenarios:
         ap.error("--only needs --scenarios")
@@ -539,7 +674,7 @@ def main():
     # diff at all.
     read = (git_reader(None, None) if args.paths is not None or args.only is not None
             else git_reader(args.base, args.head))
-    out, report = scenarios_outputs(paths, read, only=args.only)
+    out, report = scenarios_outputs(paths, read, only=args.only, event=args.event)
     print("\n".join(out))
     print("\n".join(report), file=sys.stderr)
     if args.summary:
