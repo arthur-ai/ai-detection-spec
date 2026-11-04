@@ -18,10 +18,8 @@ need_curl
 need_user
 need_pkgs tar gzip || true
 
-# An attempt counts only if it left the file the installer should, as in 84. pipefail,
-# because as_user's shell has none: a failed curl feeds sh nothing, sh exits 0, the attempt
-# reads as a success and try_user discards curl's error, so the file check that then fails
-# retries with no reason shown.
+# An attempt counts only if it left the file the installer should, and pipefail makes a
+# failed curl count as a failed attempt; 84 says why.
 vendor_once() { try_user "$1" "set -o pipefail; $3" && as_user "test -e $2"; }
 vendor() { retry "$1" vendor_once "$@"; }
 # MAKI'S INSTALLER ASKS THE GITHUB API FOR ITS LATEST TAG, unauthenticated, and that API
