@@ -205,6 +205,7 @@ jobs:
           - 15-manus-atlas
           - 20-cli-agents
           - 21-cli-agents-homebrew
+          - 22-cli-agents-homebrew-more
           - 25-python-agents
           - 30-ide-agents
           - 40-browser
@@ -393,6 +394,9 @@ jobs:
           - 94-linux-cli-agents-legacy
           - 95-linux-crush-packages
           - 96-linux-cli-agents-npm
+          - 97-linux-cli-agents-npm-more
+          - 98-linux-installers-more
+          - 99-linux-prime-agent
           # 77-linux-rpm and 91-linux-claude-rpm need dnf, which no ubuntu label has, so
           # they are under the container job only. A scenario listed where it can never
           # run spends a runner on exiting 3; tools/check_workflows.py still fails one

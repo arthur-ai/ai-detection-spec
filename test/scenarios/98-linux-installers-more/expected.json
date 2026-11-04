@@ -1,0 +1,43 @@
+{
+  "description": "Three terminal coding agents herdr runs, through their vendors' curl installers: Maki, Devin CLI and Oh My Pi.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "deb+rpm": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=3",
+    "jbplugin": ">=0",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "port": ">=0",
+    "proc": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "maki",
+      "devin-cli",
+      "oh-my-pi"
+    ],
+    "forbid": [
+      "pi",
+      "openclaw",
+      "windsurf",
+      "claude-code",
+      "codex-cli"
+    ]
+  },
+  "why": "Each agent has one witness here: ~/.local/bin/maki, ~/.local/bin/devin, and ~/.omp, which omp writes when run. ~/.local/bin/omp is on disk and claims nothing, so the Oh My Pi finding is ~/.omp's alone, and removing any of the three values turns must_find red. Oh My Pi is a fork of Pi, so pi and openclaw (built on Pi's libraries) are forbidden; windsurf because its cask is devin-desktop; claude-code and codex-cli because ~/.local/bin and top-level home directories are their routes too.",
+  "must_contain": [
+    "/home/dana/.local/bin/maki",
+    "/home/dana/.local/bin/devin",
+    "/home/dana/.omp/"
+  ],
+  "known_gaps": [
+    "Maki's, Devin CLI's and Oh My Pi's Windows installers are not exercised."
+  ]
+}

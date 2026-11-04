@@ -134,6 +134,11 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 93-linux-cli-agents-more | Editor extensions are not installed: Amp's VS Code extension, Qwen Code's IDE companion and Junie's JetBrains plugin. |
 | 95-linux-crush-packages | Charm's apt and yum repositories (repo.charm.sh) are not used; the release assets carry the same package name. |
 | 96-linux-cli-agents-npm | Editor surfaces are not installed: the CodeBuddy IDE and extensions, and the Qoder IDE. |
+| 97-linux-cli-agents-npm-more | MastraCode's ~/.mastracode, where herdr's integration writes its hook, is not created by --version or -p and is unread. |
+| 97-linux-cli-agents-npm-more | Command Code's and Devin CLI's npm packages on Windows, and Devin CLI's winget package, are not exercised. |
+| 98-linux-installers-more | Maki's, Devin CLI's and Oh My Pi's Windows installers are not exercised. |
+| 99-linux-prime-agent | The installer refuses glibc below 2.35, so the scenario exits 3 on Rocky 9 and Amazon Linux 2023. |
+| 99-linux-prime-agent | The Windows installer (install.ps1) is not exercised. |
 
 `14-meta-muse` needs macOS 14 or newer, so CI skips it on older runners rather than failing it. Its `requires.json` carries the reason.
 

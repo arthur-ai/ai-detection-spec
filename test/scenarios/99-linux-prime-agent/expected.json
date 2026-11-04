@@ -1,0 +1,41 @@
+{
+  "description": "Prime Agent through Prime Intellect's curl installer, which writes ~/.local/bin/prime-agent and ~/.prime.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "deb+rpm": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=1",
+    "jbplugin": ">=0",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "port": ">=0",
+    "proc": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "prime-agent"
+    ],
+    "forbid": [
+      "claude-code",
+      "codex-cli"
+    ],
+    "forbid_evidence": [
+      "/.prime/"
+    ]
+  },
+  "why": "~/.local/bin/prime-agent is the only witness, so removing it turns must_find red. ~/.prime is on disk and forbid_evidence holds it unclaimed, because Prime Intellect's separate `prime` CLI keeps its config there too. claude-code and codex-cli are forbidden because ~/.local/bin and top-level home directories are their routes too.",
+  "must_contain": [
+    "/home/dana/.local/bin/prime-agent",
+    "/home/dana/.prime/"
+  ],
+  "known_gaps": [
+    "The installer refuses glibc below 2.35, so the scenario exits 3 on Rocky 9 and Amazon Linux 2023.",
+    "The Windows installer (install.ps1) is not exercised."
+  ]
+}
