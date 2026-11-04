@@ -1,0 +1,45 @@
+{
+  "scenario": "22-cli-agents-homebrew-more",
+  "identifiers": [
+    {
+      "agent": "devin-cli",
+      "route": "homebrew",
+      "value": "devin-cli",
+      "agent_version": "3000.11.228",
+      "platform": "darwin",
+      "os": "15.8.2",
+      "arch": "arm64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "devin-cli",
+      "route": "homebrew",
+      "value": "devin-cli",
+      "agent_version": "3000.11.205",
+      "platform": "darwin",
+      "os": "26.6.2",
+      "arch": "arm64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "maki",
+      "route": "homebrew",
+      "value": "maki",
+      "agent_version": "0.6.5",
+      "platform": "darwin",
+      "os": "15.8.2",
+      "arch": "arm64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "maki",
+      "route": "homebrew",
+      "value": "maki",
+      "agent_version": "0.6.5",
+      "platform": "darwin",
+      "os": "26.6.2",
+      "arch": "arm64",
+      "run": "41774392960"
+    }
+  ]
+}

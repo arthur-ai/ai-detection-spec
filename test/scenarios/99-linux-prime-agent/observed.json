@@ -1,0 +1,41 @@
+{
+  "scenario": "99-linux-prime-agent",
+  "identifiers": [
+    {
+      "agent": "prime-agent",
+      "route": "binaries",
+      "value": "~/.local/bin/prime-agent",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "prime-agent",
+      "route": "binaries",
+      "value": "~/.local/bin/prime-agent",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "prime-agent",
+      "route": "binaries",
+      "value": "~/.local/bin/prime-agent",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "prime-agent",
+      "route": "binaries",
+      "value": "~/.local/bin/prime-agent",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "41774392960"
+    }
+  ]
+}
