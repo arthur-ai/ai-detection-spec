@@ -22,7 +22,7 @@
       "kimi-code",
       "codebuddy",
       "qoder",
-      "letta-code"
+      "letta"
     ],
     "forbid": [
       "claude-code",
@@ -30,7 +30,7 @@
       "gemini-cli"
     ]
   },
-  "why": "Kimi Code, CodeBuddy Code and Qoder each have two witnesses here, the npm row and the state directory a first run or the postinstall writes, so must_contain names both; Letta Code's npm row is its only one. Kimi Code, CodeBuddy Code and Qoder CLI follow Claude Code's and Gemini CLI's shape, and Qoder's postinstall carries Google's licence header, so those agents and codex-cli are forbidden: a new terminal agent must not be read as one already catalogued.",
+  "why": "Each agent has two witnesses here, the npm row and the state directory a first run or the postinstall writes, so must_contain names both. Kimi Code, CodeBuddy Code and Qoder CLI follow Claude Code's and Gemini CLI's shape, and Qoder's postinstall carries Google's licence header, so those agents and codex-cli are forbidden: a new terminal agent must not be read as one already catalogued.",
   "must_contain": [
     "@moonshot-ai/kimi-code",
     "@tencent-ai/codebuddy-code",
@@ -38,10 +38,10 @@
     "@letta-ai/letta-code",
     "/.kimi-code/",
     "/.codebuddy/",
+    "/.letta/",
     "/root/.qoder/"
   ],
   "known_gaps": [
-    "Letta Code's ~/.letta, which `letta --version` writes, is not a catalog value: the Letta server writes it too (catalog/agents.yaml).",
     "Editor surfaces are not installed: the CodeBuddy IDE and extensions, and the Qoder IDE."
   ]
 }
