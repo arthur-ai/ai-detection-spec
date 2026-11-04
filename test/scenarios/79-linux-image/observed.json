@@ -8,7 +8,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "aider",
@@ -17,7 +17,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "goose",
@@ -26,7 +26,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "goose",
@@ -35,7 +35,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "goose",
@@ -44,7 +44,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "goose",
@@ -53,7 +53,61 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
+    },
+    {
+      "agent": "letta",
+      "route": "image_labels",
+      "value": "https://github.com/letta-ai/letta-code",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "41771813518"
+    },
+    {
+      "agent": "letta",
+      "route": "image_labels",
+      "value": "https://github.com/letta-ai/letta-code",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "41771813518"
+    },
+    {
+      "agent": "letta",
+      "route": "images",
+      "value": "letta/letta",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "41771813518"
+    },
+    {
+      "agent": "letta",
+      "route": "images",
+      "value": "letta/letta",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "41771813518"
+    },
+    {
+      "agent": "letta-server",
+      "route": "images",
+      "value": "lettaai/letta",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "41771813518"
+    },
+    {
+      "agent": "letta-server",
+      "route": "images",
+      "value": "lettaai/letta",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "41771813518"
     },
     {
       "agent": "openhands",
@@ -62,7 +116,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "openhands",
@@ -71,7 +125,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "openhands",
@@ -80,7 +134,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "openhands",
@@ -89,7 +143,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "openhands",
@@ -98,7 +152,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "openhands",
@@ -107,7 +161,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "swe-agent",
@@ -116,7 +170,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "swe-agent",
@@ -125,7 +179,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     }
   ]
 }
