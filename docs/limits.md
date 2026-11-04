@@ -96,10 +96,9 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 72-linux-python-agents | Whether ~/.hermes appears depends on the install route: the vendor's curl installer creates it, a uv install does not until the agent runs. The run records what appeared rather than asserting it. |
 | 73-linux-deb | The AppImage, which is Cursor's primary Linux download, is not installed here. desktop_ids is the route that would catch it, and this scenario exercises that route through the .deb's own entry instead. |
 | 74-linux-dpkg-removed | Asserts on a pair of ordinary packages rather than on an agent, because no catalogued agent's deb can be installed and removed without also removing the evidence this checks for. |
-| 75-linux-browser | No real extension identifier. 45-claude-extension gets one on macOS by unpacking the Web Store's signed CRX, which does carry the key; the same route would work here and is not yet built. |
+| 75-linux-browser | No real extension identifier here. 92-linux-browser-agents reads real ones on Linux, from the Web Store's signed CRX. |
 | 75-linux-browser | Google ships no Linux arm64 Chrome, so this skips on arm64 runners. |
 | 75-linux-browser | The planted extension is unreferenced by construction. The sideloaded token is exercised only on macOS, by 45-claude-extension. |
-| 75-linux-browser | The planted native-messaging manifest is the one Claude Desktop writes, so the classifier finds claude-desktop here, on a platform the catalog does not claim for it, and the run records that identifier as observed on Linux from a planted file rather than an install. |
 | 76-linux-systemd | Skips wherever there is no system dbus -- a container has none, which is what the kind=scan marker in osquery/queries/runtime-linux.sql exists to report. It runs for real on a GitHub ubuntu runner, where systemd is PID 1, and on every family under test/run-gce.sh and test/run-ec2.sh. |
 | 76-linux-systemd | No agent's systemd unit name has been read off a real install, so this proves the query and the matcher and not any vendor's naming. The route is registered and carries no values for exactly that reason. |
 | 76-linux-systemd | systemd user units (systemctl --user) are not visible to the table at all, and a per-user agent gateway is exactly the thing that would be one. |

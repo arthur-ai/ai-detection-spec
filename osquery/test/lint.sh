@@ -675,6 +675,19 @@ if bad:
 print(f"binding check: ok, refuses {len(cases)} broken registries, reads every binding form "
       f"validate_catalog accepts, and passes the real one")
 BINDING
+# THE --deep CHECK'S EXCLUSION IS DERIVED, AND ASSERTED BOTH WAYS. ci.yml skips the kinds
+# build.snapshot_kinds() names; `proc` and `port` must be among them, and `file` never,
+# because an install that vanished between two scans is what the check exists to catch.
+python3 - "$OSQ/tools" <<'SNAPSHOT' || fail=1
+import sys
+sys.path.insert(0, sys.argv[1])
+import build
+kinds = build.snapshot_kinds()
+if not {"proc", "port"} <= kinds or "file" in kinds:
+    print(f"FAIL: build.snapshot_kinds() is {sorted(kinds)}: expected proc and port, never file")
+    sys.exit(1)
+print(f"snapshot kinds: ok, {sorted(kinds)} end with a process and --deep may lose them")
+SNAPSHOT
 # The rendered match SQL is generated from the catalog the way dist/ is from queries/, and
 # gated the same way. The parity test needs osqueryi and SKIPs without one, which is what
 # lets this file stay runnable on a runner with no osquery; ci.yml's runtime jobs run it

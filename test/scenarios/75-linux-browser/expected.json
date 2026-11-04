@@ -1,5 +1,5 @@
 {
-  "description": "A real Chrome profile on Linux, its extension permissions, and a native-messaging bridge.",
+  "description": "A real Chrome profile on Linux, its extension permissions, and a native-messaging bridge in each scope.",
   "platform": "linux",
   "counts": {
     "deb": ">=0",
@@ -18,26 +18,27 @@
     "vscodeext": ">=0"
   },
   "classified": {
-    "must_find": [
-      "claude-desktop"
-    ],
+    "must_find": [],
     "forbid": [
       "claude-in-chrome",
       "openclaw"
+    ],
+    "forbid_evidence": [
+      "com.example.fixture_host"
     ]
   },
-  "why": "The extension branch and both native-messaging casings, on paths read off a real install. `claude-in-chrome` is FORBIDDEN rather than expected, and that is the interesting part: osquery derives `identifier` from the manifest `key`, which a planted extension does not carry, so the id comes back EMPTY. A scenario that expected the agent here would be asserting something the platform cannot produce. What is asserted is that the branch returns the row, the permissions and the <all_urls> flag -- and that an empty id is not silently matched to anything.",
+  "why": "The extension branch and both native-messaging casings, on paths read off a real install. `claude-in-chrome` is FORBIDDEN rather than expected, and that is the interesting part: osquery derives `identifier` from the manifest `key`, which a planted extension does not carry, so the id comes back EMPTY. A scenario that expected the agent here would be asserting something the platform cannot produce. What is asserted is that the branch returns the row, the permissions and the <all_urls> flag -- and that an empty id is not silently matched to anything. The bridge is planted once per scope under a name no agent claims, and require_rows pins each scope's row: a fixture proves the query's paths, never an identifier.",
   "must_contain": [
-    "nativeMessaging",
-    "com.anthropic.claude_browser_extension.json"
+    "nativeMessaging"
   ],
   "require_rows": [
-    {"kind": "ext", "extra": ",unreferenced", "perms": ["cookies", "<all_urls>"]}
+    {"kind": "ext", "extra": ",unreferenced", "perms": ["cookies", "<all_urls>"]},
+    {"kind": "nmh", "id": "com.example.fixture_host.json", "loc": "/.config/google-chrome/NativeMessagingHosts/"},
+    {"kind": "nmh", "id": "com.example.fixture_host.json", "loc": "/etc/opt/chrome/native-messaging-hosts/"}
   ],
   "known_gaps": [
-    "No real extension identifier. 45-claude-extension gets one on macOS by unpacking the Web Store's signed CRX, which does carry the key; the same route would work here and is not yet built.",
+    "No real extension identifier here. 92-linux-browser-agents reads real ones on Linux, from the Web Store's signed CRX.",
     "Google ships no Linux arm64 Chrome, so this skips on arm64 runners.",
-    "The planted extension is unreferenced by construction. The sideloaded token is exercised only on macOS, by 45-claude-extension.",
-    "The planted native-messaging manifest is the one Claude Desktop writes, so the classifier finds claude-desktop here, on a platform the catalog does not claim for it, and the run records that identifier as observed on Linux from a planted file rather than an install."
+    "The planted extension is unreferenced by construction. The sideloaded token is exercised only on macOS, by 45-claude-extension."
   ]
 }
