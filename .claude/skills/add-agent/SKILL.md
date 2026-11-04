@@ -143,7 +143,8 @@ Mechanics:
   `test/artifacts/`, and only CI's `collect` job adds to `observed.json` (`CONTRIBUTING.md`,
   **Recording the observation**).
 - **Run in the container or VM, not on a host.** A host has agents of its own: its
-  `~/.claude` tripped `forbid claude-code` when 93, 94 and 95 were first run on one.
+  `~/.claude` was found as `claude-code` when 93, 94 and 95 were first run on one, and any
+  agent a scenario does not name fails it.
 
 ## 5. Regenerate and run the gates
 

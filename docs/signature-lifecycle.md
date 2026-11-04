@@ -79,7 +79,7 @@ An older generation is an ordinary catalog value, matched like the current one.
 | layer | how it holds several generations | in |
 |---|---|---|
 | catalog | each generation is a value on its route; `superseded:` marks the ones a run stopped producing | `catalog/agents.yaml` |
-| assertion | a `must_contain` entry may be a **list**: any of these satisfies the probe | `test/lib/assert.sh` |
+| assertion | a `must_contain` entry may be a **list**: any of these satisfies the probe | `tools/scenarios.py` |
 | coverage | credit keyed `(route, value)`, recorded per `(platform, os, arch)` with its version | `tools/agent_status.py` |
 
 The list form was measured, not designed: one run installed the `chatgpt` cask on two runner
@@ -96,7 +96,7 @@ Render it in prose; never filter findings by it.
 |---|---|---|
 | the shrink guard | a run proves fewer identifiers than the committed record; it refuses to record and names each loss | `tools/agent_status.py`, `record()` |
 | `tested-absent` | a CI scenario installed the agent and this identifier never showed up; `--check` fails | `tools/agent_status.py`, `collect()` |
-| an assertion | `must_contain` names the value and the row is gone | `test/lib/assert.sh` |
+| an assertion | `must_contain` names the value and the row is gone | `tools/scenarios.py` |
 
 A value under an alternation list fires none of them until its last alternative goes.
 

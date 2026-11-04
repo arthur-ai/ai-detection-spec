@@ -115,6 +115,10 @@ harnesses.
   fails one that does not. The default is 360, and a hung `open -a` billed it in full.
 - **Each scenario declares its `platform`**, and `tools/check_workflows.py` asserts a runner
   that can host it, or a misplaced scenario skips forever while looking scheduled.
+- **A scenario is read only through `tools/scenarios.py`**, which refuses a key nothing reads:
+  93's `forbid_evidence` sat where nothing looked, and the scenario stayed green. A scenario
+  finds exactly its `must_find`, and what the catalog already lists, such as extension ids,
+  is derived there rather than copied into a scenario.
 - **Be slow to conclude something cannot be tested.** A scenario that cannot run `exit 3`s to
   SKIP with the reason in `requires.json`. This repo once concluded the Claude extension needed
   MDM to install; Chrome had simply never been launched, so no profile existed.

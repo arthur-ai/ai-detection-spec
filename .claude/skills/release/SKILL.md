@@ -156,12 +156,12 @@ $ test/run-linux.sh                                          # locally, needs Do
 
 Read the run at the commit the suite ran on, not the newest: a later `.md`-only push gets its
 own run. Each `Runtime on <platform>` job must read `success`. The scope job skips them for a
-diff it judges documentation, and the run still concludes `success`, so `skipped` verifies
-nothing. `ci.yml` has no manual trigger, so a commit whose jobs read `skipped` never gets them.
-Read the last commit on `main` whose run executed them, and check that nothing since is more
-than documentation or `collect`'s observations:
-`git diff --name-only <that-sha> <verified-sha> | grep -v '\.md$\|observed\.json$'` prints
-nothing.
+diff no runtime job can read (documentation, a scenario's own files, the lint-only checks), and
+the run still concludes `success`, so `skipped` verifies nothing. `ci.yml` has no manual
+trigger, so a commit whose jobs read `skipped` never gets them. Read the last commit on `main`
+whose run executed them, and ask the same scoper whether anything since could reach one:
+`python3 tools/ci_scope.py <that-sha> <verified-sha>` prints `runtime=false`. Its list of
+paths no runtime job reads is `RUNTIME_INERT`, which `test/test_ci_scope.py` proves.
 
 Windows has no local harness: its scenarios run only in `scenarios.yml`, one
 `<scenario> on windows-2025` job each.
@@ -197,6 +197,12 @@ a dispatch runs only those, and its summary opens with `dispatched with names:`.
 release commit usually has no full run. Start one with no input, once, at the commit you will
 tag, after the last merge: `gh workflow run scenarios.yml --ref main`. Its `collect` lands on
 top, and the next paragraph is how to tag past that.
+
+It is also the first run that can see an over-match a scoped merge could not. A scenario fails
+on any agent its `must_find` does not name (`tools/scenarios.py`), and a catalog change reruns
+only the scenarios linked to the agents it changed, plus each platform's control, a baseline
+that must find nothing. A signature that claims rows anywhere else passed its pull request and
+fails here.
 
 **The `collect` commit can never have a run of its own.** A push made with the default
 `GITHUB_TOKEN` triggers no further runs, and `collect` pushes with it — a run appearing against
@@ -254,6 +260,14 @@ A macOS or Ubuntu job is named for its scenario. A `Linux scenarios on <image>` 
 its image, and the second line reads the `<scenario> on <image>` annotation the harness writes,
 which is also in the job's step summary. To rerun one scenario rather than the image's whole
 list, dispatch with its name in the `scenarios` input.
+
+Two lines in a scenario's log name a detection defect rather than a broken install. Read them
+before rerunning anything:
+
+| line | what it means |
+|---|---|
+| `classified nothing else: FAIL - also found <agent>` | a signature claims rows in a scenario that does not name its agent, and a fleet would report the same false finding. `(a declared lookalike)` beside the name means the scenario's `forbid` predicted it. Fix the signature, or name the agent in `must_find` if the scenario really installs it |
+| `classified '<agent>' through '<id>': FAIL` | an extension id `every_extension` installs is not evidence for its agent: the Web Store stopped serving it, or the id is wrong. `docs/signature-lifecycle.md` has the triage |
 
 ## 3. Write the notes
 
