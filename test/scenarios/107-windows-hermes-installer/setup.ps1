@@ -9,8 +9,11 @@
 # EVERYTHING LANDS UNDER %LOCALAPPDATA%\hermes: the checkout, PM's tool store and the
 # launchers in its bin\. No ~\.hermes and nothing in ~\.local\bin, which are the two places
 # filesystem-windows.sql reads (probe run 41870942008). So the install is found RUNNING,
-# by the launcher's path, and `hermes gateway run` is what keeps a process there: with no
-# messaging platform configured it logs a warning and stays up until it is stopped.
+# by the launcher's directory, and `hermes gateway run` is what keeps a process there: with
+# no messaging platform configured it logs a warning and stays up until it is stopped. The
+# first launch republishes the launchers and renames the running hermes.exe aside to
+# hermes.exe.deleteme, and processes.path follows the rename (run 41880268740), which is
+# why the catalog names the directory and the rows are printed below.
 #
 # Measured on that run: 8.4 minutes for the install, v0.22.7.
 . (Join-Path $PSScriptRoot '..\..\lib\guest-windows.ps1')

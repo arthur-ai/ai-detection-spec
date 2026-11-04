@@ -203,6 +203,7 @@ jobs:
           - 13-desktop-apps-more
           - 14-meta-muse
           - 15-manus
+          - 16-hermes-desktop
           - 20-cli-agents
           - 21-cli-agents-homebrew
           - 22-cli-agents-homebrew-more

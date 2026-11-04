@@ -455,21 +455,23 @@ check("claude.exe is Claude Code by its own value, and claude.exe-helper is noth
       _ids(_rows("C:\\Users\\dana\\.local\\bin\\claude.exe")) == {"claude-code"}
       and _ids(_rows("C:\\Users\\dana\\.local\\bin\\claude.exe-helper")) == set())
 
-# HERMES ON WINDOWS, by the launcher its installer writes and the package its desktop app
+# HERMES ON WINDOWS, by the launcher directory its installer writes and the package its desktop app
 # ships as. Each value is the narrowest one that is the agent, so the lookalikes below are
 # the generic `hermes` names other software uses: the IBC relayer's cargo install, a
-# sibling launcher, a directory that only starts with hermes, and the desktop app's
+# hermes.exe beside the bin directory rather than in it, a directory that only starts with hermes, and the desktop app's
 # remote-only Light variant, which is not catalogued.
 def _proc(*paths):
     return [{"kind": "proc", "id": p, "ver": "", "loc": p, "extra": "", "perms": ""}
             for p in paths]
-check("the Windows installer's launcher, running, is Hermes",
-      _ids(_proc("C:\\Users\\dana\\AppData\\Local\\hermes\\bin\\hermes.exe")) == {"hermes"})
+check("the Windows installer's launchers, running, are Hermes, renamed aside or not",
+      all(_ids(_proc(f"C:\\Users\\dana\\AppData\\Local\\hermes\\bin\\{n}")) == {"hermes"}
+          for n in ("hermes.exe", "hermes.exe.deleteme", "hermes.exe.4242.deleteme",
+                    "hermes-acp.exe")))
 for near in ("C:\\Users\\dana\\.cargo\\bin\\hermes.exe",
-             "C:\\Users\\dana\\AppData\\Local\\hermes\\bin\\hermes.exe-old",
+             "C:\\Users\\dana\\AppData\\Local\\hermes\\hermes.exe",
              "C:\\Users\\dana\\AppData\\Local\\hermes-engine\\bin\\hermes.exe",
              "C:\\Users\\dana\\AppData\\Local\\Programs\\hermes\\hermes.exe"):
-    check(f"a hermes.exe that is not the agent's launcher is NOT claimed ({near})",
+    check(f"a hermes.exe outside the agent's launcher directory is NOT claimed ({near})",
           _ids(_proc(near)) == set())
 _msix = classify_json([{"kind": "msix", "id": n, "ver": "1", "loc": "C:\\x", "extra": "", "perms": ""}
                        for n in ("NousResearch.HermesBundled_e60prshbsznhj",
@@ -478,6 +480,13 @@ check("Hermes Desktop's MSIX family is Hermes, and the Light client's is not",
       {e["id"] for f in _msix["findings"] for e in f["evidence"]}
       == {"NousResearch.HermesBundled_e60prshbsznhj"},
       f"got {[(f['id'], [e['id'] for e in f['evidence']]) for f in _msix['findings']]}")
+_app = classify_json([{"kind": "app", "id": b, "ver": "1", "loc": "/Applications/x.app", "extra": "",
+                       "perms": ""}
+                      for b in ("com.nousresearch.hermes-bundled", "com.nousresearch.hermes-light")])
+check("Hermes Desktop's bundle id is Hermes, and the Light client's is not",
+      {e["id"] for f in _app["findings"] for e in f["evidence"]}
+      == {"com.nousresearch.hermes-bundled"},
+      f"got {[(f['id'], [e['id'] for e in f['evidence']]) for f in _app['findings']]}")
 _img = classify_json([{"kind": "image", "id": t, "ver": "", "loc": "sha", "extra": "", "perms": ""}
                       for t in ("docker.io/nousresearch/hermes-agent:latest", "hermes-agent:latest",
                                 "nousresearch/hermes-sandbox:latest",
