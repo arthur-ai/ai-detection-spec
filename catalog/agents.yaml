@@ -1195,8 +1195,7 @@ agents:
 
   # OpenAI's ChatGPT Atlas. RETIRED on 2026-08-09 and kept, because machines that installed
   # it still carry it; its Sparkle feed's newest build is from 2026-07-24. Its agent mode
-  # moved to ChatGPT's Chrome extension, which is not catalogued: its Web Store id has not
-  # been read off an install.
+  # moved to ChatGPT's Chrome extension, the `chatgpt-extension` entry.
   - id: chatgpt-atlas
     name: ChatGPT Atlas
     classification: AI browser
