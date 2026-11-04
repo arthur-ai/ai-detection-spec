@@ -1223,6 +1223,6 @@ agents:
     platforms: [linux]  # as openhands: an image route, which no macOS runner can prove
     # The server from 0.1.4 to 0.5.1, amd64 only, last pushed 2024-10-29; its CMD is
     # ./letta/server/startup.sh, and its Docker Hub organisation names itself Letta, with
-    # letta.com as its profile. 79-linux-image pulled it as `letta` in CI run 41767347062, on
-    # Ubuntu 24.04 x86_64 and arm64.
+    # letta.com as its profile. 79-linux-image read it in CI run 41769159813, on Ubuntu 24.04
+    # x86_64 and arm64.
     images: [lettaai/letta]
