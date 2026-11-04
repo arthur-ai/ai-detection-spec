@@ -1,0 +1,167 @@
+{
+  "scenario": "98-linux-installers-more",
+  "identifiers": [
+    {
+      "agent": "devin-cli",
+      "route": "binaries",
+      "value": "~/.local/bin/devin",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "devin-cli",
+      "route": "binaries",
+      "value": "~/.local/bin/devin",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "devin-cli",
+      "route": "binaries",
+      "value": "~/.local/bin/devin",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "devin-cli",
+      "route": "binaries",
+      "value": "~/.local/bin/devin",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "devin-cli",
+      "route": "binaries",
+      "value": "~/.local/bin/devin",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "devin-cli",
+      "route": "binaries",
+      "value": "~/.local/bin/devin",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "maki",
+      "route": "binaries",
+      "value": "~/.local/bin/maki",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "maki",
+      "route": "binaries",
+      "value": "~/.local/bin/maki",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "maki",
+      "route": "binaries",
+      "value": "~/.local/bin/maki",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "maki",
+      "route": "binaries",
+      "value": "~/.local/bin/maki",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "maki",
+      "route": "binaries",
+      "value": "~/.local/bin/maki",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "maki",
+      "route": "binaries",
+      "value": "~/.local/bin/maki",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "oh-my-pi",
+      "route": "state_dirs",
+      "value": "~/.omp",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "oh-my-pi",
+      "route": "state_dirs",
+      "value": "~/.omp",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "oh-my-pi",
+      "route": "state_dirs",
+      "value": "~/.omp",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "oh-my-pi",
+      "route": "state_dirs",
+      "value": "~/.omp",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "oh-my-pi",
+      "route": "state_dirs",
+      "value": "~/.omp",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "oh-my-pi",
+      "route": "state_dirs",
+      "value": "~/.omp",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "41774392960"
+    }
+  ]
+}
