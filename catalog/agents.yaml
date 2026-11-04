@@ -1080,7 +1080,8 @@ agents:
     # Read on 2026-10-29 off an `npm install -g` on an Ubuntu 24.04 host, osquery 5.23.1's
     # npm_packages row: @moonshot-ai/kimi-code 2.4.0. 96-linux-cli-agents-npm.
     npm: ["@moonshot-ai/kimi-code"]
-    # A homebrew-core formula. 21-cli-agents-homebrew; pending CI.
+    # A homebrew-core formula. 21-cli-agents-homebrew in CI run 41714485113: 2.3.3 on
+    # macOS 15 and 2.3.2 on macOS 26.
     homebrew: [kimi-code]
     # The previous, Python generation, kimi-cli 1.52.0, as a uv tool directory.
     # 94-linux-cli-agents-legacy in CI run 40920067535, Ubuntu 24.04 x86_64.
@@ -1092,7 +1093,8 @@ agents:
     # container on 2026-11-03. 96 runs it.
     #
     # ~/.kimi is the Python generation's: kimi-cli 1.52.0 writes it on `kimi --version`, read
-    # in the same container. 94 runs it. Kimi Code 2.4.1 did not write it.
+    # in the same container. 94 read it in CI run 41714485113, on Ubuntu 24.04 x86_64 and
+    # arm64. Kimi Code 2.4.1 did not write it.
     state_dirs: ["~/.kimi-code", "~/.kimi"]
 
   # Tencent's CodeBuddy Code. Its package ships several bins, `codebuddy` and `cbc` among
@@ -1110,8 +1112,8 @@ agents:
     # 96-linux-cli-agents-npm.
     npm: ["@tencent-ai/codebuddy-code"]
     # Written on first run: `codebuddy --help` wrote it and --version did not, 2.179.3 in an
-    # Ubuntu 24.04 container on 2026-11-03. 96 runs it. Whether the CodeBuddy IDE writes it
-    # too is unexamined.
+    # Ubuntu 24.04 container on 2026-11-03. 96 read it in CI run 41714485113, on Ubuntu
+    # 24.04 x86_64 and arm64. Whether the CodeBuddy IDE writes it too is unexamined.
     state_dirs: ["~/.codebuddy"]
 
   # Alibaba's Qoder CLI. One entry for Qoder, as Antigravity is one entry for its editions:
@@ -1149,5 +1151,6 @@ agents:
     # The same install's npm_packages row: @letta-ai/letta-code 0.34.23.
     # 96-linux-cli-agents-npm.
     npm: ["@letta-ai/letta-code"]
-    # A homebrew-core formula. 21-cli-agents-homebrew; pending CI.
+    # A homebrew-core formula. 21-cli-agents-homebrew in CI run 41714485113: 0.34.24 on
+    # macOS 15 and 26.
     homebrew: [letta-code]
