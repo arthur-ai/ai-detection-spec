@@ -81,6 +81,12 @@ removed:
 #             ai_tools' other types, which describe what an agent USES
 #   herdr     not from ai_tools: a terminal multiplexer that hosts agents. It runs no model and
 #             acts on nothing itself; each agent in its panes is found by that agent's own values
+#   ChatGPT Atlas (com.openai.atlas)
+#             not from ai_tools: OpenAI's AI browser, shut down on 2026-08-09. OpenAI's notice
+#             (help.openai.com/articles/20001371) says it may no longer open, browse or run
+#             agent workflows after that date, and its agent mode moved to `chatgpt-extension`.
+#             UNVERIFIED on a real install: no run has launched the last build since. The DMG
+#             is still served; test_matcher holds the id unclaimed
 
 # THE DEFINITIONS ARE DATA, not comments, because a catalog read by someone else's tool has
 # to explain its own words. Every one acts on the user's behalf; what does not is in
@@ -1237,23 +1243,10 @@ agents:
     platforms: [darwin]
     # Read off CI run 40914014884 on 2026-10-29, osquery 5.23.1's apps rows:
     # /Applications/Manus Studio.app 2.0.6 on macOS 26 and /Applications/Manus.app 1.7.4 on
-    # macOS 15, both installed by the cask. 15-manus-atlas.
+    # macOS 15, both installed by the cask. 15-manus.
     bundle_ids: [im.manus.desktop]
     # The same run's homebrew_packages rows: manus 2.0.6 and 1.7.4, type cask.
     homebrew: [manus]
-
-  # OpenAI's ChatGPT Atlas. RETIRED on 2026-08-09 and kept, because machines that installed
-  # it still carry it; its Sparkle feed's newest build is from 2026-07-24. Its agent mode
-  # moved to ChatGPT's Chrome extension, the `chatgpt-extension` entry.
-  - id: chatgpt-atlas
-    name: ChatGPT Atlas
-    classification: AI browser
-    platforms: [darwin]
-    # Read off CI run 40914014884 on 2026-10-29: ChatGPT Atlas.app/Contents/Info.plist and
-    # osquery's apps row, 1.2026.189.1 on macOS 15 and 26, from OpenAI's last DMG.
-    # 15-manus-atlas. NOT `homebrew: [chatgpt-atlas]`: the cask is disabled, so no run can
-    # produce the token.
-    bundle_ids: [com.openai.atlas]
 
   # ---------------------------------------------------------------------------------------
   # FROM HERE, terminal coding agents added 2026-11-02, the ones herdr (a terminal

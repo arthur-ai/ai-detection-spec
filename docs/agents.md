@@ -9,9 +9,9 @@
 Every AI agent this repo finds, every identifier it is matched on,
 and the CI test behind each one.
 
-![agents](https://img.shields.io/badge/agents-64-1D4E89)
-![identifiers](https://img.shields.io/badge/identifiers-175-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-172%2F175-A26A16)
+![agents](https://img.shields.io/badge/agents-63-1D4E89)
+![identifiers](https://img.shields.io/badge/identifiers-174-1D4E89)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-172%2F174-A26A16)
 ![real install](https://img.shields.io/badge/by_real_install-172-2E7D57)
 
 </div>
@@ -19,7 +19,7 @@ and the CI test behind each one.
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 172 of 175. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
+**Every identifier is proved by a real install in CI** — 172 of 174. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
 
 ## 🧪 Why a real install is the bar
 
@@ -32,9 +32,9 @@ Proof is counted **per identifier**, not per agent. Installing an agent vouches
 only for the identifiers that run actually matched, so a sibling identifier on the
 same agent is not covered by association.
 
-> **This number is a floor.** `00-baseline`, `100-windows-baseline`, `15-manus-atlas`, `70-linux-baseline`, `74-linux-dpkg-removed`, `76-linux-systemd` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
+> **This number is a floor.** `00-baseline`, `100-windows-baseline`, `15-manus`, `70-linux-baseline`, `74-linux-dpkg-removed`, `76-linux-systemd` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
 
-# Agents (64)
+# Agents (63)
 
 Software that acts on the user's behalf. This is what the catalog is for.
 
@@ -99,7 +99,7 @@ General-purpose, and often bridged to messaging.
 |---|---|---|---|
 | **Hermes Agent** | macOS, Linux | **`hermes-agent`**, **`hermes-agent`**, **`~/.hermes`**, **`~/.local/bin/hermes`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents |
 | **Letta server** | Linux | **`lettaai/letta`** | 79-linux-image |
-| **Manus** | macOS | im.manus.desktop, manus | 15-manus-atlas |
+| **Manus** | macOS | im.manus.desktop, manus | 15-manus |
 | **Muse for Mac** | macOS | **`com.meta.endo`** | 14-meta-muse |
 | **OpenClaw** | macOS, Linux | **`ai.openclaw.mac`**, **`com.clawdbot.mac`**, **`openclaw`**, **`ai.openclaw.`**, **`openclaw`**, **`clawdbot`**, **`moltbot`**, **`~/.openclaw`** | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 57-clawdbot-era, 60-persistence, 82-linux-running, 90-demo-fleet |
 
@@ -109,7 +109,6 @@ A browser whose AI features are the product.
 
 | name | platforms | identifiers | scenarios |
 |---|---|---|---|
-| **ChatGPT Atlas** | macOS | com.openai.atlas | 15-manus-atlas |
 | **Dia** | macOS | **`company.thebrowser.dia`**, **`thebrowsercompany-dia`** | 13-desktop-apps-more |
 | **Orion** | macOS | **`com.kagi.kagimacOS`**, **`orion`** | 10-desktop-apps |
 | **Perplexity Comet** | macOS | **`ai.perplexity.comet`**, **`comet`** | 10-desktop-apps, 90-demo-fleet |
@@ -145,7 +144,6 @@ Each one needs work, and the state column says what kind. **did not appear** mea
 
 | agent | route | identifier | state | reached by |
 |---|---|---|---|---|
-| ChatGPT Atlas | bundle id | `com.openai.atlas` | no test | -- |
 | Manus | bundle id | `im.manus.desktop` | no test | -- |
 | Manus | homebrew | `manus` | no test | -- |
 
