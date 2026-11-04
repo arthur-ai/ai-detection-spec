@@ -527,6 +527,7 @@ jobs:
           - 106-windows-python-agents
           - 107-windows-hermes-installer
           - 108-windows-hermes-desktop
+          - 109-windows-hermes-idle
         exclude: ${{ fromJSON(needs.scope.outputs.exclude_scenario_windows || '[]') }}
     steps:
       - uses: actions/checkout@v4

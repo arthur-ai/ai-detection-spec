@@ -473,6 +473,13 @@ for near in ("C:\\Users\\dana\\.cargo\\bin\\hermes.exe",
              "C:\\Users\\dana\\AppData\\Local\\Programs\\hermes\\hermes.exe"):
     check(f"a hermes.exe outside the agent's launcher directory is NOT claimed ({near})",
           _ids(_proc(near)) == set())
+check("the Windows installer's launcher on disk is Hermes",
+      _ids(_rows("C:\\Users\\dana\\AppData\\Local\\hermes\\bin\\hermes.exe")) == {"hermes"})
+for near in ("C:\\Users\\dana\\AppData\\Local\\hermes\\bin\\hermes-acp.exe",
+             "C:\\Users\\dana\\AppData\\Local\\hermes-engine\\bin\\hermes.exe",
+             "C:\\Users\\dana\\AppData\\Local\\relayer\\bin\\hermes.exe"):
+    check(f"another bin\\ executable under %LOCALAPPDATA% is NOT claimed ({near})",
+          _ids(_rows(near)) == set())
 _msix = classify_json([{"kind": "msix", "id": n, "ver": "1", "loc": "C:\\x", "extra": "", "perms": ""}
                        for n in ("NousResearch.HermesBundled_e60prshbsznhj",
                                  "NousResearch.HermesLight_e60prshbsznhj")])
