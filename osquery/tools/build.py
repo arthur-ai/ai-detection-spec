@@ -239,7 +239,7 @@ def queries(files=None):
     return out
 
 
-def snapshot_kinds(qs=None):
+def snapshot_kinds():
     """The kinds whose rows end with a process: every kind a query emits when its
     `-- tables:` names `processes`. ci.yml's --deep check skips them, because a process
     that ended between its two scans is not inventory --deep lost. The check skipped a
@@ -247,8 +247,7 @@ def snapshot_kinds(qs=None):
     processes, and macOS starts cupsd on demand and lets it exit idle, so run 41778882094
     lost port 631 between the scans. Derived from the header so a new query that reads
     processes declares itself."""
-    qs = queries() if qs is None else qs
-    return {k for q in qs
+    return {k for q in queries()
             if "processes" in {t.strip() for t in q["fm"].get("tables", "").split(",")}
             for k in q["kinds"]}
 

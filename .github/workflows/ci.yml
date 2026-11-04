@@ -269,8 +269,8 @@ jobs:
           sys.path.insert(0, "osquery/tools")
           import build
           key = lambda r: (r["kind"], r["id"], r["loc"])
-          kept = {key(r) for r in base if r["kind"] not in build.snapshot_kinds()}
-          lost = sorted(kept - {key(r) for r in deep})
+          skip = build.snapshot_kinds()
+          lost = sorted({key(r) for r in base if r["kind"] not in skip} - {key(r) for r in deep})
           if lost:
               sys.exit(f"::error::--deep lost {len(lost)} base rows, first {lost[:3]}. "
                        "The base inventory must survive a failed container scan.")
@@ -656,8 +656,8 @@ jobs:
           sys.path.insert(0, "osquery/tools")
           import build
           key = lambda r: (r["kind"], r["id"], r["loc"])
-          kept = {key(r) for r in base if r["kind"] not in build.snapshot_kinds()}
-          lost = sorted(kept - {key(r) for r in deep})
+          skip = build.snapshot_kinds()
+          lost = sorted({key(r) for r in base if r["kind"] not in skip} - {key(r) for r in deep})
           if lost:
               sys.exit(f"::error::--deep lost {len(lost)} base rows, first {lost[:3]}. "
                        "The base inventory must survive a failed container scan.")
