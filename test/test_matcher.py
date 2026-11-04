@@ -1806,20 +1806,23 @@ check("a scenario with no `classified` block is refused, not skipped", bool(_se(
 _nomf = _exp()
 del _nomf["classified"]["must_find"]
 check("...and one with no must_find, which says nothing about what it finds", bool(_se(_nomf)))
+# Each refused case counts the kinds it names, so only the rule it is about can refuse it:
+# a kind the scenario does not count is refused on its own, which hid the others.
+_kinds = {"deb": ">=0", "ext": ">=0"}
 for _label, _rows in (("a field outside the six columns", [{"kind": "deb", "name": "nano"}]),
                       ("a list, compared as its own text", [{"kind": "ext", "extra": ["a"]}]),
                       ("a tail_of form", [{"ver": {"tail_of": "loc"}}]),
                       ("a spec naming no field", [{}]),
-                      ("an empty string", [{"kind": ""}])):
+                      ("an empty string", [{"id": ""}])):
     check(f"forbid_rows refuses {_label}, which matches no row and passes",
-          bool(_se(_exp(forbid_rows=_rows))))
+          bool(_se(_exp(counts=_kinds, forbid_rows=_rows))))
 check("...and passes an exact field",
       _se(_exp(counts={"deb": ">=0"}, forbid_rows=[{"kind": "deb", "id": "nano"}])) == [])
-for _label, _rows in (("an empty string, a substring of everything", [{"kind": ""}]),
+for _label, _rows in (("an empty string, a substring of everything", [{"id": ""}]),
                       ("an empty list, all() of nothing", [{"perms": []}]),
                       ("a spec naming no field", [{}]),
                       ("a tail_of naming no column", [{"ver": {"tail_of": "path"}}])):
-    check(f"require_rows refuses {_label}", bool(_se(_exp(require_rows=_rows))))
+    check(f"require_rows refuses {_label}", bool(_se(_exp(counts=_kinds, require_rows=_rows))))
 check("...and passes a substring, a list of them and a tail_of",
       _se(_exp(counts={"ext": ">=0"}, require_rows=[{"kind": "ext", "perms": ["a", "b"],
                                                      "ver": {"tail_of": "loc"}}])) == [])

@@ -42,7 +42,9 @@ ROOT="$(cd "$HERE/.." && pwd)"
 # tree_scenarios asks too; test/test_ci_scope.py compares the two.
 linux_scenarios() { python3 "$ROOT/tools/scenarios.py" list linux; }
 # --list answers before the docker check, so a host without docker can still ask.
-if [ "${1:-}" = --list ]; then linux_scenarios; exit 0; fi
+# Its status, not 0: this script runs without -e, and a failed listing must not read as an
+# empty one.
+if [ "${1:-}" = --list ]; then linux_scenarios || exit 1; exit 0; fi
 
 OSQUERY_VERSION="${OSQUERY_VERSION:-5.23.1}"
 # Docker Hub is blocked daemon-side on some machines here, so the default is a mirror
