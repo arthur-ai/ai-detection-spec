@@ -11,15 +11,15 @@ and the CI test behind each one.
 
 ![agents](https://img.shields.io/badge/agents-57-1D4E89)
 ![identifiers](https://img.shields.io/badge/identifiers-159-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-154%2F159-A26A16)
-![real install](https://img.shields.io/badge/by_real_install-154-2E7D57)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-156%2F159-A26A16)
+![real install](https://img.shields.io/badge/by_real_install-156-2E7D57)
 
 </div>
 
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 154 of 159. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
+**Every identifier is proved by a real install in CI** — 156 of 159. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
 
 ## 🧪 Why a real install is the bar
 
@@ -60,7 +60,7 @@ Operates on a codebase, usually with shell access.
 | **GitHub Copilot** | macOS, Linux, Windows | **`copilot-cli`**, **`@github/copilot`**, **`github-copilot-intellij`** | 101-windows-cli-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 86-linux-jetbrains-agents |
 | **Crush** | Linux | **`@charmland/crush`**, **`crush`**, **`crush`** | 93-linux-cli-agents-more, 95-linux-crush-packages |
 | **Cursor** | macOS, Linux, Windows | **`com.todesktop.230313mzl4w4u92`**, **`cursor`**, **`cursor-cli`**, **`~/.local/bin/cursor-agent`**, **`~/AppData/Local/Programs/cursor/`**, **`cursor`**, **`cursor`**, **`cursor.desktop`**, **`{DADADADA-ADAD-ADAD-ADAD-ADADADADADAD}}_is1`** | 10-desktop-apps, 105-windows-desktop-apps, 21-cli-agents-homebrew, 73-linux-deb, 77-linux-rpm, 84-linux-installers, 90-demo-fleet |
-| **DeepSeek Harness** | Linux | @deepseek-ai/dsh ⚠ | 93-linux-cli-agents-more |
+| **DeepSeek Harness** | Linux | **`@deepseek-ai/dsh`** | 93-linux-cli-agents-more |
 | **Factory Droid** | macOS, Linux | **`droid`**, **`@factory/cli`**, **`droid`**, **`~/.factory`** | 21-cli-agents-homebrew, 93-linux-cli-agents-more, 94-linux-cli-agents-legacy |
 | **Gemini CLI** | macOS, Linux, Windows | **`gemini-cli`**, **`@google/gemini-cli`** | 101-windows-cli-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 81-linux-bun |
 | **Gemini Code Assist** | macOS, Linux | **`google.geminicodeassist`**, **`gemini`** | 30-ide-agents, 85-linux-vscode-agents, 86-linux-jetbrains-agents |
@@ -113,7 +113,7 @@ An extension that acts inside the browser on the user's behalf.
 
 | name | platforms | identifiers | scenarios |
 |---|---|---|---|
-| **ChatGPT browser extension** | macOS, Linux, Windows | hehggadaopoacecdllhhajmbjkdcmajg ⚠ | 104-windows-browser, 45-claude-extension, 92-linux-browser-agents |
+| **ChatGPT browser extension** | macOS, Linux, Windows | **`hehggadaopoacecdllhhajmbjkdcmajg`** | 104-windows-browser, 45-claude-extension, 92-linux-browser-agents |
 | **Claude in Chrome** | macOS, Linux, Windows | **`fcoeoabgfenejglbffodgkkbkcdhcgfn`** | 104-windows-browser, 45-claude-extension, 92-linux-browser-agents |
 | **HARPA AI** | macOS, Linux, Windows | **`eanggfilgoajaocelnaflolkadkeghjp`** | 104-windows-browser, 45-claude-extension, 92-linux-browser-agents |
 | **Merlin** | macOS, Linux, Windows | **`camppjleccjaphfdbohjdohecfnoikec`** | 104-windows-browser, 45-claude-extension, 92-linux-browser-agents |
@@ -139,8 +139,6 @@ Every one is work, and the middle column says what kind. **did not appear** mean
 | agent | route | identifier | state | reached by |
 |---|---|---|---|---|
 | ChatGPT Atlas | bundle id | `com.openai.atlas` | no test | -- |
-| ChatGPT browser extension | extension id | `hehggadaopoacecdllhhajmbjkdcmajg` | did not appear | 104-windows-browser, 45-claude-extension, 92-linux-browser-agents |
-| DeepSeek Harness | npm | `@deepseek-ai/dsh` | did not appear | 93-linux-cli-agents-more |
 | Manus | bundle id | `im.manus.desktop` | no test | -- |
 | Manus | homebrew | `manus` | no test | -- |
 
