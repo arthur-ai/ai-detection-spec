@@ -160,7 +160,9 @@ rc=\$?
 # for one and it fails on a row count instead of saying the artifact was wrong. In this
 # container the deep scenarios exit 3 before reaching here, because there is no daemon;
 # the branch is what keeps a local run with a mounted socket honest.
-if [ \"\$(python3 tools/scenarios.py field $s deep)\" = true ]; then
+deep=\$(python3 tools/scenarios.py field $s deep) || {
+  echo 'FAIL: tools/scenarios.py refused the scenario'; exit 1; }
+if [ \"\$deep\" = true ]; then
   osquery/bin/discover --deep > /tmp/out.json 2>/tmp/err.txt || {
     echo 'FAIL: the deep path did not run'; cat /tmp/err.txt; exit 1; }
 else

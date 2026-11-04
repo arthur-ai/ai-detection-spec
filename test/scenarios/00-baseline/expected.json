@@ -1,6 +1,7 @@
 {
   "description": "Bare macOS VM.",
   "platform": "darwin",
+  "control": true,
   "counts": {
     "app": ">=1",
     "brew": ">=0",
@@ -21,5 +22,5 @@
       "claude-code"
     ]
   },
-  "why": "The control. The query enumerates, so a clean machine returns its whole inventory, and what must be empty is the matcher's output. `forbid` is the assertion: it caught the stock Apple native-messaging manifest reporting two phantom findings on every Mac."
+  "why": "The control. The query enumerates, so a clean machine returns its whole inventory, and what must be empty is the matcher's output: nothing may be found, and as a control it reruns whenever a macOS agent changes. That caught the stock Apple native-messaging manifest reporting two phantom findings on every Mac; `forbid` names those two agents."
 }

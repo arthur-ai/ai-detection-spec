@@ -369,6 +369,8 @@ with tempfile.TemporaryDirectory() as d:
     (pathlib.Path(d) / ".github" / "workflows").mkdir(parents=True)
     (pathlib.Path(d) / ci_scope.SCENARIOS_WORKFLOW).write_text(_mini_wf)
     (pathlib.Path(d) / "catalog").mkdir()
+    (pathlib.Path(d) / "catalog" / "routes.yaml").write_text(
+        "platforms: [darwin]\nroutes:\n  npm: {platform: darwin, kind: npm}\n")
     _commit(d, ci_scope.CATALOG, "agents:\n  - {id: x, name: X}\n  - {id: y, name: Y}\n")
     _git(d, "add", "-A")
     _git(d, "commit", "-qm", "scenarios")
@@ -393,11 +395,6 @@ check("the scenarios that must find an agent run when it changes",
 check("a scenario that only FORBIDS an agent runs when it changes",
       {"70-linux-baseline", "71-linux-cli-agents"} <= _edit("cursor"))
 _controls = {n for n in _LISTED if _expected(n).get("control")}
-_pi_on = set(next(a for a in _catdoc["agents"] if a["id"] == "pi")["platforms"])
-_on = {n for n in _controls if _PLAT[n] in _pi_on}
-check("a control runs when an agent of its platform changes, and not for another platform",
-      _on and _controls - _on and _on <= _edit("pi") and not (_controls - _on) & _edit("pi"),
-      f"{sorted(_controls)}; pi ({sorted(_pi_on)}) ran {sorted(_controls & _edit('pi'))}")
 _fe = {n for n in _LISTED if (_expected(n).get("classified") or {}).get("forbid_evidence")}
 check("forbid_evidence names no agent, so its scenarios run on any agent edit",
       bool(_fe) and _fe <= _edit("pi"), f"{sorted(_fe)}")
@@ -418,8 +415,8 @@ for _n in DARWIN:
     _darwin_seen |= set(_c.get("forbid", []))
     _darwin_seen |= {r["agent"] for r in _o.get("identifiers", []) + _o.get("archived", [])}
 _unseen = sorted(a["id"] for a in _catdoc["agents"] if a["id"] not in _darwin_seen)
-check("an edit to an agent no macOS scenario names or observed runs none of them",
-      bool(_unseen) and not (_edit(_unseen[0]) & DARWIN),
+check("an edit to an agent no macOS scenario names or observed runs none of them but a control",
+      bool(_unseen) and not (_edit(_unseen[0]) & DARWIN - _controls),
       f"{_unseen[:1]}: {sorted(_edit(_unseen[0]) & DARWIN)}" if _unseen else "no such agent")
 
 
@@ -442,14 +439,32 @@ check("moving one agent past three others runs what editing all four would",
 check("and runs less than every scenario", _moved3 != _LISTED)
 check("an agent added mid-list reorders nobody", _order(
     _A[:5] + [{"id": "zz-new", "name": "New", "classification": "Coding agent",
-               "platforms": ["linux"]}] + _A[5:])
-      == _fe | {n for n in _controls if _PLAT[n] == "linux"})
+               "platforms": ["linux"]}] + _A[5:]) == _fe)
 # must_find as tools/scenarios.py derives it. A new extension agent is named by no scenario
 # and observed by none, so only the derivation from every_extension can select 45.
 _ran_ext = _order(_A + [{"id": "zz-ext", "name": "Ext", "classification": "Browser agent",
                          "platforms": ["darwin"], "extension_ids": ["z" * 32]}])
 check("a new extension agent runs the scenarios that find it through every_extension",
       "45-claude-extension" in _ran_ext, str(sorted(_ran_ext)))
+_ctl = lambda plats: {n for n in _controls if _PLAT[n] in plats}  # noqa: E731
+
+
+def _added(**agent):
+    """The controls an agent appended to the catalog reruns. Appended, so nothing reorders."""
+    return _controls & _order(_catdoc["agents"] + [dict(
+        {"id": "zz-new", "name": "New", "classification": "Coding agent"}, **agent)])
+
+
+# Where a ROUTE fires, not the `platforms` an agent declares: the classifier matches wherever
+# the route can, and 75-linux-browser finds a macOS-and-Windows agent on Linux that way.
+check("a control reruns on the platform of a route the changed agent has a value on",
+      _ctl({"linux"}) and _added(platforms=["linux"], deb_packages=["zz"]) == _ctl({"linux"}),
+      str(sorted(_added(platforms=["linux"], deb_packages=["zz"]))))
+check("...on every platform for a route that fires on all of them",
+      _added(platforms=["darwin"], npm=["zz"]) == _controls,
+      str(sorted(_added(platforms=["darwin"], npm=["zz"]))))
+check("...and on none for an agent with no route value, which can match nowhere",
+      not _added(platforms=["darwin", "linux", "windows"]))
 check("a catalog comment runs nothing",
       scenarios([ci_scope.CATALOG], head={ci_scope.CATALOG: _cat + "\n# a note\n"}) == set())
 check("the rendered files add nothing beside a catalog edit",
@@ -629,7 +644,7 @@ check("ci.yml with no base runs every scenario", scenarios([_C], base={_C: None}
 
 # --- INERT is checked, not trusted -------------------------------------------------------
 def reachable(through_scenarios=True, seed=None,
-              roots=("osquery", "test", "tools", "bin", "catalog")):
+              roots=("osquery", "test", "tools", "bin", "catalog", "schema")):
     """Every tracked file a scenarios.yml job can reach: what its steps name, then whatever
     a reached SCRIPT names -- an import, a string constant, a non-comment line. Data files
     are read rather than followed. Generous on purpose: a false reach only keeps a file

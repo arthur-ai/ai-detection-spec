@@ -456,7 +456,10 @@ jobs:
       - name: Query and assert
         if: steps.provision.outputs.runnable == 'true'
         run: |
-          if [ "$(python3 tools/scenarios.py field "${{ matrix.scenario }}" deep)" = true ]; then
+          # Its own statement, so a refused scenario fails here under -e rather than
+          # reading as not deep.
+          deep=$(python3 tools/scenarios.py field "${{ matrix.scenario }}" deep)
+          if [ "$deep" = true ]; then
             sudo -n osquery/bin/discover --deep > /tmp/out.json
           else
             sudo -n /usr/bin/osqueryi --json < osquery/dist/discovery-linux.sql > /tmp/out.json

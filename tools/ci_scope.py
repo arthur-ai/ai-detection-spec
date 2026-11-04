@@ -95,7 +95,10 @@ WHAT THIS FORM CANNOT SEE, and the one thing it gives up: a changed signature th
 rows -- in the classifier or in the rendered SQL its parity check compares against -- in a
 scenario with no link to its agent. Nothing on a pull request asserts on that scenario, so
 nothing there could fail. scenarios.yml runs every scenario weekly without calling this
-file at all, which bounds that miss at a week.
+file at all, and a scenario fails on any agent its must_find does not name
+(tools/scenarios.py), so the miss turns the weekly run red within a week of the merge
+rather than passing. Each platform's `control` narrows it: it reruns for every changed
+agent whose routes fire there.
 """
 import argparse
 import copy
@@ -127,7 +130,6 @@ INERT = frozenset({
     "osquery/test/lib/fake_docker.py", "osquery/test/lint.sh", "test/lib/fake_amplitude.py",
     "test/lib/vm.sh", "test/lint.sh", "test/run-ec2.sh", "test/test_conformance.py",
     "test/test_export.py", "tools/export.py",
-    "schema/catalog.schema.json", "schema/evidence.schema.json",
     "test/run-gce.sh", "test/run.sh", "test/test_ci_scope.py", "test/test_matcher.py",
     # test/run-linux.sh is NOT here: scenarios.yml's container job runs it. See HARNESS.
     "test/test_telemetry.py", "osquery/tools/bundle.py", "tools/check_doc_numbers.py",
@@ -141,6 +143,10 @@ INERT = frozenset({
 NOT_ASSERTED = {
     "docs/blind-spots.yaml": "rendered into docs/limits.md; no scenario asserts on it",
     "osquery/dist/fleet-policies.yml": "checked by test_match_sql.py under lint; no scenario reads it",
+    "schema/evidence.schema.json": "read by tools/scenarios.py only for the six row fields a "
+                                   "scenario may name, which lint checks every scenario against",
+    "schema/catalog.schema.json": "named by bin/classify for a catalog document, which no "
+                                  "scenario reads; test_conformance.py checks it under lint",
 }
 # Sourced by scenario setup scripts and by nothing else a job runs, which
 # test/test_ci_scope.py also proves. A change runs the scenarios that source it.
@@ -350,6 +356,15 @@ class Scope:
         self.harness = harness_jobs(doc or {})
         self.listed = set().union(*self.jobs.values()) if self.jobs else set()
         self._info = None
+        self._head_agents = None
+
+    @property
+    def head_agents(self):
+        """The head catalog's agents, which every scenario's must_find derives from: read
+        and parsed once rather than once per scenario."""
+        if self._head_agents is None:
+            self._head_agents = self.yaml.safe_load(self.read("head", CATALOG) or "")["agents"]
+        return self._head_agents
 
     @property
     def info(self):
@@ -371,8 +386,7 @@ class Scope:
         try:
             exp = self._expected(name)
             obs = json.loads(self.read("head", f"test/scenarios/{name}/observed.json") or "{}")
-            agents = self.yaml.safe_load(self.read("head", CATALOG) or "")["agents"]
-            found = scenarios.must_find(name, self._expected, agents)
+            found = scenarios.must_find(name, self._expected, self.head_agents)
         except (ValueError, TypeError, KeyError, self.yaml.YAMLError):
             return None
         cls = exp["classified"]
@@ -574,8 +588,18 @@ class Scope:
                  if b_by_id.get(i) != h_by_id.get(i)} | flipped
         if not moved:
             return frozenset(), "the catalog's agents parse unchanged"
+        # A CONTROL RERUNS WHERE A CHANGED AGENT'S ROWS CAN MATCH: the platforms of the routes
+        # it has values on, not the `platforms` it declares. bin/classify matches wherever a
+        # route fires, and 75-linux-browser finds claude-desktop, declared for macOS and
+        # Windows, on Linux through a native-messaging manifest.
+        reg = self.yaml.safe_load(self.read("head", "catalog/routes.yaml") or "") or {}
+        if not reg.get("routes"):
+            return EVERY, "catalog/routes.yaml cannot say where a changed agent matches"
+        every, groups = reg.get("platforms") or [], reg.get("platform_groups") or {}
         claims = {p for i in moved for a in (b_by_id.get(i), h_by_id.get(i)) if a
-                  for p in a.get("platforms") or []}
+                  for r, spec in reg["routes"].items() if a.get(r)
+                  for p in ([spec.get("platform")] if spec.get("platform") in every
+                            else groups.get(spec.get("platform")) or every)}
         return (self.where(lambda i: bool(i["agents"] & moved) or i["any_agent"]
                            or (i["control"] and i["platform"] in claims)),
                 f"agents changed or reordered: {', '.join(sorted(moved))}")

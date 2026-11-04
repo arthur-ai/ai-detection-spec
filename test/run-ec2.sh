@@ -354,7 +354,9 @@ log "=============== $SC on $OS $ARCH"
 sudo "test/scenarios/$SC/setup.sh"; rc=$?
 if [ "$rc" = 3 ]; then log "--- $SC SKIP"; exit 3; fi
 if [ "$rc" != 0 ]; then log "--- $SC FAIL (setup exit $rc)"; exit 1; fi
-if [ "$(python3 tools/scenarios.py field "$SC" deep)" = true ]; then
+deep=$(python3 tools/scenarios.py field "$SC" deep) || {
+  log "--- $SC FAIL (tools/scenarios.py refused its files)"; exit 1; }
+if [ "$deep" = true ]; then
   sudo osquery/bin/discover --deep > "$OUT/payload.json" 2>"$OUT/payload.err"
 else
   sudo osqueryi --json < osquery/dist/discovery-linux.sql > "$OUT/payload.json" 2>"$OUT/payload.err"

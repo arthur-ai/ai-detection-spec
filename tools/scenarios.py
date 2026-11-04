@@ -29,6 +29,7 @@ extension-ids.txt, which its setup installs from. `composes` runs sibling scenar
 what each of them finds.
 """
 import collections
+import functools
 import json
 import pathlib
 import re
@@ -105,10 +106,11 @@ def _rows(v, columns, value_ok, what):
     return None
 
 
+@functools.lru_cache(maxsize=None)
 def _columns():
     # The six-column contract, from the schema rather than a copy of it.
     doc = json.loads((ROOT / "schema" / "evidence.schema.json").read_text())
-    return list(doc["$defs"]["row"]["properties"])
+    return tuple(doc["$defs"]["row"]["properties"])
 
 
 # --- the vocabulary -------------------------------------------------------------------------
@@ -190,6 +192,17 @@ def shape_errors(name, exp, req=None, columns=None):
         if exp.get("platform") != "darwin":
             errors.append(f"{name}: requires.json carries a macOS floor on a "
                           f"{exp.get('platform')} scenario")
+    # A ROW KIND IS ONE THE SCENARIO COUNTS. A payload row of any other kind fails the run as
+    # UNEXPECTED KIND, so a spec naming one can match nothing in a passing run: a misspelt
+    # kind under forbid_rows passes whatever the payload holds.
+    if not _counts(exp.get("counts")):
+        counted = {k for key in exp["counts"] for k in key.split("+")}
+        for key in ("forbid_rows", "require_rows"):
+            for spec in exp.get(key) if isinstance(exp.get(key), list) else []:
+                kind = spec.get("kind") if isinstance(spec, dict) else None
+                if isinstance(kind, str) and kind not in counted:
+                    errors.append(f"{name}: {key} names kind {kind!r}, which counts does not, "
+                                  f"so no row of it reaches a passing run")
     return errors
 
 
@@ -231,8 +244,25 @@ def field(name, key, where=SCENARIOS):
     if errors:
         raise ValueError("\n".join(errors))
     if key.startswith("requires."):
-        return (req or {}).get(key.split(".", 1)[1], FIELDS[key])
+        min_macos, why = floor(name, where)
+        return min_macos if key == "requires.min_macos" else why
     return exp.get(key, FIELDS[key])
+
+
+def floor(name, where=SCENARIOS, _through=()):
+    """(min_macos, why): the scenario's own floor, or the highest of the scenarios it
+    composes, since it runs their setups and must find what they find. 90-demo-fleet
+    carries none of its own and runs 11-perplexity-desktop, which needs macOS 15."""
+    if name in _through:
+        raise ValueError(f"{name}: composes itself, through {' -> '.join(_through + (name,))}")
+    exp, req = read(name, where)
+    best = (req["min_macos"], req["why"]) if req else (FIELDS["requires.min_macos"],
+                                                      FIELDS["requires.why"])
+    for sibling in exp.get("composes") or []:
+        need, why = floor(sibling, where, _through + (name,))
+        if need > best[0]:
+            best = (need, f"{sibling}: {why}")
+    return best
 
 
 def catalog(root=ROOT):
@@ -245,10 +275,27 @@ def catalog(root=ROOT):
 
 # --- derived from the catalog ---------------------------------------------------------------
 
+@functools.lru_cache(maxsize=None)
+def store_routes(root=ROOT):
+    """The routes whose values are Chrome Web Store ids, read off catalog/routes.yaml by
+    their purl rather than named here: a setup fetches each from the store."""
+    import yaml
+    routes = yaml.safe_load((root / "catalog" / "routes.yaml").read_text())["routes"]
+    return tuple(sorted(r for r, spec in routes.items() if spec.get("purl") == "chrome-extension"))
+
+
 def extension_ids(agents, platform):
-    """[(id, agent)] for every extension id the catalog matches on `platform`."""
-    return [(i, a["id"]) for a in agents if platform in (a.get("platforms") or [])
-            for i in (a.get("extension_ids") or [])]
+    """[(id, agent)] for every Web Store id the catalog matches on `platform`. Not a
+    superseded one: it stays on its route for old machines, and the store no longer serves
+    it, so a setup that fetched it would fail every run (docs/signature-lifecycle.md)."""
+    out = []
+    for a in agents:
+        if platform not in (a.get("platforms") or []):
+            continue
+        retired = {(str(s.get("route")), str(s.get("value"))) for s in a.get("superseded") or []}
+        out += [(str(v), a["id"]) for r in store_routes() for v in a.get(r) or []
+                if (r, str(v)) not in retired]
+    return out
 
 
 def extensions_text(agents, platform):
@@ -257,17 +304,20 @@ def extensions_text(agents, platform):
     return "\n".join(lines + [f"{i} {aid}" for i, aid in extension_ids(agents, platform)]) + "\n"
 
 
-def must_find(name, lookup, agents):
+def must_find(name, lookup, agents, _through=()):
     """Every agent the scenario must find: its own list, the platform's extension agents
     under every_extension, and what each scenario it composes must find. `lookup(name)`
-    returns a parsed expected.json, so a reader of git revisions can use this too."""
+    returns a parsed expected.json, so a reader of git revisions can use this too. A
+    scenario that composes itself is a ValueError, never a RecursionError past every gate."""
+    if name in _through:
+        raise ValueError(f"{name}: composes itself, through {' -> '.join(_through + (name,))}")
     exp = lookup(name)
     cls = exp.get("classified") or {}
     out = set(cls.get("must_find") or [])
     if cls.get("every_extension"):
         out |= {aid for _, aid in extension_ids(agents, exp.get("platform"))}
     for sibling in exp.get("composes") or []:
-        out |= must_find(sibling, lookup, agents)
+        out |= must_find(sibling, lookup, agents, _through + (name,))
     return out
 
 
@@ -350,20 +400,30 @@ def write(agents, where=SCENARIOS):
 
 
 def load(expected_path, root=ROOT):
-    """(expected, must_find) for the scenario at `expected_path`, refused with every problem
-    found when its files or the catalog disagree. What the assertions read."""
+    """(expected, must_find) for the scenario whose expected.json is the file at
+    `expected_path`, refused with every problem found when its files, the scenarios it
+    composes or the catalog disagree. What the assertions read."""
     path = pathlib.Path(expected_path).resolve()
     where, name = path.parent.parent, path.parent.name
     agents, platforms = catalog(root)
-    exp, req = read(name, where)
-    errors = shape_errors(name, exp, req)
+    req_path = path.parent / "requires.json"
+    exp = json.loads(path.read_text())
+    errors = shape_errors(name, exp, json.loads(req_path.read_text()) if req_path.exists() else None)
+    docs = {name: exp}
     if not errors:
-        docs = {n: read(n, where)[0] for n in [name] + list(exp.get("composes") or [])
-                if (where / n / "expected.json").exists()}
-        errors = catalog_errors(name, docs, agents, platforms, where)
+        # A composed scenario is checked here too: a malformed one would derive a must_find
+        # of whatever its value spells, a string's letters included.
+        for sibling in exp.get("composes") or []:
+            if (where / sibling / "expected.json").exists():
+                sib, sib_req = read(sibling, where)
+                found = shape_errors(sibling, sib, sib_req)
+                errors += found
+                if not found:
+                    docs[sibling] = sib
+        errors += catalog_errors(name, docs, agents, platforms, where)
     if errors:
         raise ValueError("\n".join(errors))
-    return exp, must_find(name, lambda n: read(n, where)[0], agents)
+    return exp, must_find(name, docs.__getitem__, agents)
 
 
 # --- what each key asserts ------------------------------------------------------------------
