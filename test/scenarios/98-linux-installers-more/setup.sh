@@ -18,6 +18,18 @@ need_curl
 need_user
 need_pkgs tar gzip || true
 
+# PROBE (throwaway branch, never merged): print Maki's installer and what its lookups answer.
+echo "--- PROBE maki install.sh"
+curl -fsSL https://maki.sh/install.sh -o /tmp/maki-install.sh || echo "PROBE fetch failed"
+sed 's/^/PROBE| /' /tmp/maki-install.sh
+for u in $(grep -oE 'https://[^"'"'"' )>]+' /tmp/maki-install.sh | sort -u); do
+  echo "PROBE-HEAD $u"
+  curl -sSI "$u" 2>&1 | head -25 | sed 's/^/PROBE-H| /'
+done
+echo "PROBE-HEAD api.github.com/rate_limit"
+curl -sS https://api.github.com/rate_limit | head -40 | sed 's/^/PROBE-R| /'
+echo "--- PROBE end"
+
 # An attempt counts only if it left the file the installer should, as in 84.
 vendor_once() { try_user "$1" "$3" && as_user "test -e $2"; }
 vendor() { retry "$1" vendor_once "$@"; }
