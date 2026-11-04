@@ -35,4 +35,6 @@ Start-Process -FilePath $exe -ArgumentList 'gateway', 'run' -WindowStyle Hidden 
 Start-Sleep -Seconds 30
 Get-Content "$env:RUNNER_TEMP\hermes-gateway.out", "$env:RUNNER_TEMP\hermes-gateway.err" `
   -ErrorAction SilentlyContinue | Select-Object -Last 10
+# What the query will read: the process rows under a home, as osquery spells them.
+& $env:OSQI --json "SELECT pid, parent, path FROM processes WHERE path LIKE '%hermes%'"
 exit 0
