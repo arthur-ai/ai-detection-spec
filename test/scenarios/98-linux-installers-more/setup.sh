@@ -35,8 +35,12 @@ maki_tag="$(curl --retry 3 -fsSL -o /dev/null -w '%{url_effective}' \
   || echo "WARN: no tag from github.com/tontinton/maki/releases/latest; Maki's installer looks it up" >&2
 vendor "the Maki installer" '~/.local/bin/maki' \
   "curl --retry 3 -fsSL https://maki.sh/install.sh | sh -s -- $maki_tag" || true
+# DEVIN'S INSTALLER ENDS BY RUNNING `devin setup`, which asks to log in and, without a TTY,
+# exits 1 with "Login canceled" after the binary is in place (every image, run 41772215488).
+# So its exit status is not the verdict here; the file is. Without this, vendor() retried a
+# finished install twice more and reported it failed above a passing must_find.
 vendor "the Devin CLI installer" '~/.local/bin/devin' \
-  'curl --retry 3 -fsSL https://cli.devin.ai/install.sh | bash' || true
+  'curl --retry 3 -fsSL https://cli.devin.ai/install.sh | bash || test -e ~/.local/bin/devin' || true
 vendor "the Oh My Pi installer" '~/.local/bin/omp' \
   'curl --retry 3 -fsSL https://omp.sh/install | sh' || true
 
