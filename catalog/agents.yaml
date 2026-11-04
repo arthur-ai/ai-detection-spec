@@ -1177,7 +1177,10 @@ agents:
   #   ~/.letta       the server's LETTA_DIR in letta 0.16.8's constants.py, and what Letta
   #                  Code's first run writes
   #
-  # A coding agent, because everything published under these names today is Letta Code.
+  # A coding agent, because everything published under these names today is Letta Code. A
+  # GUESS FOR THE SERVER: a machine whose only evidence is one of these values may run the
+  # server instead, and is classified a coding agent all the same, because no value here can
+  # say which it runs. The server's own image, which can, is `letta-server` below.
   #
   # NOT HERE: npm's unscoped `letta` is an unrelated promisify library, and Letta's SDKs, npm
   # `@letta-ai/letta-client` and PyPI `letta-client`, are libraries an agent is built with;
@@ -1203,11 +1206,23 @@ agents:
     # in Ubuntu 24.04 containers on 2026-11-03. 96 runs it, and read it in CI run 41767347062
     # on every Linux image it runs on.
     state_dirs: ["~/.letta"]
-    # letta/letta is the current repository, 0.34.39 on 2026-11-02. lettaai/letta served the
-    # server from 0.1.4 to 0.5.1, amd64 only, last pushed 2024-10-29; its Docker Hub
-    # organisation names itself Letta, with letta.com as its profile. 79-linux-image pulled
-    # both in CI run 41767347062, on Ubuntu 24.04 x86_64 and arm64.
-    images: [letta/letta, lettaai/letta]
+    # 0.34.39 on 2026-11-02. 79-linux-image pulled it in CI run 41767347062, on Ubuntu 24.04
+    # x86_64 and arm64.
+    images: [letta/letta]
     # org.opencontainers.image.source on letta/letta:0.34.39, read off its manifest on
     # 2026-11-03. The server's images carry no labels. 79 read it in the same run.
     image_labels: ["https://github.com/letta-ai/letta-code"]
+
+  # The Letta server's first image, from before Letta moved the server's names to Letta Code.
+  # Its own entry because this value names the server and nothing else, so it can be classified
+  # as what it is rather than as `letta`'s guess: the server hosts general-purpose stateful
+  # agents and runs their tools, a personal agent's shape, not a coding agent's.
+  - id: letta-server
+    name: Letta server
+    classification: Personal agent
+    platforms: [linux]  # as openhands: an image route, which no macOS runner can prove
+    # The server from 0.1.4 to 0.5.1, amd64 only, last pushed 2024-10-29; its CMD is
+    # ./letta/server/startup.sh, and its Docker Hub organisation names itself Letta, with
+    # letta.com as its profile. 79-linux-image pulled it as `letta` in CI run 41767347062, on
+    # Ubuntu 24.04 x86_64 and arm64.
+    images: [lettaai/letta]

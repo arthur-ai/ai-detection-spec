@@ -27,7 +27,8 @@
       "openhands",
       "goose",
       "swe-agent",
-      "letta"
+      "letta",
+      "letta-server"
     ],
     "forbid": [
       "claude-code",

@@ -25,7 +25,7 @@ Three things. Each can be taken on its own.
 | | What it is | Who takes it |
 |---|---|---|
 | **The spec** [`SPEC.md`](SPEC.md), [`schema/`](schema), [`conformance/`](conformance) | The contract between a catalog, a collector and a matcher, [defined below](#what-the-spec-is). [`bin/classify`](bin/classify) is the reference matcher | People building it into an MDM, an EDR or an inventory tool |
-| **The catalog** [`catalog/`](catalog) | **55 agents and 161 identifiers**, written to the spec. CI must see each identifier on a real install, in a job called a scenario, and [the coverage page](docs/agents.md) is generated from what those jobs recorded | Anyone who needs the facts |
+| **The catalog** [`catalog/`](catalog) | **56 agents and 161 identifiers**, written to the spec. CI must see each identifier on a real install, in a job called a scenario, and [the coverage page](docs/agents.md) is generated from what those jobs recorded | Anyone who needs the facts |
 | **The osquery implementation** [`osquery/`](osquery) | The catalog rendered as queries for macOS, Linux and Windows, and the scripts that run them. The spec calls a collector a *binding*, and this is the first one | Security and IT teams who want to run it on a fleet this week |
 
 ## Run it

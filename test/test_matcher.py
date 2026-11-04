@@ -1573,12 +1573,13 @@ check("...while agy-old, the generic `kimi` and `qoder`, PyPI's unrelated `kimi`
        "/home/dana/.local/share/uv/tools/letta-client/"} <= set(_u),
       f"got {_c}")
 # Letta's two repositories, and Docker Hub's neatlyhealth/letta, a fork of the server under
-# someone else's name: the route compares whole repository names, so it is declined.
+# someone else's name: the route compares whole repository names, so it is declined. The
+# 2024 repository names only the server, so it lands on the server's own entry.
 _c, _u = _claims([*_kind("image", "letta/letta:latest", "lettaai/letta:0.5.1",
                          "neatlyhealth/letta:latest"),
                   _ilabel("https://github.com/letta-ai/letta-code")])
-check("Letta's images and its OCI source label resolve to it",
-      _c == {"letta/letta:latest": "letta", "lettaai/letta:0.5.1": "letta",
+check("Letta's images and its OCI source label resolve to it, and the server's to the server",
+      _c == {"letta/letta:latest": "letta", "lettaai/letta:0.5.1": "letta-server",
              "https://github.com/letta-ai/letta-code": "letta"}, f"got {_c}")
 check("...while a fork's repository claims nothing",
       "neatlyhealth/letta:latest" in _u, f"got {_c}")
