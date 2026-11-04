@@ -1,0 +1,299 @@
+{
+  "scenario": "97-linux-cli-agents-npm-more",
+  "identifiers": [
+    {
+      "agent": "command-code",
+      "route": "npm",
+      "value": "command-code",
+      "agent_version": "1.88.2",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "command-code",
+      "route": "npm",
+      "value": "command-code",
+      "agent_version": "1.88.2",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "command-code",
+      "route": "npm",
+      "value": "command-code",
+      "agent_version": "1.88.2",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "command-code",
+      "route": "npm",
+      "value": "command-code",
+      "agent_version": "1.88.2",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "command-code",
+      "route": "npm",
+      "value": "command-code",
+      "agent_version": "1.88.2",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "command-code",
+      "route": "npm",
+      "value": "command-code",
+      "agent_version": "1.88.2",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "command-code",
+      "route": "state_dirs",
+      "value": "~/.commandcode",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "command-code",
+      "route": "state_dirs",
+      "value": "~/.commandcode",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "command-code",
+      "route": "state_dirs",
+      "value": "~/.commandcode",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "command-code",
+      "route": "state_dirs",
+      "value": "~/.commandcode",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "command-code",
+      "route": "state_dirs",
+      "value": "~/.commandcode",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "command-code",
+      "route": "state_dirs",
+      "value": "~/.commandcode",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "devin-cli",
+      "route": "npm",
+      "value": "devin",
+      "agent_version": "3000.11.234",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "devin-cli",
+      "route": "npm",
+      "value": "devin",
+      "agent_version": "3000.11.234",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "devin-cli",
+      "route": "npm",
+      "value": "devin",
+      "agent_version": "3000.11.234",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "devin-cli",
+      "route": "npm",
+      "value": "devin",
+      "agent_version": "3000.11.234",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "devin-cli",
+      "route": "npm",
+      "value": "devin",
+      "agent_version": "3000.11.234",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "devin-cli",
+      "route": "npm",
+      "value": "devin",
+      "agent_version": "3000.11.234",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "mastracode",
+      "route": "npm",
+      "value": "mastracode",
+      "agent_version": "0.49.0",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "mastracode",
+      "route": "npm",
+      "value": "mastracode",
+      "agent_version": "0.49.0",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "mastracode",
+      "route": "npm",
+      "value": "mastracode",
+      "agent_version": "0.49.0",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "mastracode",
+      "route": "npm",
+      "value": "mastracode",
+      "agent_version": "0.49.0",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "mastracode",
+      "route": "npm",
+      "value": "mastracode",
+      "agent_version": "0.49.0",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "mastracode",
+      "route": "npm",
+      "value": "mastracode",
+      "agent_version": "0.49.0",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "oh-my-pi",
+      "route": "npm",
+      "value": "@oh-my-pi/pi-coding-agent",
+      "agent_version": "18.16.0",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "oh-my-pi",
+      "route": "npm",
+      "value": "@oh-my-pi/pi-coding-agent",
+      "agent_version": "18.16.0",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "oh-my-pi",
+      "route": "npm",
+      "value": "@oh-my-pi/pi-coding-agent",
+      "agent_version": "18.16.0",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "oh-my-pi",
+      "route": "npm",
+      "value": "@oh-my-pi/pi-coding-agent",
+      "agent_version": "18.16.0",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "x86_64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "oh-my-pi",
+      "route": "npm",
+      "value": "@oh-my-pi/pi-coding-agent",
+      "agent_version": "18.16.0",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "41774392960"
+    },
+    {
+      "agent": "oh-my-pi",
+      "route": "npm",
+      "value": "@oh-my-pi/pi-coding-agent",
+      "agent_version": "18.16.0",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "41774392960"
+    }
+  ]
+}

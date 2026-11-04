@@ -82,6 +82,8 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 14-meta-muse | `~/.local/bin/muse` claims the launcher only. muse-bin-<version> beside it is read as unmatched evidence, not as a value: the launcher is always written with it, so the agent is found anyway, and claiming every `muse-<something>` would claim other vendors' tools. |
 | 14-meta-muse | Sign-in gated once installed, like 10: Muse for Mac is never launched, so its first-run permission prompts and whatever it writes under ~/Library go unobserved, and Muse Code is never run, so ~/.muse -- which the binary names for projects and worktrees -- is not produced here. |
 | 14-meta-muse | The DMG is whatever the production Sparkle channel serves on the day. A build that changes its bundle id shows up as a missing com.meta.endo, which is the point; a build that only bumps the version is recorded as that version. |
+| 15-manus | Manus is never launched: its computer-use and capture helpers, which its cask's uninstall stanza names as launchd jobs, are never registered, so no launchd value is read. |
+| 15-manus | Manus's Windows build is not installed anywhere. |
 | 20-cli-agents, 71-linux-cli-agents | The shim's `ver` is checked for presence, not against the installed release: the shim's path names no release, and the release changes with every install, so expected.json cannot hold it. A join onto the wrong versions/ file would pass. |
 | 40-browser | The planted extension is unreferenced by construction, so the sideloaded token is exercised only by 45-claude-extension. |
 | 45-claude-extension | Chrome for Testing registers the extension, because branded Chrome 137 and later refuse --load-extension. Branded Chrome's own install, update and ExtensionInstallForcelist paths are untested, and whether the policy needs an MDM-delivered profile on macOS is UNVERIFIED. |
@@ -133,6 +135,11 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 93-linux-cli-agents-more | Editor extensions are not installed: Amp's VS Code extension, Qwen Code's IDE companion and Junie's JetBrains plugin. |
 | 95-linux-crush-packages | Charm's apt and yum repositories (repo.charm.sh) are not used; the release assets carry the same package name. |
 | 96-linux-cli-agents-npm | Editor surfaces are not installed: the CodeBuddy IDE and extensions, and the Qoder IDE. |
+| 97-linux-cli-agents-npm-more | MastraCode's ~/.mastracode, where herdr's integration writes its hook, is not created by --version or -p and is unread. |
+| 97-linux-cli-agents-npm-more | Command Code's and Devin CLI's npm packages on Windows, and Devin CLI's winget package, are not exercised. |
+| 98-linux-installers-more | Maki's, Devin CLI's and Oh My Pi's Windows installers are not exercised. |
+| 99-linux-prime-agent | The installer refuses glibc below 2.35, so the scenario exits 3 on Rocky 9 and Amazon Linux 2023. |
+| 99-linux-prime-agent | The Windows installer (install.ps1) is not exercised. |
 
 `14-meta-muse` needs macOS 14 or newer, so CI skips it on older runners rather than failing it. Its `requires.json` carries the reason.
 

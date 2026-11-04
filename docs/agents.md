@@ -9,17 +9,17 @@
 Every AI agent this repo finds, every identifier it is matched on,
 and the CI test behind each one.
 
-![agents](https://img.shields.io/badge/agents-56-1D4E89)
-![identifiers](https://img.shields.io/badge/identifiers-161-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-161%2F161-2E7D57)
-![real install](https://img.shields.io/badge/by_real_install-161-2E7D57)
+![agents](https://img.shields.io/badge/agents-63-1D4E89)
+![identifiers](https://img.shields.io/badge/identifiers-174-1D4E89)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-172%2F174-A26A16)
+![real install](https://img.shields.io/badge/by_real_install-172-2E7D57)
 
 </div>
 
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 161 of 161. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
+**Every identifier is proved by a real install in CI** — 172 of 174. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
 
 ## 🧪 Why a real install is the bar
 
@@ -32,7 +32,9 @@ Proof is counted **per identifier**, not per agent. Installing an agent vouches
 only for the identifiers that run actually matched, so a sibling identifier on the
 same agent is not covered by association.
 
-# Agents (56)
+> **This number is a floor.** `00-baseline`, `100-windows-baseline`, `15-manus`, `70-linux-baseline`, `74-linux-dpkg-removed`, `76-linux-systemd` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
+
+# Agents (63)
 
 Software that acts on the user's behalf. This is what the catalog is for.
 
@@ -54,11 +56,13 @@ Operates on a codebase, usually with shell access.
 | **CodeGPT** | macOS, Linux | **`danielsanmedium.dscodegpt`** | 30-ide-agents, 85-linux-vscode-agents |
 | **Codex CLI** | macOS, Linux, Windows | **`codex`**, **`@openai/codex`**, **`openai.chatgpt`**, **`~/.codex`** | 101-windows-cli-agents, 103-windows-vscode-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 85-linux-vscode-agents |
 | **Cody** | macOS, Linux | **`sourcegraph.cody-ai`**, **`Sourcegraph`** | 30-ide-agents, 85-linux-vscode-agents, 86-linux-jetbrains-agents |
+| **Command Code** | Linux | **`command-code`**, **`~/.commandcode`** | 97-linux-cli-agents-npm-more |
 | **Continue** | macOS, Linux, Windows | **`@continuedev/cli`**, **`continue.continue`**, **`continue-intellij-extension`** | 103-windows-vscode-agents, 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode, 80-linux-jetbrains |
 | **GitHub Copilot** | macOS, Linux, Windows | **`copilot-cli`**, **`@github/copilot`**, **`github-copilot-intellij`** | 101-windows-cli-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 86-linux-jetbrains-agents |
 | **Crush** | Linux | **`@charmland/crush`**, **`crush`**, **`crush`** | 93-linux-cli-agents-more, 95-linux-crush-packages |
 | **Cursor** | macOS, Linux, Windows | **`com.todesktop.230313mzl4w4u92`**, **`cursor`**, **`cursor-cli`**, **`~/.local/bin/cursor-agent`**, **`~/AppData/Local/Programs/cursor/`**, **`cursor`**, **`cursor`**, **`cursor.desktop`**, **`{DADADADA-ADAD-ADAD-ADAD-ADADADADADAD}}_is1`** | 10-desktop-apps, 105-windows-desktop-apps, 21-cli-agents-homebrew, 73-linux-deb, 77-linux-rpm, 84-linux-installers |
 | **DeepSeek Harness** | Linux | **`@deepseek-ai/dsh`** | 93-linux-cli-agents-more |
+| **Devin CLI** | macOS, Linux | **`devin-cli`**, **`devin`**, **`~/.local/bin/devin`** | 22-cli-agents-homebrew-more, 97-linux-cli-agents-npm-more, 98-linux-installers-more |
 | **Factory Droid** | macOS, Linux | **`droid`**, **`@factory/cli`**, **`droid`**, **`~/.factory`** | 21-cli-agents-homebrew, 93-linux-cli-agents-more, 94-linux-cli-agents-legacy |
 | **Gemini CLI** | macOS, Linux, Windows | **`gemini-cli`**, **`@google/gemini-cli`** | 101-windows-cli-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 81-linux-bun |
 | **Gemini Code Assist** | macOS, Linux | **`google.geminicodeassist`**, **`gemini`** | 30-ide-agents, 85-linux-vscode-agents, 86-linux-jetbrains-agents |
@@ -71,11 +75,15 @@ Operates on a codebase, usually with shell access.
 | **Kiro** | macOS | **`dev.kiro.desktop`**, **`kiro`** | 10-desktop-apps |
 | **Kiro CLI** | macOS, Linux | **`com.amazon.codewhisperer`**, **`kiro-cli`**, **`~/.local/bin/kiro-cli`** | 21-cli-agents-homebrew, 84-linux-installers |
 | **Letta** | macOS, Linux | **`letta-code`**, **`@letta-ai/letta-code`**, **`letta`**, **`letta/letta`**, **`https://github.com/letta-ai/letta-code`**, **`~/.letta`** | 21-cli-agents-homebrew, 72-linux-python-agents, 79-linux-image, 96-linux-cli-agents-npm |
+| **Maki** | macOS, Linux | **`maki`**, **`~/.local/bin/maki`** | 22-cli-agents-homebrew-more, 98-linux-installers-more |
+| **MastraCode** | Linux | **`mastracode`** | 97-linux-cli-agents-npm-more |
 | **Mistral Vibe** | macOS, Linux | **`mistral-vibe`**, **`mistral-vibe`**, **`~/.vibe`** | 21-cli-agents-homebrew, 93-linux-cli-agents-more |
 | **Muse Code** | macOS, Linux | **`muse-code`**, **`~/.local/bin/muse`** | 14-meta-muse, 21-cli-agents-homebrew, 84-linux-installers |
+| **Oh My Pi** | Linux | **`@oh-my-pi/pi-coding-agent`**, **`~/.omp`** | 97-linux-cli-agents-npm-more, 98-linux-installers-more |
 | **opencode** | macOS, Linux | **`opencode`**, **`opencode-ai`**, **`~/.opencode`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 84-linux-installers |
 | **OpenHands** | Linux | **`ghcr.io/openhands/openhands`**, **`ghcr.io/all-hands-ai/openhands`**, **`https://github.com/OpenHands/OpenHands`** | 79-linux-image |
 | **Pi** | macOS, Linux | **`@earendil-works/pi-coding-agent`**, **`@mariozechner/pi-coding-agent`**, **`~/.pi`** | 20-cli-agents, 84-linux-installers, 87-linux-pi, 88-linux-pi-legacy |
+| **Prime Agent** | Linux | **`~/.local/bin/prime-agent`** | 99-linux-prime-agent |
 | **Qoder** | Linux | **`@qoder-ai/qodercli`**, **`~/.qoder`**, **`~/.local/bin/qodercli`** | 84-linux-installers, 96-linux-cli-agents-npm |
 | **Qwen Code** | macOS, Linux | **`qwen-code`**, **`@qwen-code/qwen-code`**, **`~/.qwen`** | 21-cli-agents-homebrew, 93-linux-cli-agents-more |
 | **Roo Code** | macOS, Linux, Windows | **`rooveterinaryinc.roo-cline`** | 103-windows-vscode-agents, 30-ide-agents, 85-linux-vscode-agents |
@@ -91,6 +99,7 @@ General-purpose, and often bridged to messaging.
 |---|---|---|---|
 | **Hermes Agent** | macOS, Linux | **`hermes-agent`**, **`hermes-agent`**, **`~/.hermes`**, **`~/.local/bin/hermes`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents |
 | **Letta server** | Linux | **`lettaai/letta`** | 79-linux-image |
+| **Manus** | macOS | im.manus.desktop, manus | 15-manus |
 | **Muse for Mac** | macOS | **`com.meta.endo`** | 14-meta-muse |
 | **OpenClaw** | macOS, Linux | **`ai.openclaw.mac`**, **`com.clawdbot.mac`**, **`openclaw`**, **`ai.openclaw.`**, **`openclaw`**, **`clawdbot`**, **`moltbot`**, **`~/.openclaw`** | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 57-clawdbot-era, 60-persistence, 82-linux-running |
 
@@ -128,6 +137,15 @@ A chat client that can run tools on the machine, for example through MCP.
 | **Perplexity** | macOS | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
 
 > **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = superseded: a run proved it and the current release no longer emits it. ∅ = no CI runner for its platform. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it.
+
+## ⚠️ Identifiers that did not pass
+
+Each one needs work, and the state column says what kind. **did not appear** means a scenario installed the agent and this identifier never showed up — the suite reached it and it did not reproduce, usually because the scenario installs by a different route, or because the artifact only exists once the agent has run.
+
+| agent | route | identifier | state | reached by |
+|---|---|---|---|---|
+| Manus | bundle id | `im.manus.desktop` | no test | -- |
+| Manus | homebrew | `manus` | no test | -- |
 
 **What it cannot see is a separate page.** [`docs/limits.md`](limits.md) carries what osquery cannot see on any machine and what each scenario leaves unproved after its install succeeds -- rendered from the same inputs, gated the same way.
 

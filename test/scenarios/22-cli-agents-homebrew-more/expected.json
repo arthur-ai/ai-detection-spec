@@ -1,0 +1,31 @@
+{
+  "description": "Maki's Homebrew formula and Devin CLI's cask, installed and not run.",
+  "platform": "darwin",
+  "counts": {
+    "brew": ">=2",
+    "app": ">=0",
+    "npm": ">=0",
+    "file": ">=0",
+    "ext": ">=0",
+    "nmh": ">=0",
+    "daemon": ">=0",
+    "port": ">=0",
+    "vscodeext": ">=0",
+    "jbplugin": ">=0",
+    "proc": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "maki",
+      "devin-cli"
+    ],
+    "forbid": [
+      "windsurf"
+    ]
+  },
+  "why": "Nothing else on this machine names either agent, so each Homebrew token is its only witness. windsurf is forbidden because its cask is devin-desktop, and the devin-cli token must not be read as it.",
+  "must_contain": [
+    "\"id\": \"maki\"",
+    "\"id\": \"devin-cli\""
+  ]
+}
