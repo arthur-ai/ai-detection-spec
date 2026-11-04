@@ -83,7 +83,9 @@ ONE macOS LABEL ON A PULL REQUEST, the first its matrix lists, passed as `--even
 pull_request`: the other labels are excluded by `os`, the push to main that follows the
 merge runs every label and records what each produced, and so does the weekly run. A
 pull request proves an identifier on a real install; which macOS versions carry it is
-the observation's business, and observations are committed from main alone. The org's
+the observation's business, and observations are committed from main alone.
+tools/check_workflows.py holds the first label to every scenario's `min_macos`, since
+the job skips, green, a scenario its runner cannot host. The org's
 plan allows five macOS jobs at once, and on 2026-11-03 a catalog pull request's two
 macOS jobs waited 35 minutes behind full matrices for about a minute of work each.
 
