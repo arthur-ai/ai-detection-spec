@@ -267,7 +267,15 @@ for _job, _names in sorted(_jobs.items()):
         _req = repo / "test" / "scenarios" / _name / "requires.json"
         if not _req.exists():
             continue
-        _need = int(json.loads(_req.read_text()).get("min_macos") or 0)
+        _need = json.loads(_req.read_text()).get("min_macos") or 0
+        # AN INTEGER OR NOTHING: the job's runnable gate and test/run.sh compare the floor
+        # with the shell's `-lt`, which errors on anything else and reads as "runnable".
+        # int() here would round 15.5 to 15 and pass what both of them cannot read.
+        if type(_need) is not int:
+            print(f"FAIL: {_name} declares min_macos {_need!r}, which is not an integer macOS "
+                  f"version, and the runnable gate compares it as one.")
+            failed = True
+            continue
         if _need > int(_m.group(1)):
             print(f"FAIL: {_name} needs macOS {_need}, and a pull request runs job {_job!r} on "
                   f"{_labels[0]} alone, where it would skip. List a label that hosts it first.")
