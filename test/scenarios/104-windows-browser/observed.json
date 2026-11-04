@@ -2,14 +2,24 @@
   "scenario": "104-windows-browser",
   "identifiers": [
     {
-      "agent": "claude-desktop",
-      "route": "msix_families",
-      "value": "Claude_pzs8sxrjxfjjc",
-      "agent_version": "4.4212.0.0",
+      "agent": "chatgpt-extension",
+      "route": "extension_ids",
+      "value": "hehggadaopoacecdllhhajmbjkdcmajg",
+      "agent_version": "1.26.1102.11740",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "41717324550"
+      "run": "41745176563"
+    },
+    {
+      "agent": "claude-desktop",
+      "route": "msix_families",
+      "value": "Claude_pzs8sxrjxfjjc",
+      "agent_version": "4.16336.0.0",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "41745176563"
     },
     {
       "agent": "claude-desktop",
@@ -18,7 +28,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "41717324550"
+      "run": "41745176563"
     },
     {
       "agent": "claude-in-chrome",
@@ -28,7 +38,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "41717324550"
+      "run": "41745176563"
     },
     {
       "agent": "harpa",
@@ -38,7 +48,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "41717324550"
+      "run": "41745176563"
     },
     {
       "agent": "merlin",
@@ -48,7 +58,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "41717324550"
+      "run": "41745176563"
     },
     {
       "agent": "monica",
@@ -58,7 +68,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "41717324550"
+      "run": "41745176563"
     },
     {
       "agent": "sider",
@@ -68,7 +78,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "41717324550"
+      "run": "41745176563"
     }
   ]
 }
