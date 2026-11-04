@@ -62,13 +62,21 @@ sudo_maybe tee "$ext/manifest.json" >/dev/null <<'MANIFEST'
  "host_permissions":["<all_urls>"]}
 MANIFEST
 
-# A native-messaging manifest in the USER scope, whose directory name is `NativeMessagingHosts`
-# -- mixed case -- while the system scope uses `native-messaging-hosts`. osquery's LIKE is
+# A native-messaging manifest in EACH SCOPE, because the directory names differ by case:
+# `NativeMessagingHosts` per user, `native-messaging-hosts` system-wide, where an
+# administrator places one (Chrome creates nothing under /etc/opt/chrome). osquery's LIKE is
 # case-sensitive, so getting one of the two wrong returns half the answer with no error.
-# Both spellings were read off this same real install.
-sudo_maybe mkdir -p "$home/.config/google-chrome/NativeMessagingHosts"
-sudo_maybe tee "$home/.config/google-chrome/NativeMessagingHosts/com.anthropic.claude_browser_extension.json" >/dev/null <<'NMH'
-{"name":"com.anthropic.claude_browser_extension","type":"stdio",
- "path":"/opt/fixture/bridge","allowed_origins":["chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/"]}
-NMH
+# Both spellings were read off a real Chrome install.
+#
+# A NAME NO AGENT CLAIMS. This tests the query's paths, which a fixture can prove; it
+# cannot prove an identifier. It once copied Claude Desktop's bridge,
+# com.anthropic.claude_browser_extension, and every run recorded Claude Desktop as observed
+# on Linux, which it has no build for, from this file. forbid_evidence keeps any agent from
+# claiming it again.
+nmh='{"name":"com.example.fixture_host","type":"stdio","path":"/opt/fixture/bridge",
+ "allowed_origins":["chrome-extension://aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/"]}'
+for dir in "$home/.config/google-chrome/NativeMessagingHosts" /etc/opt/chrome/native-messaging-hosts; do
+  sudo_maybe mkdir -p "$dir"
+  printf '%s\n' "$nmh" | sudo_maybe tee "$dir/com.example.fixture_host.json" >/dev/null
+done
 sudo_maybe chown -R "$SCENARIO_USER:$SCENARIO_USER" "$home/.config"
