@@ -130,7 +130,6 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 93-linux-cli-agents-more | Amp's and Droid's curl installers (ampcode.com/install.sh, app.factory.ai/cli) and Junie's (junie.jetbrains.com/install.sh) are not exercised, and no value was read from them. |
 | 93-linux-cli-agents-more | Editor extensions are not installed: Amp's VS Code extension, Qwen Code's IDE companion and Junie's JetBrains plugin. |
 | 95-linux-crush-packages | Charm's apt and yum repositories (repo.charm.sh) are not used; the release assets carry the same package name. |
-| 96-linux-cli-agents-npm | Letta Code's ~/.letta, which `letta --version` writes, is not a catalog value: the Letta server writes it too (catalog/agents.yaml). |
 | 96-linux-cli-agents-npm | Editor surfaces are not installed: the CodeBuddy IDE and extensions, and the Qoder IDE. |
 
 `14-meta-muse` needs macOS 14 or newer, so CI skips it on older runners rather than failing it. Its `requires.json` carries the reason.

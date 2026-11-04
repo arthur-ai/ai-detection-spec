@@ -9,9 +9,9 @@
 Every AI agent this repo finds, every identifier it is matched on,
 and the CI test behind each one.
 
-![agents](https://img.shields.io/badge/agents-55-1D4E89)
-![identifiers](https://img.shields.io/badge/identifiers-156-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-156%2F156-2E7D57)
+![agents](https://img.shields.io/badge/agents-56-1D4E89)
+![identifiers](https://img.shields.io/badge/identifiers-161-1D4E89)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-156%2F161-A26A16)
 ![real install](https://img.shields.io/badge/by_real_install-156-2E7D57)
 
 </div>
@@ -19,7 +19,7 @@ and the CI test behind each one.
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 156 of 156. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
+**Every identifier is proved by a real install in CI** — 156 of 161. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
 
 ## 🧪 Why a real install is the bar
 
@@ -32,7 +32,9 @@ Proof is counted **per identifier**, not per agent. Installing an agent vouches
 only for the identifiers that run actually matched, so a sibling identifier on the
 same agent is not covered by association.
 
-# Agents (55)
+> **This number is a floor.** `00-baseline`, `100-windows-baseline`, `70-linux-baseline`, `74-linux-dpkg-removed`, `76-linux-systemd` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
+
+# Agents (56)
 
 Software that acts on the user's behalf. This is what the catalog is for.
 
@@ -70,7 +72,7 @@ Operates on a codebase, usually with shell access.
 | **Kimi Code** | macOS, Linux | **`kimi-code`**, **`@moonshot-ai/kimi-code`**, **`kimi-cli`**, **`~/.kimi-code`**, **`~/.kimi`** | 21-cli-agents-homebrew, 84-linux-installers, 94-linux-cli-agents-legacy, 96-linux-cli-agents-npm |
 | **Kiro** | macOS | **`dev.kiro.desktop`**, **`kiro`** | 10-desktop-apps |
 | **Kiro CLI** | macOS, Linux | **`com.amazon.codewhisperer`**, **`kiro-cli`**, **`~/.local/bin/kiro-cli`** | 21-cli-agents-homebrew, 84-linux-installers |
-| **Letta Code** | macOS, Linux | **`letta-code`**, **`@letta-ai/letta-code`** | 21-cli-agents-homebrew, 96-linux-cli-agents-npm |
+| **Letta** | macOS, Linux | **`letta-code`**, **`@letta-ai/letta-code`**, letta ⚠, letta/letta ⚠, https://github.com/letta-ai/letta-code ⚠, ~/.letta ⚠ | 21-cli-agents-homebrew, 72-linux-python-agents, 79-linux-image, 96-linux-cli-agents-npm |
 | **Mistral Vibe** | macOS, Linux | **`mistral-vibe`**, **`mistral-vibe`**, **`~/.vibe`** | 21-cli-agents-homebrew, 93-linux-cli-agents-more |
 | **Muse Code** | macOS, Linux | **`muse-code`**, **`~/.local/bin/muse`** | 14-meta-muse, 21-cli-agents-homebrew, 84-linux-installers |
 | **opencode** | macOS, Linux | **`opencode`**, **`opencode-ai`**, **`~/.opencode`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 84-linux-installers |
@@ -90,6 +92,7 @@ General-purpose, and often bridged to messaging.
 | name | platforms | identifiers | scenarios |
 |---|---|---|---|
 | **Hermes Agent** | macOS, Linux | **`hermes-agent`**, **`hermes-agent`**, **`~/.hermes`**, **`~/.local/bin/hermes`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents |
+| **Letta server** | Linux | lettaai/letta ⚠ | 79-linux-image |
 | **Muse for Mac** | macOS | **`com.meta.endo`** | 14-meta-muse |
 | **OpenClaw** | macOS, Linux | **`ai.openclaw.mac`**, **`com.clawdbot.mac`**, **`openclaw`**, **`ai.openclaw.`**, **`openclaw`**, **`clawdbot`**, **`moltbot`**, **`~/.openclaw`** | 50-autonomous, 55-openclaw-npm, 56-openclaw-retired-names, 57-clawdbot-era, 60-persistence, 82-linux-running, 90-demo-fleet |
 
@@ -127,6 +130,18 @@ A chat client that can run tools on the machine, for example through MCP.
 | **Perplexity** | macOS | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
 
 > **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = superseded: a run proved it and the current release no longer emits it. ∅ = no CI runner for its platform. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it.
+
+## ⚠️ Identifiers that did not pass
+
+Each one needs work, and the state column says what kind. **did not appear** means a scenario installed the agent and this identifier never showed up — the suite reached it and it did not reproduce, usually because the scenario installs by a different route, or because the artifact only exists once the agent has run.
+
+| agent | route | identifier | state | reached by |
+|---|---|---|---|---|
+| Letta | PyPI | `letta` | did not appear | 21-cli-agents-homebrew, 72-linux-python-agents, 79-linux-image, 96-linux-cli-agents-npm |
+| Letta | image | `letta/letta` | did not appear | 21-cli-agents-homebrew, 72-linux-python-agents, 79-linux-image, 96-linux-cli-agents-npm |
+| Letta | image_labels | `https://github.com/letta-ai/letta-code` | did not appear | 21-cli-agents-homebrew, 72-linux-python-agents, 79-linux-image, 96-linux-cli-agents-npm |
+| Letta | state dir | `~/.letta` | did not appear | 21-cli-agents-homebrew, 72-linux-python-agents, 79-linux-image, 96-linux-cli-agents-npm |
+| Letta server | image | `lettaai/letta` | did not appear | 79-linux-image |
 
 **What it cannot see is a separate page.** [`docs/limits.md`](limits.md) carries what osquery cannot see on any machine and what each scenario leaves unproved after its install succeeds -- rendered from the same inputs, gated the same way.
 

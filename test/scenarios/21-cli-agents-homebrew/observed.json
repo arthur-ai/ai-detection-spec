@@ -372,7 +372,7 @@
       "run": "41764872370"
     },
     {
-      "agent": "letta-code",
+      "agent": "letta",
       "route": "homebrew",
       "value": "letta-code",
       "agent_version": "0.34.24",
@@ -382,7 +382,7 @@
       "run": "41764872370"
     },
     {
-      "agent": "letta-code",
+      "agent": "letta",
       "route": "homebrew",
       "value": "letta-code",
       "agent_version": "0.34.24",
