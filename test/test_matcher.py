@@ -1918,6 +1918,13 @@ check("an agent found beyond must_find fails, named as the lookalike it was decl
       not _extra[1] and any("cli (a declared lookalike)" in l for l in _extra[0]), str(_extra[0]))
 check("a forbid_evidence string in a finding's evidence fails, whichever agent claimed it",
       not _vd(["cli"], forbid_evidence=["libxcli"])[1] and _vd(["cli"], forbid_evidence=["zz"])[1])
+_two = {"findings": [{"id": "e1", "evidence": [{"kind": "ext", "id": "aaaa"}]}]}
+check("every_extension wants each id as evidence for its agent, not one id per agent",
+      _sc.evidence_wanted(_exp({"every_extension": True}), _AG + [
+          {"id": "e1", "platforms": ["linux"], "extension_ids": ["zzzz"]}]) == [
+          ("e1", "aaaa"), ("e2", "bbbb"), ("e1", "zzzz")]
+      and _sc.classified_verdict(_two, _exp(), {"e1"}, [("e1", "aaaa")])[1]
+      and not _sc.classified_verdict(_two, _exp(), {"e1"}, [("e1", "aaaa"), ("e1", "zzzz")])[1])
 _win = {"findings": [{"id": "cli", "evidence": [{"kind": "npm", "loc": "C:\\Users\\dana\\npm"}]}]}
 check("...a Windows path among them, which the evidence's JSON text would have escaped",
       not _sc.classified_verdict(_win, _exp({"forbid_evidence": ["C:\\Users\\dana"]}), {"cli"})[1])

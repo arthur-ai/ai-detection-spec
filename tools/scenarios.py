@@ -304,6 +304,15 @@ def extensions_text(agents, platform):
     return "\n".join(lines + [f"{i} {aid}" for i, aid in extension_ids(agents, platform)]) + "\n"
 
 
+def evidence_wanted(exp, agents):
+    """[(agent, id)]: each Web Store id every_extension installs, which must be evidence for
+    its own agent. must_find is satisfied by any one of an agent's ids, so an id whose
+    download failed would pass beside one that did not."""
+    if not (exp.get("classified") or {}).get("every_extension"):
+        return []
+    return [(aid, i) for i, aid in extension_ids(agents, exp.get("platform"))]
+
+
 def must_find(name, lookup, agents, _through=()):
     """Every agent the scenario must find: its own list, the platform's extension agents
     under every_extension, and what each scenario it composes must find. `lookup(name)`
@@ -492,15 +501,22 @@ def counts_verdict(rows, exp):
     return lines, ok_all
 
 
-def classified_verdict(result, exp, want):
+def classified_verdict(result, exp, want, evidence=()):
     """(lines, ok) for what bin/classify concluded: every agent in `want` (must_find, as
-    derived) is found, nothing else is, and no finding rests on forbid_evidence."""
+    derived) is found, each (agent, id) in `evidence` is found through a row with that id,
+    nothing else is found, and no finding rests on forbid_evidence."""
     found = {f["id"] for f in result["findings"]}
     cls = exp["classified"]
     lines, ok_all = [], True
     for agent in sorted(want):
         ok = agent in found
         lines.append(f"  classified must_find {agent!r}: {'ok' if ok else 'FAIL'}")
+        ok_all &= ok
+    for agent, value in evidence:
+        ok = any(f["id"] == agent and any(isinstance(e, dict) and e.get("id") == value
+                                          for e in f.get("evidence", []))
+                 for f in result["findings"])
+        lines.append(f"  classified {agent!r} through {value!r}: {'ok' if ok else 'FAIL'}")
         ok_all &= ok
     extra = sorted(found - want)
     lookalike = set(cls.get("forbid") or [])
@@ -541,7 +557,8 @@ def _assert(kind, rows_path, expected_path):
         if proc.returncode != 0:
             print(f"  FAIL: classifier exited {proc.returncode}: {proc.stderr.strip()[:200]}")
             return 1
-        lines, ok = classified_verdict(json.loads(proc.stdout), exp, want)
+        lines, ok = classified_verdict(json.loads(proc.stdout), exp, want,
+                                       evidence_wanted(exp, catalog()[0]))
     print("\n".join(lines))
     return 0 if ok else 1
 
@@ -563,7 +580,11 @@ def main(argv):
         print(json.dumps(value) if isinstance(value, bool) else value)
         return 0
     if argv[:1] == ["list"] and len(argv) == 2:
-        print("\n".join(on_platform(argv[1])))
+        # Nothing at all when there is nothing: an empty join still prints a newline, which a
+        # harness reads as one scenario with no name.
+        found = on_platform(argv[1])
+        if found:
+            print("\n".join(found))
         return 0
     if argv[:1] == ["want"] and len(argv) == 2:
         try:

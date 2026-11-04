@@ -77,7 +77,9 @@ esac
 # to REC_DIR, mounted at /observed.
 scenarios=("$@")
 if [ ${#scenarios[@]} -eq 0 ]; then
-  while IFS= read -r n; do scenarios+=("$n"); done < <(linux_scenarios)
+  # A blank line is no scenario: run with an empty name, a cloud runner would clean up
+  # its whole family directory.
+  while IFS= read -r n; do if [ -n "$n" ]; then scenarios+=("$n"); fi; done < <(linux_scenarios)
   # An empty list would run nothing and exit 0: the list command failing must not read
   # as a tree with no Linux scenarios.
   [ ${#scenarios[@]} -gt 0 ] || { echo "$(basename "$0"): tools/scenarios.py listed no linux scenario" >&2; exit 1; }
