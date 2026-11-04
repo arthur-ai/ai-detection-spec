@@ -18,8 +18,9 @@ need_curl
 need_user
 need_pkgs tar gzip || true
 
-# An attempt counts only if it left the file the installer should, as in 84.
-vendor_once() { try_user "$1" "$3" && as_user "test -e $2"; }
+# An attempt counts only if it left the file the installer should, and pipefail makes a
+# failed curl count as a failed attempt; 84 says why.
+vendor_once() { try_user "$1" "set -o pipefail; $3" && as_user "test -e $2"; }
 vendor() { retry "$1" vendor_once "$@"; }
 # MAKI'S INSTALLER ASKS THE GITHUB API FOR ITS LATEST TAG, unauthenticated, and that API
 # allows 60 requests an hour per IP, which a shared runner's IP can have spent: it answered
@@ -35,8 +36,12 @@ maki_tag="$(curl --retry 3 -fsSL -o /dev/null -w '%{url_effective}' \
   || echo "WARN: no tag from github.com/tontinton/maki/releases/latest; Maki's installer looks it up" >&2
 vendor "the Maki installer" '~/.local/bin/maki' \
   "curl --retry 3 -fsSL https://maki.sh/install.sh | sh -s -- $maki_tag" || true
+# DEVIN'S INSTALLER ENDS BY RUNNING `devin setup`, which asks to log in and, without a TTY,
+# exits 1 with "Login canceled" after the binary is in place (every image, run 41772215488).
+# So its exit status is not the verdict here; the file is. Without this, vendor() retried a
+# finished install twice more and reported it failed above a passing must_find.
 vendor "the Devin CLI installer" '~/.local/bin/devin' \
-  'curl --retry 3 -fsSL https://cli.devin.ai/install.sh | bash' || true
+  'curl --retry 3 -fsSL https://cli.devin.ai/install.sh | bash || test -e ~/.local/bin/devin' || true
 vendor "the Oh My Pi installer" '~/.local/bin/omp' \
   'curl --retry 3 -fsSL https://omp.sh/install | sh' || true
 

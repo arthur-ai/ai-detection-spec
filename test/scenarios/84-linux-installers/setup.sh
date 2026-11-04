@@ -40,7 +40,11 @@ need_node 22 || echo "WARN: Node 22 did not install"
 # installer here retries a partial transfer. Checking the file matters for Kiro CLI too: its
 # installer prompts on /dev/tty when a previous attempt left the binary behind. Running out
 # still fails the assertion, which names the agent.
-vendor_once() { try_user "$1" "$3" && as_user "test -e $2"; }
+#
+# pipefail, because as_user's shell has none: a failed curl feeds sh nothing, sh exits 0,
+# the attempt reads as a success and try_user discards curl's error, so the file check that
+# then fails retries with no reason shown.
+vendor_once() { try_user "$1" "set -o pipefail; $3" && as_user "test -e $2"; }
 vendor() { retry "$1" vendor_once "$@"; }
 vendor "the opencode installer" '~/.opencode/bin/opencode' \
   'curl --retry 3 -fsSL https://opencode.ai/install | bash' || true
