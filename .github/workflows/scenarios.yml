@@ -149,7 +149,7 @@ jobs:
           else
             case "$EVENT" in
               pull_request|push)
-                python3 tools/ci_scope.py --scenarios "$BASE" "$HEAD_SHA" \
+                python3 tools/ci_scope.py --scenarios "$BASE" "$HEAD_SHA" --event "$EVENT" \
                   --summary "$GITHUB_STEP_SUMMARY" >> "$GITHUB_OUTPUT" ;;
               *) echo "runtime=true" >> "$GITHUB_OUTPUT"
                  echo "$EVENT has no diff to read; running every scenario"
@@ -186,7 +186,10 @@ jobs:
         #
         # TWO LABELS, so observed.json records which macOS version produced each identifier
         # and a signature that appears on one and not the other is visible rather than
-        # averaged away.
+        # averaged away. A PULL REQUEST RUNS THE FIRST ALONE: tools/ci_scope.py excludes
+        # the rest by `os` on that event, and the push to main after the merge runs both
+        # and records both. The org's plan runs five macOS jobs at once, and a second
+        # label on every pull request was half of what queued behind that.
         #
         # PINNED, never macos-latest: a floating label changes the OS under every observation
         # with no diff here. macos-14 left when GitHub retired it (2026-11-02); its records

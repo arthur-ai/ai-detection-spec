@@ -52,7 +52,7 @@ Operates on a codebase, usually with shell access.
 | **BLACKBOX AI** | macOS, Linux | **`blackboxapp.blackbox`**, **`blackboxapp.blackboxagent`** | 30-ide-agents, 85-linux-vscode-agents |
 | **Claude Code** | macOS, Linux, Windows | **`@anthropic-ai/claude-code`**, **`anthropic.claude-code`**, **`~/.claude`**, **`~/.local/bin/claude`**, **`~/.local/bin/claude.exe`**, **`~/.local/share/claude/versions/`**, **`~/.local/bin/claude.exe`**, **`claude-code`**, **`claude-code`** | 101-windows-cli-agents, 102-windows-claude-native, 103-windows-vscode-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 83-linux-claude-running, 85-linux-vscode-agents, 89-linux-claude-deb, 90-demo-fleet, 91-linux-claude-rpm |
 | **Cline** | macOS, Linux, Windows | **`cline`**, **`saoudrizwan.claude-dev`**, **`cline`** | 103-windows-vscode-agents, 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode, 80-linux-jetbrains |
-| **CodeBuddy Code** | Linux | **`@tencent-ai/codebuddy-code`**, **`~/.codebuddy`** | 96-linux-cli-agents-npm |
+| **CodeBuddy** | Linux | **`@tencent-ai/codebuddy-code`**, **`~/.codebuddy`** | 96-linux-cli-agents-npm |
 | **CodeGPT** | macOS, Linux | **`danielsanmedium.dscodegpt`** | 30-ide-agents, 85-linux-vscode-agents |
 | **Codex CLI** | macOS, Linux, Windows | **`codex`**, **`@openai/codex`**, **`openai.chatgpt`**, **`~/.codex`** | 101-windows-cli-agents, 103-windows-vscode-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 85-linux-vscode-agents, 90-demo-fleet |
 | **Cody** | macOS, Linux | **`sourcegraph.cody-ai`**, **`Sourcegraph`** | 30-ide-agents, 85-linux-vscode-agents, 86-linux-jetbrains-agents |
