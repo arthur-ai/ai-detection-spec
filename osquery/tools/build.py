@@ -239,6 +239,19 @@ def queries(files=None):
     return out
 
 
+def snapshot_kinds():
+    """The kinds whose rows end with a process: every kind a query emits when its
+    `-- tables:` names `processes`. ci.yml's --deep check skips them, because a process
+    that ended between its two scans is not inventory --deep lost. The check skipped a
+    typed `proc` once and missed `port`: queries/ports.sql joins listening_ports to
+    processes, and macOS starts cupsd on demand and lets it exit idle, so run 41778882094
+    lost port 631 between the scans. Derived from the header so a new query that reads
+    processes declares itself."""
+    return {k for q in queries()
+            if "processes" in {t.strip() for t in q["fm"].get("tables", "").split(",")}
+            for k in q["kinds"]}
+
+
 def _binding(block):
     """A route block's `osquery:` mapping, in either form the YAML may take -- inline
     `{table: .., min_osquery: ..}` or one key per indented line -- in any key order and with
