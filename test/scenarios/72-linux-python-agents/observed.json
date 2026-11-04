@@ -8,7 +8,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "aider",
@@ -17,7 +17,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "aider",
@@ -26,7 +26,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "aider",
@@ -35,7 +35,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "aider",
@@ -44,7 +44,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "aider",
@@ -53,7 +53,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "aider",
@@ -62,7 +62,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "aider",
@@ -71,7 +71,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "aider",
@@ -80,7 +80,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "aider",
@@ -89,7 +89,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "aider",
@@ -98,7 +98,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "aider",
@@ -107,7 +107,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "hermes",
@@ -116,7 +116,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "hermes",
@@ -125,7 +125,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "hermes",
@@ -134,7 +134,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "hermes",
@@ -143,7 +143,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "hermes",
@@ -152,7 +152,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "hermes",
@@ -161,7 +161,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "hermes",
@@ -170,7 +170,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "hermes",
@@ -179,7 +179,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "hermes",
@@ -188,7 +188,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "hermes",
@@ -197,7 +197,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "hermes",
@@ -206,7 +206,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "hermes",
@@ -215,7 +215,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "hermes",
@@ -224,7 +224,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "hermes",
@@ -233,7 +233,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "hermes",
@@ -242,7 +242,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "hermes",
@@ -251,7 +251,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "hermes",
@@ -260,7 +260,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "41769455693"
+      "run": "41771813518"
     },
     {
       "agent": "hermes",
@@ -269,7 +269,61 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41769455693"
+      "run": "41771813518"
+    },
+    {
+      "agent": "letta",
+      "route": "pypi",
+      "value": "letta",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "41771813518"
+    },
+    {
+      "agent": "letta",
+      "route": "pypi",
+      "value": "letta",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "x86_64",
+      "run": "41771813518"
+    },
+    {
+      "agent": "letta",
+      "route": "pypi",
+      "value": "letta",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "41771813518"
+    },
+    {
+      "agent": "letta",
+      "route": "pypi",
+      "value": "letta",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "x86_64",
+      "run": "41771813518"
+    },
+    {
+      "agent": "letta",
+      "route": "pypi",
+      "value": "letta",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "41771813518"
+    },
+    {
+      "agent": "letta",
+      "route": "pypi",
+      "value": "letta",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "41771813518"
     }
   ]
 }
