@@ -64,10 +64,10 @@ docker image inspect alpine:3.20 --format '{{.RepoTags}}'
 
 # --- THE REST OF THE CONTAINER-ROUTE CATALOG ------------------------------------------
 #
-# THIS COSTS CI TIME AND THE TRADE IS DELIBERATE. These four images are ~5.7GB on top of
-# aider's 5.8GB, which roughly doubles this scenario's pull. The alternative was to
-# catalogue the names off a registry manifest and never fetch them, and that is the exact
-# shape of claim this repo has been wrong about twice -- `bot.molt.mac` and npm `aider`.
+# THIS COSTS CI TIME AND THE TRADE IS DELIBERATE. These images more than double aider's
+# 5.8GB pull. The alternative was to catalogue the names off a registry manifest and never
+# fetch them, and that is the exact shape of claim this repo has been wrong about twice --
+# `bot.molt.mac` and npm `aider`.
 # A signature nothing pulls is a guess with a comment beside it. Trim this list by
 # REMOVING SIGNATURES, never by leaving a signature untested.
 #
@@ -82,9 +82,17 @@ for repo in \
 do
   try "pull $repo" docker pull "$repo" || echo "  (continuing -- one registry is not the suite)"
 done
+# LETTA'S TWO REPOSITORIES. letta/letta now ships Letta Code and carries an OCI `source`
+# label; lettaai/letta is the 2024 server, which has none. lettaai/letta publishes amd64
+# only, so it is pulled for that platform: docker_images lists an image whatever its
+# architecture, and the arm runner would otherwise find no manifest to pull.
+retry "pull letta/letta:latest" try "pull letta/letta:latest" \
+  docker pull letta/letta:latest || true
+retry "pull lettaai/letta:latest" try "pull lettaai/letta:latest" \
+  docker pull --platform linux/amd64 lettaai/letta:latest || true
 echo "--- pulled agent images:"
 docker images --format '  {{.Repository}}:{{.Tag}} {{.ID}} {{.Size}}' \
-  | grep -Ei 'openhands|goose|swe-agent|aider' || true
+  | grep -Ei 'openhands|goose|swe-agent|aider|letta' || true
 
 # --- A RUNNING CONTAINER, which is a different row and a different claim ---------------
 #

@@ -6,8 +6,7 @@
 #   Kimi Code       @moonshot-ai/kimi-code       ~/.kimi-code on `kimi -p hi`, not on --version
 #   CodeBuddy Code  @tencent-ai/codebuddy-code   ~/.codebuddy on --help, not on --version
 #   Qoder CLI       @qoder-ai/qodercli           postinstall writes ~/.qoder/entry/
-#   Letta Code      @letta-ai/letta-code         ~/.letta on --version, which is not a value:
-#                                                the Letta server writes it too
+#   Letta Code      @letta-ai/letta-code         ~/.letta on --version
 #
 # SEPARATE from 84-linux-installers, whose curl installers put the same `kimi` and `qodercli`
 # on PATH, and from 94-linux-cli-agents-legacy, whose Python kimi-cli this package's
@@ -42,5 +41,6 @@ npm ls -g --depth=0 2>/dev/null | sed 's/^/      /'
 need_user
 as_user 'kimi -p hi </dev/null' >/dev/null 2>&1 || true
 try_user "codebuddy --help, which is what writes ~/.codebuddy" 'codebuddy --help >/dev/null' || true
+try_user "letta --version, which is what writes ~/.letta" 'letta --version' || true
 echo "--- what landed in the user's home:"
 as_user 'ls -1d ~/.*/ 2>&1' | sed 's/^/      /'
