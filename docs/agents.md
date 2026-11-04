@@ -10,8 +10,8 @@ Every AI agent this repo finds, every identifier it is matched on,
 and the CI test behind each one.
 
 ![agents](https://img.shields.io/badge/agents-63-1D4E89)
-![identifiers](https://img.shields.io/badge/identifiers-174-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-174%2F174-2E7D57)
+![identifiers](https://img.shields.io/badge/identifiers-177-1D4E89)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-174%2F177-A26A16)
 ![real install](https://img.shields.io/badge/by_real_install-174-2E7D57)
 
 </div>
@@ -19,7 +19,7 @@ and the CI test behind each one.
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 174 of 174. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
+**Every identifier is proved by a real install in CI** — 174 of 177. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
 
 ## 🧪 Why a real install is the bar
 
@@ -31,6 +31,8 @@ review.
 Proof is counted **per identifier**, not per agent. Installing an agent vouches
 only for the identifiers that run actually matched, so a sibling identifier on the
 same agent is not covered by association.
+
+> **This number is a floor.** `00-baseline`, `100-windows-baseline`, `107-windows-hermes-installer`, `108-windows-hermes-desktop`, `70-linux-baseline`, `74-linux-dpkg-removed`, `75-linux-browser`, `76-linux-systemd` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
 
 # Agents (63)
 
@@ -95,7 +97,7 @@ General-purpose, and often bridged to messaging.
 
 | name | platforms | identifiers | scenarios |
 |---|---|---|---|
-| **Hermes Agent** | macOS, Linux | **`hermes-agent`**, **`hermes-agent`**, **`~/.hermes`**, **`~/.local/bin/hermes`** | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents |
+| **Hermes Agent** | macOS, Linux, Windows | **`hermes-agent`**, **`hermes-agent`**, nousresearch/hermes-agent ⚠, **`~/.hermes`**, **`~/.local/bin/hermes`**, ~/AppData/Local/hermes/bin/hermes.exe ⚠, NousResearch.HermesBundled_e60prshbsznhj | 107-windows-hermes-installer, 108-windows-hermes-desktop, 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
 | **Letta server** | Linux | **`lettaai/letta`** | 79-linux-image |
 | **Manus** | macOS | **`im.manus.desktop`**, **`manus`** | 15-manus |
 | **Muse for Mac** | macOS | **`com.meta.endo`** | 14-meta-muse |
@@ -135,6 +137,16 @@ A chat client that can run tools on the machine, for example through MCP.
 | **Perplexity** | macOS | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
 
 > **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = superseded: a run proved it and the current release no longer emits it. ∅ = no CI runner for its platform. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it.
+
+## ⚠️ Identifiers that did not pass
+
+Each one needs work, and the state column says what kind. **did not appear** means a scenario installed the agent and this identifier never showed up — the suite reached it and it did not reproduce, usually because the scenario installs by a different route, or because the artifact only exists once the agent has run.
+
+| agent | route | identifier | state | reached by |
+|---|---|---|---|---|
+| Hermes Agent | image | `nousresearch/hermes-agent` | did not appear | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
+| Hermes Agent | process_paths | `~/AppData/Local/hermes/bin/hermes.exe` | did not appear | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
+| Hermes Agent | msix_families | `NousResearch.HermesBundled_e60prshbsznhj` | no test | -- |
 
 **What it cannot see is a separate page.** [`docs/limits.md`](limits.md) carries what osquery cannot see on any machine and what each scenario leaves unproved after its install succeeds -- rendered from the same inputs, gated the same way.
 

@@ -1,0 +1,35 @@
+{
+  "description": "Hermes Desktop for Windows, the signed MSIX bundle the vendor's App Installer feed serves, found by its package family name.",
+  "platform": "windows",
+  "counts": {
+    "ext": ">=0",
+    "file": ">=0",
+    "msix": ">=2",
+    "nmh": ">=1",
+    "npm": ">=0",
+    "proc": ">=0",
+    "scan": ">=1",
+    "uninstall": ">=1",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "hermes"
+    ],
+    "forbid": [
+      "claude-desktop",
+      "claude-code"
+    ]
+  },
+  "must_contain": [
+    "NousResearch.HermesBundled_e60prshbsznhj"
+  ],
+  "require_rows": [
+    {"kind": "msix", "id": "NousResearch.HermesBundled_", "extra": "Nous Research"}
+  ],
+  "why": "The MSIX family name is the only witness on this host: the desktop bundle writes nothing under the home that a Windows file query reads, and is not launched. must_contain names the whole family, publisher hash included, so a change of signing certificate turns this red rather than passing on a lookalike. `forbid` names the other agent the msix route finds, whose rows share this kind.",
+  "known_gaps": [
+    "The Microsoft Store package is a different identity, NousResearchInc.HermesAgent with the Store's publisher hash, and Server 2025 has no Store, so it is not installed here (docs/blind-spots.yaml, Store-only apps).",
+    "Read while its user is signed in: an MSIX package installed for one user is in HKEY_USERS only then (docs/blind-spots.yaml)."
+  ]
+}

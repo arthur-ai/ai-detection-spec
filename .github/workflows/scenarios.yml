@@ -524,6 +524,8 @@ jobs:
           - 104-windows-browser
           - 105-windows-desktop-apps
           - 106-windows-python-agents
+          - 107-windows-hermes-installer
+          - 108-windows-hermes-desktop
         exclude: ${{ fromJSON(needs.scope.outputs.exclude_scenario_windows || '[]') }}
     steps:
       - uses: actions/checkout@v4

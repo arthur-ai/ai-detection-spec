@@ -455,6 +455,38 @@ check("claude.exe is Claude Code by its own value, and claude.exe-helper is noth
       _ids(_rows("C:\\Users\\dana\\.local\\bin\\claude.exe")) == {"claude-code"}
       and _ids(_rows("C:\\Users\\dana\\.local\\bin\\claude.exe-helper")) == set())
 
+# HERMES ON WINDOWS, by the launcher its installer writes and the package its desktop app
+# ships as. Each value is the narrowest one that is the agent, so the lookalikes below are
+# the generic `hermes` names other software uses: the IBC relayer's cargo install, a
+# sibling launcher, a directory that only starts with hermes, and the desktop app's
+# remote-only Light variant, which is not catalogued.
+def _proc(*paths):
+    return [{"kind": "proc", "id": p, "ver": "", "loc": p, "extra": "", "perms": ""}
+            for p in paths]
+check("the Windows installer's launcher, running, is Hermes",
+      _ids(_proc("C:\\Users\\dana\\AppData\\Local\\hermes\\bin\\hermes.exe")) == {"hermes"})
+for near in ("C:\\Users\\dana\\.cargo\\bin\\hermes.exe",
+             "C:\\Users\\dana\\AppData\\Local\\hermes\\bin\\hermes.exe-old",
+             "C:\\Users\\dana\\AppData\\Local\\hermes-engine\\bin\\hermes.exe",
+             "C:\\Users\\dana\\AppData\\Local\\Programs\\hermes\\hermes.exe"):
+    check(f"a hermes.exe that is not the agent's launcher is NOT claimed ({near})",
+          _ids(_proc(near)) == set())
+_msix = classify_json([{"kind": "msix", "id": n, "ver": "1", "loc": "C:\\x", "extra": "", "perms": ""}
+                       for n in ("NousResearch.HermesBundled_e60prshbsznhj",
+                                 "NousResearch.HermesLight_e60prshbsznhj")])
+check("Hermes Desktop's MSIX family is Hermes, and the Light client's is not",
+      {e["id"] for f in _msix["findings"] for e in f["evidence"]}
+      == {"NousResearch.HermesBundled_e60prshbsznhj"},
+      f"got {[(f['id'], [e['id'] for e in f['evidence']]) for f in _msix['findings']]}")
+_img = classify_json([{"kind": "image", "id": t, "ver": "", "loc": "sha", "extra": "", "perms": ""}
+                      for t in ("docker.io/nousresearch/hermes-agent:latest", "hermes-agent:latest",
+                                "nousresearch/hermes-sandbox:latest",
+                                "nousresearch/hermes-agent-fork:latest")])
+check("the vendor's image is Hermes; a local build, the sandbox and a fork are not",
+      {e["id"] for f in _img["findings"] for e in f["evidence"]}
+      == {"docker.io/nousresearch/hermes-agent:latest"},
+      f"got {[(f['id'], [e['id'] for e in f['evidence']]) for f in _img['findings']]}")
+
 
 # --- the Linux package routes, and the lookalikes the base OS ships ----------------
 #

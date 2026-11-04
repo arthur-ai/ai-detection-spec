@@ -1,0 +1,33 @@
+{
+  "description": "Hermes Agent through the vendor's PowerShell installer, found running from the launcher it writes.",
+  "platform": "windows",
+  "counts": {
+    "ext": ">=0",
+    "file": ">=0",
+    "msix": ">=1",
+    "nmh": ">=1",
+    "npm": ">=0",
+    "proc": ">=1",
+    "scan": ">=1",
+    "uninstall": ">=1",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "hermes"
+    ],
+    "forbid": [
+      "claude-code",
+      "codex-cli",
+      "aider"
+    ]
+  },
+  "require_rows": [
+    {"kind": "proc", "id": "\\AppData\\Local\\hermes\\bin\\hermes.exe"}
+  ],
+  "why": "The vendor's native Windows route puts the whole install under %LOCALAPPDATA%\\hermes, which no Windows file query reads, so the only witness is the launcher running: `hermes gateway run` keeps hermes.exe alive. require_rows holds the row to the launcher's path. `forbid` names the agents whose skills the installer bundles by name (claude-code, codex) and the other Python agent the Windows scenarios install.",
+  "known_gaps": [
+    "Installed and not running, this install is invisible on Windows: filesystem-windows.sql reads ~\\.local\\bin and the home's dot-directories, and the installer writes to neither.",
+    "The installer's MSIX desktop stage (-IncludeDesktop) is not run; 108-windows-hermes-desktop installs the packaged desktop app instead."
+  ]
+}
