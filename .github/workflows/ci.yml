@@ -261,12 +261,16 @@ jobs:
           bad = [r for r in base if set(r) != {"kind","id","ver","loc","extra","perms"}]
           if bad:
               sys.exit(f"::error::{len(bad)} rows violate the six-column contract: {bad[:1]}")
-          # BY ROW, NOT BY COUNT, AND NOT `proc`. The two scans run seconds apart on a live
-          # runner whose processes come and go, so comparing counts failed a run that touched
-          # nothing here (PR 133: 604 base, 603 deep) and could not say which rows. A process
-          # that ended in between is not inventory --deep lost.
+          # BY ROW, NOT BY COUNT, AND NOT THE KINDS A PROCESS TAKES WITH IT. The two scans run
+          # seconds apart on a live runner whose processes come and go: comparing counts
+          # failed a run that touched nothing here (PR 133: 604 base, 603 deep) and could not
+          # say which rows, and skipping a typed `proc` missed `port`. build.snapshot_kinds()
+          # says why and derives the set from the queries' own headers.
+          sys.path.insert(0, "osquery/tools")
+          import build
           key = lambda r: (r["kind"], r["id"], r["loc"])
-          lost = sorted({key(r) for r in base if r["kind"] != "proc"} - {key(r) for r in deep})
+          kept = {key(r) for r in base if r["kind"] not in build.snapshot_kinds()}
+          lost = sorted(kept - {key(r) for r in deep})
           if lost:
               sys.exit(f"::error::--deep lost {len(lost)} base rows, first {lost[:3]}. "
                        "The base inventory must survive a failed container scan.")
@@ -647,9 +651,13 @@ jobs:
           bad = [r for r in base if set(r) != {"kind","id","ver","loc","extra","perms"}]
           if bad:
               sys.exit(f"::error::{len(bad)} rows violate the six-column contract: {bad[:1]}")
-          # By row and not `proc`, as in the darwin job, which says why.
+          # By row, and not the kinds a process takes with it, as in the darwin job, which
+          # says why.
+          sys.path.insert(0, "osquery/tools")
+          import build
           key = lambda r: (r["kind"], r["id"], r["loc"])
-          lost = sorted({key(r) for r in base if r["kind"] != "proc"} - {key(r) for r in deep})
+          kept = {key(r) for r in base if r["kind"] not in build.snapshot_kinds()}
+          lost = sorted(kept - {key(r) for r in deep})
           if lost:
               sys.exit(f"::error::--deep lost {len(lost)} base rows, first {lost[:3]}. "
                        "The base inventory must survive a failed container scan.")
