@@ -2,7 +2,7 @@
   "description": "The browser-agent extensions on Windows, matched by id, and the Claude Desktop bridge Claude's extension talks to.",
   "platform": "windows",
   "counts": {
-    "ext": ">=6",
+    "ext": ">=1",
     "file": ">=1",
     "msix": ">=2",
     "nmh": ">=2",

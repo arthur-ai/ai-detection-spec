@@ -511,9 +511,12 @@ def classified_verdict(result, exp, want):
     # `nothing else` asks whether an AGENT was claimed. This asks whether a ROW became
     # evidence: a stock Ubuntu's libxcursor1 is rightly in the payload, and must not be
     # evidence for Cursor even while some other row correctly is.
+    # Against each field's VALUE, never the evidence's JSON text, where a backslash is
+    # doubled: a Windows path probe would match nothing there and pass.
     for probe in cls.get("forbid_evidence", []):
-        claimed = sorted({f["id"] for f in result["findings"]
-                          for e in f.get("evidence", []) if probe in json.dumps(e)})
+        claimed = sorted({f["id"] for f in result["findings"] for e in f.get("evidence", [])
+                          if any(probe in str(v)
+                                 for v in (e.values() if isinstance(e, dict) else [e]))})
         lines.append(f"  forbid_evidence {probe!r}: "
                      + ("ok" if not claimed else "FAIL - claimed by " + ", ".join(claimed)))
         ok_all &= not claimed

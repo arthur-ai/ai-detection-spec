@@ -11,7 +11,11 @@ set -e
 # python3 reads the list, and /usr/bin/python3 is a stub until the Command Line Tools are installed.
 need_clt || { echo "FAIL: Command Line Tools did not install" >&2; exit 1; }
 D="$(cd "$(dirname "$0")/.." && pwd)"
-for s in $(python3 -c 'import json, sys; print(" ".join(json.load(open(sys.argv[1]))["composes"]))' \
-             "$(dirname "$0")/expected.json"); do
+# A list that cannot be read, or reads as empty, would run nothing and exit 0.
+composes=$(python3 -c 'import json, sys; print(" ".join(json.load(open(sys.argv[1]))["composes"]))' \
+             "$(dirname "$0")/expected.json") \
+  || { echo "FAIL: could not read composes from expected.json" >&2; exit 1; }
+[ -n "$composes" ] || { echo "FAIL: expected.json composes no scenario" >&2; exit 1; }
+for s in ${=composes}; do
   echo "--- $s ---"; zsh "$D/$s/setup.sh" || echo "WARN: $s had failures"
 done

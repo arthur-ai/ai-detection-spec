@@ -1918,6 +1918,9 @@ check("an agent found beyond must_find fails, named as the lookalike it was decl
       not _extra[1] and any("cli (a declared lookalike)" in l for l in _extra[0]), str(_extra[0]))
 check("a forbid_evidence string in a finding's evidence fails, whichever agent claimed it",
       not _vd(["cli"], forbid_evidence=["libxcli"])[1] and _vd(["cli"], forbid_evidence=["zz"])[1])
+_win = {"findings": [{"id": "cli", "evidence": [{"kind": "npm", "loc": "C:\\Users\\dana\\npm"}]}]}
+check("...a Windows path among them, which the evidence's JSON text would have escaped",
+      not _sc.classified_verdict(_win, _exp({"forbid_evidence": ["C:\\Users\\dana"]}), {"cli"})[1])
 check("a harness reads a field's default where the scenario is silent, and its value where it says",
       _sc.field("00-baseline", "deep") is False and _sc.field("79-linux-image", "deep") is True)
 def _raises(exc, fn):

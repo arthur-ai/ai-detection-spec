@@ -78,6 +78,9 @@ esac
 scenarios=("$@")
 if [ ${#scenarios[@]} -eq 0 ]; then
   while IFS= read -r n; do scenarios+=("$n"); done < <(linux_scenarios)
+  # An empty list would run nothing and exit 0: the list command failing must not read
+  # as a tree with no Linux scenarios.
+  [ ${#scenarios[@]} -gt 0 ] || { echo "$(basename "$0"): tools/scenarios.py listed no linux scenario" >&2; exit 1; }
 fi
 
 # What every scenario needs before setup.sh runs: osquery, python3 with yaml for the

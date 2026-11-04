@@ -546,8 +546,8 @@ def main():
     for name in scenarios.names():
         try:
             covered |= scenarios.must_find(name, lambda n: scenarios.read(n)[0], doc["agents"])
-        except (ValueError, KeyError, TypeError, AttributeError):
-            pass  # a refused scenario, which the check below names
+        except (ValueError, KeyError, TypeError, AttributeError, OSError):
+            pass  # a refused scenario, or one composing a missing one: the check below names it
 
     for agent in doc["agents"]:
         aid = agent.get("id", "<missing id>")

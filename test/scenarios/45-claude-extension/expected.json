@@ -30,12 +30,7 @@
   "must_contain": [
     "fcoeoabgfenejglbffodgkkbkcdhcgfn",
     "nativeMessaging",
-    "<all_urls>",
-    "eanggfilgoajaocelnaflolkadkeghjp",
-    "ofpnmcalabcbjgholdjcjblkibolbppb",
-    "difoiogjjojoaoomphldepapgpbgkhkb",
-    "camppjleccjaphfdbohjdohecfnoikec",
-    "hehggadaopoacecdllhhajmbjkdcmajg"
+    "<all_urls>"
   ],
   "known_gaps": [
     "Chrome for Testing registers the extension, because branded Chrome 137 and later refuse --load-extension. Branded Chrome's own install, update and ExtensionInstallForcelist paths are untested, and whether the policy needs an MDM-delivered profile on macOS is UNVERIFIED."

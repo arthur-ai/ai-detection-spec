@@ -75,6 +75,9 @@ scenarios=("$@")
 [ ${#families[@]} -gt 0 ] || families=(debian-12 ubuntu-2404 rocky-9)
 if [ ${#scenarios[@]} -eq 0 ]; then
   while IFS= read -r n; do scenarios+=("$n"); done < <(python3 "$ROOT/tools/scenarios.py" list linux)
+  # An empty list would run nothing and exit 0: the list command failing must not read
+  # as a tree with no Linux scenarios.
+  [ ${#scenarios[@]} -gt 0 ] || { echo "$(basename "$0"): tools/scenarios.py listed no linux scenario" >&2; exit 1; }
 fi
 
 # The public image family for each name this script accepts: image project, then family.
