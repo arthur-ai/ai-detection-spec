@@ -2067,6 +2067,12 @@ check("...and a suffix ties its numbers rather than being guessed newer or older
       _cl.release_key("2.1.292-1") == (2, 1, 292)
       and _cl.primary([dict(_running[0], ver="2.0.0-beta2"), dict(_running[1], ver="2.0.0")],
                       _rank) == 0)
+check("...and at most 16 components of 18 digits are read; the rest is not compared",
+      _cl.release_key("1." * 100000 + "1") == (1,) * 16
+      and _cl.release_key("2.1." + "9" * 19) == (2, 1)
+      and _cl.release_key("9" * 4301) == ())
+check("...so a version that is one long number carries no release, and raises nothing",
+      _cl.primary([dict(_running[0], ver="9" * 4301), _running[1]], _rank) == 1)
 _shim = [_r("file", "/Users/u/.claude/", loc="/Users/u/.claude/"),
          _r("file", "/Users/u/.local/bin/claude", "2.1.317", "/Users/u/.local/bin/claude")]
 check("a shim that carries its release speaks before a state directory listed ahead of it",
