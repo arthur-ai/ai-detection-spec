@@ -5,7 +5,7 @@
     "deb": ">=0",
     "deb+rpm": ">=1",
     "desktop": ">=0",
-    "ext": ">=5",
+    "ext": ">=6",
     "file": ">=0",
     "jbplugin": ">=0",
     "nmh": ">=0",
@@ -23,14 +23,17 @@
       "harpa",
       "monica",
       "sider",
-      "merlin"
+      "merlin",
+      "chatgpt-extension"
     ],
     "forbid": [
       "claude-code",
-      "claude-desktop"
+      "claude-desktop",
+      "chatgpt-desktop",
+      "codex-cli"
     ]
   },
-  "why": "Each browser agent on Linux, where nothing proved one before. An extension id is derived from its manifest key, so it is the same on every OS; the id is each agent's only witness here. `forbid` keeps Claude's extension from being read as the same vendor's CLI or desktop app.",
+  "why": "Each browser agent on Linux, where nothing proved one before. An extension id is derived from its manifest key, so it is the same on every OS; the id is each agent's only witness here. `forbid` keeps Claude's and ChatGPT's extensions from being read as the same vendor's CLI or desktop app.",
   "known_gaps": [
     "Chrome for Testing registers the extensions. Branded Chrome's own install and ExtensionInstallForcelist, which a managed fleet uses, are untested.",
     "x86_64 only: Google ships no Linux arm64 Chrome, so the arm64 runner skips this."

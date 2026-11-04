@@ -20,12 +20,18 @@
       "harpa",
       "monica",
       "sider",
-      "merlin"
+      "merlin",
+      "chatgpt-extension"
+    ],
+    "forbid": [
+      "chatgpt-desktop",
+      "codex-cli"
     ]
   },
-  "why": "Verifies the ext route end to end: a real signed artifact, a real profile, and an identifier osquery derives from the manifest key rather than one we assert. The same method works on any Chromium browser -- osquery's chrome_extensions spans 11 browser_types and a Chromium extension id is key-derived, so it is identical in Brave, Edge and Chromium. The extension is then registered by Chrome for Testing's --load-extension, not from the store, so the row's `extra` carries sideloaded:<sha256 of manifest.json>. The hash changes with every release, so require_rows pins the token's prefix to the Claude row: every extension here is sideloaded, so any of them would satisfy a probe on its own.",
+  "why": "Verifies the ext route end to end: a real signed artifact, a real profile, and an identifier osquery derives from the manifest key rather than one we assert. The same method works on any Chromium browser -- osquery's chrome_extensions spans 11 browser_types and a Chromium extension id is key-derived, so it is identical in Brave, Edge and Chromium. The extension is then registered by Chrome for Testing's --load-extension, not from the store, so the row's `extra` carries sideloaded:<sha256 of manifest.json>. The hash changes with every release, so require_rows pins the token's prefix to the Claude row, with its nativeMessaging and <all_urls> permissions: every extension here is sideloaded and ChatGPT's requests both, so any of them would satisfy a probe on its own. `forbid` keeps ChatGPT's extension from being read as OpenAI's desktop app or Codex.",
   "require_rows": [
-    {"kind": "ext", "id": "fcoeoabgfenejglbffodgkkbkcdhcgfn", "extra": ",sideloaded:"}
+    {"kind": "ext", "id": "fcoeoabgfenejglbffodgkkbkcdhcgfn", "extra": ",sideloaded:",
+     "perms": ["nativeMessaging", "<all_urls>"]}
   ],
   "must_contain": [
     "fcoeoabgfenejglbffodgkkbkcdhcgfn",
@@ -34,7 +40,8 @@
     "eanggfilgoajaocelnaflolkadkeghjp",
     "ofpnmcalabcbjgholdjcjblkibolbppb",
     "difoiogjjojoaoomphldepapgpbgkhkb",
-    "camppjleccjaphfdbohjdohecfnoikec"
+    "camppjleccjaphfdbohjdohecfnoikec",
+    "hehggadaopoacecdllhhajmbjkdcmajg"
   ],
   "known_gaps": [
     "Chrome for Testing registers the extension, because branded Chrome 137 and later refuse --load-extension. Branded Chrome's own install, update and ExtensionInstallForcelist paths are untested, and whether the policy needs an MDM-delivered profile on macOS is UNVERIFIED."

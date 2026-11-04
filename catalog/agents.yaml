@@ -941,6 +941,18 @@ agents:
     platforms: [darwin, linux, windows]
     extension_ids: [camppjleccjaphfdbohjdohecfnoikec]
 
+  # OpenAI's ChatGPT extension, which drives tabs in its Work mode. Read off the Web Store's
+  # CRX by a probe in CI run 41500293412 on 2026-11-02: name "ChatGPT", 1.26.1020.11845,
+  # "Control your browser with ChatGPT.", under a manifest asking for debugger, scripting,
+  # tabs, downloads, nativeMessaging and <all_urls>. 45, 92 and 104 install it. NOT
+  # ejcfepkfckglbgocfkanmcdngdijcgld, OpenAI's "ChatGPT search", which only sets the default
+  # search engine; test_matcher asserts it is declined.
+  - id: chatgpt-extension
+    name: ChatGPT browser extension
+    classification: Browser agent
+    platforms: [darwin, linux, windows]
+    extension_ids: [hehggadaopoacecdllhhajmbjkdcmajg]
+
   # ---------------------------------------------------------------------------------------
   # FROM HERE, terminal coding agents added 2026-10-28. Each value was read off a real install
   # by the scenario named. The npm, PyPI, deb and path values came from a run on Ubuntu 24.04
@@ -1015,6 +1027,19 @@ agents:
     # 40761736977: 0.25.3 on macOS 26 and 0.23.0 on macOS 15.
     homebrew: [qwen-code]
 
+  # DeepSeek Harness, DeepSeek's agent runtime: `dsh --profile headless "<job>"` runs a coding
+  # agent in the working directory. NOT `~/.dsh`, which the first headless run writes: the
+  # unrelated dsh distributed shell, packaged by Debian, reads ~/.dsh/dsh.conf by its man page
+  # (not read off an install). So only `npm -g` is found: `npx @deepseek-ai/dsh web`, the one
+  # command the vendor's README gives, leaves nothing a route reads (filesystem.sql's npx gap).
+  - id: deepseek-harness
+    name: DeepSeek Harness
+    classification: Coding agent
+    platforms: [linux]
+    # 93-linux-cli-agents-more in CI run 41718064984 on 2026-11-03: @deepseek-ai/dsh
+    # 0.2.1-rc.5, bin `dsh`, on Ubuntu 24.04 x86_64.
+    npm: ["@deepseek-ai/dsh"]
+
   # Google's Jules CLI. It drives Jules's cloud VMs, and `jules remote pull --apply` writes
   # the resulting patch into the local checkout, so it acts on the user's behalf.
   # NOT HERE: npm's unscoped `jules` is a 2017 JSON tool; test_matcher asserts it is declined.
@@ -1080,7 +1105,8 @@ agents:
     # Read on 2026-10-29 off an `npm install -g` on an Ubuntu 24.04 host, osquery 5.23.1's
     # npm_packages row: @moonshot-ai/kimi-code 2.4.0. 96-linux-cli-agents-npm.
     npm: ["@moonshot-ai/kimi-code"]
-    # A homebrew-core formula. 21-cli-agents-homebrew; pending CI.
+    # A homebrew-core formula. 21-cli-agents-homebrew in CI run 41714485113: 2.3.3 on
+    # macOS 15 and 2.3.2 on macOS 26.
     homebrew: [kimi-code]
     # The previous, Python generation, kimi-cli 1.52.0, as a uv tool directory.
     # 94-linux-cli-agents-legacy in CI run 40920067535, Ubuntu 24.04 x86_64.
@@ -1092,7 +1118,8 @@ agents:
     # container on 2026-11-03. 96 runs it.
     #
     # ~/.kimi is the Python generation's: kimi-cli 1.52.0 writes it on `kimi --version`, read
-    # in the same container. 94 runs it. Kimi Code 2.4.1 did not write it.
+    # in the same container. 94 read it in CI run 41714485113, on Ubuntu 24.04 x86_64 and
+    # arm64. Kimi Code 2.4.1 did not write it.
     state_dirs: ["~/.kimi-code", "~/.kimi"]
 
   # Tencent's CodeBuddy Code. Its package ships several bins, `codebuddy` and `cbc` among
@@ -1110,8 +1137,8 @@ agents:
     # 96-linux-cli-agents-npm.
     npm: ["@tencent-ai/codebuddy-code"]
     # Written on first run: `codebuddy --help` wrote it and --version did not, 2.179.3 in an
-    # Ubuntu 24.04 container on 2026-11-03. 96 runs it. Whether the CodeBuddy IDE writes it
-    # too is unexamined.
+    # Ubuntu 24.04 container on 2026-11-03. 96 read it in CI run 41714485113, on Ubuntu
+    # 24.04 x86_64 and arm64. Whether the CodeBuddy IDE writes it too is unexamined.
     state_dirs: ["~/.codebuddy"]
 
   # Alibaba's Qoder CLI. One entry for Qoder, as Antigravity is one entry for its editions:
@@ -1149,7 +1176,8 @@ agents:
     # The same install's npm_packages row: @letta-ai/letta-code 0.34.23.
     # 96-linux-cli-agents-npm.
     npm: ["@letta-ai/letta-code"]
-    # A homebrew-core formula. 21-cli-agents-homebrew; pending CI.
+    # A homebrew-core formula. 21-cli-agents-homebrew in CI run 41714485113: 0.34.24 on
+    # macOS 15 and 26.
     homebrew: [letta-code]
 
   # Manus's desktop agent, which runs tasks on the local machine through computer-use and

@@ -7,10 +7,10 @@
 # %LOCALAPPDATA%\Google\Chrome\User Data.
 . (Join-Path $PSScriptRoot '..\..\lib\guest-windows.ps1')
 
-# Claude, HARPA AI, Monica, Sider, Merlin: every browser agent the catalog matches by id.
+# Claude, HARPA AI, Monica, Sider, Merlin, ChatGPT: every browser agent the catalog matches by id.
 $ids = @('fcoeoabgfenejglbffodgkkbkcdhcgfn', 'eanggfilgoajaocelnaflolkadkeghjp',
          'ofpnmcalabcbjgholdjcjblkibolbppb', 'difoiogjjojoaoomphldepapgpbgkhkb',
-         'camppjleccjaphfdbohjdohecfnoikec')
+         'camppjleccjaphfdbohjdohecfnoikec', 'hehggadaopoacecdllhhajmbjkdcmajg')
 $udd = Join-Path $env:LOCALAPPDATA 'Google\Chrome\User Data'
 $dl = Join-Path $env:RUNNER_TEMP 'browser'
 New-Item -ItemType Directory -Force -Path $dl | Out-Null
