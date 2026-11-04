@@ -33,13 +33,15 @@ run_scenario() {
   # guest can never be newer than the host, so on an older host that is a fact about the
   # lab and not a defect in the query. Report it as SKIP: a failure nobody can act on
   # gets ignored, and an ignored suite stops being read at all.
-  if [ -f "$dir/requires.json" ]; then
-    local need guest
-    need=$(python3 -c "import json;print(json.load(open('$dir/requires.json')).get('min_macos',0))")
+  # The floor through tools/scenarios.py, which refuses the scenario's files here rather
+  # than reading a misspelt key as no floor at all.
+  local need guest
+  need=$(python3 "$SCENARIOS_PY" field "$s" requires.min_macos) || return 1
+  if [ "$need" -gt 0 ]; then
     guest=$(vm_ssh "$vm" "sw_vers -productVersion" | cut -d. -f1)
     if [ "$guest" -lt "$need" ]; then
       echo "SKIP: needs macOS >= $need, guest is $guest"
-      python3 -c "import json;print('      '+json.load(open('$dir/requires.json')).get('why',''))"
+      echo "      $(python3 "$SCENARIOS_PY" field "$s" requires.why)"
       # Say how to fix it here, not in a README nobody opens while staring at a skip.
       echo "      To run it: on a macOS $need+ host, or explicitly ->"
       echo "        BASE_IMAGE=$(image_for_macos "$need") ./run.sh $s"
@@ -81,7 +83,8 @@ run_scenario() {
   vm_ssh "$vm" "/tmp/scenarios/$s/setup.sh" || setup_rc=$?
   if [ "$setup_rc" = "3" ]; then
     echo "SKIP: setup reported this environment cannot host the scenario"
-    [ -f "$dir/requires.json" ] && python3 -c "import json;print('      '+json.load(open('$dir/requires.json')).get('why',''))"
+    local why; why=$(python3 "$SCENARIOS_PY" field "$s" requires.why)
+    [ -z "$why" ] || echo "      $why"
     echo
     return 2
   fi
@@ -141,7 +144,7 @@ EOF
   # Found by adding five agents to must_find and noticing the run reported ALL PASS
   # without ever printing them.
   assert_counts "$ART/$s.json" "$dir/expected.json" || rc=1
-  assert_classified "$ART/$s.json" "$dir/expected.json" "$HERE/.." || rc=1
+  assert_classified "$ART/$s.json" "$dir/expected.json" || rc=1
   assert_match_sql "$ART/$s.json" "$dir/expected.json" "$HERE/.." \
     "$ART/$s.agents.json" "$ART/$s.parity.json" || rc=1
 

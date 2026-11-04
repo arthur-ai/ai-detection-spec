@@ -18,8 +18,7 @@
   "classified": {
     "must_find": [
       "openclaw"
-    ],
-    "forbid": []
+    ]
   },
   "why": "The demo's punchline. must_find 'openclaw' is now the assertion that would have caught the bug that mattered most: the design said the bundle id was bot.molt.mac, the shipped app is ai.openclaw.mac, and under the old design the query matched nothing on any Mac while exiting 0. That identifier now lives in the catalog, where correcting it re-matches evidence already collected instead of needing a redeploy.",
   "must_contain": [

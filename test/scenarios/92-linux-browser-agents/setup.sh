@@ -34,13 +34,14 @@ cft=/tmp/cft/chrome-linux64/chrome
 # goes where it can.
 install -m 0644 "$lib/unpack_crx.py" /tmp/unpack_crx.py
 
-# Claude, HARPA AI, Monica, Sider, Merlin, ChatGPT: every browser agent the catalog matches by id. No
+# Every browser agent the catalog matches by id: extension-ids.txt is generated from it by
+# tools/scenarios.py, which puts each agent in must_find through `every_extension`. No
 # answer for ANY id is the network, so SKIP. No answer for SOME is an extension the Web Store
 # stopped serving, which must stay red: its agent's must_find fails and names it.
+ids=$(awk '!/^#/ {print $1}' "$(dirname "$0")/extension-ids.txt")
+[ -n "$ids" ] || { echo "FAIL: extension-ids.txt lists no id"; exit 1; }
 dirs=()
-for id in fcoeoabgfenejglbffodgkkbkcdhcgfn eanggfilgoajaocelnaflolkadkeghjp \
-          ofpnmcalabcbjgholdjcjblkibolbppb difoiogjjojoaoomphldepapgpbgkhkb \
-          camppjleccjaphfdbohjdohecfnoikec hehggadaopoacecdllhhajmbjkdcmajg; do
+for id in $ids; do
   crx="https://clients2.google.com/service/update2/crx?response=redirect&prodversion=155.0&acceptformat=crx3&x=id%3D${id}%26uc"
   retry "the CRX for $id" curl --retry 3 -fsSLo "/tmp/$id.crx" "$crx" || continue
   chmod 0644 "/tmp/$id.crx"

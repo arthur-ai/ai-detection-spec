@@ -18,8 +18,7 @@
   "classified": {
     "must_find": [
       "openclaw"
-    ],
-    "forbid": []
+    ]
   },
   "why": "The npm install route, which the cask scenario cannot see. This is also where the npx gap recorded at the foot of filesystem.sql would be proven or disproven: the claim that an npx-launched agent still creates its state dotdir is UNVERIFIED, and this scenario is the place to settle it.",
   "must_contain": [

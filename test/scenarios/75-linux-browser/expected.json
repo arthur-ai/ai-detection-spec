@@ -18,7 +18,9 @@
     "vscodeext": ">=0"
   },
   "classified": {
-    "must_find": [],
+    "must_find": [
+      "claude-desktop"
+    ],
     "forbid": [
       "claude-in-chrome",
       "openclaw"
@@ -35,6 +37,7 @@
   "known_gaps": [
     "No real extension identifier. 45-claude-extension gets one on macOS by unpacking the Web Store's signed CRX, which does carry the key; the same route would work here and is not yet built.",
     "Google ships no Linux arm64 Chrome, so this skips on arm64 runners.",
-    "The planted extension is unreferenced by construction. The sideloaded token is exercised only on macOS, by 45-claude-extension."
+    "The planted extension is unreferenced by construction. The sideloaded token is exercised only on macOS, by 45-claude-extension.",
+    "The planted native-messaging manifest is the one Claude Desktop writes, so the classifier finds claude-desktop here, on a platform the catalog does not claim for it, and the run records that identifier as observed on Linux from a planted file rather than an install."
   ]
 }

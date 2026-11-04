@@ -20,7 +20,7 @@ Two more modes serve the scenario harness (test/lib/assert.sh's assert_match_sql
     --wrapper <payload.json>     print the SQL bin/discover --names would run over it
     --assert <actual> <expected> [--agents <json>] [--parity <json>] [--root <dir>]
                                  parity over <actual>, then dist/agents-<platform>.sql's
-                                 findings against expected.json's must_find and forbid.
+                                 findings against the scenario's must_find, and nothing else.
                                  Given the two json files it runs no osqueryi at all,
                                  which is how the Tart harness asserts on a host without one.
 """
@@ -134,7 +134,7 @@ def diff(a, b):
 
 def assert_mode(argv):
     """The scenario assertion: parity on the rows a scenario collected, then the
-    standalone artifact's findings against the scenario's must_find and forbid."""
+    standalone artifact's findings against the scenario's must_find, and nothing else."""
     import argparse
     ap = argparse.ArgumentParser(prog="test_match_sql.py --assert")
     ap.add_argument("actual")
@@ -144,8 +144,12 @@ def assert_mode(argv):
     ap.add_argument("--root", default=str(ROOT))
     a = ap.parse_args(argv)
     rows = json.load(open(a.actual))
-    expected = json.load(open(a.expected))
-    plat = expected.get("platform") or platform_here()
+    # tools/scenarios.py reads the scenario, as test/assert.sh's other layers do, and gives
+    # must_find as derived from the catalog.
+    sys.path.insert(0, str(ROOT.parent / "tools"))
+    import scenarios
+    expected, must_find = scenarios.load(a.expected)
+    plat = expected["platform"]
     frag = shipped_fragment()
     classify = R.load_classify()
     catalog = classify.load_catalog(R.CATALOG)
@@ -185,8 +189,7 @@ def assert_mode(argv):
     found_by = collections.defaultdict(set)
     for agent, kind, _, _ in want:
         found_by[agent].add(kind)
-    want_c = expected.get("classified") or {}
-    for agent in want_c.get("must_find", []):
+    for agent in sorted(must_find):
         # NOT FOUND AT ALL IS NOT A BLIND SPOT, and the two may not share a line: when npm
         # failed to install cline, this called it "found only through nothing; covered by
         # the parity check", which compares rows and says nothing about an absent agent.
@@ -203,8 +206,10 @@ def assert_mode(argv):
             continue
         check(f"dist/agents-{plat}.sql finds {agent!r}", agent in live_found,
               f"found {sorted(live_found)}")
-    for agent in want_c.get("forbid", []):
-        check(f"dist/agents-{plat}.sql does not claim {agent!r}", agent not in live_found)
+    # NOTHING ELSE, as the classifier is held to: an agent must_find does not name is a
+    # signature too broad, whichever matcher claims it.
+    check(f"dist/agents-{plat}.sql claims nothing beyond must_find", live_found <= must_find,
+          f"also claimed {sorted(live_found - must_find)}")
     return 1 if failures else 0
 
 

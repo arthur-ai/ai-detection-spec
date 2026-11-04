@@ -1,0 +1,8 @@
+# Generated from catalog/agents.yaml by `python3 tools/scenarios.py --write`; do
+# not edit. Every extension id the catalog matches on windows, and its agent.
+fcoeoabgfenejglbffodgkkbkcdhcgfn claude-in-chrome
+eanggfilgoajaocelnaflolkadkeghjp harpa
+ofpnmcalabcbjgholdjcjblkibolbppb monica
+difoiogjjojoaoomphldepapgpbgkhkb sider
+camppjleccjaphfdbohjdohecfnoikec merlin
+hehggadaopoacecdllhhajmbjkdcmajg chatgpt-extension

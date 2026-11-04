@@ -43,9 +43,11 @@ selected by every rule that would have consulted them. The rules, and what each 
   test/scenarios/<s>/    that scenario.
   SETUP_LIBS             the scenarios whose setup.sh sources it.
   HARNESS                the scenarios of the jobs that run it: a platform's whole tree.
-  catalog/agents.yaml    the scenarios that name a changed agent (must_find, forbid), that
-                         observed one (observed.json), or that carry forbid_evidence, which
-                         names no agent. Two agents whose order flipped are both changed:
+  catalog/agents.yaml    the scenarios that must find a changed agent (must_find, as
+                         tools/scenarios.py derives it), hold its lookalikes (forbid), or
+                         observed it (observed.json); those carrying forbid_evidence, which
+                         names no agent; and the `control` of each platform a changed agent
+                         claims. Two agents whose order flipped are both changed:
                          bin/classify gives a row both match to the first. A change outside
                          `agents:` runs every scenario.
   rendered match SQL     nothing more when the catalog is in the same diff, since lint's
@@ -80,6 +82,8 @@ import pathlib
 import re
 import subprocess
 import sys
+
+import scenarios
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -252,19 +256,9 @@ def runner_platform(spec):
 
 
 def tree_scenarios(platform, root=ROOT):
-    """Every scenario directory whose expected.json declares `platform`. One whose
-    expected.json cannot be read is included: could-not-look must not read as
-    nothing-to-run. `test/run-linux.sh --list` enumerates the same way, and
-    test/test_ci_scope.py holds the two together."""
-    out = []
-    for exp in sorted((root / "test" / "scenarios").glob("*/expected.json")):
-        try:
-            if json.loads(exp.read_text()).get("platform") != platform:
-                continue
-        except ValueError:
-            pass
-        out.append(exp.parent.name)
-    return out
+    """Every scenario that declares `platform`, by tools/scenarios.py, which includes one
+    whose expected.json cannot be read. `test/run-linux.sh --list` asks the same function."""
+    return scenarios.on_platform(platform, root / "test" / "scenarios")
 
 
 def job_scenarios(doc, root=ROOT):
@@ -294,16 +288,27 @@ class Scope:
             self._info = {name: self._facts(name) for name in sorted(self.listed)}
         return self._info
 
+    def _expected(self, name):
+        exp = json.loads(self.read("head", f"test/scenarios/{name}/expected.json") or "")
+        if scenarios.shape_errors(name, exp):
+            raise ValueError(f"tools/scenarios.py refuses {name}'s expected.json")
+        return exp
+
     def _facts(self, name):
+        """A scenario's facts, or None when its files cannot be read or are refused, or the
+        catalog its must_find derives from cannot be: could-not-look runs."""
         try:
-            exp = json.loads(self.read("head", f"test/scenarios/{name}/expected.json") or "")
+            exp = self._expected(name)
             obs = json.loads(self.read("head", f"test/scenarios/{name}/observed.json") or "{}")
-        except ValueError:
+            agents = self.yaml.safe_load(self.read("head", CATALOG) or "")["agents"]
+            found = scenarios.must_find(name, self._expected, agents)
+        except (ValueError, TypeError, KeyError, self.yaml.YAMLError):
             return None
-        cls = exp.get("classified") or {}
+        cls = exp["classified"]
         seen = {r.get("agent") for r in obs.get("identifiers", []) + obs.get("archived", [])}
-        return {"platform": exp.get("platform"), "deep": bool(exp.get("deep")),
-                "agents": set(cls.get("must_find", [])) | set(cls.get("forbid", [])) | seen,
+        return {"platform": exp["platform"], "deep": bool(exp.get("deep")),
+                "control": bool(exp.get("control")),
+                "agents": found | set(cls.get("forbid") or []) | seen,
                 "any_agent": bool(cls.get("forbid_evidence"))}
 
     def where(self, test):
@@ -445,7 +450,10 @@ class Scope:
                  if b_by_id.get(i) != h_by_id.get(i)} | flipped
         if not moved:
             return frozenset(), "the catalog's agents parse unchanged"
-        return (self.where(lambda i: bool(i["agents"] & moved) or i["any_agent"]),
+        claims = {p for i in moved for a in (b_by_id.get(i), h_by_id.get(i)) if a
+                  for p in a.get("platforms") or []}
+        return (self.where(lambda i: bool(i["agents"] & moved) or i["any_agent"]
+                           or (i["control"] and i["platform"] in claims)),
                 f"agents changed or reordered: {', '.join(sorted(moved))}")
 
     def select(self):

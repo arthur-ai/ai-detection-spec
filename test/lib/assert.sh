@@ -5,7 +5,7 @@
 #
 # The query enumerates and holds no catalog, so a count proves only that each BRANCH still
 # returns rows, and most counts are floors. Whether the rows resolve to the right agent is
-# assert_classified's question, and `forbid` proves they resolve to nothing else.
+# assert_classified's question, and it also proves they resolve to nothing else.
 set -euo pipefail
 
 # A TEST RUN IS NOT A USE, and bin/classify sends one usage event per run. `CI` already
@@ -15,159 +15,21 @@ set -euo pipefail
 # explicitly rather than relied upon: see docs/telemetry.md.
 export AI_DETECTION_SPEC_TELEMETRY=0
 
+# THE ASSERTIONS LIVE IN tools/scenarios.py, beside the vocabulary they read, so a key this
+# file checks and a key the static gate accepts cannot be two lists. It refuses a scenario
+# whose files it cannot read in full before asserting anything.
+SCENARIOS_PY="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)/tools/scenarios.py"
+
 assert_counts() {
-  local actual_json="$1" expected_json="$2"
-  python3 - "$actual_json" "$expected_json" <<'PY'
-import json, re, sys, collections
-# A BARE ARRAY IS THE ONLY SHAPE ANY PRODUCER EMITS -- `osqueryi --json`, osquery/bin/discover and
-# osquery/bin/container-scan alike. This used to unwrap a `findings` envelope as well, from an
-# endpoint script that predates this repo: nothing in the tree could produce a dict, and
-# the unwrap would have raised on bin/classify's findings anyway, which carry no `kind`.
-actual = json.load(open(sys.argv[1]))
-expected = json.load(open(sys.argv[2]))
-got = collections.Counter(r["kind"] for r in actual)
-want = expected["counts"]
-fail = False
-# A `+` IN A KEY SUMS THE KINDS IT JOINS. It exists for one assertion: "the package
-# branch ran". A Linux box always has packages, so a zero there is a branch that did not
-# run rather than a clean machine -- but which kind carries them is the distro's
-# choice, `deb` on Debian and Ubuntu, `rpm` on Rocky and Fedora. Pinning `deb >= 1`
-# said Ubuntu; `deb+rpm >= 1` says Linux, and the per-kind floors beside it stay.
-def count(key):
-    return sum(got.get(k, 0) for k in key.split("+"))
-covered = {k for key in want for k in key.split("+")}
-print(f"{'kind':10} {'want':>8} {'got':>8}")
-for kind in sorted(set(want) | (set(got) - covered)):
-    w, g = want.get(kind), count(kind)
-    if w is None:
-        print(f"{kind:10} {'-':>8} {g:>8}  UNEXPECTED KIND"); fail = True; continue
-    if isinstance(w, str) and w.startswith(">="):
-        ok = g >= int(w[2:])
-    else:
-        ok = g == w
-    print(f"{kind:10} {str(w):>8} {g:>8}  {'ok' if ok else 'FAIL'}")
-    fail |= not ok
-# A LIST ELEMENT MEANS "ANY OF THESE", and it exists because the OS axis produced the
-# first identifier that legitimately differs by platform. The `chatgpt` cask resolved to
-# 26.721.41059 on macos-15 and to 1.2026.160 on macos-14 in run 33511815638, and those two
-# builds carry DIFFERENT bundle ids -- com.openai.codex and com.openai.chat. Both are real.
-#
-# The alternative was to drop the bundle-id probe and lean on the classifier, and that is
-# the wrong trade: `chatgpt` matches on the brew route too, so must_find still passes with
-# every bundle id in the catalog broken. This probe is the only thing that reads the raw
-# row, which is exactly why it must be able to say "one of these two" instead of being
-# weakened to nothing.
-blobs = [json.dumps(r) for r in actual]
-for probe in expected.get("must_contain", []):
-    alts = probe if isinstance(probe, list) else [probe]
-    hit = any(any(p in blob for p in alts) for blob in blobs)
-    label = " | ".join(alts)
-    print(f"  must_contain {label!r}: {'ok' if hit else 'FAIL'}")
-    fail |= not hit
-
-# forbid_rows: NO ROW MAY MATCH ALL THE NAMED FIELDS. Exact per field, never a substring,
-# because what is being asserted is that a QUERY excluded something -- and a substring
-# probe would be satisfied or defeated by whatever else happened to be installed.
-#
-# This exists for osquery/queries/packages-linux.sql's dpkg status filter. A package removed
-# without --purge stays in dpkg's database as `deinstall ok config-files`, WITH ITS
-# VERSION, so an unfiltered query reports software nobody has as installed. Asserting the
-# absence of {kind: deb, id: nano} is the only way to see that the filter works: row
-# counts, must_find and the classifier all look identical either way.
-for spec in expected.get("forbid_rows", []):
-    hits = [r for r in actual if all(str(r.get(k, "")) == str(v) for k, v in spec.items())]
-    label = ", ".join(f"{k}={v}" for k, v in spec.items())
-    print(f"  forbid_rows {label}: {'FAIL' if hits else 'ok'}"
-          + (f"  found {len(hits)}" if hits else ""))
-    fail |= bool(hits)
-
-# require_rows: SOME ONE ROW MUST MATCH EVERY NAMED FIELD. A value is a substring of that
-# field, or a list of substrings that must all be in it: substrings, because a sideload hash
-# and a permission list vary by run. must_contain cannot say "on the same row", and a
-# scenario that sideloads five extensions satisfies `,sideloaded:` with any of them.
-#
-# A value {"tail_of": "loc"} must EQUAL the last path component of that field on the same
-# row. A release read off a path changes with every install, so no literal holds it, and the
-# substring `.` that stood in for it passed any dotted version.
-def field_ok(r, k, v):
-    got = str(r.get(k, ""))
-    if isinstance(v, dict):
-        if set(v) != {"tail_of"}:
-            sys.exit(f"require_rows: unknown value form {v}")
-        return got != "" and got == re.split(r"[\\/]", str(r.get(v["tail_of"], "")))[-1]
-    return all(s in got for s in (v if isinstance(v, list) else [v]))
-
-for spec in expected.get("require_rows", []):
-    def matches(r, spec=spec):
-        return all(field_ok(r, k, v) for k, v in spec.items())
-    ok = any(matches(r) for r in actual)
-    label = ", ".join(f"{k}~{v}" for k, v in spec.items())
-    print(f"  require_rows {label}: {'ok' if ok else 'FAIL'}")
-    fail |= not ok
-sys.exit(1 if fail else 0)
-PY
+  python3 "$SCENARIOS_PY" assert-counts "$1" "$2"
 }
 
-# Run the reference classifier over enumerated evidence and check what it concludes.
-#
-# The query returns everything, so "did we find OpenClaw" is answered here, by the matcher,
-# and not by a row count.
-#
-# `forbid` is the over-matching guard: naming an agent that must NOT appear is the only
-# way to catch a signature that is too broad, and a too-broad signature is now the most
-# likely defect in the system. `mcp` as an exact npm name is real signal; `mcp` as a
-# substring also matches libxdmcp, an X11 library.
+# Run the reference classifier over enumerated evidence and check what it concludes: every
+# agent must_find names, and nothing else. The query returns everything, so "did we find
+# OpenClaw" is answered by the matcher, not by a row count, and an agent found beyond
+# must_find is a signature too broad -- `mcp` as a substring also matches libxdmcp.
 assert_classified() {
-  local actual_json="$1" expected_json="$2" root="$3"
-  python3 - "$actual_json" "$expected_json" "$root" <<'PY_INNER'
-import json, subprocess, sys
-actual, expected_path, root = sys.argv[1], sys.argv[2], sys.argv[3]
-expected = json.load(open(expected_path))
-want = expected.get("classified")
-if want is None:
-    print("  (no classified block in expected.json, skipping)")
-    sys.exit(0)
-
-rows = json.load(open(actual))  # a bare array -- see assert_counts
-proc = subprocess.run(
-    [sys.executable, root + "/bin/classify", "--json", "--show-unmatched"],
-    input=json.dumps(rows), capture_output=True, text=True)
-if proc.returncode != 0:
-    print("  FAIL: classifier exited %d: %s" % (proc.returncode, proc.stderr.strip()[:200]))
-    sys.exit(1)
-result = json.loads(proc.stdout)
-found = {f["id"] for f in result["findings"]}
-
-fail = False
-for agent in want.get("must_find", []):
-    ok = agent in found
-    print("  classified must_find %r: %s" % (agent, "ok" if ok else "FAIL"))
-    fail |= not ok
-for agent in want.get("forbid", []):
-    ok = agent not in found
-    print("  classified forbid    %r: %s" % (agent, "ok" if ok else "FAIL - over-matched"))
-    fail |= not ok
-# forbid_evidence: A STRING THAT MUST NOT APPEAR IN ANY FINDING'S EVIDENCE.
-#
-# `forbid` above asks whether an AGENT was claimed, which cannot express the assertion
-# Linux needs most: a stock Ubuntu ships libxcursor1 and libwayland-cursor0, both real
-# deb packages whose names contain `cursor`. Those rows are legitimately in the payload,
-# so a raw must_not_contain would always fail; what must be true is that neither is
-# EVIDENCE FOR Cursor. Same shape as `libxdmcp` versus `mcp`, and the same reason: without
-# it, "correctly declined" and "the route never ran" are indistinguishable.
-for probe in want.get("forbid_evidence", []):
-    claimed = [(f["id"], json.dumps(e)) for f in result["findings"]
-               for e in f.get("evidence", []) if probe in json.dumps(e)]
-    print("  forbid_evidence %r: %s" % (probe, "ok" if not claimed
-          else "FAIL - claimed by " + ", ".join(sorted({c[0] for c in claimed}))))
-    fail |= bool(claimed)
-if "unmatched_max" in want:
-    n = len(result["unmatched"])
-    ok = n <= want["unmatched_max"]
-    print("  unmatched rows %d <= %d: %s" % (n, want["unmatched_max"], "ok" if ok else "FAIL"))
-    fail |= not ok
-sys.exit(1 if fail else 0)
-PY_INNER
+  python3 "$SCENARIOS_PY" assert-classified "$1" "$2"
 }
 
 # The rendered match SQL -- osquery/dist/signatures.sql and osquery/dist/agents-<platform>.sql -- against
@@ -179,7 +41,7 @@ PY_INNER
 # the fragment over the rows just collected must claim exactly the evidence rows the
 # classifier claims, and the standalone artifact, run live, must find what `must_find`
 # names (except agents this payload found only through images, which only the bounded
-# container branch carries) and nothing `forbid` names.
+# container branch carries) and nothing beyond it.
 #
 # Given <agents.json> and <parity.json> it runs no osqueryi: test/run.sh produces both in
 # the Tart guest and asserts on a host that may have none. Without them it runs osqueryi

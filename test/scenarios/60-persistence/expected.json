@@ -18,8 +18,7 @@
   "classified": {
     "must_find": [
       "openclaw"
-    ],
-    "forbid": []
+    ]
   },
   "why": "launchd enumerates every non-Apple job (937 down to 47 on a reference Mac; the exclusion is the platform vendor, not a catalog), and the gateway LaunchAgent is what finds OpenClaw here. The listener on 18789 is asserted as raw evidence only: the `ports` route is retired, because a listening port names an agent only when the process holding it already does.",
   "must_contain": [

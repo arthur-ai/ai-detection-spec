@@ -18,14 +18,8 @@
     "vscodeext": ">=0"
   },
   "classified": {
-    "must_find": [
-      "claude-in-chrome",
-      "harpa",
-      "monica",
-      "sider",
-      "merlin",
-      "chatgpt-extension"
-    ],
+    "must_find": [],
+    "every_extension": true,
     "forbid": [
       "claude-code",
       "claude-desktop",

@@ -38,18 +38,9 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
 
-# Every scenario whose expected.json declares linux. tools/ci_scope.py's tree_scenarios
-# enumerates the same directories the same way, and test/test_ci_scope.py compares the two.
-linux_scenarios() {
-  local d n
-  for d in "$HERE"/scenarios/*/; do
-    n="$(basename "$d")"
-    [ -f "$d/expected.json" ] || continue
-    [ "$(python3 -c "import json;print(json.load(open('$d/expected.json')).get('platform'))")" = linux ] \
-      || continue
-    printf '%s\n' "$n"
-  done
-}
+# Every scenario that declares linux, by tools/scenarios.py, which tools/ci_scope.py's
+# tree_scenarios asks too; test/test_ci_scope.py compares the two.
+linux_scenarios() { python3 "$ROOT/tools/scenarios.py" list linux; }
 # --list answers before the docker check, so a host without docker can still ask.
 if [ "${1:-}" = --list ]; then linux_scenarios; exit 0; fi
 
@@ -169,7 +160,7 @@ rc=\$?
 # for one and it fails on a row count instead of saying the artifact was wrong. In this
 # container the deep scenarios exit 3 before reaching here, because there is no daemon;
 # the branch is what keeps a local run with a mounted socket honest.
-if python3 -c \"import json,sys;sys.exit(0 if json.load(open('test/scenarios/$s/expected.json')).get('deep') else 1)\"; then
+if [ \"\$(python3 tools/scenarios.py field $s deep)\" = true ]; then
   osquery/bin/discover --deep > /tmp/out.json 2>/tmp/err.txt || {
     echo 'FAIL: the deep path did not run'; cat /tmp/err.txt; exit 1; }
 else

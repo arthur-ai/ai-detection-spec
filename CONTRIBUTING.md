@@ -34,13 +34,18 @@ scenario, not only reading the diff. Contributions are accepted under the
      state_dirs: ["~/.openclaw"]
    ```
 4. **Prove it in a scenario** under `test/scenarios/`: a `setup.sh` (`setup.ps1` on Windows)
-   that installs it and an `expected.json` that puts it in `classified.must_find`. Under
-   `classified.forbid`, list any agent the new rows could be mistaken for: Roo Code's extension
-   id, `rooveterinaryinc.roo-cline`, contains Cline's name. Add the scenario to the matrix in
-   `.github/workflows/scenarios.yml`.
+   that installs it and an `expected.json` that puts it in `classified.must_find`. A scenario
+   finds exactly its `must_find`, so a lookalike that becomes a finding fails it. Under
+   `classified.forbid`, list any agent the new rows could be mistaken for, so a change to
+   that agent reruns the scenario: Roo Code's extension id, `rooveterinaryinc.roo-cline`,
+   contains Cline's name. A Chrome extension needs no scenario edit: the scenarios that
+   declare `every_extension` install and find every one the catalog lists. Add a new scenario
+   to the matrix in `.github/workflows/scenarios.yml`. [`tools/scenarios.py`](tools/scenarios.py)
+   holds every key a scenario may use and what each one asserts.
 5. **Regenerate and check**:
    ```console
    $ python3 osquery/tools/build.py          # osquery/dist/
+   $ python3 tools/scenarios.py --write      # each extension-ids.txt
    $ python3 tools/agent_status.py --write   # docs/agents.md, docs/limits.md, the README badge
    $ tools/gates.sh
    ```

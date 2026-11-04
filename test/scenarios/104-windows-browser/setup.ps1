@@ -7,10 +7,11 @@
 # %LOCALAPPDATA%\Google\Chrome\User Data.
 . (Join-Path $PSScriptRoot '..\..\lib\guest-windows.ps1')
 
-# Claude, HARPA AI, Monica, Sider, Merlin, ChatGPT: every browser agent the catalog matches by id.
-$ids = @('fcoeoabgfenejglbffodgkkbkcdhcgfn', 'eanggfilgoajaocelnaflolkadkeghjp',
-         'ofpnmcalabcbjgholdjcjblkibolbppb', 'difoiogjjojoaoomphldepapgpbgkhkb',
-         'camppjleccjaphfdbohjdohecfnoikec', 'hehggadaopoacecdllhhajmbjkdcmajg')
+# Every browser agent the catalog matches by id: extension-ids.txt is generated from it by
+# tools/scenarios.py, which puts each agent in must_find through `every_extension`.
+$ids = @(Get-Content (Join-Path $PSScriptRoot 'extension-ids.txt') |
+  Where-Object { $_ -and -not $_.StartsWith('#') } | ForEach-Object { ($_ -split ' ')[0] })
+if ($ids.Count -eq 0) { Write-Host 'FAIL: extension-ids.txt lists no id'; exit 1 }
 $udd = Join-Path $env:LOCALAPPDATA 'Google\Chrome\User Data'
 $dl = Join-Path $env:RUNNER_TEMP 'browser'
 New-Item -ItemType Directory -Force -Path $dl | Out-Null

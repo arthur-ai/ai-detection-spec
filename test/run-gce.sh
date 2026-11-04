@@ -74,13 +74,7 @@ done
 scenarios=("$@")
 [ ${#families[@]} -gt 0 ] || families=(debian-12 ubuntu-2404 rocky-9)
 if [ ${#scenarios[@]} -eq 0 ]; then
-  for d in "$HERE"/scenarios/*/; do
-    n="$(basename "$d")"
-    [ -f "$d/expected.json" ] || continue
-    [ "$(python3 -c "import json;print(json.load(open('$d/expected.json')).get('platform'))")" = linux ] \
-      || continue
-    scenarios+=("$n")
-  done
+  while IFS= read -r n; do scenarios+=("$n"); done < <(python3 "$ROOT/tools/scenarios.py" list linux)
 fi
 
 # The public image family for each name this script accepts: image project, then family.
@@ -234,7 +228,7 @@ log "=============== $SC on $OS"
 sudo "test/scenarios/$SC/setup.sh"; rc=$?
 if [ "$rc" = 3 ]; then log "--- $SC SKIP"; exit 3; fi
 if [ "$rc" != 0 ]; then log "--- $SC FAIL (setup exit $rc)"; exit 1; fi
-if python3 -c "import json,sys;sys.exit(0 if json.load(open('test/scenarios/$SC/expected.json')).get('deep') else 1)"; then
+if [ "$(python3 tools/scenarios.py field "$SC" deep)" = true ]; then
   sudo osquery/bin/discover --deep > "$OUT/payload.json" 2>"$OUT/payload.err"
 else
   sudo osqueryi --json < osquery/dist/discovery-linux.sql > "$OUT/payload.json" 2>"$OUT/payload.err"

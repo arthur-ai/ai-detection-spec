@@ -21,6 +21,7 @@ import tempfile
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 import ci_scope  # noqa: E402
+import scenarios as scenarios_lib  # noqa: E402  (this file's scenarios() is the selection)
 
 failures = []
 
@@ -308,7 +309,8 @@ with tempfile.TemporaryDirectory() as d:
     for _n, _agent in (("a", "x"), ("b", "y")):
         (pathlib.Path(d) / "test" / "scenarios" / _n).mkdir(parents=True)
         (pathlib.Path(d) / "test" / "scenarios" / _n / "expected.json").write_text(json.dumps(
-            {"platform": "darwin", "classified": {"must_find": [_agent]}}))
+            {"description": _n, "platform": "darwin", "why": _n, "counts": {"app": ">=0"},
+             "classified": {"must_find": [_agent]}}))
     (pathlib.Path(d) / ".github" / "workflows").mkdir(parents=True)
     (pathlib.Path(d) / ci_scope.SCENARIOS_WORKFLOW).write_text(_mini_wf)
     (pathlib.Path(d) / "catalog").mkdir()
@@ -332,9 +334,15 @@ print()
 print("which scenarios -- a catalog edit runs every scenario that can see it")
 check("the scenarios that must find an agent run when it changes",
       {"87-linux-pi", "88-linux-pi-legacy"} <= _edit("pi"), str(sorted(_edit("pi"))))
-# A forbid is the over-matching guard, so it is the link most worth keeping.
+# A forbid names a lookalike the scenario holds, which a changed signature may now claim.
 check("a scenario that only FORBIDS an agent runs when it changes",
       {"70-linux-baseline", "71-linux-cli-agents"} <= _edit("cursor"))
+_controls = {n for n in _LISTED if _expected(n).get("control")}
+_pi_on = set(next(a for a in _catdoc["agents"] if a["id"] == "pi")["platforms"])
+_on = {n for n in _controls if _PLAT[n] in _pi_on}
+check("a control runs when an agent of its platform changes, and not for another platform",
+      _on and _controls - _on and _on <= _edit("pi") and not (_controls - _on) & _edit("pi"),
+      f"{sorted(_controls)}; pi ({sorted(_pi_on)}) ran {sorted(_controls & _edit('pi'))}")
 _fe = {n for n in _LISTED if (_expected(n).get("classified") or {}).get("forbid_evidence")}
 check("forbid_evidence names no agent, so its scenarios run on any agent edit",
       bool(_fe) and _fe <= _edit("pi"), f"{sorted(_fe)}")
@@ -351,7 +359,8 @@ check("an agent a scenario only OBSERVED runs that scenario",
 _darwin_seen = set()
 for _n in DARWIN:
     _c, _o = _expected(_n).get("classified") or {}, _observed(_n)
-    _darwin_seen |= set(_c.get("must_find", [])) | set(_c.get("forbid", []))
+    _darwin_seen |= scenarios_lib.must_find(_n, _expected, _catdoc["agents"])
+    _darwin_seen |= set(_c.get("forbid", []))
     _darwin_seen |= {r["agent"] for r in _o.get("identifiers", []) + _o.get("archived", [])}
 _unseen = sorted(a["id"] for a in _catdoc["agents"] if a["id"] not in _darwin_seen)
 check("an edit to an agent no macOS scenario names or observed runs none of them",
@@ -378,7 +387,14 @@ check("moving one agent past three others runs what editing all four would",
 check("and runs less than every scenario", _moved3 != _LISTED)
 check("an agent added mid-list reorders nobody", _order(
     _A[:5] + [{"id": "zz-new", "name": "New", "classification": "Coding agent",
-               "platforms": ["linux"]}] + _A[5:]) == _fe)
+               "platforms": ["linux"]}] + _A[5:])
+      == _fe | {n for n in _controls if _PLAT[n] == "linux"})
+# must_find as tools/scenarios.py derives it. A new extension agent is named by no scenario
+# and observed by none, so only the derivation from every_extension can select 45.
+_ran_ext = _order(_A + [{"id": "zz-ext", "name": "Ext", "classification": "Browser agent",
+                         "platforms": ["darwin"], "extension_ids": ["z" * 32]}])
+check("a new extension agent runs the scenarios that find it through every_extension",
+      "45-claude-extension" in _ran_ext, str(sorted(_ran_ext)))
 check("a catalog comment runs nothing",
       scenarios([ci_scope.CATALOG], head={ci_scope.CATALOG: _cat + "\n# a note\n"}) == set())
 check("the rendered files add nothing beside a catalog edit",

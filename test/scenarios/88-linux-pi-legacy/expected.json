@@ -30,6 +30,5 @@
   "must_contain": [
     "@mariozechner/pi-coding-agent",
     "/home/dana/.pi/"
-  ],
-  "known_gaps": []
+  ]
 }

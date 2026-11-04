@@ -35,6 +35,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 sys.path.insert(0, str(ROOT / "test"))
 import conformance  # noqa: E402
 import export  # noqa: E402
+import scenarios  # noqa: E402
 
 os.environ.setdefault("AI_DETECTION_SPEC_TELEMETRY", "0")
 failures = []
@@ -112,10 +113,14 @@ def main():
         hosts = set(re.findall(r"https?://([^/\s\"'$]+)/[^\s\"']*crx", text))
         return hosts == {"clients2.google.com"} and "/service/update2/crx" in text
 
-    # setup.sh, or setup.ps1 on Windows: a scenario's script in either language.
-    setups = [s for s in (p.read_text() for p in
-                          sorted((ROOT / "test" / "scenarios").glob("*/setup.*")))
-              if web_store_only(s)]
+    # setup.sh, or setup.ps1 on Windows: a scenario's script in either language, with the
+    # id list it installs from, which tools/scenarios.py generates beside it.
+    setups = []
+    for d in sorted((ROOT / "test" / "scenarios").iterdir()):
+        script = "".join(p.read_text() for p in sorted(d.glob("setup.*")))
+        if web_store_only(script):
+            listed = d / scenarios.EXTENSIONS
+            setups.append(script + (listed.read_text() if listed.exists() else ""))
     not_cws = [i["value"] for a in doc["agents"] for i in a["identifiers"]
                if routes_yaml[i["route"]].get("purl") == "chrome-extension"
                and not any(i["value"] in s for s in setups)]
