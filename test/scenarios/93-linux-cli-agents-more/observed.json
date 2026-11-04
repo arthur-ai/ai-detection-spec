@@ -9,7 +9,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "amp",
@@ -19,17 +19,17 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "amp",
       "route": "npm",
       "value": "@ampcode/cli",
-      "agent_version": "0.0.1793736138-gdba311",
+      "agent_version": "0.0.1793750459-gc8c68b",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "amp",
@@ -39,17 +39,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "41716075234"
-    },
-    {
-      "agent": "amp",
-      "route": "npm",
-      "value": "@ampcode/cli",
-      "agent_version": "0.0.1793736138-gdba311",
-      "platform": "linux",
-      "os": "ubuntu-24.04",
-      "arch": "aarch64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "amp",
@@ -58,8 +48,18 @@
       "agent_version": "0.0.1793736138-gdba311",
       "platform": "linux",
       "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "41745176563"
+    },
+    {
+      "agent": "amp",
+      "route": "npm",
+      "value": "@ampcode/cli",
+      "agent_version": "0.0.1793736138-gdba311",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "crush",
@@ -69,7 +69,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "crush",
@@ -79,7 +79,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "crush",
@@ -89,7 +89,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "crush",
@@ -99,7 +99,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "crush",
@@ -109,7 +109,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "crush",
@@ -119,7 +119,67 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
+    },
+    {
+      "agent": "deepseek-harness",
+      "route": "npm",
+      "value": "@deepseek-ai/dsh",
+      "agent_version": "0.2.1-rc.5",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "41745176563"
+    },
+    {
+      "agent": "deepseek-harness",
+      "route": "npm",
+      "value": "@deepseek-ai/dsh",
+      "agent_version": "0.2.1-rc.5",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "x86_64",
+      "run": "41745176563"
+    },
+    {
+      "agent": "deepseek-harness",
+      "route": "npm",
+      "value": "@deepseek-ai/dsh",
+      "agent_version": "0.2.1-rc.5",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "41745176563"
+    },
+    {
+      "agent": "deepseek-harness",
+      "route": "npm",
+      "value": "@deepseek-ai/dsh",
+      "agent_version": "0.2.1-rc.5",
+      "platform": "linux",
+      "os": "rocky-9.8",
+      "arch": "x86_64",
+      "run": "41745176563"
+    },
+    {
+      "agent": "deepseek-harness",
+      "route": "npm",
+      "value": "@deepseek-ai/dsh",
+      "agent_version": "0.2.1-rc.5",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "41745176563"
+    },
+    {
+      "agent": "deepseek-harness",
+      "route": "npm",
+      "value": "@deepseek-ai/dsh",
+      "agent_version": "0.2.1-rc.5",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "41745176563"
     },
     {
       "agent": "factory-droid",
@@ -129,7 +189,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "factory-droid",
@@ -139,7 +199,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "factory-droid",
@@ -149,7 +209,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "factory-droid",
@@ -159,7 +219,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "factory-droid",
@@ -169,7 +229,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "factory-droid",
@@ -179,7 +239,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "factory-droid",
@@ -188,7 +248,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "factory-droid",
@@ -197,7 +257,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "factory-droid",
@@ -206,7 +266,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "factory-droid",
@@ -215,7 +275,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "factory-droid",
@@ -224,7 +284,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "factory-droid",
@@ -233,7 +293,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "jules",
@@ -243,7 +303,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "jules",
@@ -253,7 +313,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "jules",
@@ -263,7 +323,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "jules",
@@ -273,7 +333,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "jules",
@@ -283,7 +343,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "jules",
@@ -293,7 +353,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "jules",
@@ -302,7 +362,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "jules",
@@ -311,7 +371,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "jules",
@@ -320,7 +380,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "jules",
@@ -329,7 +389,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "jules",
@@ -338,7 +398,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "jules",
@@ -347,7 +407,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "junie",
@@ -356,7 +416,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "junie",
@@ -365,7 +425,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "junie",
@@ -374,7 +434,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "junie",
@@ -383,7 +443,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "junie",
@@ -392,7 +452,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "junie",
@@ -401,7 +461,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "junie",
@@ -411,7 +471,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "junie",
@@ -421,7 +481,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "junie",
@@ -431,7 +491,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "junie",
@@ -441,7 +501,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "junie",
@@ -451,7 +511,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "junie",
@@ -461,7 +521,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "junie",
@@ -470,7 +530,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "junie",
@@ -479,7 +539,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "junie",
@@ -488,7 +548,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "junie",
@@ -497,7 +557,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "junie",
@@ -506,7 +566,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "junie",
@@ -515,7 +575,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "mistral-vibe",
@@ -524,7 +584,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "mistral-vibe",
@@ -533,7 +593,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "mistral-vibe",
@@ -542,7 +602,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "mistral-vibe",
@@ -551,7 +611,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "mistral-vibe",
@@ -560,7 +620,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "mistral-vibe",
@@ -569,7 +629,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "mistral-vibe",
@@ -578,7 +638,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "mistral-vibe",
@@ -587,7 +647,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "mistral-vibe",
@@ -596,7 +656,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "mistral-vibe",
@@ -605,7 +665,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "mistral-vibe",
@@ -614,7 +674,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "mistral-vibe",
@@ -623,7 +683,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "qwen-code",
@@ -633,7 +693,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "qwen-code",
@@ -643,7 +703,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "qwen-code",
@@ -653,7 +713,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "qwen-code",
@@ -663,7 +723,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "qwen-code",
@@ -673,7 +733,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "qwen-code",
@@ -683,7 +743,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "qwen-code",
@@ -692,7 +752,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "qwen-code",
@@ -701,7 +761,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "qwen-code",
@@ -710,7 +770,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "qwen-code",
@@ -719,7 +779,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "qwen-code",
@@ -728,7 +788,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "41716075234"
+      "run": "41745176563"
     },
     {
       "agent": "qwen-code",
@@ -737,7 +797,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "41716075234"
+      "run": "41745176563"
     }
   ]
 }
