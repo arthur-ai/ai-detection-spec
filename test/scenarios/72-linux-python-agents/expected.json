@@ -20,7 +20,8 @@
   "classified": {
     "must_find": [
       "aider",
-      "hermes"
+      "hermes",
+      "letta"
     ],
     "forbid": [
       "openclaw",
@@ -36,7 +37,8 @@
   "must_contain": [
     "aider-chat",
     "hermes-agent",
-    "litellm"
+    "litellm",
+    "/uv/tools/letta/"
   ],
   "known_gaps": [
     "Whether ~/.hermes appears depends on the install route: the vendor's curl installer creates it, a uv install does not until the agent runs. The run records what appeared rather than asserting it."
