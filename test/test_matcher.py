@@ -1535,7 +1535,7 @@ _c, _u = _claims(_kind("npm", "@moonshot-ai/kimi-code", "kimi-code", "kimi", "ki
                        "antigravity", "antigravity-cli", "agy"))
 check("the 2026-10-29 agents' npm names resolve to them",
       _c == {"@moonshot-ai/kimi-code": "kimi-code",
-             "@tencent-ai/codebuddy-code": "codebuddy-code",
+             "@tencent-ai/codebuddy-code": "codebuddy",
              "@qoder-ai/qodercli": "qoder", "@letta-ai/letta-code": "letta-code"}, f"got {_c}")
 check("...and their unscoped namesakes claim nothing",
       {"kimi-code", "kimi", "kimi-cli", "codebuddy", "codebuddy-code", "letta",
@@ -1555,7 +1555,7 @@ _c, _u = _claims(_kind("file", "/home/dana/.local/bin/agy", "/home/dana/.local/b
 check("the installers' paths, the state directories and the legacy Kimi tool directory "
       "resolve to their agents",
       _c == {"/home/dana/.local/bin/agy": "antigravity", "/home/dana/.kimi-code/": "kimi-code",
-             "/home/dana/.kimi/": "kimi-code", "/home/dana/.codebuddy/": "codebuddy-code",
+             "/home/dana/.kimi/": "kimi-code", "/home/dana/.codebuddy/": "codebuddy",
              "/home/dana/.local/share/uv/tools/kimi-cli/": "kimi-code",
              "/home/dana/.local/bin/qodercli": "qoder", "/home/dana/.qoder/": "qoder"},
       f"got {_c}")

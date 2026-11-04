@@ -20,7 +20,7 @@
   "classified": {
     "must_find": [
       "kimi-code",
-      "codebuddy-code",
+      "codebuddy",
       "qoder",
       "letta-code"
     ],

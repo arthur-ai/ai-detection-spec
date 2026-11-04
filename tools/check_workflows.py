@@ -245,6 +245,43 @@ for _job, _names in sorted(_jobs.items()):
                   f"{_plat}. It would skip on every run while looking scheduled.")
             failed = True
 
+# THE FIRST macOS LABEL MUST HOST EVERY macOS SCENARIO. A pull request runs that label
+# alone (tools/ci_scope.py, `--event pull_request`), and the job's runnable gate SKIPS,
+# green, a scenario whose requires.json `min_macos` the runner cannot meet. So a scenario
+# whose floor only a later label clears would never run on a pull request while looking
+# scheduled: the failure the pairing above exists to catch, one axis over. A label this
+# cannot read as a version is not known to host anything, and fails the same way.
+for _job, _names in sorted(_jobs.items()):
+    _spec = _doc["jobs"][_job]
+    _labels = [str(_l) for _l in (((_spec.get("strategy") or {}).get("matrix") or {}).get("os") or [])
+               if "macos" in str(_l)]
+    if not _labels:
+        continue
+    _m = re.fullmatch(r"macos-(\d+)", _labels[0])
+    if not _m:
+        print(f"FAIL: scenarios.yml job {_job!r} lists {_labels[0]!r} first, which this check "
+              f"cannot read as a macOS version, and a pull request runs the first label alone.")
+        failed = True
+        continue
+    for _name in sorted(_names & _on_disk):
+        _req = repo / "test" / "scenarios" / _name / "requires.json"
+        if not _req.exists():
+            continue
+        _need = json.loads(_req.read_text()).get("min_macos", 0)
+        # AN INTEGER OR NO KEY: the job's runnable gate and test/run.sh compare the floor
+        # with the shell's `-lt`, which errors on anything else and reads as "runnable".
+        # int() here would round 15.5 to 15, and `or 0` would read a `false` or `null`
+        # floor as none; both pass what the gates cannot read.
+        if type(_need) is not int:
+            print(f"FAIL: {_name} declares min_macos {_need!r}, which is not an integer macOS "
+                  f"version, and the runnable gate compares it as one.")
+            failed = True
+            continue
+        if _need > int(_m.group(1)):
+            print(f"FAIL: {_name} needs macOS {_need}, and a pull request runs job {_job!r} on "
+                  f"{_labels[0]} alone, where it would skip. List a label that hosts it first.")
+            failed = True
+
 # A `deep: true` SCENARIO MUST BE UNDER A JOB THAT RUNS THE DEEP ARTIFACT, and a job that
 # runs it must have one.
 #

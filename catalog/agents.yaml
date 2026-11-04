@@ -1124,23 +1124,31 @@ agents:
     # arm64. Kimi Code 2.4.1 did not write it.
     state_dirs: ["~/.kimi-code", "~/.kimi"]
 
-  # Tencent's CodeBuddy Code. Its package ships several bins, `codebuddy` and `cbc` among
-  # them, so the package name is the value, not a binary.
+  # Tencent's CodeBuddy: the CodeBuddy Code CLI and the CodeBuddy IDE. One entry, as Qoder is
+  # one, because the two share ~/.codebuddy: the IDE's product.json sets `dataFolderName` to
+  # `.codebuddy`, the folder a VS Code build keeps its extensions in, so the folder cannot say
+  # which wrote it. Read off the 4.12.2 cask's zip on 2026-11-03, without launching the IDE.
+  # The IDE is a coding agent too: its bundled extension runs terminal commands and writes
+  # files, with a setting to do so without asking. Its bundle id, com.tencent.codebuddy, and
+  # Homebrew's `codebuddy` cask would join this entry; no run installs either, nor its
+  # editor extensions.
+  #
+  # The CLI's package ships several bins, `codebuddy` and `cbc` among them, so the package
+  # name is the value, not a binary.
   #
   # NOT HERE: npm's unscoped `codebuddy` and `codebuddy-code` are a third party's "Hello,
   # World!" packages, and PyPI's `codebuddy` searches Stack Overflow; test_matcher asserts all
-  # three are declined. Homebrew's `codebuddy` cask is the CodeBuddy IDE, which no run
-  # installs, and neither are its editor extensions.
-  - id: codebuddy-code
-    name: CodeBuddy Code
+  # three are declined.
+  - id: codebuddy
+    name: CodeBuddy
     classification: Coding agent
     platforms: [linux]
     # The same install's npm_packages row: @tencent-ai/codebuddy-code 2.178.1.
     # 96-linux-cli-agents-npm.
     npm: ["@tencent-ai/codebuddy-code"]
-    # Written on first run: `codebuddy --help` wrote it and --version did not, 2.179.3 in an
-    # Ubuntu 24.04 container on 2026-11-03. 96 read it in CI run 41714485113, on Ubuntu
-    # 24.04 x86_64 and arm64. Whether the CodeBuddy IDE writes it too is unexamined.
+    # Written by the CLI on first run: `codebuddy --help` wrote it and --version did not,
+    # 2.179.3 in an Ubuntu 24.04 container on 2026-11-03. 96 read it in CI run 41714485113,
+    # on Ubuntu 24.04 x86_64 and arm64. The IDE's data folder is the same; see above.
     state_dirs: ["~/.codebuddy"]
 
   # Alibaba's Qoder CLI. One entry for Qoder, as Antigravity is one entry for its editions:

@@ -7,7 +7,8 @@ does not fail: it skips the scenario matrix on a change that needed it, the pull
 goes green on lint alone, and a signature lands on the strength of a static check --
 which is exactly how `bot.molt.mac` got in. A wrong `true` costs runner minutes and
 nothing else. So every ambiguous case below is asserted to RUN, and the cheap direction
-is asserted only for inputs that are unambiguously prose.
+is asserted only for inputs that are unambiguously prose or that the reachability
+analysis at the end proves no gated job can read.
 """
 import contextlib
 import io
@@ -37,24 +38,35 @@ def runs(paths):
     return ci_scope.decide(paths)[0]
 
 
-print("the cheap direction -- prose only, and nothing else")
+print("the cheap direction -- prose, and the paths no runtime job is proven to reach")
 check("a README-only diff skips the runners", not runs(["README.md"]))
 check("several docs still skip", not runs(["README.md", "osquery/docs/deployment.md", "CLAUDE.md"]))
 check("a skill's prose skips", not runs([".claude/skills/release/SKILL.md"]))
 check("LICENSE skips", not runs(["LICENSE"]))
+# EACH OF THESE IS PROVEN AT THE END of this file against what ci.yml's runtime jobs run;
+# here, only that the rule reads them as the proof says. On 2026-11-03 a one-file change
+# to a Windows scenario's setup.ps1 booted all three runtime VMs, twice, and a change to
+# the recorder that only lint and the scenario jobs run did the same.
+check("a scenario's own files skip the runtime jobs; scenarios.yml runs the scenario",
+      not runs(["test/scenarios/00-baseline/expected.json",
+                "test/scenarios/104-windows-browser/setup.ps1"]))
+check("a recorder skips", not runs(["tools/merge_observations.py", "tools/agent_status.py"]))
+check("scenarios.yml skips: ci.yml's jobs are its own", not runs([".github/workflows/scenarios.yml"]))
+# docs/ IS NOT A DOCUMENTATION DIRECTORY: blind-spots.yaml is data. It skips because
+# tools/agent_status.py, which reads it, runs under lint, and lint is not gated.
+check("docs/blind-spots.yaml skips, as a proven RUNTIME_INERT member and not as docs/",
+      not runs(["docs/blind-spots.yaml"]) and "docs/blind-spots.yaml" in ci_scope.RUNTIME_INERT)
 
 print()
-print("the expensive direction -- anything that is not plainly prose")
+print("the expensive direction -- anything that is not plainly prose or proven unreached")
 check("one query beside a doc runs", runs(["README.md", "osquery/queries/browser.sql"]))
 check("the catalog runs", runs(["catalog/agents.yaml"]))
-# docs/ IS NOT A DOCUMENTATION DIRECTORY. blind-spots.yaml lives there and
-# tools/agent_status.py reads it, so the coverage gate -- which runs on a runner --
-# depends on it. A rule keyed on the directory rather than the extension would have
-# skipped it.
-check("docs/blind-spots.yaml runs, despite living under docs/",
-      runs(["docs/blind-spots.yaml"]))
-check("a workflow edit runs", runs([".github/workflows/scenarios.yml"]))
-check("a scenario's expected.json runs", runs(["test/scenarios/00-baseline/expected.json"]))
+check("a matcher fixture runs: osquery/test/test_match_sql.py reads them on a runner",
+      runs(["test/fixtures/known-agents.json"]))
+check("ci.yml itself runs", runs([".github/workflows/ci.yml"]))
+check("a scenario file beside an artifact runs",
+      runs(["test/scenarios/00-baseline/setup.sh", "osquery/dist/discovery-darwin.sql"]))
+check("a scenario-shaped path outside test/scenarios/ runs", runs(["scenarios/00-baseline/setup.sh"]))
 check("a dotfile nobody listed runs", runs([".gitignore"]))
 check("an extension this file has never heard of runs", runs(["osquery/queries/new.rq"]))
 
@@ -242,7 +254,8 @@ def scenarios(paths, base=None, head=None):
         if job in _HARNESS:
             keep = o[ci_scope.output_key("run", job)].split()
         else:
-            drop = {d["scenario"] for d in json.loads(o[ci_scope.output_key("exclude", job)])}
+            drop = {d["scenario"] for d in json.loads(o[ci_scope.output_key("exclude", job)])
+                    if "scenario" in d}
             keep = [n for n in names if n not in drop]
         if (o[ci_scope.output_key("skip", job)] == "true") != (not keep):
             check(f"skip_{job} agrees with its exclusion for {paths}", False)
@@ -284,8 +297,27 @@ check("no computable diff runs every scenario", scenarios(None) == _LISTED)
 check("an empty diff runs every scenario", scenarios([]) == _LISTED)
 check("an unrecognised path runs every scenario", scenarios(["new/thing.txt"]) == _LISTED)
 check("bin/classify runs every scenario", scenarios(["bin/classify"]) == _LISTED)
-check("tools/agent_status.py runs every scenario, since every job records through it",
-      scenarios(["tools/agent_status.py"]) == _LISTED)
+# A RECORDER RUNS ONE SCENARIO PER JOB, not every scenario: it runs after the assertion
+# and decides what the run records, so one scenario per job proves it end to end. The
+# expensive direction holds inside the rule: every job still runs something, and what it
+# runs names agents, so --record meets real identifiers rather than a baseline's none.
+_rec = scenarios(["tools/agent_status.py"])
+check("a recorder runs a scenario in every job",
+      all(set(names) & _rec for names in _JOBS.values()), str(sorted(_rec)))
+check("and no more than one per job", len(_rec) <= len(_JOBS), str(sorted(_rec)))
+check("and each one names agents, so --record has identifiers to write",
+      all((_expected(n).get("classified") or {}).get("must_find") for n in _rec),
+      str(sorted(_rec)))
+check("tools/merge_observations.py and tools/observations.py scope the same way",
+      scenarios(["tools/merge_observations.py"]) == _rec
+      and scenarios(["tools/observations.py"]) == _rec)
+# THE SCOPER RUNS NOTHING. No scenario calls it, this file proves it under lint, and a
+# matrix spent on a change to it proves nothing about it.
+check("tools/ci_scope.py runs nothing", scenarios(["tools/ci_scope.py"]) == set())
+check("a recorder beside a catalog edit adds to it, never narrows it",
+      scenarios(["tools/agent_status.py", ci_scope.CATALOG],
+                head=_with_agent("claude-code", name="edited"))
+      == _rec | _edit("claude-code"))
 check("a catalog that does not parse runs every scenario",
       scenarios([ci_scope.CATALOG], head={ci_scope.CATALOG: "agents: ["}) == _LISTED)
 check("a catalog with no base runs every scenario",
@@ -296,6 +328,29 @@ check("a catalog edit outside `agents:` runs every scenario",
 _out, _ = ci_scope.scenarios_outputs(None, _reader())
 check("and every scenario means every exclusion is empty, the direction that runs more",
       all(line.endswith("=[]") for line in _out if line.startswith("exclude_")), str(_out))
+
+print()
+print("a pull request runs one macOS label; everything else runs every label")
+_os = [str(l) for l in _WF["jobs"]["scenario"]["strategy"]["matrix"]["os"] if "macos" in str(l)]
+check("the macOS matrix lists at least two labels, or there is nothing to spare", len(_os) >= 2)
+
+
+def _os_excluded(paths, event):
+    out, report = ci_scope.scenarios_outputs(paths, _reader(), event=event)
+    ex = json.loads(dict(l.split("=", 1) for l in out)[ci_scope.output_key("exclude", "scenario")])
+    return [d["os"] for d in ex if "os" in d], report
+
+
+_ex, _rep = _os_excluded(["test/scenarios/00-baseline/setup.sh"], "pull_request")
+check("a pull request excludes every macOS label but the first", _ex == _os[1:], str(_ex))
+check("and its summary says which label runs and where the rest run",
+      any("one macOS label" in r and _os[0] in r for r in _rep), str(_rep))
+check("a push keeps every label", _os_excluded(["test/scenarios/00-baseline/setup.sh"], "push")[0] == [])
+check("so does a run with no event", _os_excluded(["test/scenarios/00-baseline/setup.sh"], None)[0] == [])
+check("a pull request that runs no scenario spares no label: an empty matrix needs none",
+      _os_excluded(["README.md"], "pull_request")[0] == [])
+check("the scenario exclusions are unchanged beside the label",
+      scenarios(["test/scenarios/00-baseline/setup.sh"]) == {"00-baseline"})
 
 print()
 print("which scenarios -- as the workflow calls it, reading both sides through git")
@@ -401,6 +456,8 @@ check("osquery/dist/discovery-windows.sql runs exactly the Windows scenarios",
 DEEP = {n for n in _LISTED if _expected(n).get("deep")}
 check("the deep artifact runs the deep scenarios, the only ones that run osquery/bin/discover",
       bool(DEEP) and scenarios(["osquery/dist/discovery-deep.sql"]) == DEEP, str(sorted(DEEP)))
+check("so do the scanner and what it calls",
+      scenarios(["osquery/bin/discover", "osquery/bin/container-scan"]) == DEEP)
 check("so does the pack", scenarios(["osquery/dist/ai-detection-spec.conf"]) == DEEP)
 # What a darwin query edit actually touches, so the platform rule is seen to save something.
 _dq = scenarios(["osquery/queries/runtime.sql", "osquery/dist/discovery-darwin.sql", "osquery/dist/agents-darwin.sql",
@@ -500,6 +557,8 @@ check("osquery/dist/fleet-policies.yml runs nothing: no scenario reads it",
       scenarios(["osquery/dist/fleet-policies.yml"]) == set())
 check("an INERT check runs nothing", scenarios(["test/lint.sh", "tools/validate_catalog.py"])
       == set())
+check("the conformance vectors run nothing: lint holds bin/classify to them",
+      scenarios(["conformance/vectors.json"]) == set())
 check("docs/blind-spots.yaml runs nothing", scenarios(["docs/blind-spots.yaml"]) == set())
 
 _wft = (ROOT / ci_scope.SCENARIOS_WORKFLOW).read_text()
@@ -509,8 +568,23 @@ check("a comment in scenarios.yml runs nothing",
 check("a scenario added to a matrix runs that scenario alone",
       scenarios([_W], base={_W: _replaced(_wft, "          - 57-clawdbot-era\n", "")})
       == {"57-clawdbot-era"})
-check("any other edit to scenarios.yml runs every scenario",
+# JOB BY JOB. The Provision bound is the macOS job's, so its scenarios run and no other's.
+check("an edit to a scenario job runs that job's scenarios",
       scenarios([_W], base={_W: _replaced(_wft, "timeout-minutes: 50", "timeout-minutes: 49")})
+      == DARWIN)
+# collect needs every scenario job and runs none: it consumes their uploads, so one
+# scenario per job proves a change to it, the same set a recorder runs.
+check("an edit to collect runs one scenario per job",
+      scenarios([_W], base={_W: _replaced(_wft, "timeout-minutes: 15", "timeout-minutes: 14")})
+      == _rec)
+check("an edit to the scope job runs every scenario",
+      scenarios([_W], base={_W: _replaced(_wft, "timeout-minutes: 10", "timeout-minutes: 9")})
+      == _LISTED)
+check("an edit outside the jobs runs every scenario",
+      scenarios([_W], base={_W: _replaced(_wft, "OSQUERY_VERSION: 5.23.1", "OSQUERY_VERSION: 5.23.0")})
+      == _LISTED)
+check("a job added runs every scenario",
+      scenarios([_W], head={_W: _wft + "  extra:\n    runs-on: ubuntu-latest\n    steps: []\n"})
       == _LISTED)
 check("scenarios.yml with no base runs every scenario",
       scenarios([_W], base={_W: None}) == _LISTED)
@@ -538,13 +612,16 @@ check("ci.yml with no base runs every scenario", scenarios([_C], base={_C: None}
 
 
 # --- INERT is checked, not trusted -------------------------------------------------------
-def reachable(through_scenarios=True):
+def reachable(through_scenarios=True, seed=None,
+              roots=("osquery", "test", "tools", "bin", "catalog")):
     """Every tracked file a scenarios.yml job can reach: what its steps name, then whatever
     a reached SCRIPT names -- an import, a string constant, a non-comment line. Data files
     are read rather than followed. Generous on purpose: a false reach only keeps a file
-    out of INERT, which costs minutes, never a skipped scenario."""
+    out of INERT, which costs minutes, never a skipped scenario. `seed` is a (path, text)
+    to start from instead of the workflow's steps; `roots` the top-level directories whose
+    files are candidates."""
     files = [p for p in _git(str(ROOT), "ls-files").split()
-             if p.split("/")[0] in ("osquery", "test", "tools", "bin", "catalog")
+             if p.split("/")[0] in roots
              and (through_scenarios or not p.startswith("test/scenarios/"))]
 
     def names(path, text):
@@ -590,9 +667,10 @@ def reachable(through_scenarios=True):
                 out.add(f)
         return out
 
-    seed = "\n".join(str(s.get("run", "")) for j in _WF["jobs"].values()
-                     for s in j.get("steps", []))
-    seen = hits("scenarios.yml", seed)
+    if seed is None:
+        seed = ("scenarios.yml", "\n".join(str(s.get("run", "")) for j in _WF["jobs"].values()
+                                          for s in j.get("steps", [])))
+    seen = hits(*seed)
     todo = list(seen)
     while todo:
         f = todo.pop()
@@ -625,6 +703,69 @@ _shared = reachable(through_scenarios=False)
 check("SETUP_LIBS are reached only through scenario setup scripts",
       not (set(ci_scope.SETUP_LIBS) & _shared),
       f"reached otherwise: {sorted(set(ci_scope.SETUP_LIBS) & _shared)}")
+# A RECORDER IS NOT ON THE ASSERTION PATH. The same analysis, seeded from the two assert
+# scripts instead of the workflow, must not reach one: if it did, a change there could
+# change whether a scenario passes, and one scenario per job would be too few. NOT THROUGH
+# SCENARIO SETUP SCRIPTS: those run in Provision, before the assertion, and nothing in the
+# assertion can run one -- while the generous analysis reaches one from a glob in
+# osquery/tools/render_match.py and, from there, the Linux harness and its recorder.
+_assert_reach = reachable(through_scenarios=False, seed=("test/assert.sh", "\n".join(
+    (ROOT / p).read_text() for p in ("test/assert.sh", "test/lib/assert.sh"))))
+check("the assertion path reaches bin/classify", "bin/classify" in _assert_reach)
+check("every RECORDER path is a tracked file", set(ci_scope.RECORDERS) <= _tracked,
+      str(sorted(set(ci_scope.RECORDERS) - _tracked)))
+check("the scenario jobs reach every RECORDER", set(ci_scope.RECORDERS) <= _reach,
+      f"not reached, so not a recorder: {sorted(set(ci_scope.RECORDERS) - _reach)}")
+check("no RECORDER is on the assertion path", not (set(ci_scope.RECORDERS) & _assert_reach),
+      f"remove from RECORDERS: {sorted(set(ci_scope.RECORDERS) & _assert_reach)}")
+
+print()
+print("RUNTIME_INERT, against what ci.yml's runtime jobs can actually reach")
+# THE SAME ANALYSIS, seeded from the runtime jobs: the ones ci.yml gates on the scope
+# verdict, found by that `if` rather than by name. Wider roots, so the proof can speak
+# about docs/, .github/ and the spec's own files. NOT THROUGH SCENARIO FILES as
+# candidates: osquery/test/test_match_sql.py globs `*.json` under test/fixtures/, and the
+# generous analysis cannot see the directory, so every expected.json would read as
+# reached. Instead, nothing a runtime job runs may name the scenario tree at all.
+import yaml  # noqa: E402
+_CI = yaml.safe_load((ROOT / ci_scope.CI_WORKFLOW).read_text())
+_RUNTIME_JOBS = {n: j for n, j in _CI["jobs"].items()
+                 if "outputs.runtime" in str(j.get("if", ""))}
+check("ci.yml gates at least three jobs on the scope verdict", len(_RUNTIME_JOBS) >= 3,
+      str(sorted(_RUNTIME_JOBS)))
+_ci_seed = ("ci.yml", "\n".join(str(s.get("run", "")) for j in _RUNTIME_JOBS.values()
+                                 for s in j.get("steps", [])))
+_ci_reach = reachable(through_scenarios=False, seed=_ci_seed,
+                      roots=("osquery", "test", "tools", "bin", "catalog", "docs",
+                             "conformance", "schema"))
+for _f in ("bin/classify", "osquery/bin/discover", "osquery/tools/measure.py",
+           "osquery/test/test_match_sql.py", "test/fixtures/known-agents.json",
+           "catalog/routes.yaml"):
+    check(f"the runtime jobs reach {_f}", _f in _ci_reach)
+check("every RUNTIME_INERT path is a tracked file", ci_scope.RUNTIME_INERT <= _tracked,
+      str(sorted(ci_scope.RUNTIME_INERT - _tracked)))
+check("no runtime job can reach a RUNTIME_INERT path", not (ci_scope.RUNTIME_INERT & _ci_reach),
+      f"remove from RUNTIME_INERT: {sorted(ci_scope.RUNTIME_INERT & _ci_reach)}")
+def _script_text(f):
+    """A reached SCRIPT's text, less comments: the thing that could open a file. A data
+    file or a doc the analysis reached is read rather than run, so it is not scanned."""
+    if f == _ci_seed[0]:
+        return _ci_seed[1]
+    text = (ROOT / f).read_text(errors="replace")
+    if not (f.endswith((".py", ".sh", ".ps1")) or text.startswith("#!")):
+        return ""
+    return "\n".join(l for l in text.splitlines() if not l.lstrip().startswith("#"))
+
+
+_names_tree = [f for f in [_ci_seed[0]] + sorted(_ci_reach)
+               if re.search(r"(^|[\s\"'/(])scenarios(/|[\"'\s)]|$)", _script_text(f))]
+check("no script a runtime job runs names the scenario tree", not _names_tree, str(_names_tree))
+# THE OTHER WORKFLOWS ARE EXCUSED THE SAME WAY: a script opens one only by naming its
+# directory. Not by reach, which a `s*` the analysis lifts out of a format string in
+# osquery/tools/measure.py would match to scenarios.yml.
+_names_wf = [f for f in [_ci_seed[0]] + sorted(_ci_reach)
+             if re.search(r"\.github\b|workflows/", _script_text(f))]
+check("no script a runtime job runs names the workflows directory", not _names_wf, str(_names_wf))
 
 print()
 print("the command line, as the workflow actually calls it")
@@ -632,7 +773,7 @@ out = subprocess.run([sys.executable, str(ROOT / "tools" / "ci_scope.py"),
                       "--paths", "README.md"], capture_output=True, text=True)
 check("stdout is GITHUB_OUTPUT form and nothing else",
       out.stdout == "runtime=false\n", repr(out.stdout))
-check("the reason goes to stderr, where a log shows it", "documentation" in out.stderr,
+check("the reason goes to stderr, where a log shows it", "lint still runs" in out.stderr,
       repr(out.stderr))
 check("it exits 0 either way", out.returncode == 0, str(out.returncode))
 # From the repository root, as the workflow runs it: --paths reads the working tree.
