@@ -1196,16 +1196,18 @@ agents:
     homebrew: [letta-code]
     # `uv tool install letta` wrote the tool directory `letta`, 0.34.12, and no ~/.letta until
     # the first run, in an Ubuntu 24.04 container on 2026-11-03. 72-linux-python-agents
-    # installs it without running it; pending CI.
+    # installs it without running it, and read it in CI run 41767347062 on every Linux image
+    # it runs on.
     pypi: [letta]
     # Written on first run: `letta --version` wrote it from npm's 0.34.39 and PyPI's 0.34.12,
-    # in Ubuntu 24.04 containers on 2026-11-03. 96 runs it; pending CI.
+    # in Ubuntu 24.04 containers on 2026-11-03. 96 runs it, and read it in CI run 41767347062
+    # on every Linux image it runs on.
     state_dirs: ["~/.letta"]
     # letta/letta is the current repository, 0.34.39 on 2026-11-02. lettaai/letta served the
     # server from 0.1.4 to 0.5.1, amd64 only, last pushed 2024-10-29; its Docker Hub
-    # organisation names itself Letta, with letta.com as its profile. 79-linux-image pulls
-    # both; pending CI.
+    # organisation names itself Letta, with letta.com as its profile. 79-linux-image pulled
+    # both in CI run 41767347062, on Ubuntu 24.04 x86_64 and arm64.
     images: [letta/letta, lettaai/letta]
     # org.opencontainers.image.source on letta/letta:0.34.39, read off its manifest on
-    # 2026-11-03. The server's images carry no labels. 79; pending CI.
+    # 2026-11-03. The server's images carry no labels. 79 read it in the same run.
     image_labels: ["https://github.com/letta-ai/letta-code"]
