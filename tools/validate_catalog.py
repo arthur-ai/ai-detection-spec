@@ -367,6 +367,75 @@ def version_errors(doc, catalog_version):
     return []
 
 
+# EVERY KEY IN A SCENARIO'S expected.json IS ONE SOMETHING READS. A key in the wrong place is
+# an assertion that never runs while its scenario stays green: 93's forbid_evidence sat at the
+# top level, where test/lib/assert.sh does not look, so "~/.dsh is claimed by nothing" went
+# unasserted. Readers: assert_counts takes counts, must_contain, require_rows and forbid_rows;
+# assert_classified takes `classified`; tools/ci_scope.py and the harnesses take platform and
+# deep; tools/agent_status.py takes why and known_gaps. description is for people, and so is
+# demo_beat, the step of 90-demo-fleet's demo a scenario shows. A key joins these sets in the
+# change that teaches something to read it.
+EXPECTED_KEYS = {"description", "platform", "deep", "counts", "must_contain", "require_rows",
+                 "forbid_rows", "classified", "why", "known_gaps", "demo_beat"}
+CLASSIFIED_KEYS = {"must_find", "forbid", "forbid_evidence", "unmatched_max"}
+
+
+def expected_key_errors(name, exp, columns):
+    """Keys nothing reads, at either level, and row fields outside the six-column contract.
+    assert.sh reads a row field with .get(k, ""), so a misspelled one matches no row: under
+    require_rows that fails, but under forbid_rows it passes whatever the rows hold."""
+    errors = [f"{name}: expected.json key {k!r} is read by nothing"
+              + ("; it belongs under `classified`" if k in CLASSIFIED_KEYS else "")
+              for k in sorted(set(exp) - EXPECTED_KEYS)]
+    errors += [f"{name}: classified.{k} is read by nothing"
+               + ("; it belongs at the top level" if k in EXPECTED_KEYS else "")
+               for k in sorted(set(exp.get("classified") or {}) - CLASSIFIED_KEYS)]
+    for key in ("require_rows", "forbid_rows"):
+        for spec in exp.get(key, []):
+            errors += [f"{name}: {key} field {f!r} is not one of the columns {sorted(columns)}"
+                       for f in sorted(set(spec) - set(columns))]
+    return errors
+
+
+def extension_scenario_errors(agents, scenarios):
+    """A scenario whose setup names any extension id the catalog matches installs every one
+    listed for its platform, and its must_find names each of their agents. Three setup scripts
+    and three must_find lists carried them by hand, and nothing said when one fell behind.
+    `scenarios` is {name: (expected, setup text)}."""
+    every = {i for a in agents for i in a.get("extension_ids", []) or []}
+    errors = []
+    for name, (exp, setup) in sorted(scenarios.items()):
+        if not any(i in setup for i in every):
+            continue
+        want = {i: a["id"] for a in agents if exp.get("platform") in a.get("platforms", [])
+                for i in a.get("extension_ids", []) or []}
+        found = set(exp.get("classified", {}).get("must_find", []))
+        errors += [f"{name}: installs browser extensions but not {i} ({aid})"
+                   for i, aid in sorted(want.items()) if i not in setup]
+        errors += [f"{name}: installs {aid}'s extension and must_find does not name it"
+                   for aid in sorted(set(want.values()) - found)]
+    return errors
+
+
+# Controls whose `why` promises that every agent of their platform is forbidden. A Windows
+# agent was once added without joining this one's list.
+CONTROLS = ("100-windows-baseline",)
+
+
+def control_errors(agents, scenarios):
+    errors = []
+    for name in CONTROLS:
+        if name not in scenarios:
+            errors.append(f"{name}: named in CONTROLS and not a scenario")
+            continue
+        exp = scenarios[name][0]
+        forbid = set(exp.get("classified", {}).get("forbid", []))
+        errors += [f"{name}: forbids every {exp.get('platform')} agent but not {a['id']}"
+                   for a in agents
+                   if exp.get("platform") in a.get("platforms", []) and a["id"] not in forbid]
+    return errors
+
+
 def main():
     doc = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
     reg = load_routes()
@@ -569,6 +638,17 @@ def main():
                     errors.append(
                         f"{path.parent.name}: classified.{key} names {aid!r}, "
                         f"which is not an id in catalog/agents.yaml")
+
+    columns = json.loads((root / "schema" / "evidence.schema.json").read_text()
+                         )["$defs"]["row"]["properties"]
+    scenarios = {}
+    for path in sorted((root / "test" / "scenarios").glob("*/expected.json")):
+        exp = json.loads(path.read_text())
+        errors.extend(expected_key_errors(path.parent.name, exp, columns))
+        scenarios[path.parent.name] = (exp, "".join(p.read_text()
+                                                    for p in path.parent.glob("setup.*")))
+    errors.extend(extension_scenario_errors(doc["agents"], scenarios))
+    errors.extend(control_errors(doc["agents"], scenarios))
 
     # A removed entry must not also be a live one, and must say what it is -- the table in
     # the report is rendered straight from this.

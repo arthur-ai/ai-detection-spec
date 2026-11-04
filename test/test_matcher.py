@@ -1716,6 +1716,38 @@ check("...and the real catalog's pass", _ce(_yaml3.safe_load(
 check("a trailing `*` is refused: an exact route matches exactly",
       any("`*`" in e for e in _rve("probe", {"npm": ["@modelcontextprotocol/*"]}, _reg)))
 
+# --- a scenario's expected.json says only what something reads ------------------------
+_cols = ["kind", "id", "ver", "loc", "extra", "perms"]
+_kee = _vc.expected_key_errors
+check("forbid_evidence at the top level is refused, where assert.sh never reads it",
+      any("belongs under `classified`" in e
+          for e in _kee("s", {"forbid_evidence": ["/home/dana/.dsh/"]}, _cols)))
+check("...and a misspelled key under `classified`",
+      bool(_kee("s", {"classified": {"must_finds": ["a"]}}, _cols)))
+check("...and a forbid_rows field outside the six columns, which matches no row and passes",
+      bool(_kee("s", {"forbid_rows": [{"kind": "deb", "name": "nano"}]}, _cols)))
+check("...and the same keys where they belong pass",
+      _kee("s", {"classified": {"forbid_evidence": ["x"]},
+                 "forbid_rows": [{"kind": "deb", "id": "nano"}]}, _cols) == [])
+_ext = [{"id": "e1", "platforms": ["linux"], "extension_ids": ["aaaa"]},
+        {"id": "e2", "platforms": ["linux", "windows"], "extension_ids": ["bbbb"]}]
+_ese = _vc.extension_scenario_errors
+check("a scenario installing one extension the catalog matches must install the others",
+      any("bbbb" in e for e in _ese(_ext, {"s": ({"platform": "linux", "classified": {
+          "must_find": ["e1", "e2"]}}, "ids=(aaaa)")})))
+check("...and must_find each of their agents",
+      any("e2" in e for e in _ese(_ext, {"s": ({"platform": "linux", "classified": {
+          "must_find": ["e1"]}}, "ids=(aaaa bbbb)")})))
+check("...only those listed for its platform, and a scenario naming none is not held to it",
+      _ese(_ext, {"w": ({"platform": "windows", "classified": {"must_find": ["e2"]}}, "bbbb"),
+                  "n": ({"platform": "linux", "classified": {}}, "no ids")}) == [])
+_cte = _vc.control_errors
+check("the Windows control must forbid every Windows agent",
+      any("e2" in e for e in _cte(_ext, {"100-windows-baseline": (
+          {"platform": "windows", "classified": {"forbid": []}}, "")})))
+check("...and passes when it does", _cte(_ext, {"100-windows-baseline": (
+      {"platform": "windows", "classified": {"forbid": ["e2"]}}, "")}) == [])
+
 # --- what the matcher takes from the registry rather than from itself ------------------
 _mini = {"platforms": ["darwin"], "routes": {
     "a": {"platform": "darwin", "kind": "app", "match": "exact"},
