@@ -52,6 +52,7 @@ _spec.loader.exec_module(classify_mod)
 SCENARIOS = ROOT / "test" / "scenarios"
 sys.path.insert(0, str(ROOT / "tools"))
 import observations as _observations  # noqa: E402
+import scenarios as _scenarios  # noqa: E402
 
 ROUTES = classify_mod.load_routes()
 REGISTRY = classify_mod.Registry(ROUTES)
@@ -461,12 +462,16 @@ def observations(scenarios=None):
 def collect():
     catalog = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
 
+    # must_find as tools/scenarios.py derives it, and only from the scenarios CI runs:
+    # 90-demo-fleet composes the others for a demo, and backs nothing they do not.
+    in_ci = ci_scenarios()
+    expected = {n: _scenarios.read(n, SCENARIOS)[0] for n in _scenarios.names(SCENARIOS)}
+    must_find = {n: _scenarios.must_find(n, expected.__getitem__, catalog["agents"])
+                 for n in expected}
     scenarios = collections.defaultdict(set)
-    for path in sorted(SCENARIOS.glob("*/expected.json")):
-        doc = json.loads(path.read_text())
-        block = doc.get("classified", {})
-        for aid in block.get("must_find", []):
-            scenarios[aid].add(path.parent.name)
+    for name in sorted(in_ci & set(expected)):
+        for aid in must_find[name]:
+            scenarios[aid].add(name)
 
     # A FIXTURE PROVES THE MATCHER AND NOTHING ELSE, so nothing here replays one. Fixture
     # rows are hand-written, and no field on one tells that apart from a row a runner
@@ -492,7 +497,6 @@ def collect():
             seen_on[key].add((rec["scenario"], rec["platform"]))
             if rec.get("os"):
                 observed_os.add(rec["os"])
-    in_ci = ci_scenarios()
     in_ci_platforms = ci_platforms()
     # Route -> the platforms it can fire on, from the registry. An identifier's platform
     # is its route's platform: there is nowhere else it could come from, which is why this
@@ -502,19 +506,11 @@ def collect():
     # Which agents each CI scenario claims to install, from its own expectations. An
     # identifier of such an agent that the run did NOT produce was reached by the suite and
     # failed to appear -- worth naming separately from one nothing has ever tried.
-    asserted_by = collections.defaultdict(set)      # agent id -> {scenario}
+    asserted_by = scenarios                         # agent id -> {scenario}
     # Declared in each scenario's expected.json, as test/lint.sh and check_workflows.py read
     # it, not taken from a record's `os`: "24.04" names a platform only to a reader who
     # already knows whose numbering that is.
-    platform_of = {}                                # scenario -> its declared platform
-    for path in sorted(SCENARIOS.glob("*/expected.json")):
-        name = path.parent.name
-        if name not in in_ci:
-            continue
-        doc = json.loads(path.read_text())
-        platform_of[name] = doc.get("platform")
-        for aid in doc.get("classified", {}).get("must_find", []):
-            asserted_by[aid].add(name)
+    platform_of = {n: expected[n]["platform"] for n in in_ci & set(expected)}
     # A CI scenario that has never RECORDED contributes nothing to the numbers below, so
     # the count is pessimistic until each has run once. Absence of an observation is not
     # absence of a test, and reporting the total without saying which scenarios are
@@ -613,14 +609,13 @@ def collect():
     # lists only successes is the same failure mode as an empty result on a clean machine:
     # it reads as complete when it is merely silent.
     limits = []
-    for path in sorted(SCENARIOS.glob("*/*.json")):
-        doc = json.loads(path.read_text())
-        name = path.parent.name
-        for gap in doc.get("known_gaps", []):
+    for name in sorted(expected):
+        for gap in expected[name].get("known_gaps", []):
             limits.append({"scenario": name, "kind": "gap", "text": gap})
-        if path.name == "requires.json" and doc.get("why"):
-            limits.append({"scenario": name, "kind": "skip", "text": doc["why"],
-                           "min_macos": doc.get("min_macos")})
+        req = _scenarios.read(name, SCENARIOS)[1]
+        if req:
+            limits.append({"scenario": name, "kind": "skip", "text": req["why"],
+                           "min_macos": req["min_macos"]})
 
     # THE GENERAL LIMITS LIVE IN ONE FILE, docs/blind-spots.yaml. They used to live in
     # README and be parsed back out of it, which meant the same thirteen rows existed in two

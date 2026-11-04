@@ -240,14 +240,14 @@ jobs:
       - name: Can this scenario run on this runner?
         id: runnable
         run: |
-          req="test/scenarios/${{ matrix.scenario }}/requires.json"
-          need=0
-          [ -f "$req" ] && need=$(python3 -c "import json;print(json.load(open('$req')).get('min_macos',0))")
+          # Through tools/scenarios.py, which refuses the scenario's files rather than read
+          # a misspelt floor as none.
+          need=$(python3 tools/scenarios.py field "${{ matrix.scenario }}" requires.min_macos)
           have=$(sw_vers -productVersion | cut -d. -f1)
           if [ "$have" -lt "$need" ]; then
             echo "runnable=false" >> "$GITHUB_OUTPUT"
             echo "SKIP: needs macOS >= $need, this runner is $have"
-            python3 -c "import json;print('  '+json.load(open('$req')).get('why',''))"
+            echo "  $(python3 tools/scenarios.py field "${{ matrix.scenario }}" requires.why)"
             echo "### SKIPPED on macOS $have" >> "$GITHUB_STEP_SUMMARY"
             echo "Needs macOS $need or newer. This is a fact about the runner, not a defect." \
               >> "$GITHUB_STEP_SUMMARY"
@@ -456,7 +456,10 @@ jobs:
       - name: Query and assert
         if: steps.provision.outputs.runnable == 'true'
         run: |
-          if python3 -c "import json,sys; sys.exit(0 if json.load(open('test/scenarios/${{ matrix.scenario }}/expected.json')).get('deep') else 1)"; then
+          # Its own statement, so a refused scenario fails here under -e rather than
+          # reading as not deep.
+          deep=$(python3 tools/scenarios.py field "${{ matrix.scenario }}" deep)
+          if [ "$deep" = true ]; then
             sudo -n osquery/bin/discover --deep > /tmp/out.json
           else
             sudo -n /usr/bin/osqueryi --json < osquery/dist/discovery-linux.sql > /tmp/out.json

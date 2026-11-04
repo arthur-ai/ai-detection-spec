@@ -12,6 +12,6 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$HERE/lib/assert.sh"
 rc=0
 assert_counts "$1" "$2" || rc=1
-assert_classified "$1" "$2" "$HERE/.." || rc=1
+assert_classified "$1" "$2" || rc=1
 assert_match_sql "$1" "$2" "$HERE/.." || rc=1
 exit "$rc"

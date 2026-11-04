@@ -48,15 +48,10 @@ set -u
 
 # EVERY BROWSER AGENT THE CATALOG MATCHES BY ID, not only Claude's -- the name predates the
 # list, and it is kept because the workflow, the docs and this scenario's observed.json key on it.
-#   fcoeoabgfenejglbffodgkkbkcdhcgfn  Claude
-#   eanggfilgoajaocelnaflolkadkeghjp  HARPA AI
-#   ofpnmcalabcbjgholdjcjblkibolbppb  Monica
-#   difoiogjjojoaoomphldepapgpbgkhkb  Sider
-#   camppjleccjaphfdbohjdohecfnoikec  Merlin
-#   hehggadaopoacecdllhhajmbjkdcmajg  ChatGPT
-EXT_IDS=(fcoeoabgfenejglbffodgkkbkcdhcgfn eanggfilgoajaocelnaflolkadkeghjp ofpnmcalabcbjgholdjcjblkibolbppb
-         difoiogjjojoaoomphldepapgpbgkhkb camppjleccjaphfdbohjdohecfnoikec
-         hehggadaopoacecdllhhajmbjkdcmajg)
+# extension-ids.txt is generated from the catalog by tools/scenarios.py, which puts each agent
+# in must_find through `every_extension`, so a new one is installed and asserted here unasked.
+EXT_IDS=($(awk '!/^#/ {print $1}' "$(dirname "$0")/extension-ids.txt"))
+[ ${#EXT_IDS} -gt 0 ] || { echo "FAIL: extension-ids.txt lists no id" >&2; exit 1; }
 UDD="$HOME/Library/Application Support/Google/Chrome"
 
 # python3 below, and /usr/bin/python3 is a stub until the Command Line Tools are installed.

@@ -27,6 +27,9 @@ on:
       - 'test/scenarios/*/observed.json'
       - 'bin/classify'
       - 'tools/agent_status.py'
+      # What agent_status.py imports to read the scenarios and their observations.
+      - 'tools/scenarios.py'
+      - 'tools/observations.py'
       - 'tools/check_doc_numbers.py'
       # The blind spots are data now, and the report renders them.
       - 'docs/blind-spots.yaml'

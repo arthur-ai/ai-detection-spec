@@ -2,6 +2,14 @@
   "description": "Every agent type the demo showcases, on one machine.",
   "platform": "darwin",
   "demo_beat": "the whole script, steps 1-4",
+  "composes": [
+    "10-desktop-apps",
+    "11-perplexity-desktop",
+    "20-cli-agents",
+    "40-browser",
+    "60-persistence",
+    "50-autonomous"
+  ],
   "counts": {
     "app": ">=6",
     "npm": ">=1",
@@ -16,18 +24,9 @@
     "proc": ">=0"
   },
   "classified": {
-    "must_find": [
-      "claude-desktop",
-      "cursor",
-      "chatgpt-desktop",
-      "perplexity-comet",
-      "claude-code",
-      "codex-cli",
-      "openclaw"
-    ],
-    "forbid": []
+    "must_find": []
   },
-  "why": "Every demo beat in one machine. The twelve must_contain identifiers became eight must_find agents, which is the same coverage asserted one layer up, where the catalog can be corrected without touching a single endpoint.",
+  "why": "Every demo beat in one machine. must_find is what each composed scenario must find, so the demo's table is the union of theirs and cannot drift from them.",
   "must_contain": [
     "com.anthropic.claudefordesktop",
     "com.todesktop.230313mzl4w4u92",
@@ -35,7 +34,6 @@
     "ai.perplexity.comet",
     "@openai/codex",
     "/.local/bin/claude",
-    "11434",
     "ai.openclaw.gateway",
     "18789",
     "nativeMessaging",

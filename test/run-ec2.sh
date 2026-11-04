@@ -86,13 +86,12 @@ done
 scenarios=("$@")
 [ ${#families[@]} -gt 0 ] || families=(al2023 al2023-arm64 ubuntu-2404)
 if [ ${#scenarios[@]} -eq 0 ]; then
-  for d in "$HERE"/scenarios/*/; do
-    n="$(basename "$d")"
-    [ -f "$d/expected.json" ] || continue
-    [ "$(python3 -c "import json;print(json.load(open('$d/expected.json')).get('platform'))")" = linux ] \
-      || continue
-    scenarios+=("$n")
-  done
+  # A blank line is no scenario: run with an empty name, a cloud runner would clean up
+  # its whole family directory.
+  while IFS= read -r n; do if [ -n "$n" ]; then scenarios+=("$n"); fi; done < <(python3 "$ROOT/tools/scenarios.py" list linux)
+  # An empty list would run nothing and exit 0: the list command failing must not read
+  # as a tree with no Linux scenarios.
+  [ ${#scenarios[@]} -gt 0 ] || { echo "$(basename "$0"): tools/scenarios.py listed no linux scenario" >&2; exit 1; }
 fi
 
 # The image for each name this script accepts -- the SSM public parameter that always names
@@ -360,7 +359,9 @@ log "=============== $SC on $OS $ARCH"
 sudo "test/scenarios/$SC/setup.sh"; rc=$?
 if [ "$rc" = 3 ]; then log "--- $SC SKIP"; exit 3; fi
 if [ "$rc" != 0 ]; then log "--- $SC FAIL (setup exit $rc)"; exit 1; fi
-if python3 -c "import json,sys;sys.exit(0 if json.load(open('test/scenarios/$SC/expected.json')).get('deep') else 1)"; then
+deep=$(python3 tools/scenarios.py field "$SC" deep) || {
+  log "--- $SC FAIL (tools/scenarios.py refused its files)"; exit 1; }
+if [ "$deep" = true ]; then
   sudo osquery/bin/discover --deep > "$OUT/payload.json" 2>"$OUT/payload.err"
 else
   sudo osqueryi --json < osquery/dist/discovery-linux.sql > "$OUT/payload.json" 2>"$OUT/payload.err"

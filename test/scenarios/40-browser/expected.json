@@ -16,6 +16,9 @@
     "proc": ">=0"
   },
   "classified": {
+    "must_find": [
+      "claude-desktop"
+    ],
     "forbid": [
       "openclaw"
     ]

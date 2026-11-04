@@ -93,10 +93,15 @@ What makes the scenario prove the identifier rather than the agent:
 
 - **The new value should be the only witness on that host.** If another route also names the
   agent there, `must_find` passes with the new value wrong. 84's `why` says this outright.
-- **`classified.forbid` every agent the new rows could be mistaken for**, and the converse:
-  85 forbids `cline` because `roo-cline` contains its id, and 78 forbids `claude-code` while
-  installing Cline. `test/lib/assert.sh` reads the other keys (`must_contain`, `require_rows`,
-  `forbid_rows`, `forbid_evidence`).
+- **A scenario finds exactly its `must_find`**: any other agent the classifier finds fails it.
+  So `classified.forbid` is not the guard. It names every agent the new rows could be mistaken
+  for, and the converse, so that a change to one reruns the scenario: 85 forbids `cline`
+  because `roo-cline` contains its id, and 78 forbids `claude-code` while installing Cline.
+  `tools/scenarios.py` holds every other key and what it asserts (`must_contain`,
+  `require_rows`, `forbid_rows`, `forbid_evidence`), and refuses one it does not read.
+- **A Chrome extension is added to no scenario by hand.** For each scenario that declares
+  `every_extension`, `python3 tools/scenarios.py --write` lists the catalog's ids in its
+  `extension-ids.txt`, its setup installs them, and each agent is in its `must_find`.
 - **Add a lookalike to `test/test_matcher.py`** and assert it is declined, where one exists — a
   generic sibling binary, an id another id contains, or the same name on another registry.
   npm's unscoped `amp`, `crush`, `jules` and `qwen-code` are other people's packages, and
@@ -144,6 +149,7 @@ Mechanics:
 
 ```console
 $ python3 osquery/tools/build.py                  # osquery/dist/, and the rendered match files if PyYAML is present
+$ python3 tools/scenarios.py --write      # each extension-ids.txt, for a Chrome extension
 $ python3 tools/agent_status.py --write   # docs/agents.md, docs/limits.md, README badge
 $ tools/gates.sh
 ```

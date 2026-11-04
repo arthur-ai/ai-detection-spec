@@ -1773,6 +1773,222 @@ check("...and the real catalog's pass", _ce(_yaml3.safe_load(
 check("a trailing `*` is refused: an exact route matches exactly",
       any("`*`" in e for e in _rve("probe", {"npm": ["@modelcontextprotocol/*"]}, _reg)))
 
+# --- the scenario contract: tools/scenarios.py --------------------------------------------
+# Each rule is broken once and passed once: a rule whose control fails refuses everything,
+# and one with no refused case refuses nothing.
+import copy as _copy  # noqa: E402
+import tempfile as _tempfile  # noqa: E402
+_sc = _vc.scenarios
+_BASE = {"description": "d", "platform": "linux", "why": "w", "counts": {"file": ">=0"},
+         "classified": {"must_find": []}}
+
+
+def _exp(classified=None, **top):
+    e = _copy.deepcopy(_BASE)
+    e["classified"].update(classified or {})
+    e.update(top)
+    return e
+
+
+def _se(exp, req=None):
+    return _sc.shape_errors("s", exp, req)
+
+
+check("a scenario with every required key passes", _se(_exp()) == [], str(_se(_exp())))
+_top_fe = _exp()
+_top_fe["forbid_evidence"] = ["/home/dana/.dsh/"]
+check("forbid_evidence at the top level is refused, and told where it is read",
+      any("belongs under `classified`" in e for e in _se(_top_fe)), str(_se(_top_fe)))
+check("...and a misspelled key under `classified`", bool(_se(_exp({"must_finds": ["a"]}))))
+_nocls = _exp()
+del _nocls["classified"]
+check("a scenario with no `classified` block is refused, not skipped", bool(_se(_nocls)))
+_nomf = _exp()
+del _nomf["classified"]["must_find"]
+check("...and one with no must_find, which says nothing about what it finds", bool(_se(_nomf)))
+# Each refused case counts the kinds it names, so only the rule it is about can refuse it:
+# a kind the scenario does not count is refused on its own, which hid the others.
+_kinds = {"deb": ">=0", "ext": ">=0"}
+for _label, _rows in (("a field outside the six columns", [{"kind": "deb", "name": "nano"}]),
+                      ("a list, compared as its own text", [{"kind": "ext", "extra": ["a"]}]),
+                      ("a tail_of form", [{"ver": {"tail_of": "loc"}}]),
+                      ("a spec naming no field", [{}]),
+                      ("an empty string", [{"id": ""}])):
+    check(f"forbid_rows refuses {_label}, which matches no row and passes",
+          bool(_se(_exp(counts=_kinds, forbid_rows=_rows))))
+check("...and passes an exact field",
+      _se(_exp(counts={"deb": ">=0"}, forbid_rows=[{"kind": "deb", "id": "nano"}])) == [])
+for _label, _rows in (("an empty string, a substring of everything", [{"id": ""}]),
+                      ("an empty list, all() of nothing", [{"perms": []}]),
+                      ("a spec naming no field", [{}]),
+                      ("a tail_of naming no column", [{"ver": {"tail_of": "path"}}])):
+    check(f"require_rows refuses {_label}", bool(_se(_exp(counts=_kinds, require_rows=_rows))))
+check("...and passes a substring, a list of them and a tail_of",
+      _se(_exp(counts={"ext": ">=0"}, require_rows=[{"kind": "ext", "perms": ["a", "b"],
+                                                     "ver": {"tail_of": "loc"}}])) == [])
+check("a count that is neither exact nor a floor is refused",
+      bool(_se(_exp(counts={"file": "5"}))) and bool(_se(_exp(counts={"file": True}))))
+check("...and both forms pass", _se(_exp(counts={"file": 3, "app": ">=1"})) == [])
+check("`deep: false` is refused: absent is false, and one meaning gets one spelling",
+      bool(_se(_exp(deep=False))) and _se(_exp(deep=True)) == [])
+check("requires.json on a Linux scenario is refused, as is one with no floor",
+      bool(_se(_exp(), {"min_macos": 15, "why": "x"}))
+      and bool(_se(_exp(platform="darwin"), {"why": "x"})))
+check("...and a darwin floor passes",
+      _se(_exp(platform="darwin"), {"min_macos": 15, "why": "x"}) == [])
+check("a floor the shell's -lt cannot compare is refused: false, null, 15.5 and '15' alike",
+      all(_se(_exp(platform="darwin"), {"min_macos": v, "why": "x"})
+          for v in (False, None, 15.5, "15")))
+
+_AG = [{"id": "e1", "platforms": ["linux"], "extension_ids": ["aaaa"]},
+       {"id": "e2", "platforms": ["linux", "windows"], "extension_ids": ["bbbb"]},
+       {"id": "cli", "platforms": ["linux", "windows"]}]
+_PL = ["darwin", "linux", "windows"]
+
+
+def _ce(docs, name="s", where=None):
+    return _sc.catalog_errors(name, docs, _AG, _PL, where or ROOT / "no-such-dir")
+
+
+check("a must_find naming no catalog id is refused", bool(_ce({"s": _exp({"must_find": ["x"]})})))
+check("...and an agent both found and forbidden",
+      bool(_ce({"s": _exp({"must_find": ["cli"], "forbid": ["cli"]})})))
+check("...and a passing scenario passes", _ce({"s": _exp({"must_find": ["cli"]})}) == [])
+check("every_extension derives the platform's extension agents and no other's",
+      _sc.must_find("s", {"s": _exp({"every_extension": True}, platform="windows")}.__getitem__,
+                    _AG) == {"e2"})
+check("every_extension where the catalog matches no extension is refused, not vacuously green",
+      bool(_ce({"s": _exp({"every_extension": True}, platform="darwin")})))
+with _tempfile.TemporaryDirectory() as _d:
+    _w = pathlib.Path(_d)
+    (_w / "s").mkdir()
+    _docs = {"s": _exp({"every_extension": True})}
+    check("every_extension with no extension-ids.txt is refused", bool(_ce(_docs, where=_w)))
+    (_w / "s" / _sc.EXTENSIONS).write_text(_sc.extensions_text(_AG, "linux"))
+    check("...and with the generated one passes", _ce(_docs, where=_w) == [])
+    (_w / "s" / _sc.EXTENSIONS).write_text(_sc.extensions_text(_AG[:1], "linux"))
+    check("...and one the catalog has outgrown is refused", bool(_ce(_docs, where=_w)))
+    check("...and one beside a scenario without every_extension is refused",
+          bool(_ce({"s": _exp()}, where=_w)))
+_comp = {"a": _exp({"must_find": ["e1"]}), "b": _exp({"must_find": ["cli"]}),
+         "d": _exp(composes=["a", "b"])}
+check("composes finds what each composed scenario finds",
+      _sc.must_find("d", _comp.__getitem__, _AG) == {"e1", "cli"} and _ce(_comp, "d") == [])
+check("...and refuses a sibling that does not exist, or another platform's",
+      bool(_ce(dict(_comp, d=_exp(composes=["a", "zz"])), "d"))
+      and bool(_ce(dict(_comp, w=_exp(platform="windows"), d=_exp(composes=["w"])), "d")))
+check("a control may not find anything",
+      bool(_ce({"s": _exp({"must_find": ["cli"]}, control=True)}))
+      and _ce({"s": _exp(control=True)}) == [])
+
+
+def _r(kind, **f):
+    return dict({"kind": kind, "id": "", "ver": "", "loc": "", "extra": "", "perms": ""}, **f)
+
+
+_rows = [_r("deb", id="nano-tiny"), _r("rpm", id="bash"),
+         _r("ext", ver="1.2", loc="/x/1.2", extra=",s")]
+_n = {"deb+rpm": 2, "ext": 1}
+
+
+def _cv(**k):
+    return _sc.counts_verdict(_rows, _exp(**k))[1]
+
+
+check("a `+` count sums its kinds", _cv(counts=_n))
+check("...a kind no count names fails", not _cv(counts={"deb+rpm": 2}))
+check("...and an exact count is exact", not _cv(counts={"deb+rpm": 3, "ext": 1}))
+check("must_contain's list means any of these",
+      _cv(counts=_n, must_contain=[["absent", "nano-tiny"]])
+      and not _cv(counts=_n, must_contain=["absent"]))
+check("forbid_rows is exact: a substring of a row's id does not trip it",
+      _cv(counts=_n, forbid_rows=[{"kind": "deb", "id": "nano"}])
+      and not _cv(counts=_n, forbid_rows=[{"kind": "deb", "id": "nano-tiny"}]))
+check("require_rows' tail_of equals the field's last path component, on the same row",
+      _cv(counts=_n, require_rows=[{"kind": "ext", "ver": {"tail_of": "loc"}}])
+      and not _cv(counts=_n, require_rows=[{"kind": "deb", "ver": {"tail_of": "loc"}}]))
+
+_found = {"findings": [{"id": "cli", "evidence": [{"id": "libxcli1"}]}]}
+
+
+def _vd(want, **cls):
+    return _sc.classified_verdict(_found, _exp(cls), set(want))
+
+
+check("every must_find agent must be found", not _vd(["cli", "e1"])[1] and _vd(["cli"])[1])
+_extra = _vd([], forbid=["cli"])
+check("an agent found beyond must_find fails, named as the lookalike it was declared",
+      not _extra[1] and any("cli (a declared lookalike)" in l for l in _extra[0]), str(_extra[0]))
+check("a forbid_evidence string in a finding's evidence fails, whichever agent claimed it",
+      not _vd(["cli"], forbid_evidence=["libxcli"])[1] and _vd(["cli"], forbid_evidence=["zz"])[1])
+_two = {"findings": [{"id": "e1", "evidence": [{"kind": "ext", "id": "aaaa"}]}]}
+check("every_extension wants each id as evidence for its agent, not one id per agent",
+      _sc.evidence_wanted(_exp({"every_extension": True}), _AG + [
+          {"id": "e1", "platforms": ["linux"], "extension_ids": ["zzzz"]}]) == [
+          ("e1", "aaaa"), ("e2", "bbbb"), ("e1", "zzzz")]
+      and _sc.classified_verdict(_two, _exp(), {"e1"}, [("e1", "aaaa")])[1]
+      and not _sc.classified_verdict(_two, _exp(), {"e1"}, [("e1", "aaaa"), ("e1", "zzzz")])[1])
+_win = {"findings": [{"id": "cli", "evidence": [{"kind": "npm", "loc": "C:\\Users\\dana\\npm"}]}]}
+check("...a Windows path among them, which the evidence's JSON text would have escaped",
+      not _sc.classified_verdict(_win, _exp({"forbid_evidence": ["C:\\Users\\dana"]}), {"cli"})[1])
+check("a harness reads a field's default where the scenario is silent, and its value where it says",
+      _sc.field("00-baseline", "deep") is False and _sc.field("79-linux-image", "deep") is True)
+def _raises(exc, fn):
+    """True when fn raises exc. A RecursionError is not a ValueError, so it reads False."""
+    try:
+        fn()
+    except exc:
+        return True
+    except Exception:  # noqa: BLE001 -- any other exception is the failure being tested
+        return False
+    return False
+
+
+check("a row spec's kind must be one the scenario counts: any other fails the run as unexpected",
+      bool(_se(_exp(forbid_rows=[{"kind": "debb", "id": "nano"}])))
+      and bool(_se(_exp(require_rows=[{"kind": "debb", "id": "nano"}])))
+      and _se(_exp(forbid_rows=[{"kind": "file", "id": "nano"}])) == [])
+check("a scenario that composes itself is a ValueError, not a RecursionError past every gate",
+      _raises(ValueError, lambda: _sc.must_find(
+          "s", {"s": _exp(composes=["s"])}.__getitem__, _AG)))
+_AGS = _AG + [{"id": "e3", "platforms": ["linux"], "extension_ids": ["cccc", "dddd"],
+               "superseded": [{"route": "extension_ids", "value": "cccc"}]}]
+check("a superseded extension id is not installed: the store no longer serves it",
+      ("dddd", "e3") in _sc.extension_ids(_AGS, "linux")
+      and ("cccc", "e3") not in _sc.extension_ids(_AGS, "linux"))
+with _tempfile.TemporaryDirectory() as _d:
+    _root = pathlib.Path(_d)
+    (_root / "catalog").mkdir()
+    (_root / "catalog" / "routes.yaml").write_text(
+        "routes:\n  extension_ids: {purl: chrome-extension}\n  edge_ids: {purl: edge}\n"
+        "  store_ids: {purl: chrome-extension}\n")
+    check("the Web Store routes are read off routes.yaml by their purl, not named",
+          _sc.store_routes(_root) == ("extension_ids", "store_ids"), str(_sc.store_routes(_root)))
+with _tempfile.TemporaryDirectory() as _d:
+    _w = pathlib.Path(_d)
+
+    def _put(name, exp, req=None, file="expected.json"):
+        (_w / name).mkdir(exist_ok=True)
+        (_w / name / file).write_text(json.dumps(exp))
+        if req:
+            (_w / name / "requires.json").write_text(json.dumps(req))
+
+    _put("a", _exp({"must_find": ["claude-code"]}, platform="darwin"),
+         {"min_macos": 15, "why": "a needs Sequoia"})
+    _put("d", _exp(composes=["a"], platform="darwin"))
+    check("a scenario inherits the macOS floor of what it composes, with the reason",
+          _sc.field("d", "requires.min_macos", _w) == 15
+          and _sc.field("d", "requires.why", _w).startswith("a: "))
+    _put("b", _exp({"must_find": "claude-code"}, platform="darwin"))
+    _put("c", _exp(composes=["b"], platform="darwin"))
+    check("load() refuses a composed scenario whose files are malformed, not spell its letters",
+          _raises(ValueError, lambda: _sc.load(_w / "c" / "expected.json")))
+    _put("a", _exp({"must_find": ["codex-cli"]}, platform="darwin"), file="other.json")
+    check("load() reads the file it is given, not whatever expected.json sits beside it",
+          _sc.load(_w / "a" / "other.json")[1] == {"codex-cli"})
+check("every scenario in the tree passes the contract",
+      _sc.check(*_sc.catalog()) == [], str(_sc.check(*_sc.catalog())[:3]))
+
 # --- what the matcher takes from the registry rather than from itself ------------------
 _mini = {"platforms": ["darwin"], "routes": {
     "a": {"platform": "darwin", "kind": "app", "match": "exact"},

@@ -38,20 +38,13 @@ set -uo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
 
-# Every scenario whose expected.json declares linux. tools/ci_scope.py's tree_scenarios
-# enumerates the same directories the same way, and test/test_ci_scope.py compares the two.
-linux_scenarios() {
-  local d n
-  for d in "$HERE"/scenarios/*/; do
-    n="$(basename "$d")"
-    [ -f "$d/expected.json" ] || continue
-    [ "$(python3 -c "import json;print(json.load(open('$d/expected.json')).get('platform'))")" = linux ] \
-      || continue
-    printf '%s\n' "$n"
-  done
-}
+# Every scenario that declares linux, by tools/scenarios.py, which tools/ci_scope.py's
+# tree_scenarios asks too; test/test_ci_scope.py compares the two.
+linux_scenarios() { python3 "$ROOT/tools/scenarios.py" list linux; }
 # --list answers before the docker check, so a host without docker can still ask.
-if [ "${1:-}" = --list ]; then linux_scenarios; exit 0; fi
+# Its status, not 0: this script runs without -e, and a failed listing must not read as an
+# empty one.
+if [ "${1:-}" = --list ]; then linux_scenarios || exit 1; exit 0; fi
 
 OSQUERY_VERSION="${OSQUERY_VERSION:-5.23.1}"
 # Docker Hub is blocked daemon-side on some machines here, so the default is a mirror
@@ -86,7 +79,12 @@ esac
 # to REC_DIR, mounted at /observed.
 scenarios=("$@")
 if [ ${#scenarios[@]} -eq 0 ]; then
-  while IFS= read -r n; do scenarios+=("$n"); done < <(linux_scenarios)
+  # A blank line is no scenario: run with an empty name, a cloud runner would clean up
+  # its whole family directory.
+  while IFS= read -r n; do if [ -n "$n" ]; then scenarios+=("$n"); fi; done < <(linux_scenarios)
+  # An empty list would run nothing and exit 0: the list command failing must not read
+  # as a tree with no Linux scenarios.
+  [ ${#scenarios[@]} -gt 0 ] || { echo "$(basename "$0"): tools/scenarios.py listed no linux scenario" >&2; exit 1; }
 fi
 
 # What every scenario needs before setup.sh runs: osquery, python3 with yaml for the
@@ -169,7 +167,9 @@ rc=\$?
 # for one and it fails on a row count instead of saying the artifact was wrong. In this
 # container the deep scenarios exit 3 before reaching here, because there is no daemon;
 # the branch is what keeps a local run with a mounted socket honest.
-if python3 -c \"import json,sys;sys.exit(0 if json.load(open('test/scenarios/$s/expected.json')).get('deep') else 1)\"; then
+deep=\$(python3 tools/scenarios.py field $s deep) || {
+  echo 'FAIL: tools/scenarios.py refused the scenario'; exit 1; }
+if [ \"\$deep\" = true ]; then
   osquery/bin/discover --deep > /tmp/out.json 2>/tmp/err.txt || {
     echo 'FAIL: the deep path did not run'; cat /tmp/err.txt; exit 1; }
 else

@@ -8,7 +8,6 @@ pill, and an entry with no detection route at all is a catalog line that can nev
 match anything.
 """
 import pathlib
-import json
 import re
 import sys
 
@@ -17,6 +16,7 @@ import yaml
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 import observations  # noqa: E402
+import scenarios  # noqa: E402
 
 # THE ROUTE VOCABULARY IS NOT WRITTEN HERE ANY MORE. It is catalog/routes.yaml, which is
 # also what bin/classify, tools/agent_status.py and test/lint.sh read -- this list used
@@ -540,10 +540,14 @@ def main():
     # THE STANDARD GATE, AND IT IS UNCONDITIONAL. Every agent is backed by a real install
     # or it does not ship. There is no longer a block that buys an exception, because the
     # one that existed was never used -- see the note at the head of this file.
+    # must_find as tools/scenarios.py derives it, so an agent a scenario finds through
+    # every_extension or composes is backed by that scenario.
     covered = set()
-    for path in sorted((ROOT / "test" / "scenarios").glob("*/expected.json")):
-        for aid in json.loads(path.read_text()).get("classified", {}).get("must_find", []):
-            covered.add(aid)
+    for name in scenarios.names():
+        try:
+            covered |= scenarios.must_find(name, lambda n: scenarios.read(n)[0], doc["agents"])
+        except (ValueError, KeyError, TypeError, AttributeError, OSError):
+            pass  # a refused scenario, or one composing a missing one: the check below names it
 
     for agent in doc["agents"]:
         aid = agent.get("id", "<missing id>")
@@ -554,21 +558,12 @@ def main():
                 f"scenario can install it, it is not a signature yet; say so in "
                 f"docs/blind-spots.yaml rather than shipping it.")
 
-    # Scenario expectations name catalog agents by id. Those run on dispatch and on a
-    # schedule, not per pull request, so a typo'd id would sit undetected for as long as
-    # nobody triggers the matrix -- and would then fail as "agent not found", which reads
-    # like a broken query rather than a broken test. Check it here, where it runs in
-    # seconds on every push. 'comet' instead of 'perplexity-comet' is not hypothetical.
-    known = {a["id"] for a in doc["agents"]}
-    root = pathlib.Path(__file__).resolve().parent.parent
-    for path in sorted((root / "test" / "scenarios").glob("*/expected.json")):
-        block = json.loads(path.read_text()).get("classified", {})
-        for key in ("must_find", "forbid"):
-            for aid in block.get(key, []):
-                if aid not in known:
-                    errors.append(
-                        f"{path.parent.name}: classified.{key} names {aid!r}, "
-                        f"which is not an id in catalog/agents.yaml")
+    # EVERY SCENARIO, THROUGH tools/scenarios.py: its vocabulary, the shape of each value,
+    # the agent ids it names and the lists it derives from this catalog. Scenarios run per
+    # diff and weekly, so a misnamed key or id would sit until one ran, then fail as "agent
+    # not found", which reads like a broken query rather than a broken test. 'comet' for
+    # 'perplexity-comet' is not hypothetical.
+    errors.extend(scenarios.check(doc["agents"], sorted(PLATFORMS)))
 
     # A removed entry must not also be a live one, and must say what it is -- the table in
     # the report is rendered straight from this.

@@ -5,7 +5,7 @@
     "deb": ">=0",
     "deb+rpm": ">=1",
     "desktop": ">=0",
-    "ext": ">=6",
+    "ext": ">=1",
     "file": ">=0",
     "jbplugin": ">=0",
     "nmh": ">=0",
@@ -18,14 +18,8 @@
     "vscodeext": ">=0"
   },
   "classified": {
-    "must_find": [
-      "claude-in-chrome",
-      "harpa",
-      "monica",
-      "sider",
-      "merlin",
-      "chatgpt-extension"
-    ],
+    "must_find": [],
+    "every_extension": true,
     "forbid": [
       "claude-code",
       "claude-desktop",

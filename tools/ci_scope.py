@@ -52,9 +52,11 @@ selected by every rule that would have consulted them. The rules, and what each 
                          run records, never what it finds.
   SCOPER                 nothing. This file decides what runs and runs in no scenario;
                          test/test_ci_scope.py proves it under lint, and a matrix cannot.
-  catalog/agents.yaml    the scenarios that name a changed agent (must_find, forbid), that
-                         observed one (observed.json), or that carry forbid_evidence, which
-                         names no agent. Two agents whose order flipped are both changed:
+  catalog/agents.yaml    the scenarios that must find a changed agent (must_find, as
+                         tools/scenarios.py derives it), hold its lookalikes (forbid), or
+                         observed it (observed.json); those carrying forbid_evidence, which
+                         names no agent; and the `control` of each platform a changed agent
+                         claims. Two agents whose order flipped are both changed:
                          bin/classify gives a row both match to the first. A change outside
                          `agents:` runs every scenario.
   rendered match SQL     nothing more when the catalog is in the same diff, since lint's
@@ -93,7 +95,10 @@ WHAT THIS FORM CANNOT SEE, and the one thing it gives up: a changed signature th
 rows -- in the classifier or in the rendered SQL its parity check compares against -- in a
 scenario with no link to its agent. Nothing on a pull request asserts on that scenario, so
 nothing there could fail. scenarios.yml runs every scenario weekly without calling this
-file at all, which bounds that miss at a week.
+file at all, and a scenario fails on any agent its must_find does not name
+(tools/scenarios.py), so the miss turns the weekly run red within a week of the merge
+rather than passing. Each platform's `control` narrows it: it reruns for every changed
+agent whose routes fire there.
 """
 import argparse
 import copy
@@ -102,6 +107,8 @@ import pathlib
 import re
 import subprocess
 import sys
+
+import scenarios
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -123,7 +130,6 @@ INERT = frozenset({
     "osquery/test/lib/fake_docker.py", "osquery/test/lint.sh", "test/lib/fake_amplitude.py",
     "test/lib/vm.sh", "test/lint.sh", "test/run-ec2.sh", "test/test_conformance.py",
     "test/test_export.py", "tools/export.py",
-    "schema/catalog.schema.json", "schema/evidence.schema.json",
     "test/run-gce.sh", "test/run.sh", "test/test_ci_scope.py", "test/test_matcher.py",
     # test/run-linux.sh is NOT here: scenarios.yml's container job runs it. See HARNESS.
     "test/test_telemetry.py", "osquery/tools/bundle.py", "tools/check_doc_numbers.py",
@@ -137,6 +143,10 @@ INERT = frozenset({
 NOT_ASSERTED = {
     "docs/blind-spots.yaml": "rendered into docs/limits.md; no scenario asserts on it",
     "osquery/dist/fleet-policies.yml": "checked by test_match_sql.py under lint; no scenario reads it",
+    "schema/evidence.schema.json": "read by tools/scenarios.py only for the six row fields a "
+                                   "scenario may name, which lint checks every scenario against",
+    "schema/catalog.schema.json": "named by bin/classify for a catalog document, which no "
+                                  "scenario reads; test_conformance.py checks it under lint",
 }
 # Sourced by scenario setup scripts and by nothing else a job runs, which
 # test/test_ci_scope.py also proves. A change runs the scenarios that source it.
@@ -183,7 +193,7 @@ RUNTIME_INERT = frozenset({
     "test/test_ci_scope.py", "test/test_matcher.py", "test/test_telemetry.py",
     "test/test_export.py", "tools/export.py", "osquery/tools/check_no_catalog.py",
     "tools/check_workflows.py", "tools/validate_catalog.py", "tools/check_doc_numbers.py",
-    "tools/gates.sh",
+    "tools/gates.sh", "tools/scenarios.py",
 })
 
 # Rendered from the catalog by osquery/tools/render_match.py. `None` is every platform.
@@ -322,19 +332,9 @@ def runner_platform(spec):
 
 
 def tree_scenarios(platform, root=ROOT):
-    """Every scenario directory whose expected.json declares `platform`. One whose
-    expected.json cannot be read is included: could-not-look must not read as
-    nothing-to-run. `test/run-linux.sh --list` enumerates the same way, and
-    test/test_ci_scope.py holds the two together."""
-    out = []
-    for exp in sorted((root / "test" / "scenarios").glob("*/expected.json")):
-        try:
-            if json.loads(exp.read_text()).get("platform") != platform:
-                continue
-        except ValueError:
-            pass
-        out.append(exp.parent.name)
-    return out
+    """Every scenario that declares `platform`, by tools/scenarios.py, which includes one
+    whose expected.json cannot be read. `test/run-linux.sh --list` asks the same function."""
+    return scenarios.on_platform(platform, root / "test" / "scenarios")
 
 
 def job_scenarios(doc, root=ROOT):
@@ -356,6 +356,15 @@ class Scope:
         self.harness = harness_jobs(doc or {})
         self.listed = set().union(*self.jobs.values()) if self.jobs else set()
         self._info = None
+        self._head_agents = None
+
+    @property
+    def head_agents(self):
+        """The head catalog's agents, which every scenario's must_find derives from: read
+        and parsed once rather than once per scenario."""
+        if self._head_agents is None:
+            self._head_agents = self.yaml.safe_load(self.read("head", CATALOG) or "")["agents"]
+        return self._head_agents
 
     @property
     def info(self):
@@ -365,17 +374,27 @@ class Scope:
             self._info = {name: self._facts(name) for name in sorted(self.listed)}
         return self._info
 
+    def _expected(self, name):
+        exp = json.loads(self.read("head", f"test/scenarios/{name}/expected.json") or "")
+        if scenarios.shape_errors(name, exp):
+            raise ValueError(f"tools/scenarios.py refuses {name}'s expected.json")
+        return exp
+
     def _facts(self, name):
+        """A scenario's facts, or None when its files cannot be read or are refused, or the
+        catalog its must_find derives from cannot be: could-not-look runs."""
         try:
-            exp = json.loads(self.read("head", f"test/scenarios/{name}/expected.json") or "")
+            exp = self._expected(name)
             obs = json.loads(self.read("head", f"test/scenarios/{name}/observed.json") or "{}")
-        except ValueError:
+            found = scenarios.must_find(name, self._expected, self.head_agents)
+        except (ValueError, TypeError, KeyError, self.yaml.YAMLError):
             return None
-        cls = exp.get("classified") or {}
+        cls = exp["classified"]
         seen = {r.get("agent") for r in obs.get("identifiers", []) + obs.get("archived", [])}
-        return {"platform": exp.get("platform"), "deep": bool(exp.get("deep")),
-                "agents": set(cls.get("must_find", [])) | set(cls.get("forbid", [])) | seen,
-                "must_find": set(cls.get("must_find", [])),
+        return {"platform": exp["platform"], "deep": bool(exp.get("deep")),
+                "control": bool(exp.get("control")),
+                "agents": found | set(cls.get("forbid") or []) | seen,
+                "must_find": found,
                 "any_agent": bool(cls.get("forbid_evidence"))}
 
     def where(self, test):
@@ -569,7 +588,20 @@ class Scope:
                  if b_by_id.get(i) != h_by_id.get(i)} | flipped
         if not moved:
             return frozenset(), "the catalog's agents parse unchanged"
-        return (self.where(lambda i: bool(i["agents"] & moved) or i["any_agent"]),
+        # A CONTROL RERUNS WHERE A CHANGED AGENT'S ROWS CAN MATCH: the platforms of the routes
+        # it has values on, not the `platforms` it declares. bin/classify matches wherever a
+        # route fires, and 75-linux-browser finds claude-desktop, declared for macOS and
+        # Windows, on Linux through a native-messaging manifest.
+        reg = self.yaml.safe_load(self.read("head", "catalog/routes.yaml") or "") or {}
+        if not reg.get("routes"):
+            return EVERY, "catalog/routes.yaml cannot say where a changed agent matches"
+        every, groups = reg.get("platforms") or [], reg.get("platform_groups") or {}
+        claims = {p for i in moved for a in (b_by_id.get(i), h_by_id.get(i)) if a
+                  for r, spec in reg["routes"].items() if a.get(r)
+                  for p in ([spec.get("platform")] if spec.get("platform") in every
+                            else groups.get(spec.get("platform")) or every)}
+        return (self.where(lambda i: bool(i["agents"] & moved) or i["any_agent"]
+                           or (i["control"] and i["platform"] in claims)),
                 f"agents changed or reordered: {', '.join(sorted(moved))}")
 
     def select(self):

@@ -220,32 +220,40 @@ def deep_kinds_for(platform):
 covered, bad = set(), False
 bad = bad or bool(globals().get("bad_registry"))
 seen_platforms, deep_platforms = set(), set()
-SCENARIOS = sorted(glob.glob(os.path.join(root, "test", "scenarios", "*", "expected.json")))
-if not SCENARIOS:
+# Each scenario through tools/scenarios.py, the root's one reader of them, which refuses a
+# malformed one -- a count neither exact nor '>=N' among them -- before this reads it.
+sys.path.insert(0, os.path.join(root, "tools"))
+import scenarios
+where = os.path.join(root, "test", "scenarios")
+NAMES = scenarios.names(where)
+if not NAMES:
     print("FAIL: no test/scenarios/*/expected.json to check kinds against"); sys.exit(1)
-for f in SCENARIOS:
-    name = os.path.basename(os.path.dirname(f))
-    d = json.load(open(f))
+for name in NAMES:
+    try:
+        platform = scenarios.field(name, "platform", where)
+        deep = scenarios.field(name, "deep", where)
+    except ValueError as exc:
+        print(f"FAIL: {exc}"); bad = True
+        continue
     # REQUIRED, and it lives in expected.json rather than requires.json because every
     # scenario already has one of these. An absent platform is the same ambiguity the
     # catalog refuses for agents: "macOS" or "nobody said" are different claims.
-    platform = d.get("platform")
     if platform not in PLATFORMS:
         print(f"FAIL: {name} declares platform {platform!r}, want one of {PLATFORMS}")
         bad = True
         continue
     seen_platforms.add(platform)
     want = kinds_for(platform)
-    if d.get("deep"):
+    if deep:
         want |= deep_kinds_for(platform)
         deep_platforms.add(platform)
-    counts = d.get("counts", {})
+    counts = scenarios.read(name, where)[0]["counts"]
     missing = want - set(counts)
     if missing:
         print(f"FAIL: {name} ({platform}) does not pin {sorted(missing)}")
         bad = True
     for k, v in counts.items():
-        # A `+` KEY SUMS KINDS -- test/lib/assert.sh reads it -- and every part of it
+        # A `+` KEY SUMS KINDS -- tools/scenarios.py reads it -- and every part of it
         # must be a kind this platform emits. It proves the SUM, so it covers neither
         # part below: `deb+rpm >= 1` says the package branch ran, not that either
         # family was installed.
@@ -255,8 +263,6 @@ for f in SCENARIOS:
                       f"route produces"); bad = True
         if "+" in k:
             continue
-        if isinstance(v, str) and not v.startswith(">="):
-            print(f"FAIL: {name}.{k} = {v!r}, want an int or '>=N'"); bad = True
         # A FLOOR OF ZERO IS NOT EVIDENCE. `">=0"` used to count a kind as exercised,
         # so a kind pinned `>=0` by every scenario satisfied the "every kind is
         # exercised somewhere" check while nothing installed anything that produces it
@@ -267,7 +273,7 @@ for f in SCENARIOS:
             covered.add(k)
     # ONE SETUP SCRIPT, IN THE PLATFORM'S OWN LANGUAGE: Windows PowerShell on Windows, an
     # executable shell script elsewhere. A scenario carrying both has one nobody runs.
-    here = os.path.dirname(f)
+    here = os.path.join(where, name)
     sh, ps1 = os.path.join(here, "setup.sh"), os.path.join(here, "setup.ps1")
     if platform == "windows":
         if not os.path.exists(ps1) or os.path.exists(sh):

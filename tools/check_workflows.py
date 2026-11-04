@@ -16,7 +16,6 @@ because the release checklist says to read the last Scenarios run before tagging
 
 A checklist catches that once. This catches it every time.
 """
-import json
 import pathlib
 import re
 import sys
@@ -30,6 +29,7 @@ except ImportError:
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from ci_scope import (HARNESS, HARNESS_ENV, harness_jobs, job_scenarios, output_key,  # noqa: E402
                       runner_platform)
+import scenarios  # noqa: E402
 
 # EVERY JOB DECLARES A BOUND, AND NO BOUND IS NEAR THE DEFAULT. GitHub's is 360 minutes,
 # and an unbounded job that hangs does not fail -- it bills until the limit. 50-autonomous
@@ -236,10 +236,14 @@ for _job, _names in sorted(_jobs.items()):
         failed = True
         continue
     for _name in sorted(_names & _on_disk):
-        _exp = repo / "test" / "scenarios" / _name / "expected.json"
-        if not _exp.exists():
+        if not (repo / "test" / "scenarios" / _name / "expected.json").exists():
             continue
-        _want = json.loads(_exp.read_text()).get("platform")
+        try:
+            _want = scenarios.field(_name, "platform", repo / "test" / "scenarios")
+        except ValueError as exc:
+            print(f"FAIL: {exc}")
+            failed = True
+            continue
         if _want != _plat:
             print(f"FAIL: {_name} declares platform {_want!r} but job {_job!r} runs on "
                   f"{_plat}. It would skip on every run while looking scheduled.")
@@ -264,17 +268,14 @@ for _job, _names in sorted(_jobs.items()):
         failed = True
         continue
     for _name in sorted(_names & _on_disk):
-        _req = repo / "test" / "scenarios" / _name / "requires.json"
-        if not _req.exists():
-            continue
-        _need = json.loads(_req.read_text()).get("min_macos", 0)
-        # AN INTEGER OR NO KEY: the job's runnable gate and test/run.sh compare the floor
-        # with the shell's `-lt`, which errors on anything else and reads as "runnable".
-        # int() here would round 15.5 to 15, and `or 0` would read a `false` or `null`
-        # floor as none; both pass what the gates cannot read.
-        if type(_need) is not int:
-            print(f"FAIL: {_name} declares min_macos {_need!r}, which is not an integer macOS "
-                  f"version, and the runnable gate compares it as one.")
+        # THROUGH tools/scenarios.py, which refuses a floor that is not an integer macOS
+        # version: the job's runnable gate and test/run.sh compare it with the shell's `-lt`,
+        # which errors on anything else and reads as "runnable". A `false` or `null` floor
+        # is refused there rather than read as none.
+        try:
+            _need = scenarios.field(_name, "requires.min_macos", repo / "test" / "scenarios")
+        except (ValueError, OSError) as exc:
+            print(f"FAIL: {exc}")
             failed = True
             continue
         if _need > int(_m.group(1)):
@@ -301,9 +302,11 @@ for _job, _names in sorted(_jobs.items()):
     _honours = "--deep" in _runs
     _deep = set()
     for _name in sorted(_names & _on_disk):
-        _exp = repo / "test" / "scenarios" / _name / "expected.json"
-        if _exp.exists() and json.loads(_exp.read_text()).get("deep"):
-            _deep.add(_name)
+        try:
+            if scenarios.field(_name, "deep", repo / "test" / "scenarios"):
+                _deep.add(_name)
+        except (ValueError, OSError):
+            pass  # refused, and reported, by the platform check above
     for _name in sorted(_deep):
         if not _honours:
             print(f"FAIL: {_name} declares \"deep\": true but job {_job!r} runs only the "

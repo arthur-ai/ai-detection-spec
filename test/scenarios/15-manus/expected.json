@@ -17,8 +17,7 @@
   "classified": {
     "must_find": [
       "manus"
-    ],
-    "forbid": []
+    ]
   },
   "why": "Manus also matches on the brew route, so must_find would pass with its bundle id broken; must_contain names im.manus.desktop for that reason. Nothing is forbidden: no catalogued agent shares a value or a namespace with Manus, and test_matcher holds its helper's id apart.",
   "must_contain": [
