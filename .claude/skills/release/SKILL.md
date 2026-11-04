@@ -161,7 +161,7 @@ the run still concludes `success`, so `skipped` verifies nothing. `ci.yml` has n
 trigger, so a commit whose jobs read `skipped` never gets them. Read the last commit on `main`
 whose run executed them, and ask the same scoper whether anything since could reach one:
 `python3 tools/ci_scope.py <that-sha> <verified-sha>` prints `runtime=false`. Its list of
-paths no runtime job reads is `RUNTIME_INERT`, which `test/test_ci_scope.py` proves.
+paths no runtime job reads is `RUNTIME_INERT`, which `test/test_ci_scope.py` checks.
 
 Windows has no local harness: its scenarios run only in `scenarios.yml`, one
 `<scenario> on windows-2025` job each.
@@ -198,11 +198,10 @@ release commit usually has no full run. Start one with no input, once, at the co
 tag, after the last merge: `gh workflow run scenarios.yml --ref main`. Its `collect` lands on
 top, and the next paragraph is how to tag past that.
 
-It is also the first run that can see an over-match a scoped merge could not. A scenario fails
-on any agent its `must_find` does not name (`tools/scenarios.py`), and a catalog change reruns
-only the scenarios linked to the agents it changed, plus each platform's control, a baseline
-that must find nothing. A signature that claims rows anywhere else passed its pull request and
-fails here.
+It also catches what scoping cannot. A catalog change reruns only the scenarios
+`tools/ci_scope.py` links to it, and a scenario fails on any agent its `must_find` does not
+name (`tools/scenarios.py`), so a signature that claims rows in an unlinked scenario passed its
+pull request and fails on the next full run: the weekly one, or this.
 
 **The `collect` commit can never have a run of its own.** A push made with the default
 `GITHUB_TOKEN` triggers no further runs, and `collect` pushes with it — a run appearing against
@@ -261,12 +260,13 @@ its image, and the second line reads the `<scenario> on <image>` annotation the 
 which is also in the job's step summary. To rerun one scenario rather than the image's whole
 list, dispatch with its name in the `scenarios` input.
 
-Two lines in a scenario's log name a detection defect rather than a broken install. Read them
+Three lines in a scenario's log name a detection defect rather than a broken install. Read them
 before rerunning anything:
 
 | line | what it means |
 |---|---|
-| `classified nothing else: FAIL - also found <agent>` | a signature claims rows in a scenario that does not name its agent, and a fleet would report the same false finding. `(a declared lookalike)` beside the name means the scenario's `forbid` predicted it. Fix the signature, or name the agent in `must_find` if the scenario really installs it |
+| `classified nothing else: FAIL - also found <agent>` | a signature claims rows in a scenario that does not name its agent. If the scenario does not install that agent, a fleet would report the same false finding: fix the signature. If it does, name the agent in `must_find`. `(a declared lookalike)` beside the name means the scenario's `forbid` predicted it |
+| `FAIL  dist/agents-<platform>.sql claims nothing beyond must_find` | the same, in the rendered SQL the endpoint runs. Beside the line above it has the same cause; alone, the SQL and `bin/classify` disagree, and the parity line before it (`match SQL agrees with the classifier on N evidence rows`) says whether on the collected rows |
 | `classified '<agent>' through '<id>': FAIL` | an extension id `every_extension` installs is not evidence for its agent: the Web Store stopped serving it, or the id is wrong. `docs/signature-lifecycle.md` has the triage |
 
 ## 3. Write the notes

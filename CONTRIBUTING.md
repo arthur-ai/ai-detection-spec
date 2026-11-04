@@ -207,9 +207,9 @@ records what each produced. The three runtime jobs in `ci.yml` run only when a c
 can reach one, so a scenario's own files or a lint-only check boot no runner there. A
 `workflow_dispatch` runs everything, or only the scenarios named in its `scenarios` input. A
 new identifier over-matching rows in an unrelated scenario is the one thing scoping can miss.
-A scenario fails on any agent its `must_find` does not name, so the weekly run catches it,
-and each platform's control, a baseline that must find nothing, catches it on a stock
-machine at pull-request time.
+A scenario fails on any agent its `must_find` does not name, so the weekly run catches it. A
+control, a baseline that must find nothing, reruns for every changed agent whose routes fire
+on its platform, so an over-match on a stock machine fails the pull request itself.
 
 Assert on **counts and specific identifiers**, and on what must **not** match. Every defect
 found here produced plausible output with the wrong number of rows, and none errored.
