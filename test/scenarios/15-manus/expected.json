@@ -1,0 +1,31 @@
+{
+  "description": "Manus's desktop agent through its cask.",
+  "platform": "darwin",
+  "counts": {
+    "app": ">=1",
+    "brew": ">=1",
+    "npm": ">=0",
+    "file": ">=0",
+    "ext": ">=0",
+    "nmh": ">=0",
+    "daemon": ">=0",
+    "port": ">=0",
+    "vscodeext": ">=0",
+    "jbplugin": ">=0",
+    "proc": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "manus"
+    ],
+    "forbid": []
+  },
+  "why": "Manus also matches on the brew route, so must_find would pass with its bundle id broken; must_contain names im.manus.desktop for that reason. Nothing is forbidden: no catalogued agent shares a value or a namespace with Manus, and test_matcher holds its helper's id apart.",
+  "must_contain": [
+    "im.manus.desktop"
+  ],
+  "known_gaps": [
+    "Manus is never launched: its computer-use and capture helpers, which its cask's uninstall stanza names as launchd jobs, are never registered, so no launchd value is read.",
+    "Manus's Windows build is not installed anywhere."
+  ]
+}
