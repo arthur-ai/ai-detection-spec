@@ -2,7 +2,7 @@
   "scenario": "96-linux-cli-agents-npm",
   "identifiers": [
     {
-      "agent": "codebuddy-code",
+      "agent": "codebuddy",
       "route": "npm",
       "value": "@tencent-ai/codebuddy-code",
       "agent_version": "2.179.3",
@@ -12,7 +12,7 @@
       "run": "41717453987"
     },
     {
-      "agent": "codebuddy-code",
+      "agent": "codebuddy",
       "route": "npm",
       "value": "@tencent-ai/codebuddy-code",
       "agent_version": "2.179.3",
@@ -22,7 +22,7 @@
       "run": "41717453987"
     },
     {
-      "agent": "codebuddy-code",
+      "agent": "codebuddy",
       "route": "npm",
       "value": "@tencent-ai/codebuddy-code",
       "agent_version": "2.179.3",
@@ -32,7 +32,7 @@
       "run": "41717453987"
     },
     {
-      "agent": "codebuddy-code",
+      "agent": "codebuddy",
       "route": "npm",
       "value": "@tencent-ai/codebuddy-code",
       "agent_version": "2.179.3",
@@ -42,7 +42,7 @@
       "run": "41717453987"
     },
     {
-      "agent": "codebuddy-code",
+      "agent": "codebuddy",
       "route": "npm",
       "value": "@tencent-ai/codebuddy-code",
       "agent_version": "2.179.3",
@@ -52,7 +52,7 @@
       "run": "41717453987"
     },
     {
-      "agent": "codebuddy-code",
+      "agent": "codebuddy",
       "route": "npm",
       "value": "@tencent-ai/codebuddy-code",
       "agent_version": "2.179.3",
@@ -62,7 +62,7 @@
       "run": "41717453987"
     },
     {
-      "agent": "codebuddy-code",
+      "agent": "codebuddy",
       "route": "state_dirs",
       "value": "~/.codebuddy",
       "platform": "linux",
@@ -71,7 +71,7 @@
       "run": "41717453987"
     },
     {
-      "agent": "codebuddy-code",
+      "agent": "codebuddy",
       "route": "state_dirs",
       "value": "~/.codebuddy",
       "platform": "linux",
@@ -80,7 +80,7 @@
       "run": "41717453987"
     },
     {
-      "agent": "codebuddy-code",
+      "agent": "codebuddy",
       "route": "state_dirs",
       "value": "~/.codebuddy",
       "platform": "linux",
@@ -89,7 +89,7 @@
       "run": "41717453987"
     },
     {
-      "agent": "codebuddy-code",
+      "agent": "codebuddy",
       "route": "state_dirs",
       "value": "~/.codebuddy",
       "platform": "linux",
@@ -98,7 +98,7 @@
       "run": "41717453987"
     },
     {
-      "agent": "codebuddy-code",
+      "agent": "codebuddy",
       "route": "state_dirs",
       "value": "~/.codebuddy",
       "platform": "linux",
@@ -107,7 +107,7 @@
       "run": "41717453987"
     },
     {
-      "agent": "codebuddy-code",
+      "agent": "codebuddy",
       "route": "state_dirs",
       "value": "~/.codebuddy",
       "platform": "linux",
