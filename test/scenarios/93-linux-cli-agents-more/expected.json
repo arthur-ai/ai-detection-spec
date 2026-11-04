@@ -1,5 +1,5 @@
 {
-  "description": "Seven terminal coding agents through their npm and PyPI names, each run once so it writes its state directory.",
+  "description": "Terminal coding agents through their npm and PyPI names, each run once so it writes its state directory.",
   "platform": "linux",
   "counts": {
     "deb": ">=0",
@@ -9,7 +9,7 @@
     "file": ">=6",
     "jbplugin": ">=0",
     "nmh": ">=0",
-    "npm": ">=6",
+    "npm": ">=7",
     "port": ">=0",
     "proc": ">=0",
     "rpm": ">=0",
@@ -25,16 +25,20 @@
       "qwen-code",
       "jules",
       "junie",
-      "mistral-vibe"
+      "mistral-vibe",
+      "deepseek-harness"
     ],
     "forbid": [
       "gemini-cli",
       "opencode",
       "claude-code",
       "codex-cli"
+    ],
+    "forbid_evidence": [
+      "/home/dana/.dsh/"
     ]
   },
-  "why": "Most of these agents have two witnesses here, a package and a state directory, so must_contain names each. Amp and Crush write no top-level directory, so their npm row is the only witness. Qwen Code is a Gemini CLI fork and Crush was opencode-ai/opencode before its rename, so gemini-cli and opencode are forbidden; claude-code and codex-cli are forbidden because ~/.local/bin and top-level home directories are their routes too.",
+  "why": "Most of these agents have two witnesses here, a package and a state directory, so must_contain names each. Amp and Crush write no top-level directory, so their npm row is the only witness, as DeepSeek Harness's is: its ~/.dsh must arrive and be claimed by nothing, because another tool's dsh uses that name. Qwen Code is a Gemini CLI fork and Crush was opencode-ai/opencode before its rename, so gemini-cli and opencode are forbidden; claude-code and codex-cli are forbidden because ~/.local/bin and top-level home directories are their routes too.",
   "must_contain": [
     "@ampcode/cli",
     "@factory/cli",
@@ -48,7 +52,9 @@
     "/root/.local/bin/junie",
     "/root/.junie/",
     "/uv/tools/mistral-vibe/",
-    "/home/dana/.vibe/"
+    "/home/dana/.vibe/",
+    "@deepseek-ai/dsh",
+    "/home/dana/.dsh/"
   ],
   "known_gaps": [
     "Amp's and Droid's curl installers (ampcode.com/install.sh, app.factory.ai/cli) and Junie's (junie.jetbrains.com/install.sh) are not exercised, and no value was read from them.",
