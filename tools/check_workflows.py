@@ -267,10 +267,11 @@ for _job, _names in sorted(_jobs.items()):
         _req = repo / "test" / "scenarios" / _name / "requires.json"
         if not _req.exists():
             continue
-        _need = json.loads(_req.read_text()).get("min_macos") or 0
-        # AN INTEGER OR NOTHING: the job's runnable gate and test/run.sh compare the floor
+        _need = json.loads(_req.read_text()).get("min_macos", 0)
+        # AN INTEGER OR NO KEY: the job's runnable gate and test/run.sh compare the floor
         # with the shell's `-lt`, which errors on anything else and reads as "runnable".
-        # int() here would round 15.5 to 15 and pass what both of them cannot read.
+        # int() here would round 15.5 to 15, and `or 0` would read a `false` or `null`
+        # floor as none; both pass what the gates cannot read.
         if type(_need) is not int:
             print(f"FAIL: {_name} declares min_macos {_need!r}, which is not an integer macOS "
                   f"version, and the runnable gate compares it as one.")
