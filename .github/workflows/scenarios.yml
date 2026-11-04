@@ -49,6 +49,13 @@ on:
           than an image's whole list.
         required: false
         default: ""
+      runners:
+        description: >-
+          Where the macOS scenario jobs run. `variable` follows the MACOS_SCENARIO_RUNNERS
+          repository variable; the other two override it for this run alone.
+        type: choice
+        options: [variable, hosted, self-hosted]
+        default: variable
 
 # Cancel superseded PR runs, NEVER a main or scheduled one. A cancelled main run loses the
 # observations `collect` would have committed, and a lost observation reads downstream as
@@ -173,7 +180,22 @@ jobs:
     needs: scope
     if: needs.scope.outputs.runtime == 'true' && needs.scope.outputs.skip_scenario != 'true'
     name: ${{ matrix.scenario }} on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    # GITHUB'S RUNNERS, OR THE LAB'S MACS WHEN ASKED, and never the lab's for a fork's pull
+    # request. The lab is laptops that boot one fresh VM per job (docs/macos-runners.md);
+    # `self-hosted` beside the label routes a job there. This repository is public and a
+    # self-hosted runner executes whatever a pull request writes into this file, so code
+    # from outside the organisation stays on GitHub's machines.
+    #
+    # Asked by the MACOS_SCENARIO_RUNNERS repository variable, or for one dispatch by the
+    # `runners` input. Unset is GitHub's, so deleting the variable is the way back.
+    # matrix.os stays the label either way: it is the OS the job is promised, and artifact
+    # names, tools/ci_scope.py and tools/check_workflows.py all read it.
+    runs-on: >-
+      ${{ (inputs.runners == 'self-hosted'
+           || (inputs.runners != 'hosted' && vars.MACOS_SCENARIO_RUNNERS == 'self-hosted'))
+          && !github.event.pull_request.head.repo.fork
+          && fromJSON(format('["self-hosted","{0}"]', matrix.os))
+          || matrix.os }}
     # Above Provision's own bound, so a hang there fails in that step, with its name.
     timeout-minutes: 60
     strategy:
@@ -219,6 +241,19 @@ jobs:
         # is what tools/check_workflows.py checks and what the schedule runs.
         exclude: ${{ fromJSON(needs.scope.outputs.exclude_scenario || '[]') }}
     steps:
+      # WHICH MACHINE THIS IS, and the value that chose it. runs-on reads the variable as
+      # GitHub's runners unless it says exactly `self-hosted`, so a misspelling would move
+      # nothing while looking deliberate. Red here instead.
+      - name: Which runner this is
+        env:
+          SET: ${{ vars.MACOS_SCENARIO_RUNNERS }}
+        run: |
+          case "$SET" in
+            ''|hosted|self-hosted) ;;
+            *) echo "::error::MACOS_SCENARIO_RUNNERS is '$SET', which runs-on reads as GitHub's runners. Set hosted or self-hosted, or delete it."
+               exit 1 ;;
+          esac
+          echo "$RUNNER_NAME ($RUNNER_ENVIRONMENT): macOS $(sw_vers -productVersion), $(uname -m)"
       - uses: actions/checkout@v4
       - name: Install osquery
         # --retry-all-errors as well as --retry: on its own curl retries only timeouts
