@@ -81,6 +81,24 @@ removed:
 #             ai_tools' other types, which describe what an agent USES
 #   herdr     not from ai_tools: a terminal multiplexer that hosts agents. It runs no model and
 #             acts on nothing itself; each agent in its panes is found by that agent's own values
+#   Warp, the terminal app (dev.warp.Warp-Stable, cask `warp`, Linux package `warp-terminal`)
+#             not from ai_tools, but in uber/ADR's test manifest: a terminal whose agent mode is
+#             a feature, as Zed's agent panel is the editor's, so the app's presence says a
+#             terminal is installed and not that its agent was used. Use is recorded in its
+#             warp.sqlite (`agent_conversations`), a file inside the app's data directory that no
+#             route reads, and producing it needs a logged-in Warp account. The agent shipped on
+#             its own is `warp-agent-cli`. Read 2026-11-05 off warpdotdev/warp and warpdotdev/docs
+#   Open WebUI (PyPI `open-webui`)
+#             in uber/ADR's catalog: a self-hosted web front end for model runners, which a
+#             browser chats through, on the side of the line jan and anythingllm are on. ADR
+#             files it under model runtimes too. Its tools and MCP servers run inside that
+#             server when a chat calls them, as AnythingLLM's agents do; contested as Desktop
+#             assistant was, and left out for the same consistency
+#   Arc (company.thebrowser.Browser)
+#             in uber/ADR's catalog, as an AI browser: The Browser Company's Chromium browser.
+#             Its AI features (Arc Max) are an opt-in setting that names and summarises tabs and
+#             acts on nothing, so a finding would report a browser. The company's AI browser is
+#             `dia`. UNVERIFIED on a real install; test_matcher holds the id unclaimed
 #   ChatGPT Atlas (com.openai.atlas)
 #             not from ai_tools: OpenAI's AI browser, shut down on 2026-08-09. OpenAI's notice
 #             (help.openai.com/articles/20001371) says it may no longer open, browse or run
@@ -832,6 +850,17 @@ agents:
     # npm's UNSCOPED `kilocode` is 1.2.0 with an empty description and is not this; the
     # fixture carries it as a negative control.
     npm: ["@kilocode/cli"]
+    # THE CLI'S CURL INSTALLER, kilo.ai/cli/install (`install` in Kilo-Org/kilocode), puts the
+    # binary at ~/.kilo/bin/kilo. bin/ is a level deeper than the enumeration reads, so the
+    # directory is the identifier, as ~/.opencode is for the opencode it forks; the CLI also
+    # reads ~/.kilo for config and skills. Its own state is under XDG directories. PENDING CI:
+    # 98-linux-installers-more installs it, and this comment cites that run once it has read
+    # the value.
+    #
+    # NOT HERE: the Kilo-Org/tap formula, which homebrew_packages reports as a bare `kilo`
+    # with no tap, the name of antirez's text editor too; and ~/.kilocode, which only the
+    # pre-1.0 CLI wrote and no scenario installs.
+    state_dirs: ["~/.kilo"]
 
   - id: augment
     name: Augment Code
@@ -1344,3 +1373,27 @@ agents:
     # wrote /home/dana/.local/bin/prime-agent, 0.10.2. It refuses glibc below 2.35, so Rocky 9
     # and Amazon Linux 2023 cannot run it; the scenario skips there.
     binaries: ["~/.local/bin/prime-agent"]
+
+  # Warp's Agent CLI (warp.dev/agent-cli), the agent alone: a terminal UI that takes prompts,
+  # runs commands and edits files after a permission prompt. Warp's docs say it is a separate
+  # install from the desktop terminal and does not need it, and it is built from
+  # crates/warp_tui in warpdotdev/warp. The terminal app is in the considered block above:
+  # its agent mode is a feature of the terminal, and no value here is one the app writes.
+  #
+  # NOT HERE: ~/.warp, which both the app (settings and themes on macOS, MCP config and
+  # skills everywhere) and this CLI use, so it cannot tell them apart; ~/.warp/tui, the
+  # installer's install root, a level deeper than the enumeration reads; and ~/.agents, a
+  # directory several agents share. Windows' %LOCALAPPDATA%\Warp\bin\warp.cmd is outside
+  # what the Windows enumeration reads.
+  - id: warp-agent-cli
+    name: Warp Agent CLI
+    classification: Coding agent
+    platforms: [darwin, linux]
+    # The curl installer, app.warp.dev/download/agent-cli, links ~/.local/bin/warp to the
+    # build under ~/.warp/tui (Warp's uninstall page names both). The desktop app writes no
+    # ~/.local/bin entry: its Linux packages are `warp-terminal`. PENDING CI:
+    # 98-linux-installers-more installs it.
+    binaries: ["~/.local/bin/warp"]
+    # homebrew-cask's `warp-agent-cli`, which links its binary as `warp` under Homebrew's
+    # prefix. Not `warp`, the cask for the terminal app. PENDING CI: 22-cli-agents-homebrew-more.
+    homebrew: [warp-agent-cli]
