@@ -1,11 +1,14 @@
 #!/bin/bash
-# Three terminal coding agents that herdr runs, through their vendors' curl installers.
-# Read off this script's runs on 2026-11-02:
+# Terminal coding agents through their vendors' curl installers: three that herdr runs, read
+# off this script's runs on 2026-11-02, and two from uber/ADR's catalog, added 2026-11-05:
 #
 #   Maki        maki.sh/install.sh       ~/.local/bin/maki
 #   Devin CLI   cli.devin.ai/install.sh  ~/.local/bin/devin; --version writes no state directory
 #   Oh My Pi    omp.sh/install, with no bun here, so the prebuilt binary:
 #                                        ~/.local/bin/omp, and ~/.omp once run
+#   Warp Agent CLI  app.warp.dev/download/agent-cli
+#                                        ~/.local/bin/warp, linked into ~/.warp/tui
+#   Kilo CLI    kilo.ai/cli/install      ~/.kilo/bin/kilo, so ~/.kilo
 #
 # ~/.local/bin/omp is evidence, not a value; catalog/agents.yaml says why. So ~/.omp is Oh My
 # Pi's only witness here, and omp is run to write it.
@@ -44,12 +47,19 @@ vendor "the Devin CLI installer" '~/.local/bin/devin' \
   'curl --retry 3 -fsSL https://cli.devin.ai/install.sh | bash || test -e ~/.local/bin/devin' || true
 vendor "the Oh My Pi installer" '~/.local/bin/omp' \
   'curl --retry 3 -fsSL https://omp.sh/install | sh' || true
+# Both checked by the file each leaves, as above. Neither is given a prompt: the values are what the
+# installers write, and both CLIs want a login. --no-modify-path keeps Kilo's out of the
+# user's shell rc, which nothing here reads.
+vendor "the Warp Agent CLI installer" '~/.local/bin/warp' \
+  'curl --retry 3 -fsSL https://app.warp.dev/download/agent-cli | bash' || true
+vendor "the Kilo CLI installer" '~/.kilo/bin/kilo' \
+  'curl --retry 3 -fsSL https://kilo.ai/cli/install | bash -s -- --no-modify-path' || true
 
 # omp fails without credentials after writing ~/.omp.
 as_user 'timeout 60 omp --version </dev/null' >/dev/null 2>&1 || true
 as_user 'timeout 60 omp -p hi </dev/null' >/dev/null 2>&1 || true
 echo "--- versions:"
-for c in maki devin omp; do
+for c in maki devin omp warp "~/.kilo/bin/kilo"; do
   echo "      $c: $(as_user "timeout 30 $c --version </dev/null" 2>&1 | head -1)"
 done
 echo "--- what landed in the user's home:"

@@ -1,12 +1,12 @@
 {
-  "description": "Three terminal coding agents herdr runs, through their vendors' curl installers: Maki, Devin CLI and Oh My Pi.",
+  "description": "Terminal coding agents through their vendors' curl installers: Maki, Devin CLI, Oh My Pi, Warp Agent CLI and Kilo CLI.",
   "platform": "linux",
   "counts": {
     "deb": ">=0",
     "deb+rpm": ">=1",
     "desktop": ">=0",
     "ext": ">=0",
-    "file": ">=3",
+    "file": ">=5",
     "jbplugin": ">=0",
     "nmh": ">=0",
     "npm": ">=0",
@@ -21,23 +21,30 @@
     "must_find": [
       "maki",
       "devin-cli",
-      "oh-my-pi"
+      "oh-my-pi",
+      "warp-agent-cli",
+      "kilo-code"
     ],
     "forbid": [
       "pi",
       "openclaw",
       "windsurf",
       "claude-code",
-      "codex-cli"
+      "codex-cli",
+      "opencode",
+      "cline",
+      "roo-code"
     ]
   },
-  "why": "Each agent has one witness here: ~/.local/bin/maki, ~/.local/bin/devin, and ~/.omp, which omp writes when run. ~/.local/bin/omp is on disk and claims nothing, so the Oh My Pi finding is ~/.omp's alone, and removing any of the three values turns must_find red. Oh My Pi is a fork of Pi, so pi and openclaw (built on Pi's libraries) are forbidden; windsurf because its cask is devin-desktop; claude-code and codex-cli because ~/.local/bin and top-level home directories are their routes too.",
+  "why": "Each agent has one witness here: ~/.local/bin/maki, ~/.local/bin/devin, ~/.omp, which omp writes when run, ~/.local/bin/warp, and ~/.kilo, which Kilo's installer creates for its binary. ~/.local/bin/omp is on disk and claims nothing, so the Oh My Pi finding is ~/.omp's alone, and ~/.warp is on disk and claims nothing, so the Warp Agent CLI finding is ~/.local/bin/warp's alone; removing any of the five values turns must_find red. Oh My Pi is a fork of Pi, so pi and openclaw (built on Pi's libraries) are forbidden; windsurf because its cask is devin-desktop; claude-code and codex-cli because ~/.local/bin and top-level home directories are their routes too; opencode because Kilo's CLI forks it and its installer writes the same shape of directory, and cline and roo-code because Kilo Code forks them.",
   "must_contain": [
     "/home/dana/.local/bin/maki",
     "/home/dana/.local/bin/devin",
-    "/home/dana/.omp/"
+    "/home/dana/.omp/",
+    "/home/dana/.local/bin/warp",
+    "/home/dana/.kilo/"
   ],
   "known_gaps": [
-    "Maki's, Devin CLI's and Oh My Pi's Windows installers are not exercised."
+    "Maki's, Devin CLI's, Oh My Pi's, Warp Agent CLI's and Kilo CLI's Windows installers are not exercised."
   ]
 }

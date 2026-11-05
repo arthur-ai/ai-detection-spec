@@ -1652,6 +1652,37 @@ check("the updater bundled inside it claims nothing",
       "org.sparkle-project.Sparkle.Updater" in _u,
       "Sparkle ships inside Muse.app; a nested bundle is not a second agent")
 
+# WARP AND KILO, from uber/ADR's catalog. The Warp Agent CLI is its installer's shim and its
+# cask; the terminal app is in the considered block, so its bundle id, cask, package and
+# the ~/.warp both write claim nothing. Kilo's curl installer is ~/.kilo, and the legacy
+# CLI's ~/.kilocode is not a value. Open WebUI and Arc were considered and left out too.
+_c, _u = _claims(_kind("file", "/home/dana/.local/bin/warp", "/Users/dana/.local/bin/warp",
+                       "/home/dana/.kilo/", "/home/dana/.warp/", "/home/dana/.kilocode/",
+                       "/home/dana/.kilo-dev/", "/home/dana/.local/bin/warp-cli",
+                       "/home/dana/.local/bin/warp-terminal",
+                       "/home/dana/.local/pipx/venvs/open-webui/",
+                       "/home/dana/.local/share/uv/tools/open-webui/"))
+check("the Warp Agent CLI's shim and Kilo's installer directory resolve to their agents",
+      _c == {"/home/dana/.local/bin/warp": "warp-agent-cli",
+             "/Users/dana/.local/bin/warp": "warp-agent-cli",
+             "/home/dana/.kilo/": "kilo-code"}, f"got {_c}")
+check("...and ~/.warp, ~/.kilocode, a longer name and Open WebUI's tool dirs claim nothing",
+      {"/home/dana/.warp/", "/home/dana/.kilocode/", "/home/dana/.kilo-dev/",
+       "/home/dana/.local/bin/warp-cli", "/home/dana/.local/bin/warp-terminal",
+       "/home/dana/.local/pipx/venvs/open-webui/",
+       "/home/dana/.local/share/uv/tools/open-webui/"} <= set(_u),
+      "~/.warp is the terminal app's as much as the CLI's")
+_c, _u = _claims(_kind("brew", "warp-agent-cli", "warp", "kilo"))
+check("the Warp Agent CLI's cask is not the terminal's, and a bare `kilo` claims nothing",
+      _c == {"warp-agent-cli": "warp-agent-cli"} and {"warp", "kilo"} <= set(_u), f"got {_c}")
+_c, _u = _claims(_kind("app", "dev.warp.Warp-Stable", "company.thebrowser.Browser",
+                       "company.thebrowser.dia"))
+check("the Warp terminal and Arc claim nothing; Dia, from Arc's vendor, is still Dia",
+      _c == {"company.thebrowser.dia": "dia"}
+      and {"dev.warp.Warp-Stable", "company.thebrowser.Browser"} <= set(_u), f"got {_c}")
+_c, _u = _claims(_kind("deb", "warp-terminal"))
+check("the Warp terminal's Linux package claims nothing", "warp-terminal" in _u, f"got {_c}")
+
 # --- an extension's provenance is read from `extra`, after the browser ---------------
 _cspec = _ilu.spec_from_loader("classify",
     _ilm.SourceFileLoader("classify", str(ROOT / "bin" / "classify")))
