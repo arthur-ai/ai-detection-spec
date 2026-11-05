@@ -17,8 +17,10 @@
 set -e
 source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest-linux.sh"
 need_curl
-# 22 because @qwen-code/qwen-code declares node >=22. The other packages accept 20.
-need_node 22 || echo "WARN: Node 22 did not install"
+# 24 because @deepseek-ai/dsh 0.2.2-rc.1, its `latest` since 2026-11-05, declares node
+# >=24.9.0, and under Node 22 npm resolves no version at all (ETARGET, run 42102236848).
+# @qwen-code/qwen-code declares >=22; the others accept 20.
+need_node 24 || echo "WARN: Node 24 did not install"
 # NO COMPILER, unlike 96's for Letta: DeepSeek Harness pins node-pty 1.2.0-beta.15, which ships
 # linux-x64 and linux-arm64 prebuilds, and installed without make or g++ in node:22-bookworm-slim
 # on both arches on 2026-11-03.

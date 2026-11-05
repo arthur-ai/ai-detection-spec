@@ -1045,7 +1045,9 @@ agents:
     classification: Coding agent
     platforms: [linux]
     # 93-linux-cli-agents-more in CI run 41718064984 on 2026-11-03: @deepseek-ai/dsh
-    # 0.2.1-rc.5, bin `dsh`, on Ubuntu 24.04 x86_64.
+    # 0.2.1-rc.5, bin `dsh`, on Ubuntu 24.04 x86_64. Again in run 42103506902 on 2026-11-05:
+    # 0.2.2-rc.1, which declares node >=24.9.0, on Node 24.22.2, on Ubuntu 24.04 x86_64 and
+    # arm64 and the four container images.
     npm: ["@deepseek-ai/dsh"]
 
   # Google's Jules CLI. It drives Jules's cloud VMs, and `jules remote pull --apply` writes
