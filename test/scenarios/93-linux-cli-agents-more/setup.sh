@@ -52,3 +52,6 @@ as_user '$HOME/.local/bin/vibe -p hi </dev/null' >/dev/null 2>&1 || true
 as_user 'timeout 60 dsh --profile headless hi </dev/null' >/dev/null 2>&1 || true
 echo "--- what landed in the user's home:"
 as_user 'ls -1d ~/.*/ 2>&1' | sed 's/^/      /'
+# PROBE ONLY, not for main.
+os_id="$(. /etc/os-release && printf '%s-%s' "${ID:-linux}" "${VERSION_ID:-}")-$(uname -m)"
+echo "::notice title=probe 93 $os_id::node=$(node --version 2>&1) $(npm ls -g --depth=0 2>/dev/null | grep -E '@ampcode|@factory|@charmland|@qwen-code|@google/jules|@deepseek-ai|@jetbrains' | sed 's/.* //' | tr '\n' ' ') vibe=$(as_user 'ls ~/.local/share/uv/tools 2>&1' | tr '\n' ' ') dots=$(as_user 'ls -1d ~/.*/ 2>/dev/null | tr "\n" " "')"
