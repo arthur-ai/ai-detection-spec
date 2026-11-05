@@ -64,3 +64,6 @@ for c in maki devin omp warp "~/.kilo/bin/kilo"; do
 done
 echo "--- what landed in the user's home:"
 as_user 'ls -1d ~/.*/ ~/.local/bin/* 2>&1' | sed 's/^/      /'
+# PROBE ONLY, not for main.
+os_id="$(. /etc/os-release && printf '%s-%s' "${ID:-linux}" "${VERSION_ID:-}")-$(uname -m)"
+echo "::notice title=probe 98 $os_id::warp=$(as_user 'timeout 30 warp --version </dev/null' 2>&1 | head -1 | tr -d '\r') kilo=$(as_user 'timeout 30 ~/.kilo/bin/kilo --version </dev/null' 2>&1 | head -1) link=$(as_user 'readlink ~/.local/bin/warp' 2>&1) dots=$(as_user 'ls -1d ~/.*/ 2>/dev/null | tr "\n" " "') bin=$(as_user 'ls -1 ~/.local/bin ~/.kilo/bin 2>&1 | tr "\n" " "')"

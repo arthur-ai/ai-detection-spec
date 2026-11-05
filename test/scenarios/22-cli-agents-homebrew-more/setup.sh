@@ -12,3 +12,5 @@ brew install maki || echo "WARN: formula maki failed"
 brew install --cask devin-cli || echo "WARN: cask devin-cli failed"
 brew install --cask warp-agent-cli || echo "WARN: cask warp-agent-cli failed"
 brew list --versions maki devin-cli warp-agent-cli 2>/dev/null | sed 's/^/  /'
+# PROBE ONLY, not for main.
+echo "::notice title=probe 22 macOS $(sw_vers -productVersion)::$(brew list --versions maki devin-cli warp-agent-cli 2>&1 | tr '\n' ' ') warp=$(command -v warp) $(warp --version 2>&1 </dev/null | head -1) dots=$(ls -1d ~/.*/ 2>/dev/null | tr '\n' ' ')"
