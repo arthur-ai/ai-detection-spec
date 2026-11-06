@@ -31,7 +31,7 @@ host_macos_major() { sw_vers -productVersion 2>/dev/null | cut -d. -f1; }
 
 vm_require() {
   echo "host macOS $(sw_vers -productVersion) -> guest $(basename "$BASE_IMAGE")"
-  command -v tart >/dev/null || { echo "tart not found: brew install cirruslabs/cli/tart" >&2; exit 1; }
+  command -v tart >/dev/null || { echo "tart not found: brew install openai/tools/tart" >&2; exit 1; }
   command -v sshpass >/dev/null || { echo "sshpass not found: brew install sshpass" >&2; exit 1; }
 }
 

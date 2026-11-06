@@ -138,7 +138,7 @@ A job with no runner online waits up to a day, and then fails. `collect` waits f
     then `tart export` it.
   - On the others: `tart delete arthur-runner-15-prev` if it exists, then
     `tart rename arthur-runner-15 arthur-runner-15-prev`, then `tart import` the new file as
-    `arthur-runner-15`. Tart 2.32.1's import takes no overwrite option.
+    `arthur-runner-15`. `tart import` takes no overwrite option, as of Tart 2.41.1.
   - Then `host-setup.sh start` on each.
 - The runner release refreshes itself daily, verified against its published SHA-256.
 - Update each Mac's macOS by hand. Someone logs in afterwards anyway.

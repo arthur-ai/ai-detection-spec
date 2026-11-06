@@ -56,7 +56,9 @@ configure() {
   security set-keychain-settings "$HOME/Library/Keychains/login.keychain-db"
 
   [ -x /opt/homebrew/bin/brew ] || die "install Homebrew first: https://brew.sh"
-  /opt/homebrew/bin/brew install cirruslabs/cli/tart cirruslabs/cli/softnet sshpass
+  # openai/tools, where Tart and Softnet moved. The old cirruslabs/cli tap stopped at Tart
+  # 2.32.1, and Homebrew 7 refuses to load its formulas.
+  /opt/homebrew/bin/brew install openai/tools/tart openai/tools/softnet sshpass
   command -v jq >/dev/null || /opt/homebrew/bin/brew install jq
   # SOFTNET RUNS SETUID ROOT, to set up the bridge, then drops to the caller. A Homebrew
   # upgrade replaces the binary and the bit with it, so run configure again after one.
