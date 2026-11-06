@@ -7,13 +7,18 @@ to set one up and how to move jobs onto it.
 
 ## How a job gets there
 
-The `scenario` job runs on `[self-hosted, macos-<n>]` when the repository variable
+The `scenario` job runs on `[self-hosted, arthur-macos-<n>]` when the repository variable
 `MACOS_SCENARIO_RUNNERS` is `self-hosted`, or when a dispatch sets its `runners` input to
 `self-hosted`. Anything else runs on GitHub's runners, so **deleting the variable is the way
-back**. A misspelt value turns the job red rather than silently staying on GitHub.
+back**. A misspelt value turns the job red rather than silently staying on GitHub. The
+runners never carry GitHub's own `macos-<n>`, so a job asking for a GitHub-hosted Mac
+cannot land on one of ours.
 
-**A pull request from a fork always runs on GitHub's runners.** This repository is public,
-and a self-hosted runner runs whatever a pull request writes into the workflow.
+**The workflow sends a fork's pull request to GitHub's runners, but cannot enforce it.** A
+pull request runs its own copy of the workflow, and a fork can edit that copy to ask for
+these runners. What enforces it is the repository's approval rule: no outside
+contributor's run starts until a maintainer approves it. Read a fork's workflow changes
+before approving its run.
 
 ## What keeps a job contained
 
@@ -30,6 +35,9 @@ and a self-hosted runner runs whatever a pull request writes into the workflow.
 - **A runner group limited to this repository.** The runners are org runners, and `slot.sh`
   refuses to register one unless the group serves this repository alone. A group open to the
   whole org would let any public repository in it send jobs to these Macs.
+- **Approval for every outside contributor.** `slot.sh` also refuses unless the
+  repository's approval policy is `all_external_contributors`, the one that holds every
+  fork's run for a maintainer.
 
 The runner starts inside the VM's **GUI session**, as a LaunchAgent
 ([`guest-agent.sh`](../test/runner-host/guest-agent.sh)), not over SSH. `50-autonomous`
@@ -37,17 +45,23 @@ runs `open -a`, which needs a GUI session, as GitHub's runners provide.
 
 ## One-time GitHub setup (an org owner)
 
-1. **Create a GitHub App** owned by the org, with the organization permission **Self-hosted
-   runners: Read and write** and nothing else. Install it on the org.
-   - Record the App ID and the installation ID, and generate a private key.
-   - Do not grant it the repository permission *Administration*. That permission can also
-     change this repository's settings and rulesets, or delete it.
+1. **Create a GitHub App** owned by the org, with two permissions and nothing else:
+   - Organization: **Self-hosted runners: Read and write**, to register runners.
+   - Repository: **Administration: Read-only**, to read the approval policy. Never *Read
+     and write*, which can also change this repository's settings and rulesets, or delete it.
+
+   Install it on the org, with access to this repository. Record the App ID and the
+   installation ID, and generate a private key.
 2. **Restrict the org's runner group.** Org settings → Actions → Runner groups → *Default*:
    - Repository access: **Selected repositories**, this repository only.
    - Tick **Allow public repositories**.
+3. **Keep the approval policy.** This repository's Settings → Actions → General → *Approval
+   for running fork pull request workflows from contributors*: **Require approval for all
+   external contributors**.
 
-   `slot.sh` reads both settings before every job and refuses to register a runner without
-   them. If the plan offers no such setting, nothing registers. That outcome is deliberate.
+`slot.sh` reads all three settings before every job and refuses to register a runner
+without them. If the plan offers no way to restrict the runner group, nothing registers.
+That outcome is deliberate.
 
 ## A Mac
 
@@ -71,7 +85,8 @@ needs registering.
 2. Put three files in `~/.config/arthur-runner/`:
    - `app.pem`: the App's private key.
    - `app.env`: `APP_ID=…`, `INSTALLATION_ID=…`, and `RUNNER_GROUP_ID=1` for the Default group.
-   - `slots`: one `<slot> <label>` line per VM, e.g. `a macos-15` and `b macos-26`. A Mac runs
+   - `slots`: one `<slot> <label>` line per VM, e.g. `a macos-15` and `b macos-26`. The
+     label is the workflow's; the slot's runner registers as `arthur-macos-15`. A Mac runs
      at most two macOS VMs (Apple's license, and Virtualization.framework). Weight the
      labels towards `macos-15`, because a pull request runs the first label alone.
 3. `test/runner-host/host-setup.sh configure`. It checks FileVault and the screen lock. It
@@ -84,13 +99,15 @@ needs registering.
      It keeps the result only after a second boot finds the agent running in the GUI session.
    - Copy to the others: `tart export arthur-runner-15 /Volumes/<ssd>/arthur-runner-15.tvm`,
      then `tart import <file> arthur-runner-15` on each.
-5. **Isolation, by breaking it.** Boot a clone with `tart run --net-softnet`. Inside it:
+5. **Isolation, by breaking it.** Boot a clone in a window with
+   `tart clone arthur-runner-15 iso && tart run --net-softnet iso`, and open Terminal in it:
    - Reaching a LAN address must fail.
    - Reaching `https://github.com` must succeed.
    - Reaching the Mac's port 22 at the gateway (`route -n get default`) must fail. If it
      answers, Remote Login is on.
 
-   Repeat without `--net-softnet` to see the checks can fail.
+   Shut it down, `tart run iso` without `--net-softnet`, and see the LAN check succeed,
+   which shows the checks can fail. Then `tart delete iso`.
 6. `test/runner-host/host-setup.sh start`. Each slot appears under the repository's
    Settings → Actions → Runners while its VM waits for a job.
 
@@ -115,7 +132,13 @@ A job with no runner online waits up to a day, and then fails. `collect` waits f
 
 - Move a base image by reading the new digest from `ghcr.io` and editing it in `bake.sh`.
   Do it when GitHub's hosted images move a macOS release, so both kinds of runner record the
-  same OS. Then bake, export, import, and `host-setup.sh stop`/`start`. `bake.sh` refuses
-  while slots are loaded.
+  same OS. Then, on every Mac, `host-setup.sh stop` first, because a slot clones the image
+  between jobs and `bake.sh` refuses while slots are loaded:
+  - On the Mac that bakes: `bake.sh 15`, which keeps the old image as `arthur-runner-15-prev`,
+    then `tart export` it.
+  - On the others: `tart delete arthur-runner-15-prev` if it exists, then
+    `tart rename arthur-runner-15 arthur-runner-15-prev`, then `tart import` the new file as
+    `arthur-runner-15`. Tart 2.32.1's import takes no overwrite option.
+  - Then `host-setup.sh start` on each.
 - The runner release refreshes itself daily, verified against its published SHA-256.
 - Update each Mac's macOS by hand. Someone logs in afterwards anyway.

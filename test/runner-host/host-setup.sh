@@ -139,17 +139,23 @@ EOF
   log "configured $n slot(s). Next: bake.sh if an image is missing, then host-setup.sh start."
 }
 
+# Every slot is tried, and any that did not load fails the command. An `a && b` here
+# failed the command only when the slot that did not load was the last one.
 start() {
-  local plist label
+  local plist label rc=0
   for plist in "$HOME/Library/LaunchAgents/$AGENT".*.plist; do
     [ -f "$plist" ] || die "no slots are configured; run configure first"
     label=$(basename "$plist" .plist)
     if launchctl print "gui/$UID_NOW/$label" >/dev/null 2>&1; then
       log "$label is already running"
+    elif launchctl bootstrap "gui/$UID_NOW" "$plist"; then
+      log "started $label"
     else
-      launchctl bootstrap "gui/$UID_NOW" "$plist" && log "started $label"
+      log "FAIL: $label did not start; is this user logged in at the screen, not over SSH?"
+      rc=1
     fi
   done
+  return "$rc"
 }
 
 stop() {

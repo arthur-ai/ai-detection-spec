@@ -52,14 +52,23 @@ nap() { sleep "$1" & wait $! || true; }
 
 fresh_token() { [ $(( $(date +%s) - TOKEN_AT )) -lt 3000 ] || app_token; }
 
-# Delete the VMs this slot left behind when it, or the host, stopped mid-job.
+# Delete the VMs this slot left behind when it, or the host, stopped mid-job. Fails while
+# one remains, so the pass backs off instead of booting a VM beside it. The whole name is
+# matched: a prefix would let slot a reap slot a-b's rh-a-b-<epoch> mid-job.
 reap() {
-  local v
-  for v in $(tart list --format json | jq -r --arg p "rh-$slot-" \
-               '.[] | select(.Name | startswith($p)) | .Name'); do
+  local names v rc=0
+  names=$(tart list --format json | jq -r --arg p "^rh-$slot-[0-9]+\$" \
+            '.[] | select(.Name | test($p)) | .Name') \
+    || { log "ERROR: tart list failed, so leftover VMs are unknown"; return 1; }
+  for v in $names; do
     tart stop "$v" >/dev/null 2>&1 || true
-    tart delete "$v" && log "deleted leftover VM $v"
+    if tart delete "$v"; then
+      log "deleted leftover VM $v"
+    else
+      log "ERROR: could not delete leftover VM $v"; rc=1
+    fi
   done
+  return "$rc"
 }
 
 # Deregister this slot's runner unless it is gone already. An ephemeral runner deregisters
@@ -115,6 +124,20 @@ check_group() {
   fi
 }
 
+# A FORK'S PULL REQUEST RUNS ITS OWN COPY OF scenarios.yml, so the fork condition in that
+# file routes and cannot refuse: a fork can ask for these runners by editing it. What
+# refuses is this setting, under which no outside contributor's run starts until a
+# maintainer approves it. Read before every job, like the group.
+check_approval() {
+  local p
+  p=$(gh_json GET "/repos/$ORG/$REPO/actions/permissions/fork-pr-contributor-approval" \
+      | jq -r .approval_policy) || return 1
+  [ "$p" = all_external_contributors ] && return 0
+  log "ERROR: $REPO's approval policy for outside contributors is '$p'; it must be" \
+      "all_external_contributors (Settings > Actions > General)"
+  return 1
+}
+
 # runner_state: "online true", "online false", "offline false", "gone" or "unknown".
 runner_state() {
   local code
@@ -130,18 +153,19 @@ runner_state() {
 # job or sat idle until recycled; 1 when something is broken and the loop should back off.
 one_job() {
   local jit id share vm t0 now st online=0 busy_at=0 gone_at=0 why=""
-  reap
+  reap || return 1
   drop_runner || return 1
   curl -fsS -m 10 -o /dev/null "$API/zen" || { log "GitHub does not answer; is the Wi-Fi up?"; return 1; }
   app_token || return 1
   check_group || return 1
+  check_approval || return 1
   refresh_runner_cache || true
   [ -s "$RH_STATE/runner/actions-runner.tar.gz" ] || { log "ERROR: no runner in the cache"; return 1; }
 
   # Every label explicitly: a just-in-time runner carries only the labels it is given.
   jit=$(gh_json POST "/orgs/$ORG/actions/runners/generate-jitconfig" "$(jq -cn \
           --arg n "$(scutil --get LocalHostName 2>/dev/null || hostname -s)-$slot-$(date +%s)" \
-          --argjson g "$RUNNER_GROUP_ID" --arg l "$label" \
+          --argjson g "$RUNNER_GROUP_ID" --arg l "$(runner_label "$label")" \
           '{name: $n, runner_group_id: $g, labels: ["self-hosted", "macOS", "ARM64", $l]}')") \
     || return 1
   id=$(printf '%s' "$jit" | jq -r .runner.id)
@@ -204,7 +228,7 @@ one_job() {
   log "$vm done"
 }
 
-log "slot $slot serving $label from $image"
+log "slot $slot serving $label as $(runner_label "$label") from $image"
 fails=0
 while :; do
   if one_job; then

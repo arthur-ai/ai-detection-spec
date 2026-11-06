@@ -26,6 +26,11 @@ image_for_label() {
   echo "arthur-runner-${BASH_REMATCH[1]}"
 }
 
+# The label a runner registers with, never GitHub's own macos-15: a job that asks for a
+# GitHub-hosted runner cannot match one of these, however GitHub ranks the two kinds.
+# scenarios.yml's runs-on asks for the same prefix.
+runner_label() { echo "arthur-$1"; }
+
 # gh_call METHOD PATH OUT [JSON]: one REST call. The body goes to OUT and the HTTP status
 # to stdout, "000" when nothing answered. The Authorization header is read from the file
 # $RH_AUTH, so no token ever sits in a process's argv; an empty file calls anonymously.
@@ -83,6 +88,7 @@ app_token() {
 refresh_runner_cache() {
   local dir="$RH_STATE/runner" rel tag ver sha tmp
   mkdir -p "$dir"
+  chmod 755 "$dir"   # the share's root; the guest lists it
   if [ -s "$dir/actions-runner.tar.gz" ] && [ -f "$dir/VERSION" ] \
      && [ -z "$(find "$dir/VERSION" -mtime +0 2>/dev/null)" ]; then
     return 0
@@ -108,7 +114,9 @@ refresh_runner_cache() {
   if [ "$(shasum -a 256 "$tmp" | cut -d' ' -f1)" != "$sha" ]; then
     rm -f "$tmp"; log "WARN: runner $ver failed its SHA-256; keeping the cache"; return 1
   fi
-  # mv, not cp: a guest mid-copy keeps reading the inode it opened.
+  # Readable by the guest, whose user need not be this one; mktemp made it 0600, and it is
+  # a public release. mv, not cp: a guest mid-copy keeps reading the inode it opened.
+  chmod 644 "$tmp"
   mv -f "$tmp" "$dir/actions-runner.tar.gz"
   printf '%s\n' "$ver" > "$dir/VERSION"
   log "runner cache is now $ver"
