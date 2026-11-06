@@ -90,9 +90,16 @@ retry "pull letta/letta:latest" try "pull letta/letta:latest" \
   docker pull letta/letta:latest || true
 retry "pull lettaai/letta:latest" try "pull lettaai/letta:latest" \
   docker pull --platform linux/amd64 lettaai/letta:latest || true
+# HERMES AGENT'S IMAGE, which Nous Research's own release workflow pushes to Docker Hub as
+# nousresearch/hermes-agent (3.2GB on arm64, probe run 41870942008). It sets no OCI
+# `source` label -- the build passes only `revision`, and the debian base has none -- so the
+# tag is its only identifier here. Its docker-compose.yml builds a local `hermes-agent`
+# instead, and that bare name is not catalogued: it is shaped like anyone's local build.
+retry "pull nousresearch/hermes-agent:latest" try "pull nousresearch/hermes-agent:latest" \
+  docker pull nousresearch/hermes-agent:latest || true
 echo "--- pulled agent images:"
 docker images --format '  {{.Repository}}:{{.Tag}} {{.ID}} {{.Size}}' \
-  | grep -Ei 'openhands|goose|swe-agent|aider|letta' || true
+  | grep -Ei 'openhands|goose|swe-agent|aider|letta|hermes' || true
 
 # --- A RUNNING CONTAINER, which is a different row and a different claim ---------------
 #

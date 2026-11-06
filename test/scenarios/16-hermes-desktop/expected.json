@@ -1,0 +1,30 @@
+{
+  "description": "Hermes Desktop for macOS, the DMG the vendor's stable feed serves, found by its bundle id.",
+  "platform": "darwin",
+  "counts": {
+    "app": ">=1",
+    "brew": ">=0",
+    "npm": ">=0",
+    "file": ">=0",
+    "ext": ">=0",
+    "nmh": ">=0",
+    "daemon": ">=0",
+    "port": ">=0",
+    "vscodeext": ">=0",
+    "jbplugin": ">=0",
+    "proc": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "hermes"
+    ]
+  },
+  "must_contain": [
+    "com.nousresearch.hermes-bundled"
+  ],
+  "why": "The app is installed and never launched, so its bundle id is the only witness: a first launch writes ~/.local/bin/hermes and ~/.hermes, which the hermes entry already carries. must_contain names the id as well, so a rename turns this red even if something else on the runner ever named Hermes. Nothing is forbidden: no catalogued agent shares the com.nousresearch namespace.",
+  "known_gaps": [
+    "Not launched, so running_apps is not exercised for Hermes, and what the app writes on first run is read only on the probe run the catalog cites.",
+    "The source-built desktop (`hermes desktop`, bundle id com.nousresearch.hermes) and the remote-only Light client are other bundle ids, and neither is installed here."
+  ]
+}

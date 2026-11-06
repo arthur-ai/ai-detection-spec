@@ -624,10 +624,30 @@ agents:
   #   installer  `curl -fsSL https://hermes-agent.nousresearch.com/install.sh | bash`, the
   #              vendor's primary route. Read off install.sh: it writes a launcher to
   #              ~/.local/bin/hermes and puts everything else under HERMES_HOME.
+  #
+  # AND FOUR MORE, read off CI on 2026-11-04 (probe run 41870942008), each published by Nous
+  # Research itself -- its own install host, its own signing certificate, its own Docker Hub
+  # namespace pushed from NousResearch/hermes-agent's release workflow:
+  #
+  #   install.ps1  `iex (irm https://hermes-agent.nousresearch.com/install.ps1)`, native
+  #              Windows. Everything under %LOCALAPPDATA%\hermes, launchers in its bin\.
+  #   msix       Hermes Desktop for Windows, an .appinstaller feed naming a signed bundle.
+  #   dmg        Hermes Desktop for macOS, Apple Silicon only, never on Intel.
+  #   image      nousresearch/hermes-agent on Docker Hub.
   - id: hermes
     name: Hermes Agent
     classification: Personal agent
-    platforms: [darwin, linux]
+    platforms: [darwin, linux, windows]
+    # HERMES DESKTOP FOR macOS. Read off 16-hermes-desktop's setup on macos-26 (probe run
+    # 41870942008): the stable feed, hermes-assets.nousresearch.com/releases/darwin/stable/
+    # stable-mac.yml, named HermesBundled-0.22.0-mac-arm64.dmg (tag rc.3-v0.22.0), which
+    # carries `Hermes Agent.app`; `apps` rendered this id, version 0.22.0. The bundle carries
+    # the agent itself, under Contents/Resources/agent-payload. A first launch links
+    # ~/.local/bin/hermes into it and creates ~/.hermes, so a launched copy is found by those
+    # values too. NOT com.nousresearch.hermes, what `hermes desktop` builds from source, nor
+    # com.nousresearch.hermes-light, the remote-only client: neither is shipped as a download,
+    # and nothing here has read either.
+    bundle_ids: [com.nousresearch.hermes-bundled]
     homebrew: [hermes-agent]
     pypi: [hermes-agent]
     # The command, not its siblings: a uv tool install writes hermes beside hermes-acp and
@@ -655,6 +675,45 @@ agents:
     # npm's `hermes-engine` is React Native's JavaScript engine and is not this agent at all.
     # It is in the fixture as a negative control, for the same reason `libxdmcp` is: it is
     # the row a substring match would claim.
+    #
+    # THE WINDOWS INSTALLER, FOUND RUNNING AND ONLY RUNNING. Read off 107-windows-hermes-installer
+    # on windows-2025, v0.22.7: install.ps1 writes ~\AppData\Local\hermes\bin\hermes.exe and
+    # hermes-acp.exe, PM's Python under ~\AppData\Local\hermes\tools\, and NO ~\.hermes and
+    # nothing in ~\.local\bin -- the two places filesystem-windows.sql reads. So an installed,
+    # idle Windows install leaves no row, and a running one is found by its launcher.
+    #
+    # THE LAUNCHER'S DIRECTORY, NOT ITS FILE NAME, and CI is what taught that. The probe run
+    # read the gateway as ...\hermes\bin\hermes.exe; the PR's first run read the same process
+    # as ...\hermes\bin\hermes.exe.deleteme (run 41880268740). The first launch after an
+    # install republishes the launchers, and Windows will not delete a mapped image, so
+    # Hermes's own _launchers.py renames the RUNNING hermes.exe aside (`.deleteme`, or
+    # `.<pid>.deleteme`) and writes a new one -- and `processes.path` follows the rename. A
+    # value naming hermes.exe matched one run and missed the next. Every file in this bin\ is
+    # a Hermes launcher the vendor writes, so the directory is the value.
+    #
+    # Still the narrowest thing that is the agent: `hermes` is a generic name to find under
+    # %LOCALAPPDATA%, so not the whole ~\AppData\Local\hermes\, and not
+    # ~/.cargo/bin/hermes.exe, which is informalsystems' IBC relayer, nor a bare hermes.exe,
+    # which is also Meta's JavaScript engine's CLI.
+    process_paths: ["~/AppData/Local/hermes/bin/"]
+    # HERMES DESKTOP FOR WINDOWS. Read off 108-windows-hermes-desktop on windows-2025: the
+    # stable feed, hermes-assets.nousresearch.com/releases/win32/stable/stable.appinstaller,
+    # named HermesBundled-2026.6864.2132.0-win.msixbundle (tag rc.3-v0.22.0); Add-AppxPackage
+    # installed NousResearch.HermesBundled, publisher CN=Nous Research Inc., and `programs`
+    # rendered the family below with publisher "Nous Research". The bundle carries the agent
+    # and its CLI aliases (hermes.exe, hermes-agent.exe, hermes-acp.exe), not a client.
+    #
+    # NOT the Store package, NousResearchInc.HermesAgent: its publisher hash is the Store's,
+    # and Server 2025 has no Store to install it, so nothing here has read it.
+    msix_families: [NousResearch.HermesBundled_e60prshbsznhj]
+    # THE IMAGE, read off 79-linux-image on ubuntu-24.04-arm: `docker pull
+    # nousresearch/hermes-agent:latest`, 3.2GB, docker_images tag
+    # nousresearch/hermes-agent:latest. As forgeable as any tag: the build sets only the
+    # `revision` label, so there is no OCI `source` for image_labels to read. The vendor's
+    # docker-compose.yml builds a local `hermes-agent`, and that bare name is NOT catalogued:
+    # it is shaped like anyone's local build. nousresearch/hermes-sandbox is a terminal
+    # backend the agent runs commands in, not the agent, and is left out for that reason.
+    images: [nousresearch/hermes-agent]
 
   # ---------------------------------------------------------------------------------------
   # FROM HERE, the agents agentic-detector's `ai_tools` finds and this catalog did not, as of
