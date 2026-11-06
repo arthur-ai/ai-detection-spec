@@ -19,7 +19,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42274653319"
     },
     {
       "agent": "augment",
@@ -32,6 +32,16 @@
       "run": "41871675151"
     },
     {
+      "agent": "augment",
+      "route": "npm",
+      "value": "@augmentcode/auggie",
+      "agent_version": "0.37.0",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42274653319"
+    },
+    {
       "agent": "claude-code",
       "route": "binaries",
       "value": "~/.local/bin/claude",
@@ -47,7 +57,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42274653319"
     },
     {
       "agent": "claude-code",
@@ -57,6 +67,15 @@
       "os": "26.6.2",
       "arch": "arm64",
       "run": "41871675151"
+    },
+    {
+      "agent": "claude-code",
+      "route": "binaries",
+      "value": "~/.local/bin/claude",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42274653319"
     },
     {
       "agent": "claude-code",
@@ -74,7 +93,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42274653319"
     },
     {
       "agent": "claude-code",
@@ -84,6 +103,15 @@
       "os": "26.6.2",
       "arch": "arm64",
       "run": "41871675151"
+    },
+    {
+      "agent": "claude-code",
+      "route": "state_dirs",
+      "value": "~/.claude",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42274653319"
     },
     {
       "agent": "cline",
@@ -103,7 +131,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42274653319"
     },
     {
       "agent": "cline",
@@ -114,6 +142,16 @@
       "os": "26.6.2",
       "arch": "arm64",
       "run": "41871675151"
+    },
+    {
+      "agent": "cline",
+      "route": "npm",
+      "value": "cline",
+      "agent_version": "3.0.74",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42274653319"
     },
     {
       "agent": "codex-cli",
@@ -133,7 +171,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42274653319"
     },
     {
       "agent": "codex-cli",
@@ -147,6 +185,16 @@
     },
     {
       "agent": "codex-cli",
+      "route": "npm",
+      "value": "@openai/codex",
+      "agent_version": "0.167.0",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42274653319"
+    },
+    {
+      "agent": "codex-cli",
       "route": "state_dirs",
       "value": "~/.codex",
       "platform": "darwin",
@@ -161,7 +209,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42274653319"
     },
     {
       "agent": "codex-cli",
@@ -171,6 +219,15 @@
       "os": "26.6.2",
       "arch": "arm64",
       "run": "41871675151"
+    },
+    {
+      "agent": "codex-cli",
+      "route": "state_dirs",
+      "value": "~/.codex",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42274653319"
     },
     {
       "agent": "continue",
@@ -190,7 +247,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42274653319"
     },
     {
       "agent": "continue",
@@ -201,6 +258,16 @@
       "os": "26.6.2",
       "arch": "arm64",
       "run": "41871675151"
+    },
+    {
+      "agent": "continue",
+      "route": "npm",
+      "value": "@continuedev/cli",
+      "agent_version": "1.5.47",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42274653319"
     },
     {
       "agent": "copilot-cli",
@@ -220,7 +287,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42274653319"
     },
     {
       "agent": "copilot-cli",
@@ -231,6 +298,16 @@
       "os": "26.6.2",
       "arch": "arm64",
       "run": "41871675151"
+    },
+    {
+      "agent": "copilot-cli",
+      "route": "npm",
+      "value": "@github/copilot",
+      "agent_version": "1.0.106",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42274653319"
     },
     {
       "agent": "gemini-cli",
@@ -250,7 +327,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42274653319"
     },
     {
       "agent": "gemini-cli",
@@ -261,6 +338,16 @@
       "os": "26.6.2",
       "arch": "arm64",
       "run": "41871675151"
+    },
+    {
+      "agent": "gemini-cli",
+      "route": "npm",
+      "value": "@google/gemini-cli",
+      "agent_version": "0.67.0",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42274653319"
     },
     {
       "agent": "grok",
@@ -278,7 +365,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42274653319"
     },
     {
       "agent": "grok",
@@ -288,6 +375,15 @@
       "os": "26.6.2",
       "arch": "arm64",
       "run": "41871675151"
+    },
+    {
+      "agent": "grok",
+      "route": "state_dirs",
+      "value": "~/.grok",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42274653319"
     },
     {
       "agent": "kilo-code",
@@ -307,7 +403,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42274653319"
     },
     {
       "agent": "kilo-code",
@@ -320,6 +416,16 @@
       "run": "41871675151"
     },
     {
+      "agent": "kilo-code",
+      "route": "npm",
+      "value": "@kilocode/cli",
+      "agent_version": "7.8.27",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42274653319"
+    },
+    {
       "agent": "opencode",
       "route": "npm",
       "value": "opencode-ai",
@@ -337,7 +443,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42274653319"
     },
     {
       "agent": "opencode",
@@ -348,6 +454,16 @@
       "os": "26.6.2",
       "arch": "arm64",
       "run": "41871675151"
+    },
+    {
+      "agent": "opencode",
+      "route": "npm",
+      "value": "opencode-ai",
+      "agent_version": "1.19.5",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42274653319"
     },
     {
       "agent": "pi",
@@ -365,7 +481,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42274653319"
     },
     {
       "agent": "pi",
@@ -375,6 +491,15 @@
       "os": "26.6.2",
       "arch": "arm64",
       "run": "41871675151"
+    },
+    {
+      "agent": "pi",
+      "route": "state_dirs",
+      "value": "~/.pi",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42274653319"
     }
   ]
 }

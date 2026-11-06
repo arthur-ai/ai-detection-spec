@@ -17,7 +17,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42274653319"
     },
     {
       "agent": "muse-code",
@@ -27,6 +27,15 @@
       "os": "26.6.2",
       "arch": "arm64",
       "run": "41871675151"
+    },
+    {
+      "agent": "muse-code",
+      "route": "binaries",
+      "value": "~/.local/bin/muse",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42274653319"
     },
     {
       "agent": "muse-desktop",
@@ -46,7 +55,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42274653319"
     },
     {
       "agent": "muse-desktop",
@@ -57,6 +66,16 @@
       "os": "26.6.2",
       "arch": "arm64",
       "run": "41871675151"
+    },
+    {
+      "agent": "muse-desktop",
+      "route": "bundle_ids",
+      "value": "com.meta.endo",
+      "agent_version": "11.0",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42274653319"
     }
   ]
 }

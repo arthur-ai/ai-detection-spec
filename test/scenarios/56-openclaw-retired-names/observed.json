@@ -19,7 +19,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42274653319"
     },
     {
       "agent": "openclaw",
@@ -30,6 +30,16 @@
       "os": "26.6.2",
       "arch": "arm64",
       "run": "41871675151"
+    },
+    {
+      "agent": "openclaw",
+      "route": "npm",
+      "value": "clawdbot",
+      "agent_version": "2026.1.24-3",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42274653319"
     },
     {
       "agent": "openclaw",
@@ -49,7 +59,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42274653319"
     },
     {
       "agent": "openclaw",
@@ -60,6 +70,16 @@
       "os": "26.6.2",
       "arch": "arm64",
       "run": "41871675151"
+    },
+    {
+      "agent": "openclaw",
+      "route": "npm",
+      "value": "moltbot",
+      "agent_version": "0.1.0",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42274653319"
     }
   ]
 }

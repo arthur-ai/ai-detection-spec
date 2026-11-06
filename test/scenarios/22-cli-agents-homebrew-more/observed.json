@@ -5,11 +5,11 @@
       "agent": "devin-cli",
       "route": "homebrew",
       "value": "devin-cli",
-      "agent_version": "3000.11.228",
+      "agent_version": "3000.11.234",
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42274653319"
     },
     {
       "agent": "devin-cli",
@@ -29,17 +29,17 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42274653319"
     },
     {
       "agent": "maki",
       "route": "homebrew",
       "value": "maki",
-      "agent_version": "0.6.5",
+      "agent_version": "0.7.0",
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42274653319"
     },
     {
       "agent": "maki",
@@ -59,7 +59,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42274653319"
     }
   ]
 }
