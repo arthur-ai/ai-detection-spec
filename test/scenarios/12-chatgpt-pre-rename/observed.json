@@ -19,7 +19,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "42274653319"
+      "run": "42645047807"
     },
     {
       "agent": "chatgpt-desktop",
@@ -39,7 +39,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "42274653319"
+      "run": "42645047807"
     }
   ]
 }
