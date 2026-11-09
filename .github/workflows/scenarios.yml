@@ -228,6 +228,7 @@ jobs:
           - 13-desktop-apps-more
           - 14-meta-muse
           - 15-manus
+          - 17-probe-neon
           - 20-cli-agents
           - 21-cli-agents-homebrew
           - 22-cli-agents-homebrew-more
@@ -562,6 +563,7 @@ jobs:
           - 104-windows-browser
           - 105-windows-desktop-apps
           - 106-windows-python-agents
+          - 110-probe-neon
         exclude: ${{ fromJSON(needs.scope.outputs.exclude_scenario_windows || '[]') }}
     steps:
       - uses: actions/checkout@v4

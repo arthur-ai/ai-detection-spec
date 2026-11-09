@@ -1,0 +1,7 @@
+{
+  "description": "Throwaway probe.",
+  "platform": "windows",
+  "counts": {"file": ">=0"},
+  "classified": {"must_find": []},
+  "why": "probe"
+}
