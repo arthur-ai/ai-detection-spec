@@ -87,6 +87,14 @@ removed:
 #             agent workflows after that date, and its agent mode moved to `chatgpt-extension`.
 #             UNVERIFIED on a real install: no run has launched the last build since. The DMG
 #             is still served; test_matcher holds the id unclaimed
+#   agent-desktop (npm and brew `agent-desktop`, vercel-labs/agent-desktop)
+#             not from ai_tools: a computer-use CLI an agent calls. Its README, read 2026-11-09:
+#             "The loop lives in your agent; agent-desktop has no model inside." What an agent
+#             USES, as MCP configs are
+#   dsh-superagent (deepseek-ai/dsh-superagent-prototype)
+#             not from ai_tools: a research-prototype bundle for DeepSeek Harness, built from a
+#             git checkout into a dsh profile (its deployment guide, read 2026-11-09). No
+#             route reads a checkout, and the harness it needs is `deepseek-harness`
 
 # THE DEFINITIONS ARE DATA, not comments, because a catalog read by someone else's tool has
 # to explain its own words. Every one acts on the user's behalf; what does not is in
@@ -747,6 +755,36 @@ agents:
     platforms: [darwin]
     bundle_ids: [company.thebrowser.dia]
     homebrew: [thebrowsercompany-dia]
+
+  # OPERA NEON, Opera's agentic browser: its Neon Do mode browses and acts on sites for the
+  # user. A MATCH SAYS NEON IS INSTALLED, never that Do ran or that a Neon subscription is
+  # active: Do, and Neon's other AI features, need the paid plan, and browsing does not.
+  # Nothing on disk that a route reads tells the two apart.
+  #
+  # Installed from Opera's own endpoint, net.geo.opera.com/opera_neon/stable/{mac,windows},
+  # whose installers fetch the build itself; there is no Homebrew cask. Probe run
+  # 42675163069 on 2026-11-09 read both, build 139.0.6053.39: the macOS installer's
+  # Info.plist names OperaBundleID com.operasoftware.OperaNeon and it wrote
+  # /Applications/Opera Neon.app. The installed app's own id is read by 17-opera-neon.
+  #
+  # Opera's other browsers share the com.operasoftware. namespace (Opera, OperaGX, OperaAir),
+  # and the installer is com.operasoftware.Installer.OperaNeon; exact matching declines all
+  # of them, which test_matcher asserts. UNVERIFIED: Opera's 2017 concept browser, also
+  # called Neon (disabled cask `opera-neon`, last 1.0.2531.0), may have carried this same id.
+  # Nothing here has installed it, and a match on one would read as this agent.
+  - id: opera-neon
+    name: Opera Neon
+    classification: AI browser
+    platforms: [darwin, windows]
+    bundle_ids: [com.operasoftware.OperaNeon]
+    # WINDOWS, RUNNING ONLY. The user installer writes
+    # ~\AppData\Local\Programs\Opera Neon\ (launcher opera.exe, and the build under a version
+    # directory), read off probe run 42675163069. Its Uninstall key is
+    # `Opera Neon 139.0.6053.39`, the version in the key's own name, so uninstall_keys, which
+    # compares the name exactly, would lose it at the next update; it is not a value. `programs`
+    # names it the same way. So an idle install leaves nothing a route matches, and
+    # 110-windows-opera-neon launches it.
+    process_paths: ["~/AppData/Local/Programs/Opera Neon/"]
 
   # TRAE, ByteDance's VS Code fork -- an agent for the reason kiro is, and the artifact says
   # so: it ships a built-in extension "iCube Agent Shell Exec", "Shell execution service for

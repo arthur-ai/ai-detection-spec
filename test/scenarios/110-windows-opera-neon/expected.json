@@ -1,0 +1,32 @@
+{
+  "description": "Opera Neon through Opera's own installer, launched, by the path it runs from.",
+  "platform": "windows",
+  "counts": {
+    "ext": ">=0",
+    "file": ">=1",
+    "msix": ">=1",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "proc": ">=1",
+    "scan": ">=1",
+    "uninstall": ">=2",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "opera-neon"
+    ],
+    "forbid": [
+      "cursor"
+    ]
+  },
+  "require_rows": [
+    {"kind": "proc", "id": "\\AppData\\Local\\Programs\\Opera Neon\\"},
+    {"kind": "uninstall", "id": "Opera Neon ", "extra": "Opera Neon"}
+  ],
+  "why": "The running process is Opera Neon's only Windows value, so must_find proves it. The Uninstall row is required as well, to show the installer ran and that its versioned key is in the payload yet claims nothing. Cursor is forbidden because its value is the other process path under ~\\AppData\\Local\\Programs.",
+  "known_gaps": [
+    "An installed Opera Neon that is not running is not found: its Uninstall key and `programs` name both carry the version.",
+    "A match says Opera Neon is installed, not that Neon Do ran or a subscription is active."
+  ]
+}
