@@ -765,7 +765,8 @@ agents:
   # whose installers fetch the build itself; there is no Homebrew cask. Probe run
   # 42675163069 on 2026-11-09 read both, build 139.0.6053.39: the macOS installer's
   # Info.plist names OperaBundleID com.operasoftware.OperaNeon and it wrote
-  # /Applications/Opera Neon.app. The installed app's own id is read by 17-opera-neon.
+  # /Applications/Opera Neon.app. osquery's `apps` read the installed app as that id on
+  # macos-15 in 17-opera-neon, run 42676731205.
   #
   # Opera's other browsers share the com.operasoftware. namespace (Opera, OperaGX, OperaAir),
   # and the installer is com.operasoftware.Installer.OperaNeon; exact matching declines all
@@ -783,7 +784,8 @@ agents:
     # `Opera Neon 139.0.6053.39`, the version in the key's own name, so uninstall_keys, which
     # compares the name exactly, would lose it at the next update; it is not a value. `programs`
     # names it the same way. So an idle install leaves nothing a route matches, and
-    # 110-windows-opera-neon launches it.
+    # 110-windows-opera-neon launches it; its process path was read there on windows-2025,
+    # run 42676731205.
     process_paths: ["~/AppData/Local/Programs/Opera Neon/"]
 
   # TRAE, ByteDance's VS Code fork -- an agent for the reason kiro is, and the artifact says
@@ -1083,7 +1085,9 @@ agents:
     classification: Coding agent
     platforms: [linux]
     # 93-linux-cli-agents-more in CI run 41718064984 on 2026-11-03: @deepseek-ai/dsh
-    # 0.2.1-rc.5, bin `dsh`, on Ubuntu 24.04 x86_64.
+    # 0.2.1-rc.5, bin `dsh`, on Ubuntu 24.04 x86_64. Again in run 42103506902 on 2026-11-05:
+    # 0.2.2-rc.1, which declares node >=24.9.0, on Node 24.22.2, on Ubuntu 24.04 x86_64 and
+    # arm64 and the four container images.
     npm: ["@deepseek-ai/dsh"]
 
   # Google's Jules CLI. It drives Jules's cloud VMs, and `jules remote pull --apply` writes
