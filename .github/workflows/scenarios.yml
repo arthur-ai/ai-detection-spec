@@ -216,10 +216,14 @@ jobs:
         # and records both. The org's plan runs five macOS jobs at once, and a second
         # label on every pull request was half of what queued behind that.
         #
+        # NEWEST FIRST, because the first label must host every scenario, and
+        # 50-autonomous needs macOS 26. tools/check_workflows.py holds the order to each
+        # scenario's requires.json.
+        #
         # PINNED, never macos-latest: a floating label changes the OS under every observation
         # with no diff here. macos-14 left when GitHub retired it (2026-11-02); its records
         # stay in observed.json. Replace a retired label rather than drop it.
-        os: [macos-15, macos-26]
+        os: [macos-26, macos-15]
         scenario:
           - 00-baseline
           - 10-desktop-apps

@@ -142,4 +142,6 @@ The install succeeded and the identifier matched. These are the ways it still fa
 
 `14-meta-muse` needs macOS 14 or newer, so CI skips it on older runners rather than failing it. Its `requires.json` carries the reason.
 
-`11-perplexity-desktop`, `50-autonomous`, `57-clawdbot-era` need macOS 15 or newer, so CI skips them on older runners rather than failing them. Each scenario's `requires.json` carries the reason.
+`11-perplexity-desktop`, `57-clawdbot-era` need macOS 15 or newer, so CI skips them on older runners rather than failing them. Each scenario's `requires.json` carries the reason.
+
+`50-autonomous` needs macOS 26 or newer, so CI skips it on older runners rather than failing it. Its `requires.json` carries the reason.
