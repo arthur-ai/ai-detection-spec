@@ -235,6 +235,7 @@ jobs:
           - 20-cli-agents
           - 21-cli-agents-homebrew
           - 22-cli-agents-homebrew-more
+          - 23-kiro-cli-app-era
           - 25-python-agents
           - 30-ide-agents
           - 40-browser

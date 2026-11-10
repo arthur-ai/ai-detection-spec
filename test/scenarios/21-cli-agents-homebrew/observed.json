@@ -313,36 +313,6 @@
     },
     {
       "agent": "kiro-cli",
-      "route": "bundle_ids",
-      "value": "com.amazon.codewhisperer",
-      "agent_version": "2.21.1",
-      "platform": "darwin",
-      "os": "15.7.9",
-      "arch": "arm64",
-      "run": "40900003000"
-    },
-    {
-      "agent": "kiro-cli",
-      "route": "bundle_ids",
-      "value": "com.amazon.codewhisperer",
-      "agent_version": "2.35.1",
-      "platform": "darwin",
-      "os": "15.8.2",
-      "arch": "arm64",
-      "run": "41871675151"
-    },
-    {
-      "agent": "kiro-cli",
-      "route": "bundle_ids",
-      "value": "com.amazon.codewhisperer",
-      "agent_version": "2.34.0",
-      "platform": "darwin",
-      "os": "26.6.2",
-      "arch": "arm64",
-      "run": "42274653319"
-    },
-    {
-      "agent": "kiro-cli",
       "route": "homebrew",
       "value": "kiro-cli",
       "agent_version": "2.21.1",
