@@ -15,10 +15,11 @@ The repository variable `MACOS_SCENARIO_RUNNERS` decides where the `scenario` jo
 | `self-hosted` | our Macs, as `[self-hosted, arthur-macos-<n>]` |
 | `split` | our Macs for the scenarios `MACOS_SELF_HOSTED_SCENARIOS` names, GitHub's runners for the rest ([below](#both-pools-at-once)) |
 
-A dispatch's `runners` input overrides the variable for that run: `hosted`, or `self-hosted`
-for every scenario the dispatch names. **Deleting the variable is the way back.** A misspelt
-value turns the job red rather than silently staying on GitHub. The runners never carry
-GitHub's own `macos-<n>`, so a job asking for a GitHub-hosted Mac cannot land on one of ours.
+A dispatch's `runners` input overrides the variable for that run: `hosted`, `self-hosted`
+for every scenario the dispatch names, or `split`. **Deleting the variable is the way back.**
+A misspelt value turns the job red rather than silently staying on GitHub. The runners never
+carry GitHub's own `macos-<n>`, so a job asking for a GitHub-hosted Mac cannot land on one
+of ours.
 
 **The workflow sends a fork's pull request to GitHub's runners, but cannot enforce it.** A
 pull request runs its own copy of the workflow, and a fork can edit that copy to ask for
@@ -142,8 +143,11 @@ for a busy Mac never moves to a GitHub runner. So the two pools add up only when
 is given to one of them, and `split` does that by scenario:
 
 1. Set `MACOS_SELF_HOSTED_SCENARIOS` to scenario names separated by spaces, e.g.
-   `10-desktop-apps 13-desktop-apps-more`. Those run on our Macs, on every label.
-2. Set `MACOS_SCENARIO_RUNNERS=split`.
+   `10-desktop-apps 13-desktop-apps-more`. Those run on our Macs, on every label. Nothing
+   reads the list until a run is split.
+2. Try it: dispatch *Scenarios* from a branch with `runners: split`, and read each job's
+   first step for the runner it landed on.
+3. Set `MACOS_SCENARIO_RUNNERS=split`.
 
 The run's first job, `scope`, reads the list. No name, or a name no macOS job lists, fails
 that job, and no scenario runs: a misspelt name would otherwise send nothing here while

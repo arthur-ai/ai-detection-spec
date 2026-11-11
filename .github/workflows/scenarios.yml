@@ -52,9 +52,9 @@ on:
       runners:
         description: >-
           Where the macOS scenario jobs run. `variable` follows the MACOS_SCENARIO_RUNNERS
-          repository variable; the other two override it for this run alone.
+          repository variable; the others override it for this run alone.
         type: choice
-        options: [variable, hosted, self-hosted]
+        options: [variable, hosted, self-hosted, split]
         default: variable
 
 # Cancel superseded PR runs, NEVER a main or scheduled one. A cancelled main run loses the
@@ -183,8 +183,16 @@ jobs:
       # nothing to the lab while looking deliberate. Here it is one red job, and every
       # scenario job needs this one. On any other setting the step is skipped, the output
       # is unset, and the weekly run still depends on no Python here.
-      - id: lab
-        if: vars.MACOS_SCENARIO_RUNNERS == 'split'
+      #
+      # THIS `if` IS THE ONE PLACE THAT SAYS WHETHER A RUN IS SPLIT. runs-on reads only
+      # the list, which is empty unless this step ran. A dispatch's `split` turns it on
+      # for one run, so a list can be tried from a branch before the variable is set.
+      - name: Which scenarios run on our own Macs
+        id: lab
+        if: >-
+          inputs.runners == 'split'
+          || (inputs.runners != 'hosted' && inputs.runners != 'self-hosted'
+              && vars.MACOS_SCENARIO_RUNNERS == 'split')
         env:
           NAMES: ${{ vars.MACOS_SELF_HOSTED_SCENARIOS }}
         run: |
@@ -216,8 +224,9 @@ jobs:
     # `split` USES BOTH AT ONCE: the scenarios the scope job's `lab` step names go to the
     # lab and the rest stay on GitHub's. GitHub offers a job to one kind of runner only,
     # fixed here when the job is created, so the two pools add up only if each job is
-    # given to one of them. A dispatch's `self-hosted` still sends every scenario it
-    # names, which is how one is proved on the lab before it is listed.
+    # given to one of them. That step alone decides whether a run is split, so this line
+    # reads its list and never the word. A dispatch's `self-hosted` still sends every
+    # scenario it names, which is how one is proved on the lab before it is listed.
     #
     # A FORK'S PULL REQUEST IS ROUTED TO GITHUB'S RUNNERS, BUT THIS LINE CANNOT ENFORCE IT: a
     # pull request runs its own copy of this file, and a fork can edit this line. What
@@ -225,11 +234,10 @@ jobs:
     # maintainer's approval, which test/runner-host/slot.sh reads before every job.
     runs-on: >-
       ${{ (inputs.runners == 'self-hosted'
-           || (inputs.runners != 'hosted'
-               && (vars.MACOS_SCENARIO_RUNNERS == 'self-hosted'
-                   || (vars.MACOS_SCENARIO_RUNNERS == 'split'
-                       && contains(fromJSON(needs.scope.outputs.self_hosted_scenario || '[]'),
-                                   matrix.scenario)))))
+           || (inputs.runners != 'hosted' && inputs.runners != 'split'
+               && vars.MACOS_SCENARIO_RUNNERS == 'self-hosted')
+           || contains(fromJSON(needs.scope.outputs.self_hosted_scenario || '[]'),
+                       matrix.scenario))
           && !github.event.pull_request.head.repo.fork
           && fromJSON(format('["self-hosted","arthur-{0}"]', matrix.os))
           || matrix.os }}
@@ -283,9 +291,9 @@ jobs:
         # is what tools/check_workflows.py checks and what the schedule runs.
         exclude: ${{ fromJSON(needs.scope.outputs.exclude_scenario || '[]') }}
     steps:
-      # WHICH MACHINE THIS IS, and the value that chose it. runs-on reads the variable as
-      # GitHub's runners unless it says exactly `self-hosted` or `split`, so a misspelling
-      # would move nothing while looking deliberate. Red here instead.
+      # WHICH MACHINE THIS IS, and the value that chose it. The variable means GitHub's
+      # runners unless it says exactly `self-hosted` or `split`, so a misspelling would
+      # move nothing while looking deliberate. Red here instead.
       - name: Which runner this is
         env:
           SET: ${{ vars.MACOS_SCENARIO_RUNNERS }}

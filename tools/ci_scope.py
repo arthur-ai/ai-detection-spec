@@ -694,8 +694,8 @@ def self_hosted_outputs(names, read):
     mac = {job: listed for job, listed in scope.jobs.items()
            if job not in scope.harness and scope.macos_labels(job)}
     if not names:
-        raise SystemExit("ci_scope: MACOS_SCENARIO_RUNNERS is split, and "
-                         "MACOS_SELF_HOSTED_SCENARIOS names no scenario")
+        raise SystemExit("ci_scope: this run is split, and MACOS_SELF_HOSTED_SCENARIOS "
+                         "names no scenario")
     wanted = set(names)
     unknown = sorted(wanted - set().union(*mac.values()))
     if unknown:
