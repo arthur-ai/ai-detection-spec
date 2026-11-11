@@ -29,9 +29,9 @@ run_scenario() {
   vm_create "$vm"; vm_boot "$vm"
   trap '[ "$KEEP_VM" = "1" ] || vm_destroy "'"$vm"'"' RETURN
 
-  # A scenario can be unrunnable rather than broken. OpenClaw needs Sequoia, and a Tart
-  # guest can never be newer than the host, so on an older host that is a fact about the
-  # lab and not a defect in the query. Report it as SKIP: a failure nobody can act on
+  # A scenario can be unrunnable rather than broken. The OpenClaw cask has a macOS floor,
+  # and a Tart guest can never be newer than the host, so on an older host that is a fact
+  # about the lab and not a defect in the query. Report it as SKIP: a failure nobody can act on
   # gets ignored, and an ignored suite stops being read at all.
   # The floor through tools/scenarios.py, which refuses the scenario's files here rather
   # than reading a misspelt key as no floor at all.

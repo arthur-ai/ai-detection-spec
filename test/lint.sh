@@ -40,7 +40,8 @@ else
     esac
   done
 fi
-for f in "$HERE"/run.sh "$HERE"/run-ec2.sh "$HERE"/run-gce.sh "$HERE"/lib/vm.sh "$HERE"/lib/assert.sh ; do
+for f in "$HERE"/run.sh "$HERE"/run-ec2.sh "$HERE"/run-gce.sh "$HERE"/lib/vm.sh "$HERE"/lib/assert.sh \
+         "$HERE"/runner-host/*.sh ; do
   bash -n "$f" || { echo "FAIL: bash syntax in $f"; fail=1; }
 done
 

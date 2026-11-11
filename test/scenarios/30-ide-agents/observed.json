@@ -15,11 +15,11 @@
       "agent": "amazon-q",
       "route": "jetbrains_plugins",
       "value": "plugin-amazonq",
-      "agent_version": "4.10.262",
+      "agent_version": "4.11.262",
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42645047807"
     },
     {
       "agent": "amazon-q",
@@ -29,7 +29,17 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41793127036"
+      "run": "41871675151"
+    },
+    {
+      "agent": "amazon-q",
+      "route": "jetbrains_plugins",
+      "value": "plugin-amazonq",
+      "agent_version": "4.11.262",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42645047807"
     },
     {
       "agent": "amazon-q",
@@ -49,7 +59,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42645047807"
     },
     {
       "agent": "amazon-q",
@@ -59,7 +69,17 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41793127036"
+      "run": "41871675151"
+    },
+    {
+      "agent": "amazon-q",
+      "route": "vscode_extensions",
+      "value": "amazonwebservices.amazon-q-vscode",
+      "agent_version": "2.9.0",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42645047807"
     },
     {
       "agent": "blackbox",
@@ -79,7 +99,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42645047807"
     },
     {
       "agent": "blackbox",
@@ -89,7 +109,17 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41793127036"
+      "run": "41871675151"
+    },
+    {
+      "agent": "blackbox",
+      "route": "vscode_extensions",
+      "value": "blackboxapp.blackbox",
+      "agent_version": "2.8.53",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42645047807"
     },
     {
       "agent": "codegpt",
@@ -109,7 +139,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42645047807"
     },
     {
       "agent": "codegpt",
@@ -119,7 +149,17 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41793127036"
+      "run": "41871675151"
+    },
+    {
+      "agent": "codegpt",
+      "route": "vscode_extensions",
+      "value": "danielsanmedium.dscodegpt",
+      "agent_version": "3.24.81",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42645047807"
     },
     {
       "agent": "cody",
@@ -139,7 +179,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42645047807"
     },
     {
       "agent": "cody",
@@ -149,7 +189,17 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41793127036"
+      "run": "41871675151"
+    },
+    {
+      "agent": "cody",
+      "route": "vscode_extensions",
+      "value": "sourcegraph.cody-ai",
+      "agent_version": "1.156.0",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42645047807"
     },
     {
       "agent": "gemini-code-assist",
@@ -169,7 +219,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42645047807"
     },
     {
       "agent": "gemini-code-assist",
@@ -179,7 +229,17 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41793127036"
+      "run": "41871675151"
+    },
+    {
+      "agent": "gemini-code-assist",
+      "route": "vscode_extensions",
+      "value": "google.geminicodeassist",
+      "agent_version": "2.107.0",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42645047807"
     },
     {
       "agent": "roo-code",
@@ -199,7 +259,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42645047807"
     },
     {
       "agent": "roo-code",
@@ -209,7 +269,17 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41793127036"
+      "run": "41871675151"
+    },
+    {
+      "agent": "roo-code",
+      "route": "vscode_extensions",
+      "value": "rooveterinaryinc.roo-cline",
+      "agent_version": "3.54.0",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42645047807"
     }
   ]
 }

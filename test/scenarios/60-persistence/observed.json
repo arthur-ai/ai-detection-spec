@@ -17,7 +17,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42645047807"
     },
     {
       "agent": "openclaw",
@@ -26,7 +26,16 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42274653319"
+    },
+    {
+      "agent": "openclaw",
+      "route": "launchd_prefixes",
+      "value": "ai.openclaw.",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42645047807"
     }
   ]
 }
