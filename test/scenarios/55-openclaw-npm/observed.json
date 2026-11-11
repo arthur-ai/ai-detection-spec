@@ -5,6 +5,16 @@
       "agent": "openclaw",
       "route": "npm",
       "value": "openclaw",
+      "agent_version": "2026.11.3",
+      "platform": "darwin",
+      "os": "15.7.7",
+      "arch": "arm64",
+      "run": "42950761536"
+    },
+    {
+      "agent": "openclaw",
+      "route": "npm",
+      "value": "openclaw",
       "agent_version": "2026.10.8",
       "platform": "darwin",
       "os": "15.7.9",
@@ -25,11 +35,11 @@
       "agent": "openclaw",
       "route": "npm",
       "value": "openclaw",
-      "agent_version": "2026.11.1",
+      "agent_version": "2026.11.3",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42950761536"
     },
     {
       "agent": "openclaw",
@@ -40,6 +50,15 @@
       "os": "26.7.2",
       "arch": "arm64",
       "run": "42938165864"
+    },
+    {
+      "agent": "openclaw",
+      "route": "state_dirs",
+      "value": "~/.openclaw",
+      "platform": "darwin",
+      "os": "15.7.7",
+      "arch": "arm64",
+      "run": "42950761536"
     },
     {
       "agent": "openclaw",
@@ -66,7 +85,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42950761536"
     },
     {
       "agent": "openclaw",
