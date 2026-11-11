@@ -1,0 +1,38 @@
+{
+  "description": "The last Kiro CLI build that shipped a macOS app, downloaded from the vendor's own URL, so com.amazon.codewhisperer is proved by a real install now that the `kiro-cli` cask installs a bare binary.",
+  "platform": "darwin",
+  "counts": {
+    "app": ">=1",
+    "brew": ">=0",
+    "npm": ">=0",
+    "file": ">=0",
+    "ext": ">=0",
+    "nmh": ">=0",
+    "daemon": ">=0",
+    "port": ">=0",
+    "vscodeext": ">=0",
+    "jbplugin": ">=0",
+    "proc": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "kiro-cli"
+    ],
+    "forbid": [
+      "kiro"
+    ]
+  },
+  "why": "The bundle id is Kiro CLI's only witness on this machine, so must_find fails if the value is wrong, and must_contain pins the id itself. forbid_rows asserts the cask is absent: its token also names kiro-cli, and with it installed must_find would pass on a wrong bundle id. `kiro` is forbidden because Kiro the IDE is a different product whose ids do not rhyme with this one's, and a change to either entry should rerun this scenario.",
+  "must_contain": [
+    "com.amazon.codewhisperer"
+  ],
+  "forbid_rows": [
+    {
+      "kind": "brew",
+      "id": "kiro-cli"
+    }
+  ],
+  "known_gaps": [
+    "The bundle id only. The app is installed and never launched, so the LaunchAgent the cask's old uninstall stanza named, com.amazon.codewhisperer.launcher, is unverified and not in the catalog."
+  ]
+}

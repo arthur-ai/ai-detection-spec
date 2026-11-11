@@ -14,7 +14,7 @@
 #
 # So the skip is now scoped to the cask that earns it: 10-desktop-apps lost its
 # requires.json and runs on both runners, and this scenario carries the min_macos 15.
-# openclaw needs 15 too and already sits alone in 50-autonomous for its own reasons.
+# openclaw has a floor too, and already sits alone in 50-autonomous for its own reasons.
 #
 # WARN rather than exit, as in 10-desktop-apps: a cask download failing is a network fact,
 # and the assertion is where a missing app should be reported, because it names which one.

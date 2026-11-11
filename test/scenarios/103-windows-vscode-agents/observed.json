@@ -5,11 +5,11 @@
       "agent": "claude-code",
       "route": "vscode_extensions",
       "value": "anthropic.claude-code",
-      "agent_version": "2.1.318",
+      "agent_version": "2.1.319",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "41793127036"
+      "run": "42645047807"
     },
     {
       "agent": "cline",
@@ -19,7 +19,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "41793127036"
+      "run": "42645047807"
     },
     {
       "agent": "codex-cli",
@@ -29,7 +29,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "41793127036"
+      "run": "42645047807"
     },
     {
       "agent": "continue",
@@ -39,17 +39,17 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "41793127036"
+      "run": "42645047807"
     },
     {
       "agent": "kilo-code",
       "route": "vscode_extensions",
       "value": "kilocode.kilo-code",
-      "agent_version": "7.8.18",
+      "agent_version": "7.8.27",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "41793127036"
+      "run": "42645047807"
     },
     {
       "agent": "roo-code",
@@ -59,7 +59,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "41793127036"
+      "run": "42645047807"
     }
   ]
 }

@@ -92,6 +92,7 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 16-hermes-desktop | Not launched, so running_apps is not exercised for Hermes, and what the app writes on first run is read only on the probe run the catalog cites. |
 | 16-hermes-desktop | The source-built desktop (`hermes desktop`, bundle id com.nousresearch.hermes) and the remote-only Light client are other bundle ids, and neither is installed here. |
 | 20-cli-agents, 71-linux-cli-agents | The shim's `ver` is checked for presence, not against the installed release: the shim's path names no release, and the release changes with every install, so expected.json cannot hold it. A join onto the wrong versions/ file would pass. |
+| 23-kiro-cli-app-era | The bundle id only. The app is installed and never launched, so the LaunchAgent the cask's old uninstall stanza named, com.amazon.codewhisperer.launcher, is unverified and not in the catalog. |
 | 40-browser | The planted extension is unreferenced by construction, so the sideloaded token is exercised only by 45-claude-extension. |
 | 45-claude-extension | Chrome for Testing registers the extension, because branded Chrome 137 and later refuse --load-extension. Branded Chrome's own install, update and ExtensionInstallForcelist paths are untested, and whether the policy needs an MDM-delivered profile on macOS is UNVERIFIED. |
 | 55-openclaw-npm | The gateway runs with --allow-unconfigured --auth none, which is not how a real deployment runs it: enough to open the listener and keep the process this scenario asserts running, with no channel connected and no model reachable. |
@@ -149,4 +150,6 @@ The install succeeded and the identifier matched. These are the ways it still fa
 
 `14-meta-muse` needs macOS 14 or newer, so CI skips it on older runners rather than failing it. Its `requires.json` carries the reason.
 
-`11-perplexity-desktop`, `50-autonomous`, `57-clawdbot-era` need macOS 15 or newer, so CI skips them on older runners rather than failing them. Each scenario's `requires.json` carries the reason.
+`11-perplexity-desktop`, `57-clawdbot-era` need macOS 15 or newer, so CI skips them on older runners rather than failing them. Each scenario's `requires.json` carries the reason.
+
+`50-autonomous` needs macOS 26 or newer, so CI skips it on older runners rather than failing it. Its `requires.json` carries the reason.
