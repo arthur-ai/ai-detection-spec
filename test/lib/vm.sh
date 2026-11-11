@@ -8,7 +8,7 @@ set -euo pipefail
 #
 # So pick the NEWEST guest this host can actually run rather than hardcoding one. A
 # hardcoded old guest silently skips every scenario needing a newer OS, and a skip nobody
-# notices is how 50-autonomous (OpenClaw needs Sequoia) stayed unverified.
+# notices is how 50-autonomous (OpenClaw needed Sequoia then) stayed unverified.
 #
 # Apple's versioning is not contiguous: Sonoma 14, Sequoia 15, then Tahoe jumps to 26.
 image_for_macos() {

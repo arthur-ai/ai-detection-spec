@@ -88,7 +88,7 @@ needs registering.
    - `slots`: one `<slot> <label>` line per VM, e.g. `a macos-15` and `b macos-26`. The
      label is the workflow's; the slot's runner registers as `arthur-macos-15`. A Mac runs
      at most two macOS VMs (Apple's license, and Virtualization.framework). Weight the
-     labels towards `macos-15`, because a pull request runs the first label alone.
+     labels towards `macos-26`, because a pull request runs the first label alone.
 3. `test/runner-host/host-setup.sh configure`. It checks FileVault and the screen lock. It
    turns the firewall on and sleep off, and stops the keychain from auto-locking. It also
    installs Tart and Softnet, makes Softnet setuid root, and writes one LaunchAgent per slot.
