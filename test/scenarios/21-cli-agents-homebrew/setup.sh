@@ -18,7 +18,7 @@
 #     aider        formula     gemini-cli       formula
 #     hermes-agent formula     opencode         formula
 #     cursor-cli   cask        block-goose-cli  formula
-#     kiro-cli     cask, with an app whose bundle id is com.amazon.codewhisperer
+#     kiro-cli     cask, binary-only since 2026-10-31; 23-kiro-cli-app-era has its app
 #     qwen-code    formula     mistral-vibe     formula
 #     droid        cask, binary-only, Factory's
 #     kimi-code    formula     letta-code       formula

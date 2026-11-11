@@ -1499,10 +1499,14 @@ check("Cursor's generic ~/.local/bin/agent link claims nothing",
       "Cursor CLI and Grok Build both write an `agent`; a name that generic identifies nobody")
 
 _c, _u = _claims(_kind("app", "com.amazon.codewhisperer", "dev.kiro.desktop",
+                       "com.amazon.inputmethod.codewhisperer",
                        "com.electron.goose", "com.electron.other"))
 check("Kiro CLI and Kiro the IDE are told apart by their real bundle ids",
       _c.get("com.amazon.codewhisperer") == "kiro-cli"
       and _c.get("dev.kiro.desktop") == "kiro", f"got {_c}")
+# Kiro CLI.app/Contents/Helpers/CodeWhispererInputMethod.app, read off the 2.37.1 dmg.
+check("the input-method helper nested in Kiro CLI.app claims nothing",
+      "com.amazon.inputmethod.codewhisperer" in _u, f"got {_c}")
 check("Electron's default id shape claims only goose's whole id",
       _c.get("com.electron.goose") == "goose" and "com.electron.other" in _u,
       "com.electron.<name> is the packager's pattern; a prefix match would claim every app")

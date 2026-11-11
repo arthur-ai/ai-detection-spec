@@ -49,6 +49,13 @@ on:
           than an image's whole list.
         required: false
         default: ""
+      runners:
+        description: >-
+          Where the macOS scenario jobs run. `variable` follows the MACOS_SCENARIO_RUNNERS
+          repository variable; the other two override it for this run alone.
+        type: choice
+        options: [variable, hosted, self-hosted]
+        default: variable
 
 # Cancel superseded PR runs, NEVER a main or scheduled one. A cancelled main run loses the
 # observations `collect` would have committed, and a lost observation reads downstream as
@@ -173,7 +180,25 @@ jobs:
     needs: scope
     if: needs.scope.outputs.runtime == 'true' && needs.scope.outputs.skip_scenario != 'true'
     name: ${{ matrix.scenario }} on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    # GITHUB'S RUNNERS, OR THE LAB'S MACS WHEN ASKED. The lab is laptops that boot one fresh
+    # VM per job (docs/macos-runners.md), and its runners carry `arthur-<label>`, never
+    # matrix.os itself, so a job asking for GitHub's macos-15 cannot match one.
+    #
+    # Asked by the MACOS_SCENARIO_RUNNERS repository variable, or for one dispatch by the
+    # `runners` input. Unset is GitHub's, so deleting the variable is the way back.
+    # matrix.os stays the job's label either way: it is the OS the job is promised, and
+    # artifact names, tools/ci_scope.py and tools/check_workflows.py all read it.
+    #
+    # A FORK'S PULL REQUEST IS ROUTED TO GITHUB'S RUNNERS, BUT THIS LINE CANNOT ENFORCE IT: a
+    # pull request runs its own copy of this file, and a fork can edit this line. What
+    # enforces it is the repository's rule that an outside contributor's run waits for a
+    # maintainer's approval, which test/runner-host/slot.sh reads before every job.
+    runs-on: >-
+      ${{ (inputs.runners == 'self-hosted'
+           || (inputs.runners != 'hosted' && vars.MACOS_SCENARIO_RUNNERS == 'self-hosted'))
+          && !github.event.pull_request.head.repo.fork
+          && fromJSON(format('["self-hosted","arthur-{0}"]', matrix.os))
+          || matrix.os }}
     # Above Provision's own bound, so a hang there fails in that step, with its name.
     timeout-minutes: 60
     strategy:
@@ -191,10 +216,14 @@ jobs:
         # and records both. The org's plan runs five macOS jobs at once, and a second
         # label on every pull request was half of what queued behind that.
         #
+        # NEWEST FIRST, because the first label must host every scenario, and
+        # 50-autonomous needs macOS 26. tools/check_workflows.py holds the order to each
+        # scenario's requires.json.
+        #
         # PINNED, never macos-latest: a floating label changes the OS under every observation
         # with no diff here. macos-14 left when GitHub retired it (2026-11-02); its records
         # stay in observed.json. Replace a retired label rather than drop it.
-        os: [macos-15, macos-26]
+        os: [macos-26, macos-15]
         scenario:
           - 00-baseline
           - 10-desktop-apps
@@ -207,6 +236,7 @@ jobs:
           - 20-cli-agents
           - 21-cli-agents-homebrew
           - 22-cli-agents-homebrew-more
+          - 23-kiro-cli-app-era
           - 25-python-agents
           - 30-ide-agents
           - 40-browser
@@ -220,6 +250,19 @@ jobs:
         # is what tools/check_workflows.py checks and what the schedule runs.
         exclude: ${{ fromJSON(needs.scope.outputs.exclude_scenario || '[]') }}
     steps:
+      # WHICH MACHINE THIS IS, and the value that chose it. runs-on reads the variable as
+      # GitHub's runners unless it says exactly `self-hosted`, so a misspelling would move
+      # nothing while looking deliberate. Red here instead.
+      - name: Which runner this is
+        env:
+          SET: ${{ vars.MACOS_SCENARIO_RUNNERS }}
+        run: |
+          case "$SET" in
+            ''|hosted|self-hosted) ;;
+            *) echo "::error::MACOS_SCENARIO_RUNNERS is '$SET', which runs-on reads as GitHub's runners. Set hosted or self-hosted, or delete it."
+               exit 1 ;;
+          esac
+          echo "$RUNNER_NAME ($RUNNER_ENVIRONMENT): macOS $(sw_vers -productVersion), $(uname -m)"
       - uses: actions/checkout@v4
       - name: Install osquery
         # --retry-all-errors as well as --retry: on its own curl retries only timeouts

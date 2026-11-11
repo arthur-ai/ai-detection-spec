@@ -11,15 +11,15 @@ and the CI test behind each one.
 
 ![agents](https://img.shields.io/badge/agents-63-1D4E89)
 ![identifiers](https://img.shields.io/badge/identifiers-178-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-174%2F178-A26A16)
-![real install](https://img.shields.io/badge/by_real_install-174-2E7D57)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-173%2F178-A26A16)
+![real install](https://img.shields.io/badge/by_real_install-173-2E7D57)
 
 </div>
 
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 174 of 178. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
+**Every identifier is proved by a real install in CI** — 173 of 178. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
 
 ## 🧪 Why a real install is the bar
 
@@ -32,7 +32,7 @@ Proof is counted **per identifier**, not per agent. Installing an agent vouches
 only for the identifiers that run actually matched, so a sibling identifier on the
 same agent is not covered by association.
 
-> **This number is a floor.** `00-baseline`, `100-windows-baseline`, `107-windows-hermes-installer`, `108-windows-hermes-desktop`, `16-hermes-desktop`, `70-linux-baseline`, `74-linux-dpkg-removed`, `75-linux-browser`, `76-linux-systemd` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
+> **This number is a floor.** `00-baseline`, `100-windows-baseline`, `107-windows-hermes-installer`, `108-windows-hermes-desktop`, `16-hermes-desktop`, `23-kiro-cli-app-era`, `70-linux-baseline`, `74-linux-dpkg-removed`, `75-linux-browser`, `76-linux-systemd` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
 
 # Agents (63)
 
@@ -73,7 +73,7 @@ Operates on a codebase, usually with shell access.
 | **Kilo Code** | macOS, Linux, Windows | **`@kilocode/cli`**, **`kilocode.kilo-code`** | 103-windows-vscode-agents, 20-cli-agents, 71-linux-cli-agents, 85-linux-vscode-agents |
 | **Kimi Code** | macOS, Linux | **`kimi-code`**, **`@moonshot-ai/kimi-code`**, **`kimi-cli`**, **`~/.kimi-code`**, **`~/.kimi`** | 21-cli-agents-homebrew, 84-linux-installers, 94-linux-cli-agents-legacy, 96-linux-cli-agents-npm |
 | **Kiro** | macOS | **`dev.kiro.desktop`**, **`kiro`** | 10-desktop-apps |
-| **Kiro CLI** | macOS, Linux | **`com.amazon.codewhisperer`**, **`kiro-cli`**, **`~/.local/bin/kiro-cli`** | 21-cli-agents-homebrew, 84-linux-installers |
+| **Kiro CLI** | macOS, Linux | com.amazon.codewhisperer ⚠, **`kiro-cli`**, **`~/.local/bin/kiro-cli`** | 21-cli-agents-homebrew, 23-kiro-cli-app-era, 84-linux-installers |
 | **Letta** | macOS, Linux | **`letta-code`**, **`@letta-ai/letta-code`**, **`letta`**, **`letta/letta`**, **`https://github.com/letta-ai/letta-code`**, **`~/.letta`** | 21-cli-agents-homebrew, 72-linux-python-agents, 79-linux-image, 96-linux-cli-agents-npm |
 | **Maki** | macOS, Linux | **`maki`**, **`~/.local/bin/maki`** | 22-cli-agents-homebrew-more, 98-linux-installers-more |
 | **MastraCode** | Linux | **`mastracode`** | 97-linux-cli-agents-npm-more |
@@ -148,6 +148,7 @@ Each one needs work, and the state column says what kind. **did not appear** mea
 | Hermes Agent | image | `nousresearch/hermes-agent` | did not appear | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
 | Hermes Agent | process_paths | `~/AppData/Local/hermes/bin/` | did not appear | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
 | Hermes Agent | msix_families | `NousResearch.HermesBundled_e60prshbsznhj` | no test | -- |
+| Kiro CLI | bundle id | `com.amazon.codewhisperer` | did not appear | 21-cli-agents-homebrew |
 
 **What it cannot see is a separate page.** [`docs/limits.md`](limits.md) carries what osquery cannot see on any machine and what each scenario leaves unproved after its install succeeds -- rendered from the same inputs, gated the same way.
 
