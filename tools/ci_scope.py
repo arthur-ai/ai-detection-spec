@@ -99,6 +99,10 @@ file at all, and a scenario fails on any agent its must_find does not name
 (tools/scenarios.py), so the miss turns the weekly run red within a week of the merge
 rather than passing. Each platform's `control` narrows it: it reruns for every changed
 agent whose routes fire there.
+
+THE THIRD FORM ASKS WHERE, `--self-hosted <names>`: under MACOS_SCENARIO_RUNNERS=split it
+says which scenarios of each macOS job run on our own Macs, and refuses a name none of them
+lists. It reads no diff. docs/macos-runners.md has the variables.
 """
 import argparse
 import copy
@@ -676,6 +680,36 @@ def scenarios_outputs(paths, read, only=None, event=None):
     return out, report
 
 
+def self_hosted_outputs(names, read):
+    """(GITHUB_OUTPUT lines, report lines) for MACOS_SCENARIO_RUNNERS=split: per matrix job
+    with a macOS label, the scenarios of its list that run on our own Macs. Every other
+    scenario of that job stays on GitHub's runners (docs/macos-runners.md).
+
+    A NAME NO macOS JOB LISTS IS AN ERROR, AND SO IS NO NAME AT ALL. The list is a
+    repository variable, which no lint can read, and a misspelt name would send nothing to
+    the lab while looking deliberate. Decided here once rather than in each job's
+    `runs-on`, so that mistake is one red job."""
+    import yaml
+    scope = Scope([], read, yaml)
+    mac = {job: listed for job, listed in scope.jobs.items()
+           if job not in scope.harness and scope.macos_labels(job)}
+    if not names:
+        raise SystemExit("ci_scope: this run is split, and MACOS_SELF_HOSTED_SCENARIOS "
+                         "names no scenario")
+    wanted = set(names)
+    unknown = sorted(wanted - set().union(*mac.values()))
+    if unknown:
+        raise SystemExit(f"ci_scope: MACOS_SELF_HOSTED_SCENARIOS names {', '.join(unknown)}, "
+                         f"which no macOS job in scenarios.yml lists")
+    out, report = [], []
+    for job, listed in sorted(mac.items()):
+        ours = [n for n in listed if n in wanted]
+        out.append(f"{output_key('self_hosted', job)}={json.dumps(ours, separators=(',', ':'))}")
+        report.append(f"{job}: {len(ours)} of {len(listed)} run on our own Macs "
+                      f"({', '.join(ours)}); the rest run on GitHub's")
+    return out, report
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("base", nargs="?")
@@ -689,9 +723,23 @@ def main():
                     help="with --scenarios: run exactly these, as a dispatch that named them")
     ap.add_argument("--event", help="with --scenarios: GitHub's event name; a pull request "
                                     "runs one macOS label")
+    ap.add_argument("--self-hosted", nargs="*", metavar="SCENARIO",
+                    help="say which macOS scenarios run on our own Macs under "
+                         "MACOS_SCENARIO_RUNNERS=split: exactly these")
     args = ap.parse_args()
     if args.only is not None and not args.scenarios:
         ap.error("--only needs --scenarios")
+    if args.self_hosted is not None:
+        if args.scenarios:
+            ap.error("--self-hosted is its own form; it reads no diff")
+        out, report = self_hosted_outputs(args.self_hosted, git_reader(None, None))
+        print("\n".join(out))
+        print("\n".join(report), file=sys.stderr)
+        if args.summary:
+            with open(args.summary, "a") as fh:
+                fh.write("### Which macOS scenarios run on our own Macs\n\n")
+                fh.write("\n".join(f"- {line}" for line in report) + "\n")
+        return
     paths = args.paths if args.paths is not None else changed(args.base, args.head)
     if not args.scenarios:
         runtime, why = decide(paths)

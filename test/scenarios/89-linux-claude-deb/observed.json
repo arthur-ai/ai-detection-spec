@@ -9,7 +9,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "42950761536"
     },
     {
       "agent": "claude-code",
@@ -19,7 +19,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "42645047807"
+      "run": "42950761536"
     },
     {
       "agent": "claude-code",
@@ -29,7 +29,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "42950761536"
     }
   ]
 }
