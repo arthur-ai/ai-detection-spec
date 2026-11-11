@@ -52,9 +52,9 @@ on:
       runners:
         description: >-
           Where the macOS scenario jobs run. `variable` follows the MACOS_SCENARIO_RUNNERS
-          repository variable; the other two override it for this run alone.
+          repository variable; the others override it for this run alone.
         type: choice
-        options: [variable, hosted, self-hosted]
+        options: [variable, hosted, self-hosted, split]
         default: variable
 
 # Cancel superseded PR runs, NEVER a main or scheduled one. A cancelled main run loses the
@@ -116,6 +116,7 @@ jobs:
       run_scenario_linux_container: ${{ steps.scope.outputs.run_scenario_linux_container }}
       skip_scenario_windows: ${{ steps.scope.outputs.skip_scenario_windows }}
       exclude_scenario_windows: ${{ steps.scope.outputs.exclude_scenario_windows }}
+      self_hosted_scenario: ${{ steps.lab.outputs.self_hosted_scenario }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -123,8 +124,9 @@ jobs:
           fetch-depth: 0
       # The catalog and this workflow are compared parsed, not as text.
       - name: Install pyyaml
-        # Not on the schedule, which must not depend on Python here (see the step below).
-        if: github.event_name != 'schedule'
+        # Not on the schedule, which must not depend on Python here (see the step below),
+        # unless the split is on: the `lab` step then reads this workflow's matrix.
+        if: github.event_name != 'schedule' || vars.MACOS_SCENARIO_RUNNERS == 'split'
         run: pip3 install --quiet --break-system-packages pyyaml || pip3 install --quiet pyyaml
       - id: scope
         env:
@@ -175,6 +177,36 @@ jobs:
             exit 1
           }
           grep -E '^(runtime|skip_)' "$GITHUB_OUTPUT"
+      # WHICH macOS SCENARIOS RUN ON OUR OWN MACS, under MACOS_SCENARIO_RUNNERS=split
+      # (docs/macos-runners.md). Decided once here and not in each job's runs-on: the list
+      # is a repository variable no lint can read, and a name no macOS job lists would send
+      # nothing to the lab while looking deliberate. Here it is one red job, and every
+      # scenario job needs this one. On any other setting the step is skipped, the output
+      # is unset, and the weekly run still depends on no Python here.
+      #
+      # THIS `if` IS THE ONE PLACE THAT SAYS WHETHER A RUN IS SPLIT. runs-on reads only
+      # the list, which is empty unless this step ran. A dispatch's `split` turns it on
+      # for one run, so a list can be tried from a branch before the variable is set.
+      - name: Which scenarios run on our own Macs
+        id: lab
+        if: >-
+          inputs.runners == 'split'
+          || (inputs.runners != 'hosted' && inputs.runners != 'self-hosted'
+              && vars.MACOS_SCENARIO_RUNNERS == 'split')
+        env:
+          NAMES: ${{ vars.MACOS_SELF_HOSTED_SCENARIOS }}
+        run: |
+          # NAMES is a whitespace-separated list, split on purpose.
+          # shellcheck disable=SC2086
+          python3 tools/ci_scope.py --self-hosted $NAMES --summary "$GITHUB_STEP_SUMMARY" \
+            >> "$GITHUB_OUTPUT"
+          # The same refusal as the step above: an unset output reads as an empty list,
+          # which would keep every scenario on GitHub's runners and report green.
+          grep -E '^self_hosted_' "$GITHUB_OUTPUT" || {
+            echo "::error::ci_scope.py named no scenario for our own Macs. Refusing to run"
+            echo "::error::the split on a list that did not answer."
+            exit 1
+          }
 
   scenario:
     needs: scope
@@ -189,13 +221,23 @@ jobs:
     # matrix.os stays the job's label either way: it is the OS the job is promised, and
     # artifact names, tools/ci_scope.py and tools/check_workflows.py all read it.
     #
+    # `split` USES BOTH AT ONCE: the scenarios the scope job's `lab` step names go to the
+    # lab and the rest stay on GitHub's. GitHub offers a job to one kind of runner only,
+    # fixed here when the job is created, so the two pools add up only if each job is
+    # given to one of them. That step alone decides whether a run is split, so this line
+    # reads its list and never the word. A dispatch's `self-hosted` still sends every
+    # scenario it names, which is how one is proved on the lab before it is listed.
+    #
     # A FORK'S PULL REQUEST IS ROUTED TO GITHUB'S RUNNERS, BUT THIS LINE CANNOT ENFORCE IT: a
     # pull request runs its own copy of this file, and a fork can edit this line. What
     # enforces it is the repository's rule that an outside contributor's run waits for a
     # maintainer's approval, which test/runner-host/slot.sh reads before every job.
     runs-on: >-
       ${{ (inputs.runners == 'self-hosted'
-           || (inputs.runners != 'hosted' && vars.MACOS_SCENARIO_RUNNERS == 'self-hosted'))
+           || (inputs.runners != 'hosted' && inputs.runners != 'split'
+               && vars.MACOS_SCENARIO_RUNNERS == 'self-hosted')
+           || contains(fromJSON(needs.scope.outputs.self_hosted_scenario || '[]'),
+                       matrix.scenario))
           && !github.event.pull_request.head.repo.fork
           && fromJSON(format('["self-hosted","arthur-{0}"]', matrix.os))
           || matrix.os }}
@@ -249,16 +291,16 @@ jobs:
         # is what tools/check_workflows.py checks and what the schedule runs.
         exclude: ${{ fromJSON(needs.scope.outputs.exclude_scenario || '[]') }}
     steps:
-      # WHICH MACHINE THIS IS, and the value that chose it. runs-on reads the variable as
-      # GitHub's runners unless it says exactly `self-hosted`, so a misspelling would move
-      # nothing while looking deliberate. Red here instead.
+      # WHICH MACHINE THIS IS, and the value that chose it. The variable means GitHub's
+      # runners unless it says exactly `self-hosted` or `split`, so a misspelling would
+      # move nothing while looking deliberate. Red here instead.
       - name: Which runner this is
         env:
           SET: ${{ vars.MACOS_SCENARIO_RUNNERS }}
         run: |
           case "$SET" in
-            ''|hosted|self-hosted) ;;
-            *) echo "::error::MACOS_SCENARIO_RUNNERS is '$SET', which runs-on reads as GitHub's runners. Set hosted or self-hosted, or delete it."
+            ''|hosted|self-hosted|split) ;;
+            *) echo "::error::MACOS_SCENARIO_RUNNERS is '$SET', which runs-on reads as GitHub's runners. Set hosted, self-hosted or split, or delete it."
                exit 1 ;;
           esac
           echo "$RUNNER_NAME ($RUNNER_ENVIRONMENT): macOS $(sw_vers -productVersion), $(uname -m)"
