@@ -42,6 +42,19 @@ UNION ALL
 SELECT 'file', f.path, '', f.path, '', ''
   FROM users u CROSS JOIN file f ON f.path LIKE u.directory || '\AppData\Roaming\uv\tools\%\'
  WHERE u.directory LIKE '_:\Users\%'
+UNION ALL
+-- PER-APP LAUNCHERS UNDER %LOCALAPPDATA%: the executables in `<app>\bin\`, one level below
+-- it and no deeper. Windows has no ~/.local/bin convention, so an installer that keeps its
+-- own home under %LOCALAPPDATA% puts its commands in a bin\ of its own and adds that to the
+-- user PATH: Hermes Agent's install.ps1 writes %LOCALAPPDATA%\hermes\bin\hermes.exe, and
+-- nothing else of it is under a path this file read before. Bounded on purpose: one `%` is
+-- one component, so this is `<app>\bin\*.exe` and never `Programs\<app>\...` or a
+-- recursive walk, and `.exe` keeps the DLLs and scripts a bin\ also holds out of the
+-- payload. Enumerates, names no app (tools/check_no_catalog.py). Measured on windows-2025:
+-- see osquery/queries/COST.md.
+SELECT 'file', f.path, '', f.path, '', ''
+  FROM users u CROSS JOIN file f ON f.path LIKE u.directory || '\AppData\Local\%\bin\%.exe'
+ WHERE u.directory LIKE '_:\Users\%'
 
 UNION ALL
 

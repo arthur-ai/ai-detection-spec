@@ -10,8 +10,8 @@ Every AI agent this repo finds, every identifier it is matched on,
 and the CI test behind each one.
 
 ![agents](https://img.shields.io/badge/agents-63-1D4E89)
-![identifiers](https://img.shields.io/badge/identifiers-178-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-174%2F178-A26A16)
+![identifiers](https://img.shields.io/badge/identifiers-179-1D4E89)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-174%2F179-A26A16)
 ![real install](https://img.shields.io/badge/by_real_install-174-2E7D57)
 
 </div>
@@ -19,7 +19,7 @@ and the CI test behind each one.
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 174 of 178. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
+**Every identifier is proved by a real install in CI** — 174 of 179. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
 
 ## 🧪 Why a real install is the bar
 
@@ -32,7 +32,7 @@ Proof is counted **per identifier**, not per agent. Installing an agent vouches
 only for the identifiers that run actually matched, so a sibling identifier on the
 same agent is not covered by association.
 
-> **This number is a floor.** `00-baseline`, `100-windows-baseline`, `107-windows-hermes-installer`, `108-windows-hermes-desktop`, `16-hermes-desktop`, `70-linux-baseline`, `74-linux-dpkg-removed`, `75-linux-browser`, `76-linux-systemd` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
+> **This number is a floor.** `00-baseline`, `100-windows-baseline`, `107-windows-hermes-installer`, `108-windows-hermes-desktop`, `109-windows-hermes-idle`, `16-hermes-desktop`, `70-linux-baseline`, `74-linux-dpkg-removed`, `75-linux-browser`, `76-linux-systemd` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
 
 # Agents (63)
 
@@ -97,7 +97,7 @@ General-purpose, and often bridged to messaging.
 
 | name | platforms | identifiers | scenarios |
 |---|---|---|---|
-| **Hermes Agent** | macOS, Linux, Windows | com.nousresearch.hermes-bundled ⚠, **`hermes-agent`**, **`hermes-agent`**, nousresearch/hermes-agent ⚠, **`~/.hermes`**, **`~/.local/bin/hermes`**, ~/AppData/Local/hermes/bin/ ⚠, NousResearch.HermesBundled_e60prshbsznhj | 107-windows-hermes-installer, 108-windows-hermes-desktop, 16-hermes-desktop, 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
+| **Hermes Agent** | macOS, Linux, Windows | com.nousresearch.hermes-bundled ⚠, **`hermes-agent`**, **`hermes-agent`**, nousresearch/hermes-agent ⚠, **`~/.hermes`**, **`~/.local/bin/hermes`**, ~/AppData/Local/hermes/bin/hermes.exe ⚠, ~/AppData/Local/hermes/bin/ ⚠, NousResearch.HermesBundled_e60prshbsznhj | 107-windows-hermes-installer, 108-windows-hermes-desktop, 109-windows-hermes-idle, 16-hermes-desktop, 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
 | **Letta server** | Linux | **`lettaai/letta`** | 79-linux-image |
 | **Manus** | macOS | **`im.manus.desktop`**, **`manus`** | 15-manus |
 | **Muse for Mac** | macOS | **`com.meta.endo`** | 14-meta-muse |
@@ -146,6 +146,7 @@ Each one needs work, and the state column says what kind. **did not appear** mea
 |---|---|---|---|---|
 | Hermes Agent | bundle id | `com.nousresearch.hermes-bundled` | did not appear | 21-cli-agents-homebrew, 25-python-agents |
 | Hermes Agent | image | `nousresearch/hermes-agent` | did not appear | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
+| Hermes Agent | binary | `~/AppData/Local/hermes/bin/hermes.exe` | did not appear | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
 | Hermes Agent | process_paths | `~/AppData/Local/hermes/bin/` | did not appear | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
 | Hermes Agent | msix_families | `NousResearch.HermesBundled_e60prshbsznhj` | no test | -- |
 

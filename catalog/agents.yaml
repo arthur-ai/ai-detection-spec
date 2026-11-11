@@ -653,7 +653,15 @@ agents:
     # The command, not its siblings: a uv tool install writes hermes beside hermes-acp and
     # hermes-agent, so the install is found by this one, and a prefix would also claim any
     # other tool named hermes-<something>.
-    binaries: ["~/.local/bin/hermes"]
+    #
+    # THE WINDOWS INSTALLER, INSTALLED AND IDLE, is the second value. install.ps1 writes that
+    # launcher and adds its bin\ to the user PATH, and filesystem-windows.sql lists
+    # %LOCALAPPDATA%\<app>\bin\*.exe for it. Read off 109-windows-hermes-idle on windows-2025,
+    # installed and never launched. The launcher and not its siblings, for the reason above:
+    # hermes-acp.exe sits beside it. A launch can leave the running copy renamed aside as
+    # hermes.exe.deleteme while a new hermes.exe is written, so this path is there either
+    # way; the aside copy is not .exe and is not listed.
+    binaries: ["~/.local/bin/hermes", "~/AppData/Local/hermes/bin/hermes.exe"]
     # HERMES_HOME, and WHEN IT APPEARS DEPENDS ON THE ROUTE -- the distinction that made
     # ~/.aider read DID NOT APPEAR while a scenario installed aider on every run. The
     # installer puts the checkout at $HERMES_HOME/hermes-agent, so a curl install creates
@@ -679,8 +687,9 @@ agents:
     # THE WINDOWS INSTALLER, FOUND RUNNING AND ONLY RUNNING. Read off 107-windows-hermes-installer
     # on windows-2025, v0.22.7: install.ps1 writes ~\AppData\Local\hermes\bin\hermes.exe and
     # hermes-acp.exe, PM's Python under ~\AppData\Local\hermes\tools\, and NO ~\.hermes and
-    # nothing in ~\.local\bin -- the two places filesystem-windows.sql reads. So an installed,
-    # idle Windows install leaves no row, and a running one is found by its launcher.
+    # nothing in ~\.local\bin -- the two places filesystem-windows.sql then read. The
+    # launcher is now also read on disk (`binaries` above, 109-windows-hermes-idle); this
+    # value is the RUNNING install, which says Hermes is live and not just present.
     #
     # THE LAUNCHER'S DIRECTORY, NOT ITS FILE NAME, and CI is what taught that. The probe run
     # read the gateway as ...\hermes\bin\hermes.exe; the PR's first run read the same process

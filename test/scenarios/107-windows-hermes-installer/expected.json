@@ -25,9 +25,9 @@
   "require_rows": [
     {"kind": "proc", "id": "\\AppData\\Local\\hermes\\bin\\"}
   ],
-  "why": "The vendor's native Windows route puts the whole install under %LOCALAPPDATA%\\hermes, which no Windows file query reads, so the only witness is the launcher running: `hermes gateway run` keeps hermes.exe alive. The value is the launcher's directory because the first launch after an install republishes the launchers and renames the running hermes.exe aside to hermes.exe.deleteme, which processes.path follows (run 41880268740). require_rows holds the row to that directory. `forbid` names the agents whose skills the installer bundles by name (claude-code, codex) and the other Python agent the Windows scenarios install.",
+  "why": "The vendor's native Windows route puts the whole install under %LOCALAPPDATA%\\hermes, and this scenario proves the launcher running: `hermes gateway run` keeps hermes.exe alive. The value is the launcher's directory because the first launch after an install republishes the launchers and renames the running hermes.exe aside to hermes.exe.deleteme, which processes.path follows (run 41880268740). require_rows holds the row to that directory. `forbid` names the agents whose skills the installer bundles by name (claude-code, codex) and the other Python agent the Windows scenarios install.",
   "known_gaps": [
-    "Installed and not running, this install is invisible on Windows: filesystem-windows.sql reads ~\\.local\\bin and the home's dot-directories, and the installer writes to neither.",
+    "The launcher on disk is a second witness here since filesystem-windows.sql reads %LOCALAPPDATA%\\<app>\\bin\\*.exe, so this scenario no longer proves the process path alone; require_rows holds the proc row, and 109-windows-hermes-idle is the installed-only twin.",
     "The installer's MSIX desktop stage (-IncludeDesktop) is not run; 108-windows-hermes-desktop installs the packaged desktop app instead."
   ]
 }

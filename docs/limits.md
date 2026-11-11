@@ -76,10 +76,11 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 105-windows-desktop-apps | Windsurf is not launched, so its liveness is unproven. |
 | 105-windows-desktop-apps | Sign-in gated, as on macOS: nothing exercises behaviour that appears once a user signs in. |
 | 106-windows-python-agents | Installed, never run, so aider's own state directory is not produced here. |
-| 107-windows-hermes-installer | Installed and not running, this install is invisible on Windows: filesystem-windows.sql reads ~\.local\bin and the home's dot-directories, and the installer writes to neither. |
+| 107-windows-hermes-installer | The launcher on disk is a second witness here since filesystem-windows.sql reads %LOCALAPPDATA%\<app>\bin\*.exe, so this scenario no longer proves the process path alone; require_rows holds the proc row, and 109-windows-hermes-idle is the installed-only twin. |
 | 107-windows-hermes-installer | The installer's MSIX desktop stage (-IncludeDesktop) is not run; 108-windows-hermes-desktop installs the packaged desktop app instead. |
 | 108-windows-hermes-desktop | The Microsoft Store package is a different identity, NousResearchInc.HermesAgent with the Store's publisher hash, and Server 2025 has no Store, so it is not installed here (docs/blind-spots.yaml, Store-only apps). |
 | 108-windows-hermes-desktop | Read while its user is signed in: an MSIX package installed for one user is in HKEY_USERS only then (docs/blind-spots.yaml). |
+| 109-windows-hermes-idle | Only a launcher one level under %LOCALAPPDATA% is read: an installer that keeps its commands deeper, or outside bin\, is still invisible while idle. |
 | 12-chatgpt-pre-rename | The bundle id only. A direct download leaves no Homebrew record, so the `chatgpt` brew route is not exercised here; 10-desktop-apps covers it. |
 | 13-desktop-apps-more | Trae and Trae CN were read off their dmgs' Info.plist rather than a local install: the VM this was developed in had no IPv4 route to their CDNs. CI is the first real install of both. |
 | 13-desktop-apps-more | Sign-in gated, like 10: nothing exercises behaviour that appears once a user signs in. |
