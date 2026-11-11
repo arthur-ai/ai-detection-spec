@@ -355,6 +355,24 @@ for _job in sorted(_jobs):
               f"With every scenario excluded, its matrix is empty.")
         failed = True
 
+# EVERY macOS MATRIX JOB READS ITS OWN SPLIT, which tools/ci_scope.py writes per job under
+# MACOS_SCENARIO_RUNNERS=split. A `runs-on` that reads a key the scope job does not export
+# sees an empty list, keeps every scenario on GitHub's runners and stays green.
+for _job in sorted(_jobs):
+    _spec = _doc["jobs"][_job]
+    _os = ((_spec.get("strategy") or {}).get("matrix") or {}).get("os") or []
+    if _job in _harness or not any("macos" in str(_l) for _l in _os):
+        continue
+    _key = output_key("self_hosted", _job)
+    if _scope_out.get(_key) != f"${{{{ steps.lab.outputs.{_key} }}}}":
+        print(f"FAIL: scenarios.yml's scope job does not export {_key!r} from its `lab` "
+              f"step, which job {_job!r} reads to split its scenarios between runner pools.")
+        failed = True
+    if f"fromJSON(needs.scope.outputs.{_key} || '[]')" not in str(_spec.get("runs-on")):
+        print(f"FAIL: scenarios.yml job {_job!r} does not read {_key!r} in its `runs-on`. "
+              f"Under MACOS_SCENARIO_RUNNERS=split it would send nothing to our own Macs.")
+        failed = True
+
 # EVERY INPUT THE GENERATED DOC IS BUILT FROM MUST BE IN docs.yml's PATH TRIGGER.
 #
 # THIS IS THE ONE THAT FAILS BY GOING QUIET, which is this repo's signature failure mode.
