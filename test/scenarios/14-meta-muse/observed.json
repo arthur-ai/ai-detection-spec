@@ -17,7 +17,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "42645047807"
+      "run": "42938165864"
     },
     {
       "agent": "muse-code",
@@ -35,7 +35,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "42645047807"
+      "run": "42938165864"
     },
     {
       "agent": "muse-desktop",
@@ -55,7 +55,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "42645047807"
+      "run": "42938165864"
     },
     {
       "agent": "muse-desktop",
@@ -75,7 +75,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "42645047807"
+      "run": "42938165864"
     }
   ]
 }

@@ -9,7 +9,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "42645047807"
+      "run": "42938165864"
     },
     {
       "agent": "chatgpt-extension",
@@ -29,7 +29,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "42645047807"
+      "run": "42938165864"
     },
     {
       "agent": "claude-in-chrome",
@@ -45,11 +45,11 @@
       "agent": "claude-in-chrome",
       "route": "extension_ids",
       "value": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
-      "agent_version": "1.0.105",
+      "agent_version": "1.0.106",
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "42645047807"
+      "run": "42938165864"
     },
     {
       "agent": "claude-in-chrome",
@@ -65,11 +65,11 @@
       "agent": "claude-in-chrome",
       "route": "extension_ids",
       "value": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
-      "agent_version": "1.0.105",
+      "agent_version": "1.0.106",
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "42645047807"
+      "run": "42938165864"
     },
     {
       "agent": "harpa",
@@ -89,7 +89,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "42645047807"
+      "run": "42938165864"
     },
     {
       "agent": "harpa",
@@ -109,7 +109,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "42645047807"
+      "run": "42938165864"
     },
     {
       "agent": "merlin",
@@ -129,7 +129,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "42645047807"
+      "run": "42938165864"
     },
     {
       "agent": "merlin",
@@ -149,7 +149,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "42645047807"
+      "run": "42938165864"
     },
     {
       "agent": "monica",
@@ -169,7 +169,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "42645047807"
+      "run": "42938165864"
     },
     {
       "agent": "monica",
@@ -189,7 +189,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "42645047807"
+      "run": "42938165864"
     },
     {
       "agent": "sider",
@@ -209,7 +209,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "42645047807"
+      "run": "42938165864"
     },
     {
       "agent": "sider",
@@ -229,7 +229,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "42645047807"
+      "run": "42938165864"
     }
   ]
 }

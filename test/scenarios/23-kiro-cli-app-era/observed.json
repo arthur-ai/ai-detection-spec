@@ -1,0 +1,25 @@
+{
+  "scenario": "23-kiro-cli-app-era",
+  "identifiers": [
+    {
+      "agent": "kiro-cli",
+      "route": "bundle_ids",
+      "value": "com.amazon.codewhisperer",
+      "agent_version": "2.37.1",
+      "platform": "darwin",
+      "os": "15.8.2",
+      "arch": "arm64",
+      "run": "42938165864"
+    },
+    {
+      "agent": "kiro-cli",
+      "route": "bundle_ids",
+      "value": "com.amazon.codewhisperer",
+      "agent_version": "2.37.1",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "42938165864"
+    }
+  ]
+}
