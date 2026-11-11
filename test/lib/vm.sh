@@ -8,7 +8,7 @@ set -euo pipefail
 #
 # So pick the NEWEST guest this host can actually run rather than hardcoding one. A
 # hardcoded old guest silently skips every scenario needing a newer OS, and a skip nobody
-# notices is how 50-autonomous (OpenClaw needs Sequoia) stayed unverified.
+# notices is how 50-autonomous (OpenClaw needed Sequoia then) stayed unverified.
 #
 # Apple's versioning is not contiguous: Sonoma 14, Sequoia 15, then Tahoe jumps to 26.
 image_for_macos() {
@@ -31,7 +31,7 @@ host_macos_major() { sw_vers -productVersion 2>/dev/null | cut -d. -f1; }
 
 vm_require() {
   echo "host macOS $(sw_vers -productVersion) -> guest $(basename "$BASE_IMAGE")"
-  command -v tart >/dev/null || { echo "tart not found: brew install cirruslabs/cli/tart" >&2; exit 1; }
+  command -v tart >/dev/null || { echo "tart not found: brew install openai/tools/tart" >&2; exit 1; }
   command -v sshpass >/dev/null || { echo "sshpass not found: brew install sshpass" >&2; exit 1; }
 }
 

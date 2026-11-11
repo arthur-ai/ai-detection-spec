@@ -1458,10 +1458,14 @@ check("Cursor's generic ~/.local/bin/agent link claims nothing",
       "Cursor CLI and Grok Build both write an `agent`; a name that generic identifies nobody")
 
 _c, _u = _claims(_kind("app", "com.amazon.codewhisperer", "dev.kiro.desktop",
+                       "com.amazon.inputmethod.codewhisperer",
                        "com.electron.goose", "com.electron.other"))
 check("Kiro CLI and Kiro the IDE are told apart by their real bundle ids",
       _c.get("com.amazon.codewhisperer") == "kiro-cli"
       and _c.get("dev.kiro.desktop") == "kiro", f"got {_c}")
+# Kiro CLI.app/Contents/Helpers/CodeWhispererInputMethod.app, read off the 2.37.1 dmg.
+check("the input-method helper nested in Kiro CLI.app claims nothing",
+      "com.amazon.inputmethod.codewhisperer" in _u, f"got {_c}")
 check("Electron's default id shape claims only goose's whole id",
       _c.get("com.electron.goose") == "goose" and "com.electron.other" in _u,
       "com.electron.<name> is the packager's pattern; a prefix match would claim every app")
@@ -2067,6 +2071,12 @@ check("...and a suffix ties its numbers rather than being guessed newer or older
       _cl.release_key("2.1.292-1") == (2, 1, 292)
       and _cl.primary([dict(_running[0], ver="2.0.0-beta2"), dict(_running[1], ver="2.0.0")],
                       _rank) == 0)
+check("...and at most 16 components of 18 digits are read; the rest is not compared",
+      _cl.release_key("1." * 100000 + "1") == (1,) * 16
+      and _cl.release_key("2.1." + "9" * 19) == (2, 1)
+      and _cl.release_key("9" * 4301) == ())
+check("...so a version that is one long number carries no release, and raises nothing",
+      _cl.primary([dict(_running[0], ver="9" * 4301), _running[1]], _rank) == 1)
 _shim = [_r("file", "/Users/u/.claude/", loc="/Users/u/.claude/"),
          _r("file", "/Users/u/.local/bin/claude", "2.1.317", "/Users/u/.local/bin/claude")]
 check("a shim that carries its release speaks before a state directory listed ahead of it",
