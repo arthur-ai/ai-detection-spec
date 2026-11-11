@@ -2,9 +2,9 @@
 # Carries the `daemon` and `port` branches for the whole suite.
 #
 # Both are first-GUI-launch side effects of OpenClaw, and SSH has no Aqua
-# session to trigger them. 50-autonomous additionally cannot run below Sequoia. Rather
-# than leave two branches permanently unverified - which is the exact state that made
-# this harness necessary - they are exercised here with inert fixtures.
+# session to trigger them. 50-autonomous additionally cannot run below its macOS
+# floor. Rather than leave two branches permanently unverified - which is the exact
+# state that made this harness necessary - they are exercised here with inert fixtures.
 #
 # The plist is NEVER LOADED and points at /usr/bin/true. That is the point: osquery's
 # launchd table reads plists out of the standard directories rather than asking a

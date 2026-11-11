@@ -9,17 +9,17 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "41871675151"
+      "run": "42645047807"
     },
     {
       "agent": "claude-desktop",
       "route": "msix_families",
       "value": "Claude_pzs8sxrjxfjjc",
-      "agent_version": "4.16336.0.0",
+      "agent_version": "4.23118.0.0",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "41871675151"
+      "run": "42645047807"
     },
     {
       "agent": "claude-desktop",
@@ -28,7 +28,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "41871675151"
+      "run": "42645047807"
     },
     {
       "agent": "claude-in-chrome",
@@ -38,17 +38,17 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "41871675151"
+      "run": "42645047807"
     },
     {
       "agent": "harpa",
       "route": "extension_ids",
       "value": "eanggfilgoajaocelnaflolkadkeghjp",
-      "agent_version": "16.2.1",
+      "agent_version": "17.0.0",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "41871675151"
+      "run": "42645047807"
     },
     {
       "agent": "merlin",
@@ -58,7 +58,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "41871675151"
+      "run": "42645047807"
     },
     {
       "agent": "monica",
@@ -68,17 +68,17 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "41871675151"
+      "run": "42645047807"
     },
     {
       "agent": "sider",
       "route": "extension_ids",
       "value": "difoiogjjojoaoomphldepapgpbgkhkb",
-      "agent_version": "5.35.6",
+      "agent_version": "5.35.7",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "41871675151"
+      "run": "42645047807"
     }
   ]
 }

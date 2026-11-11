@@ -138,6 +138,10 @@ INERT = frozenset({
     "conformance/vectors.json",
     "osquery/tools/check_no_catalog.py", "osquery/tools/check_output.py", "osquery/tools/check_pack.py",
     "tools/check_workflows.py", "tools/gates.sh", "tools/validate_catalog.py",
+    # The runner HOST's scripts: they decide which machine a job lands on, run on that
+    # machine and not in any job, and reach a host by hand (docs/macos-runners.md).
+    *("test/runner-host/" + f for f in ("bake.sh", "bake-guest.sh", "common.sh",
+                                        "guest-agent.sh", "host-setup.sh", "slot.sh")),
 })
 # Read on a runner by nothing that asserts: each is checked by ci.yml's lint job instead.
 NOT_ASSERTED = {
@@ -194,6 +198,7 @@ RUNTIME_INERT = frozenset({
     "test/test_export.py", "tools/export.py", "osquery/tools/check_no_catalog.py",
     "tools/check_workflows.py", "tools/validate_catalog.py", "tools/check_doc_numbers.py",
     "tools/gates.sh", "tools/scenarios.py",
+    *(f for f in INERT if f.startswith("test/runner-host/")),
 })
 
 # Rendered from the catalog by osquery/tools/render_match.py. `None` is every platform.
