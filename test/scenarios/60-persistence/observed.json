@@ -6,6 +6,15 @@
       "route": "launchd_prefixes",
       "value": "ai.openclaw.",
       "platform": "darwin",
+      "os": "15.7.7",
+      "arch": "arm64",
+      "run": "42950761536"
+    },
+    {
+      "agent": "openclaw",
+      "route": "launchd_prefixes",
+      "value": "ai.openclaw.",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40764483708"
@@ -17,7 +26,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "42938165864"
+      "run": "43463357710"
     },
     {
       "agent": "openclaw",
@@ -26,7 +35,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "42274653319"
+      "run": "42950761536"
     },
     {
       "agent": "openclaw",
@@ -35,7 +44,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "42938165864"
+      "run": "43463357710"
     }
   ]
 }

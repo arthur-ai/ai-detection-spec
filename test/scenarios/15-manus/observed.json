@@ -5,21 +5,31 @@
       "agent": "manus",
       "route": "bundle_ids",
       "value": "im.manus.desktop",
-      "agent_version": "2.1.0",
+      "agent_version": "2.1.1",
       "platform": "darwin",
-      "os": "15.8.2",
+      "os": "15.7.7",
       "arch": "arm64",
-      "run": "42938165864"
+      "run": "42950761536"
     },
     {
       "agent": "manus",
       "route": "bundle_ids",
       "value": "im.manus.desktop",
-      "agent_version": "2.0.11",
+      "agent_version": "2.1.0",
+      "platform": "darwin",
+      "os": "15.8.2",
+      "arch": "arm64",
+      "run": "43463357710"
+    },
+    {
+      "agent": "manus",
+      "route": "bundle_ids",
+      "value": "im.manus.desktop",
+      "agent_version": "2.1.1",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "42274653319"
+      "run": "42950761536"
     },
     {
       "agent": "manus",
@@ -29,7 +39,17 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "42938165864"
+      "run": "43463357710"
+    },
+    {
+      "agent": "manus",
+      "route": "homebrew",
+      "value": "manus",
+      "agent_version": "2.1.1",
+      "platform": "darwin",
+      "os": "15.7.7",
+      "arch": "arm64",
+      "run": "42950761536"
     },
     {
       "agent": "manus",
@@ -39,17 +59,17 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "42938165864"
+      "run": "43463357710"
     },
     {
       "agent": "manus",
       "route": "homebrew",
       "value": "manus",
-      "agent_version": "2.0.11",
+      "agent_version": "2.1.1",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "42274653319"
+      "run": "42950761536"
     },
     {
       "agent": "manus",
@@ -59,7 +79,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "42938165864"
+      "run": "43463357710"
     }
   ]
 }

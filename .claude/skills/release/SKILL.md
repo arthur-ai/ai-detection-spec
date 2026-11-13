@@ -384,7 +384,7 @@ the Publish button is. Both need write access.
 
 **Do not upload anything by hand.** `release.yml` fires on publish, checks the tag is an
 ancestor of `main`, re-runs the static gates at that commit, rebuilds `osquery/dist/` from
-`osquery/queries/`, builds the two bundles and `catalog.json`, which are never committed, and
+`osquery/queries/`, builds the three bundles and `catalog.json`, which are never committed, and
 attaches them all, so the artifacts derive from the tagged source by construction.
 
 ```console
@@ -392,12 +392,13 @@ $ gh run list --workflow=release.yml --limit=1
 $ gh release view v<X.Y.Z> --json assets --jq '[.assets[].name]'
 ```
 
-**20 assets**, and a missing one is a broken release: `discovery-darwin.sql`,
+**22 assets**, and a missing one is a broken release: `discovery-darwin.sql`,
 `discovery-linux.sql`, `discovery-windows.sql`, `discovery-deep.sql`, `ai-detection-spec.conf`,
 `signatures.sql`, `agents-darwin.sql`, `agents-linux.sql`, `agents-windows.sql`,
-`fleet-policies.yml`, `discover`, `container-scan`,
+`fleet-policies.yml`, `discover`, `discover.ps1`, `container-scan`,
 `classify`, `agents.yaml`, `routes.yaml`, `catalog.json`, `catalog.schema.json`,
-`evidence.schema.json`, `ai-detection-spec-darwin.sh`, `ai-detection-spec-linux.sh`.
+`evidence.schema.json`, `ai-detection-spec-darwin.sh`, `ai-detection-spec-linux.sh`,
+`ai-detection-spec-windows.ps1`.
 `tools/check_workflows.py` holds this list to `release.yml`'s upload step.
 
 The notes must say two things about layout, because the scripts resolve each other by relative
@@ -405,9 +406,11 @@ path: ship `bin/`, `dist/`, `catalog/` and `schema/` **side by side** — loose 
 `bin/discover` will not find its artifact — and `classify` needs both catalog files beside it,
 or `catalog.json` and `schema/catalog.schema.json`. The two
 `ai-detection-spec-*.sh` bundles are that layout packed into one file; they carry no catalog and no
-classifier. Windows has neither a bundle nor `discover`, which are bash: it takes
-`discovery-windows.sql` and `agents-windows.sql` through `osqueryi`, the pack or the Fleet
-policies. Deployment glue for a particular MDM is not released from here.
+classifier. `ai-detection-spec-windows.ps1` packs less: `discover.ps1`, which is the writer on
+Windows because `discover` is bash, and the pack it runs, and nothing else.
+`discovery-windows.sql` and `agents-windows.sql` are downloads of their own, run through
+`osqueryi`. `fleet-policies.yml` is another, loaded with `fleetctl apply -f`. Deployment glue
+for a particular MDM is not released from here.
 
 ## Don'ts
 

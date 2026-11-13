@@ -5,61 +5,61 @@
       "agent": "amazon-q",
       "route": "jetbrains_plugins",
       "value": "plugin-amazonq",
-      "agent_version": "4.11.262",
+      "agent_version": "4.12.262",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "amazon-q",
       "route": "jetbrains_plugins",
       "value": "plugin-amazonq",
-      "agent_version": "4.11.262",
+      "agent_version": "4.12.262",
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "amazon-q",
       "route": "jetbrains_plugins",
       "value": "plugin-amazonq",
-      "agent_version": "4.11.262",
+      "agent_version": "4.12.262",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "amazon-q",
       "route": "jetbrains_plugins",
       "value": "plugin-amazonq",
-      "agent_version": "4.11.262",
+      "agent_version": "4.12.262",
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "amazon-q",
       "route": "jetbrains_plugins",
       "value": "plugin-amazonq",
-      "agent_version": "4.11.262",
+      "agent_version": "4.12.262",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "amazon-q",
       "route": "jetbrains_plugins",
       "value": "plugin-amazonq",
-      "agent_version": "4.11.262",
+      "agent_version": "4.12.262",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "cody",
@@ -69,7 +69,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "cody",
@@ -79,7 +79,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "cody",
@@ -89,7 +89,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "cody",
@@ -99,7 +99,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "cody",
@@ -109,7 +109,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "cody",
@@ -119,7 +119,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "copilot-cli",
@@ -129,7 +129,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "copilot-cli",
@@ -139,7 +139,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "copilot-cli",
@@ -149,7 +149,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "copilot-cli",
@@ -159,7 +159,7 @@
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "copilot-cli",
@@ -169,7 +169,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "copilot-cli",
@@ -179,67 +179,67 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "gemini-code-assist",
       "route": "jetbrains_plugins",
       "value": "gemini",
-      "agent_version": "1.60.1-253",
+      "agent_version": "1.61.4-253",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "gemini-code-assist",
       "route": "jetbrains_plugins",
       "value": "gemini",
-      "agent_version": "1.60.1-253",
+      "agent_version": "1.61.4-253",
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "gemini-code-assist",
       "route": "jetbrains_plugins",
       "value": "gemini",
-      "agent_version": "1.60.1-253",
+      "agent_version": "1.61.4-253",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "gemini-code-assist",
       "route": "jetbrains_plugins",
       "value": "gemini",
-      "agent_version": "1.60.1-253",
+      "agent_version": "1.61.4-253",
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "gemini-code-assist",
       "route": "jetbrains_plugins",
       "value": "gemini",
-      "agent_version": "1.60.1-253",
+      "agent_version": "1.61.4-253",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "gemini-code-assist",
       "route": "jetbrains_plugins",
       "value": "gemini",
-      "agent_version": "1.60.1-253",
+      "agent_version": "1.61.4-253",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "43463357710"
     }
   ]
 }

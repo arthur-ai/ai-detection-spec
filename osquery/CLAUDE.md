@@ -1,6 +1,6 @@
 # The osquery binding
 
-The queries, the artifacts composed and rendered from them, the two endpoint scripts and the
+The queries, the artifacts composed and rendered from them, the endpoint scripts and the
 bundle. The repo-wide rules in [`../CLAUDE.md`](../CLAUDE.md) apply here too, including why
 the endpoint enumerates and where telemetry may live.
 
@@ -75,8 +75,23 @@ and the shell is the serializer: `json_str`/`json_row` build a row with `printf`
 stub that exits 1 with empty stdout, so the row saying the writer never ran was never
 written either, and nothing reads as a clean machine.
 
-`osquery/tools/bundle.py` alone widens the list, by `base64` and `tar`, which its extraction
-preamble needs; `osquery/docs/deployment.md` tells deployers. `osquery/test/lint.sh` greps
+**`osquery/bin/discover.ps1` is the writer on Windows, and its list is closed too**:
+
+| allowed | why |
+|---|---|
+| **Windows PowerShell 5.1** | what every supported Windows ships. PowerShell 7 is an install |
+| **cmdlets, and the methods of ConstrainedLanguage mode's core types** | an unsigned script runs in that mode where AppLocker or WDAC is enforced. `[string]`, `[datetime]` and `[int64]` are core; `[IO.File]` and `[Convert]` are not, and `Add-Type` is refused outright |
+| **`osqueryi`** | through `Start-Process` with every stream redirected to a file. PowerShell's own pipes re-encode, and a path outside ASCII survives neither direction |
+
+It is ASCII, because 5.1 reads a script with no byte order mark as ANSI. It writes text with
+`New-Item -Value`, which in 5.1 writes UTF-8 with no byte order mark, where `Set-Content`
+and `Out-File` add one. **Its statements are the bash runner's**, the merge, the payload CTE and the status expression,
+copied because PowerShell cannot source bash; `osquery/test/lint.sh` renders each from both
+runners and fails on a difference. Change one in `osquery/bin/container-scan` or
+`osquery/bin/discover` and that gate names the other.
+
+`osquery/tools/bundle.py` alone widens the POSIX list, by `base64` and `tar`, which its
+extraction preamble needs; `osquery/docs/deployment.md` tells deployers. `osquery/test/lint.sh` greps
 both scripts and the bundle wrapper for `python`, `jq`, `perl`, `ruby`, `node`, `deno` and
 `php`, outside comments. That gate is narrower than the rule, so a reviewer enforces the rest.
 
@@ -91,9 +106,9 @@ is present and says so when it is not; `render_match.py --check` is its own gate
 |---|---|
 | `osquery/dist/discovery-darwin.sql` | the `fast` and `slow` queries for macOS, composed |
 | `osquery/dist/discovery-linux.sql` | the same for Linux: a different set of tables, not a superset |
-| `osquery/dist/discovery-windows.sql` | the same for Windows, which `osquery/bin/discover` does not run: it is bash |
+| `osquery/dist/discovery-windows.sql` | the same for Windows, which no script here runs: `osquery/bin/discover` is bash, and `osquery/bin/discover.ps1` runs the pack |
 | `osquery/dist/discovery-deep.sql` | the `expensive` queries, a supplement. One file because every expensive query is `posix`; `build.py` fails if one stops being |
-| `osquery/dist/ai-detection-spec.conf` | the osqueryd pack, every platform's queries with osqueryd's per-query `platform` field |
+| `osquery/dist/ai-detection-spec.conf` | the osqueryd pack, every platform's queries with osqueryd's per-query `platform` field. `--write` runs it, on every platform |
 | `osquery/dist/signatures.sql` | **rendered from the catalog**: the signature table and the match, as a fragment over an `ev` CTE the caller supplies |
 | `osquery/dist/agents-<platform>.sql` | the enumeration wrapped in that match, one row per agent, for each platform. They never see image-only agents, because the container branch needs a bound |
 | `osquery/dist/fleet-policies.yml` | one Fleet policy per agent per platform, passing when absent, each wrapping only the branches its agent's routes need |
@@ -150,4 +165,4 @@ shipped a pack query osqueryd never scheduled. A tool that runs queries here ask
 - **osqueryi refuses a flag for a table it lacks**: `--docker_socket` exits 1 with nothing on
   stdout. `osquery/tools/measure.py` passes it only where the docker tables exist.
 - **osqueryi writes CRLF**, and PowerShell 5.1's `>` writes UTF-16, which nothing here reads.
-  Redirect from `cmd` or Git Bash.
+  Redirect from `cmd` or Git Bash, or from `Start-Process`, as `osquery/bin/discover.ps1` does.

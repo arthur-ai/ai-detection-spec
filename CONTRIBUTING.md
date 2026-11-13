@@ -177,6 +177,7 @@ $ python3 osquery/test/test_match_sql.py   # the rendered SQL against bin/classi
 $ osquery/tools/measure.py --check         # cost bands
 $ sudo osquery/test/docker_states.sh       # every Docker daemon state, the guard and the bound
 $ sudo python3 osquery/tools/check_pack.py # every pack query returns rows
+> powershell -NoProfile -ExecutionPolicy Bypass -File osquery\test\discover_windows.ps1   # the Windows writer; Windows only
 ```
 
 Scenarios install real software, so each harness hosts one platform:
