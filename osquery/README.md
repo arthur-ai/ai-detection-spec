@@ -35,7 +35,7 @@ $ sudo osquery/bin/discover --deep | bin/classify     # the same, plus container
 $ sudo apt install ./osquery_5.23.1-1.linux_amd64.deb
 $ sudo osqueryi --json < osquery/dist/agents-linux.sql
 
-# On Windows there is no osquery/bin/discover, which is bash. Run osqueryi.exe from cmd,
+# On Windows, osquery/bin/discover does not run: it is bash. Run osqueryi.exe from cmd,
 # because Windows PowerShell 5.1's > writes UTF-16. Keep the || del: on a table it lacks,
 # osqueryi.exe prints valid empty JSON and exits 1, which classify would call a clean machine
 > "C:\Program Files\osquery\osqueryi.exe" --json < osquery\dist\agents-windows.sql
@@ -44,8 +44,9 @@ $ bin/classify < inventory.json                       # off the machine, as abov
 ```
 
 `osquery/dist/` is committed, so a clone has nothing to build. Pin a tagged release in
-production ([SECURITY.md](../SECURITY.md)). On a fleet, schedule `osquery/bin/discover --write`
-and read the file instead ([Running it on a fleet](#running-it-on-a-fleet)).
+production ([SECURITY.md](../SECURITY.md)). On a fleet, schedule `osquery/bin/discover --write`,
+or `osquery\bin\discover.ps1 --write` on Windows, and read the file instead
+([Running it on a fleet](#running-it-on-a-fleet)).
 
 `bin/classify` prints each agent with its evidence:
 
@@ -86,11 +87,12 @@ files when they are rendered. CI holds the two to the same answer on the same ev
 
 ## What a release attaches
 
-**20 assets**: `discovery-darwin.sql`, `discovery-linux.sql`, `discovery-windows.sql`,
+**22 assets**: `discovery-darwin.sql`, `discovery-linux.sql`, `discovery-windows.sql`,
 `discovery-deep.sql`, `ai-detection-spec.conf`, `signatures.sql`, `agents-darwin.sql`,
-`agents-linux.sql`, `agents-windows.sql`, `fleet-policies.yml`, `discover`, `container-scan`,
-`classify`, `agents.yaml`, `routes.yaml`, `catalog.json`, `catalog.schema.json`,
-`evidence.schema.json`, `ai-detection-spec-darwin.sh`, `ai-detection-spec-linux.sh`.
+`agents-linux.sql`, `agents-windows.sql`, `fleet-policies.yml`, `discover`, `discover.ps1`,
+`container-scan`, `classify`, `agents.yaml`, `routes.yaml`, `catalog.json`,
+`catalog.schema.json`, `evidence.schema.json`, `ai-detection-spec-darwin.sh`,
+`ai-detection-spec-linux.sh`, `ai-detection-spec-windows.ps1`.
 
 Each asset runs on the endpoint or off it. The tables below group them that way, so take the
 ones for the place you deploy to.
@@ -99,10 +101,11 @@ ones for the place you deploy to.
 
 | | |
 |---|---|
-| `discovery-darwin.sql`<br>`discovery-linux.sql`<br>`discovery-windows.sql` | The query for each platform. `discover` picks between the first two by `uname -s`, so you can ship both. Windows has no `discover`; run the third with `osqueryi` ([quickstart](#quickstart)) |
+| `discovery-darwin.sql`<br>`discovery-linux.sql`<br>`discovery-windows.sql` | The query for each platform. `discover` picks between the first two by `uname -s`, so you can ship both. Nothing here runs the third: `discover.ps1` runs the pack, so run it with `osqueryi` ([quickstart](#quickstart)) |
 | `discovery-deep.sql` | The container query, a supplement rather than a superset. Only `container-scan` runs it, because the wall-clock bound lives there |
 | `ai-detection-spec.conf` | The osqueryd pack, every platform's queries with osqueryd's per-query `platform` field. Take it *instead of* the `.sql` files if you schedule through osqueryd |
 | `discover` | Runs the query for its platform and prints one JSON array |
+| `discover.ps1` | The scheduled writer on Windows: runs each Windows query of `ai-detection-spec.conf` on its own and writes one JSON file. It reads the pack from `dist/` beside its own `bin/` |
 | `container-scan` | Runs the deep query under a time limit |
 
 **Off the machine**
@@ -127,6 +130,7 @@ ones for the place you deploy to.
 | | |
 |---|---|
 | `ai-detection-spec-darwin.sh`<br>`ai-detection-spec-linux.sh` | The endpoint files and `signatures.sql` for one platform, in one self-extracting script that takes `discover`'s arguments and installs nothing. It needs `base64` and `tar` |
+| `ai-detection-spec-windows.ps1` | `discover.ps1` and the pack, in one PowerShell script that takes `discover.ps1`'s arguments and installs nothing. It needs nothing `discover.ps1` does not |
 
 Loose files go **side by side**, as `bin/`, `dist/`, `catalog/` and `schema/`, because
 `discover` and `classify` each resolve what they need from their own parent directory.
@@ -168,16 +172,18 @@ own pipeline, store the JSON and run `bin/classify` over it.
 [docs/deployment.md](docs/deployment.md) has the schedule, the status line, the one-file
 bundle and what a deployment supplies.
 
-**On Windows there is no `bin/discover`**, which is bash. The [quickstart](#quickstart) has
-the one-machine command, and [docs/deployment.md](docs/deployment.md#windows) has what to
-schedule on a fleet and how to read what comes back.
+**On Windows the writer is `bin/discover.ps1`**, because `bin/discover` is bash. It takes
+`--write`, `--status` and `--cache`, and not `--names` or `--deep`.
+[docs/deployment.md](docs/deployment.md#windows) has what to schedule on a fleet and how to
+read what comes back; the [quickstart](#quickstart) has the one-machine command.
 
 ## Scope, so you know what you are getting
 
 **macOS, Linux and Windows ship.** CI installs the real software on macOS runners, on Ubuntu
 runners (x86_64 and arm64), in Debian, Rocky, Fedora and Amazon Linux containers, and on
-Windows Server 2025 runners. Windows has the queries and the rendered match, not the endpoint
-scripts; a native PowerShell binding, for fleets that run no osquery, is not built.
+Windows Server 2025 runners. Windows has the queries, the rendered match and the scheduled
+writer, `osquery/bin/discover.ps1`, which runs them through `osqueryi`; a native PowerShell
+binding, for fleets that run no osquery, is not built.
 
 Each route's platform, and the osquery table and version floor behind it
 ([SPEC.md §8.1](../SPEC.md#81-osquery)), are declared in
@@ -194,6 +200,7 @@ declared `posix` or `all` is composed into several.
 | Windows | osquery's x64 MSI, run as an administrator or SYSTEM. CI runs Windows Server 2025; no lower bound has been established, and osquery's arm64 build is untested |
 | osquery | **5.10.0** for `osquery/bin/discover --write`, which runs each query separately and reports any that fail. **5.18.0** to run the whole inventory as one query, for the JetBrains table. **5.17.0** on Windows, for MSIX packages |
 | `bash` | 3.2, the macOS system `bash` |
+| PowerShell | Windows PowerShell 5.1, for `osquery/bin/discover.ps1` and the Windows bundle. Both run unsigned in ConstrainedLanguage mode, which AppLocker and WDAC impose |
 | `python3` 3.7 and PyYAML | Off the machine only: `bin/classify`, `tools/` and `osquery/tools/render_match.py`. `bin/classify` also needs `jsonschema` to read `catalog.json` |
 
 `sudo` lets the queries read other users' home directories; without it you see only your own.

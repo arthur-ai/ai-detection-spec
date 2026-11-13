@@ -849,10 +849,10 @@ jobs:
         run: sudo -n osquery/test/docker_states.sh
 
 
-  # WINDOWS, the composed artifact and its gates on a real windows-2025 runner. No
-  # bin/discover here: it is bash, and Windows runs the pack, Fleet or osqueryi directly
-  # (osquery/README.md). Plumbing in Git Bash, as in scenarios.yml's Windows job, for the
-  # reasons it gives.
+  # WINDOWS, the composed artifact and its gates on a real windows-2025 runner, then the
+  # writer: bin/discover is bash, so Windows has osquery/bin/discover.ps1 and a bundle of
+  # its own. Plumbing in Git Bash, as in scenarios.yml's Windows job, for the reasons it
+  # gives; the writer's steps are PowerShell, which is what runs it on a fleet.
   query-runs-windows:
     needs: scope
     if: needs.scope.outputs.runtime == 'true'
@@ -958,6 +958,117 @@ jobs:
 
       - name: Run every query in the pack
         run: python3 osquery/tools/check_pack.py
+
+      # THE WRITER, ON THE ONE PLATFORM THAT CAN RUN IT. osquery/test/discover_windows.ps1
+      # holds osquery/bin/discover.ps1 to the shipped pack, a branch whose table is missing,
+      # a branch that never answers and a payload outside ASCII. `shell: powershell` is
+      # Windows PowerShell 5.1, the one every supported Windows ships; the test starts each
+      # writer under the PowerShell running it.
+      - name: The Windows writer
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File osquery\test\discover_windows.ps1
+          exit $LASTEXITCODE
+
+      # THE BUNDLE IS THE DEPLOYABLE SHAPE, AND IT IS ONLY PROVEN AWAY FROM THE CHECKOUT, as
+      # the macOS and Linux jobs say of theirs. Run from the drive's root, with a TEMP of
+      # its own so that what it leaves behind can be listed.
+      - name: The one-file bundle, run away from the checkout
+        shell: powershell
+        run: |
+          $repo = (Get-Location).Path
+          $tmp = Join-Path $env:RUNNER_TEMP 'bundle'
+          New-Item -ItemType Directory -Path "$tmp\temp" -Force | Out-Null
+          python "$repo\osquery\tools\bundle.py" --platform windows --out "$tmp\ai-detection-spec.ps1"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Set-Location C:\
+          $env:TEMP = "$tmp\temp"
+          $env:TMP = "$tmp\temp"
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$tmp\ai-detection-spec.ps1" `
+            --write "$tmp\inv.json" --status "$tmp\status.txt"
+          if ($LASTEXITCODE -ne 0) { Write-Host "::error::the bundle exited $LASTEXITCODE"; exit 1 }
+          Get-Content "$tmp\status.txt"
+
+          # WHICH BRANCHES RAN is the question worth asking: it is the same as "did every
+          # file make it inside", and the one a path resolved back into the checkout would
+          # answer rightly here and wrongly on a fleet.
+          $rows = Get-Content "$tmp\inv.json" -Raw -Encoding UTF8 | ConvertFrom-Json
+          $got = @($rows | Where-Object { $_.kind -eq 'scan' } | ForEach-Object { $_.id } | Sort-Object)
+          $pack = Get-Content "$repo\osquery\dist\ai-detection-spec.conf" -Raw | ConvertFrom-Json
+          $want = @(@($pack.queries.PSObject.Properties |
+            Where-Object { $_.Value.platform -in 'windows', 'all' } |
+            ForEach-Object { $_.Name }) + 'containers' | Sort-Object)
+          if (-not $rows -or ($got -join ' ') -ne ($want -join ' ')) {
+            Write-Host "::error::the bundle ran a different branch set: got [$got], the pack holds [$want]"
+            exit 1
+          }
+          "$(@($rows).Count) rows from the bundle, $($got.Count) branches"
+
+          # IT INSTALLS NOTHING, AND THAT INCLUDES ITS OWN PAYLOAD. One copy left behind per
+          # run is how a scheduled deployment fills a volume.
+          $left = @(Get-ChildItem -LiteralPath "$tmp\temp" -Force | ForEach-Object { $_.Name })
+          if ($left.Count -ne 0) { Write-Host "::error::the bundle left its payload behind: $left"; exit 1 }
+          'no extracted payload left on disk'
+
+          # --driver IS WHAT A CONSUMER BUILDS ON: the extracted tree in
+          # AI_DETECTION_SPEC_ROOT, the arguments passed through, and the driver's own exit
+          # status. Written with LF, because the bundle refuses a member that would not
+          # come back out of it as it went in.
+          $driver = @(
+            'if (-not (Test-Path -LiteralPath (Join-Path (Join-Path $env:AI_DETECTION_SPEC_ROOT "bin") "discover.ps1"))) {',
+            '  Write-Host "::error::the driver got no runner beside it"; exit 1 }',
+            'if ($args[0] -ne "passed-through") { Write-Host "::error::arguments did not reach the driver: $args"; exit 1 }',
+            'exit 7') -join "`n"
+          [IO.File]::WriteAllText("$tmp\drv.ps1", $driver + "`n")
+          python "$repo\osquery\tools\bundle.py" --platform windows --driver "$tmp\drv.ps1" --out "$tmp\wrapped.ps1"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$tmp\wrapped.ps1" passed-through
+          if ($LASTEXITCODE -ne 7) { Write-Host "::error::the driver's exit status did not propagate: got $LASTEXITCODE"; exit 1 }
+          # And it must be readable back out, which is how a consumer's own guards inspect
+          # what they shipped.
+          $member = python "$repo\osquery\tools\bundle.py" --platform windows --member driver "$tmp\wrapped.ps1"
+          if (-not (@($member) -match 'exit 7')) { Write-Host '::error::--member could not read the driver back'; exit 1 }
+          'driver: tree, arguments and exit status all arrived, and it reads back'
+          exit 0
+
+      # AGAIN IN CONSTRAINEDLANGUAGE MODE, which is what an unsigned script gets where
+      # AppLocker or WDAC is enforced: cmdlets and core types, and no .NET past them.
+      # __PSLockdownPolicy is the test switch PowerShell reads from the machine's
+      # environment when it starts, so the test, every writer it starts and both bundles
+      # run in that mode. The mode is asserted first, because a step that quietly stayed in
+      # FullLanguage would pass and prove nothing.
+      - name: The writer and the bundle, in ConstrainedLanguage mode
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Continue'
+          $tmp = Join-Path $env:RUNNER_TEMP 'bundle'
+          [Environment]::SetEnvironmentVariable('__PSLockdownPolicy', '4', 'Machine')
+          $env:__PSLockdownPolicy = '4'
+          $failed = @()
+          try {
+            $mode = powershell.exe -NoProfile -Command '$ExecutionContext.SessionState.LanguageMode'
+            if ($mode -ne 'ConstrainedLanguage') {
+              $failed += "PowerShell started in $mode mode"
+            } else {
+              powershell.exe -NoProfile -ExecutionPolicy Bypass -File osquery\test\discover_windows.ps1
+              if ($LASTEXITCODE -ne 0) { $failed += "the writer's test exited $LASTEXITCODE" }
+              powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$tmp\ai-detection-spec.ps1" `
+                --write "$tmp\constrained.json" --status "$tmp\constrained.txt"
+              if ($LASTEXITCODE -ne 0 -or -not (Test-Path "$tmp\constrained.txt")) {
+                $failed += "the bundle exited $LASTEXITCODE"
+              } else {
+                Get-Content "$tmp\constrained.txt"
+              }
+              powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$tmp\wrapped.ps1" passed-through
+              if ($LASTEXITCODE -ne 7) { $failed += "the driver bundle exited $LASTEXITCODE, not its driver's 7" }
+            }
+          } finally {
+            [Environment]::SetEnvironmentVariable('__PSLockdownPolicy', $null, 'Machine')
+            Remove-Item Env:\__PSLockdownPolicy -ErrorAction SilentlyContinue
+          }
+          foreach ($f in $failed) { Write-Host "::error::in ConstrainedLanguage mode, $f" }
+          if ($failed.Count -ne 0) { exit 1 }
+          exit 0
 
       # BOTH STATES OF THE CONTAINERS MARKER, on a real engine: this image's Docker for
       # Windows containers reads unreadable:docker, and with its service binary and data

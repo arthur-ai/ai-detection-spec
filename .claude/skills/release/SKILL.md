@@ -392,12 +392,13 @@ $ gh run list --workflow=release.yml --limit=1
 $ gh release view v<X.Y.Z> --json assets --jq '[.assets[].name]'
 ```
 
-**20 assets**, and a missing one is a broken release: `discovery-darwin.sql`,
+**22 assets**, and a missing one is a broken release: `discovery-darwin.sql`,
 `discovery-linux.sql`, `discovery-windows.sql`, `discovery-deep.sql`, `ai-detection-spec.conf`,
 `signatures.sql`, `agents-darwin.sql`, `agents-linux.sql`, `agents-windows.sql`,
-`fleet-policies.yml`, `discover`, `container-scan`,
+`fleet-policies.yml`, `discover`, `discover.ps1`, `container-scan`,
 `classify`, `agents.yaml`, `routes.yaml`, `catalog.json`, `catalog.schema.json`,
-`evidence.schema.json`, `ai-detection-spec-darwin.sh`, `ai-detection-spec-linux.sh`.
+`evidence.schema.json`, `ai-detection-spec-darwin.sh`, `ai-detection-spec-linux.sh`,
+`ai-detection-spec-windows.ps1`.
 `tools/check_workflows.py` holds this list to `release.yml`'s upload step.
 
 The notes must say two things about layout, because the scripts resolve each other by relative

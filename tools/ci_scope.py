@@ -131,6 +131,9 @@ CATALOG = "catalog/agents.yaml"
 # runs every scenario, which costs minutes and nothing else.
 INERT = frozenset({
     "osquery/test/check_names_line.py", "osquery/test/docker_states.sh",
+    # The Windows writer and its test: ci.yml's Windows runtime job runs both, and the
+    # Windows scenarios run osqueryi on the composed artifact, never the writer.
+    "osquery/bin/discover.ps1", "osquery/test/discover_windows.ps1",
     "osquery/test/lib/fake_docker.py", "osquery/test/lint.sh", "test/lib/fake_amplitude.py",
     "test/lib/vm.sh", "test/lint.sh", "test/run-ec2.sh", "test/test_conformance.py",
     "test/test_export.py", "tools/export.py",
