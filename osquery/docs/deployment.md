@@ -187,10 +187,15 @@ them and writes `status.txt` with the same statements. Schedule it as SYSTEM:
 > powershell -NoProfile -ExecutionPolicy Bypass -File bin\discover.ps1 --write C:\ProgramData\ai-detection-spec\inventory.json --status C:\ProgramData\ai-detection-spec\status.txt
 ```
 
+- **Set the task's *Start in* to the directory the release was unpacked into, or give
+  `-File` the script's full path.** `bin\discover.ps1` is relative to it, and an empty
+  field does not mean that directory. The script finds `dist\` from its own location, so
+  nothing else depends on it.
 - **It writes files and prints only messages.** Windows PowerShell 5.1 re-encodes what a
   script prints, and its `>` writes UTF-16, which nothing here reads. So the payload goes
   from `osqueryi` to the file, and a reader uses `type`. `--cache PATH` adds the parse check
-  it adds elsewhere, for a reader that is itself PowerShell.
+  it adds elsewhere and prints the payload in ASCII, each character outside it as a `\u`
+  escape, for a reader that is a script.
 - **It needs Windows PowerShell 5.1 and `osqueryi`, and it runs unsigned.** Where AppLocker
   or WDAC is enforced an unsigned script runs in ConstrainedLanguage mode, and CI runs the
   writer and the bundle in that mode.

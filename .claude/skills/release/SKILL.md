@@ -384,7 +384,7 @@ the Publish button is. Both need write access.
 
 **Do not upload anything by hand.** `release.yml` fires on publish, checks the tag is an
 ancestor of `main`, re-runs the static gates at that commit, rebuilds `osquery/dist/` from
-`osquery/queries/`, builds the two bundles and `catalog.json`, which are never committed, and
+`osquery/queries/`, builds the three bundles and `catalog.json`, which are never committed, and
 attaches them all, so the artifacts derive from the tagged source by construction.
 
 ```console
@@ -404,11 +404,12 @@ $ gh release view v<X.Y.Z> --json assets --jq '[.assets[].name]'
 The notes must say two things about layout, because the scripts resolve each other by relative
 path: ship `bin/`, `dist/`, `catalog/` and `schema/` **side by side** — loose in one folder,
 `bin/discover` will not find its artifact — and `classify` needs both catalog files beside it,
-or `catalog.json` and `schema/catalog.schema.json`. The two
-`ai-detection-spec-*.sh` bundles are that layout packed into one file; they carry no catalog and no
-classifier. Windows has neither a bundle nor `discover`, which are bash: it takes
-`discovery-windows.sql` and `agents-windows.sql` through `osqueryi`, the pack or the Fleet
-policies. Deployment glue for a particular MDM is not released from here.
+or `catalog.json` and `schema/catalog.schema.json`. The three
+`ai-detection-spec-*` bundles are that layout packed into one file; they carry no catalog and no
+classifier. On Windows the writer is `discover.ps1`, because `discover` is bash, and the bundle
+is `ai-detection-spec-windows.ps1`. Both run the pack: `discovery-windows.sql` and
+`agents-windows.sql` still go through `osqueryi`, or the Fleet policies. Deployment glue for a
+particular MDM is not released from here.
 
 ## Don'ts
 

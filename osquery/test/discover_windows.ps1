@@ -223,6 +223,22 @@ try {
     Check 'and so do a quote, a backslash and a percent sign' `
         ($found -and $found.loc -ceq "C:\Users\$name\it's" -and $found.ver -ceq '%s') "got: $($found.loc) / $($found.ver)"
 
+    # --cache PRINTS, and 5.1 encodes what a script prints in the console's code page. The
+    # payload reaches this reader whole only because each character outside ASCII left as
+    # its \u escape.
+    $printed = Invoke-Runner --cache $inventory
+    $code = $LASTEXITCODE
+    $echoed = $null
+    if ($code -eq 0) {
+        $echoed = Expand-Rows (ConvertFrom-Json -InputObject ($printed -join "`n")) |
+            Where-Object { $_.kind -eq 'app' } | Select-Object -First 1
+    }
+    Check '--cache prints that payload in ASCII' `
+        ($code -eq 0 -and @($printed | Where-Object { $_ -cmatch '[^\x00-\x7F]' }).Count -eq 0) `
+        "exit ${code}: $(@($printed | Where-Object { $_ -cmatch '[^\x00-\x7F]' } | Select-Object -First 1))"
+    Check 'and a reader of what it printed gets the id and the path it wrote' `
+        ($echoed -and $echoed.id -ceq $name -and $echoed.loc -ceq "C:\Users\$name\it's") "got: $($echoed.id) / $($echoed.loc)"
+
     Write-Host '  a branch that never answers is stopped, and costs one branch (30s)'
     # THE KILL DECIDES, NOT THE CHILD. A recursive count with no end holds osqueryi until
     # the bound fires; its output is discarded and its branch reads `error`.
@@ -273,13 +289,13 @@ try {
 
     # A missing cache is a fact about the deployment. Saying nothing would let it read as
     # nothing installed here.
-    $absent = Join-Path $Work 'no such cache.json'
+    $absent = Join-Path $Work "no such cache $name.json"
     $printed = Invoke-Runner --cache $absent
     $code = $LASTEXITCODE
     $marker = $null
     $json = @($printed | Where-Object { $_ -match '^\[' })
     if ($json.Count -eq 1) { $marker = Expand-Rows (ConvertFrom-Json -InputObject $json[0]) | Select-Object -First 1 }
-    Check 'a missing cache exits 1 with a no-cache row that names the path' `
+    Check 'a missing cache exits 1 with a no-cache row that names the path, outside ASCII or not' `
         ($code -eq 1 -and $marker -and $marker.kind -eq 'scan' -and $marker.id -eq 'inventory' -and
          $marker.extra -eq 'no-cache' -and $marker.loc -ceq $absent -and $marker.ver -match '^\d{10}$') `
         "exit ${code}: $($printed -join ' | ')"

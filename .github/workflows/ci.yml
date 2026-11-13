@@ -1042,10 +1042,12 @@ jobs:
         run: |
           $ErrorActionPreference = 'Continue'
           $tmp = Join-Path $env:RUNNER_TEMP 'bundle'
-          [Environment]::SetEnvironmentVariable('__PSLockdownPolicy', '4', 'Machine')
-          $env:__PSLockdownPolicy = '4'
           $failed = @()
+          # Set inside the try, so nothing can leave the machine in this mode for the steps
+          # after this one.
           try {
+            [Environment]::SetEnvironmentVariable('__PSLockdownPolicy', '4', 'Machine')
+            $env:__PSLockdownPolicy = '4'
             $mode = powershell.exe -NoProfile -Command '$ExecutionContext.SessionState.LanguageMode'
             if ($mode -ne 'ConstrainedLanguage') {
               $failed += "PowerShell started in $mode mode"
