@@ -409,8 +409,8 @@ or `catalog.json` and `schema/catalog.schema.json`. The two
 classifier. `ai-detection-spec-windows.ps1` packs less: `discover.ps1`, which is the writer on
 Windows because `discover` is bash, and the pack it runs, and nothing else.
 `discovery-windows.sql` and `agents-windows.sql` are downloads of their own, run through
-`osqueryi`, and so are the Fleet policies. Deployment glue for a particular MDM is not released
-from here.
+`osqueryi`. `fleet-policies.yml` is another, loaded with `fleetctl apply -f`. Deployment glue
+for a particular MDM is not released from here.
 
 ## Don'ts
 
