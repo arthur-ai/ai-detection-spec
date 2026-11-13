@@ -4,8 +4,8 @@ This page covers what matters only at fleet scale. [The README](../README.md) co
 machine.
 
 Paths on this page are the release layout, `bin/`, `dist/` and `catalog/` side by side, as a
-deployment unpacks them. In a clone, `discover`, `container-scan` and `dist/` are under
-`osquery/`.
+deployment unpacks them. In a clone, `discover`, `discover.ps1`, `container-scan` and `dist/`
+are under `osquery/`.
 
 ## Schedule the scan, then read the file
 
@@ -75,6 +75,9 @@ $ ./artifacts/ai-detection-spec-darwin.sh --write /var/lib/ai-detection-spec/inv
   repo has run on, and the loose files need neither.
 - **One platform per bundle.** The wrong one exits 1, naming the artifact it carries, before
   unpacking anything.
+- **The Windows bundle is PowerShell**, built with `--platform windows`. It carries
+  `bin\discover.ps1` and the pack as plain text, takes that script's arguments, and adds no
+  prerequisite. It reads its payload out of its own file, so run it with `powershell -File`.
 - **It carries `dist/signatures.sql` and not the catalog or `bin/classify`**, so `--names`
   works and everything else is raw evidence, matched off the machine.
 
@@ -89,8 +92,9 @@ $ python3 osquery/tools/bundle.py --platform darwin --driver ./my-driver.sh
 
 The bundle runs `my-driver.sh` instead of `bin/discover`, with `AI_DETECTION_SPEC_ROOT`
 pointing at the extracted tree and the arguments passed through. The driver owns the exit
-status. To read a member back out of a built bundle, use the supported interface rather than
-the file's internals:
+status. On Windows the driver is PowerShell, in ASCII with LF line endings, and the bundle
+runs it as `driver.ps1`. To read a member back out of a built bundle, use the supported
+interface rather than the file's internals:
 
 ```console
 $ python3 osquery/tools/bundle.py --platform darwin --member driver ./my-bundle.sh
@@ -175,36 +179,42 @@ on Ubuntu runners. A container has no systemd or OS Login, so `test/run-gce.sh` 
 
 ## Windows
 
-`bin/discover` is bash, so Windows has no `--write`, no `status.txt`, no `--names` and no
-bundle. The queries and the rendered match are the same files as on the other platforms, and
-there are three ways to run them:
+`bin/discover` is bash, so the writer on Windows is `bin\discover.ps1`. It runs each Windows
+query of the pack in its own bounded `osqueryi`, as `--write` does elsewhere, and merges
+them and writes `status.txt` with the same statements. Schedule it as SYSTEM:
 
-- **osqueryd**, with `dist/ai-detection-spec.conf`. The pack schedules each query on its own,
-  so one unavailable table costs one query, which is what `--write` arranges elsewhere.
+```console
+> powershell -NoProfile -ExecutionPolicy Bypass -File bin\discover.ps1 --write C:\ProgramData\ai-detection-spec\inventory.json --status C:\ProgramData\ai-detection-spec\status.txt
+```
+
+- **Set the task's *Start in* to the directory the release was unpacked into, or give
+  `-File` the script's full path.** `bin\discover.ps1` is relative to it, and an empty
+  field does not mean that directory. The script finds `dist\` from its own location, so
+  nothing else depends on it.
+- **It writes files and prints only messages.** Windows PowerShell 5.1 re-encodes what a
+  script prints, and its `>` writes UTF-16, which nothing here reads. So the payload goes
+  from `osqueryi` to the file, and a reader uses `type`. `--cache PATH` adds the parse check
+  it adds elsewhere and prints the payload in ASCII, each character outside it as a `\u`
+  escape, for a reader that is a script.
+- **It needs Windows PowerShell 5.1 and `osqueryi`, and it runs unsigned.** Where AppLocker
+  or WDAC is enforced an unsigned script runs in ConstrainedLanguage mode, and CI runs the
+  writer and the bundle in that mode.
+- **No `--names` and no `--deep`.** Match on the machine with `dist\agents-windows.sql` or
+  Fleet's policies. osquery reads no container on Windows, so the inventory carries a
+  `containers` marker instead: it names an engine found on disk (`unreadable:docker`,
+  `:podman` or `:rancher-desktop`) and says `absent` only where none is. `bin/classify`
+  sorts it with the other markers
+  ([SPEC.md §6.7](../../SPEC.md#67-scans-absences-and-gaps)).
+
+The queries run two other ways, with the same files as on the other platforms:
+
+- **osqueryd**, with `dist/ai-detection-spec.conf`, which schedules each query on its own.
 - **Fleet**, with `dist/fleet-policies.yml`, which carries a policy per agent for Windows.
-- **A scheduled task** that runs the composed query and writes the file. The task's action
-  is `cmd.exe` with the arguments `/d /c "<the line below>"`, and its *Start in* directory
-  is the directory the release was unpacked into. The action has to be `cmd.exe`, because
-  the redirections and the `||` are `cmd` syntax and Task Scheduler starts a program
-  without a shell. *Start in* has to be set, because `dist\` and `inventory.json` are
-  relative to it, and an empty field does not mean that directory. The `/d` keeps an
-  AutoRun command in the registry from running first under the task's account. Do not use
-  PowerShell here, even by hand: Windows PowerShell 5.1's `>` writes UTF-16, which nothing
-  here reads.
 
-  ```console
-  > "C:\Program Files\osquery\osqueryi.exe" --json < dist\discovery-windows.sql > inventory.json || del inventory.json
-  ```
-
-  The `|| del` stands in for the check `bin/discover` makes elsewhere. Given one table it
-  lacks, `osqueryi.exe` prints `[\n\n]`, valid empty JSON, and exits 1. Without the `del`,
-  that file would pass for a clean machine.
-
-There is no status line, so the outcome travels in the payload. The inventory carries a
-`containers` marker, because osquery reads no container on Windows: it names an engine found
-on disk (`unreadable:docker`, `:podman` or `:rancher-desktop`) and says `absent` only where
-none is. `bin/classify` sorts it with the other markers
-([SPEC.md §6.7](../../SPEC.md#67-scans-absences-and-gaps)).
+The composed `dist\discovery-windows.sql` is for one machine, by hand
+([README](../README.md#quickstart)): given one table it lacks, `osqueryi.exe` prints
+`[\n\n]`, valid empty JSON, and exits 1, which is the failure the writer's separate
+branches exist to contain.
 
 Two limits are Windows's own, and [limits.md](../../docs/limits.md#what-osquery-cannot-see)
 has both. A user who is not signed in has no registry hive loaded, so their per-user installs
