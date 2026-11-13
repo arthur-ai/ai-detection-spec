@@ -1631,6 +1631,36 @@ check("...and Atlas, and an id one of them prefixes, claim nothing",
       {"com.openai.atlas", "com.openai.atlas.update-helper",
        "im.manus.desktop.computer-use"} <= set(_u), f"got {_c}")
 
+# OPERA NEON, read off probe run 42675163069. Opera's other browsers share its namespace and
+# its installer extends the name; on Windows each Opera browser installs beside the others
+# under ~\AppData\Local\Programs, and Neon's Uninstall key carries its version.
+_c, _u = _claims(_kind("app", "com.operasoftware.OperaNeon", "com.operasoftware.Opera",
+                       "com.operasoftware.OperaGX", "com.operasoftware.OperaAir",
+                       "com.operasoftware.Installer.OperaNeon"))
+check("Opera Neon is its bundle id",
+      _c == {"com.operasoftware.OperaNeon": "opera-neon"}, f"got {_c}")
+check("...and Opera, Opera GX, Opera Air and Neon's installer claim nothing",
+      {"com.operasoftware.Opera", "com.operasoftware.OperaGX", "com.operasoftware.OperaAir",
+       "com.operasoftware.Installer.OperaNeon"} <= set(_u), f"got {_c}")
+_c, _u = _claims(_kind("proc",
+                       r"C:\Users\dana\AppData\Local\Programs\Opera Neon\opera.exe",
+                       r"C:\Users\dana\AppData\Local\Programs\Opera Neon\139.0.6053.39\opera.exe",
+                       r"C:\Users\dana\AppData\Local\Programs\Opera\opera.exe",
+                       r"C:\Users\dana\AppData\Local\Programs\Opera GX\opera.exe",
+                       r"C:\Users\dana\AppData\Local\Programs\Opera Neon Beta\opera.exe"))
+check("a running Opera Neon is found from its launcher and its versioned build",
+      _c == {r"C:\Users\dana\AppData\Local\Programs\Opera Neon\opera.exe": "opera-neon",
+             r"C:\Users\dana\AppData\Local\Programs\Opera Neon\139.0.6053.39\opera.exe":
+             "opera-neon"}, f"got {_c}")
+check("...while Opera, Opera GX and a directory Neon's name prefixes claim nothing",
+      {r"C:\Users\dana\AppData\Local\Programs\Opera\opera.exe",
+       r"C:\Users\dana\AppData\Local\Programs\Opera GX\opera.exe",
+       r"C:\Users\dana\AppData\Local\Programs\Opera Neon Beta\opera.exe"} <= set(_u),
+      f"got {_c}")
+_c, _u = _claims(_kind("uninstall", "Opera Neon 139.0.6053.39",
+                       extra="Opera Neon Stable 139.0.6053.39"))
+check("Neon's versioned Uninstall key is not a value", not _c, f"got {_c}")
+
 # META'S TWO MUSE PRODUCTS, read off real installs on 2026-10-19 and told apart by route: a
 # bundle id for the desktop agent, a ~/.local/bin launcher for the coding agent. The launcher
 # fetches the binary beside it under a versioned name, and the launcher alone finds it.

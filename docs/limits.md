@@ -76,6 +76,8 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 105-windows-desktop-apps | Windsurf is not launched, so its liveness is unproven. |
 | 105-windows-desktop-apps | Sign-in gated, as on macOS: nothing exercises behaviour that appears once a user signs in. |
 | 106-windows-python-agents | Installed, never run, so aider's own state directory is not produced here. |
+| 110-windows-opera-neon | An installed Opera Neon that is not running is not found: its Uninstall key and `programs` name both carry the version. |
+| 110-windows-opera-neon | A match says Opera Neon is installed, not that Neon Do ran or a subscription is active. |
 | 12-chatgpt-pre-rename | The bundle id only. A direct download leaves no Homebrew record, so the `chatgpt` brew route is not exercised here; 10-desktop-apps covers it. |
 | 13-desktop-apps-more | Trae and Trae CN were read off their dmgs' Info.plist rather than a local install: the VM this was developed in had no IPv4 route to their CDNs. CI is the first real install of both. |
 | 13-desktop-apps-more | Sign-in gated, like 10: nothing exercises behaviour that appears once a user signs in. |
@@ -84,6 +86,8 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 14-meta-muse | The DMG is whatever the production Sparkle channel serves on the day. A build that changes its bundle id shows up as a missing com.meta.endo, which is the point; a build that only bumps the version is recorded as that version. |
 | 15-manus | Manus is never launched: its computer-use and capture helpers, which its cask's uninstall stanza names as launchd jobs, are never registered, so no launchd value is read. |
 | 15-manus | Manus's Windows build is not installed anywhere. |
+| 17-opera-neon | A match says Opera Neon is installed, not that Neon Do ran or a subscription is active: no route reads either. |
+| 17-opera-neon | The browser is stopped before the query, so no launchd or running-app value is read on macOS. |
 | 20-cli-agents, 71-linux-cli-agents | The shim's `ver` is checked for presence, not against the installed release: the shim's path names no release, and the release changes with every install, so expected.json cannot hold it. A join onto the wrong versions/ file would pass. |
 | 23-kiro-cli-app-era | The bundle id only. The app is installed and never launched, so the LaunchAgent the cask's old uninstall stanza named, com.amazon.codewhisperer.launcher, is unverified and not in the catalog. |
 | 40-browser | The planted extension is unreferenced by construction, so the sideloaded token is exercised only by 45-claude-extension. |
