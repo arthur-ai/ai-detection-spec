@@ -5,11 +5,11 @@
       "agent": "claude-desktop",
       "route": "msix_families",
       "value": "Claude_pzs8sxrjxfjjc",
-      "agent_version": "4.23118.0.0",
+      "agent_version": "5.11492.2.0",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "cursor",
@@ -18,27 +18,27 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "cursor",
       "route": "uninstall_keys",
       "value": "{DADADADA-ADAD-ADAD-ADAD-ADADADADADAD}}_is1",
-      "agent_version": "3.29.9",
+      "agent_version": "3.30.8",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "43463357710"
     },
     {
       "agent": "windsurf",
       "route": "uninstall_keys",
       "value": "{5A8B7D94-9B5F-4D1F-93FC-5609F7159349}_is1",
-      "agent_version": "3.12.32",
+      "agent_version": "3.12.59",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "42645047807"
+      "run": "43463357710"
     }
   ]
 }

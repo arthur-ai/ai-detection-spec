@@ -6,6 +6,15 @@
       "route": "binaries",
       "value": "~/.local/bin/muse",
       "platform": "darwin",
+      "os": "15.7.7",
+      "arch": "arm64",
+      "run": "42950761536"
+    },
+    {
+      "agent": "muse-code",
+      "route": "binaries",
+      "value": "~/.local/bin/muse",
+      "platform": "darwin",
       "os": "15.7.9",
       "arch": "arm64",
       "run": "40764483708"
@@ -17,7 +26,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "42938165864"
+      "run": "43463357710"
     },
     {
       "agent": "muse-code",
@@ -26,7 +35,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "41871675151"
+      "run": "42950761536"
     },
     {
       "agent": "muse-code",
@@ -35,7 +44,17 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "42938165864"
+      "run": "43463357710"
+    },
+    {
+      "agent": "muse-desktop",
+      "route": "bundle_ids",
+      "value": "com.meta.endo",
+      "agent_version": "11.1",
+      "platform": "darwin",
+      "os": "15.7.7",
+      "arch": "arm64",
+      "run": "42950761536"
     },
     {
       "agent": "muse-desktop",
@@ -51,21 +70,11 @@
       "agent": "muse-desktop",
       "route": "bundle_ids",
       "value": "com.meta.endo",
-      "agent_version": "11.1",
+      "agent_version": "12.0",
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "42938165864"
-    },
-    {
-      "agent": "muse-desktop",
-      "route": "bundle_ids",
-      "value": "com.meta.endo",
-      "agent_version": "11.0",
-      "platform": "darwin",
-      "os": "26.6.2",
-      "arch": "arm64",
-      "run": "41871675151"
+      "run": "43463357710"
     },
     {
       "agent": "muse-desktop",
@@ -73,9 +82,19 @@
       "value": "com.meta.endo",
       "agent_version": "11.1",
       "platform": "darwin",
+      "os": "26.6.2",
+      "arch": "arm64",
+      "run": "42950761536"
+    },
+    {
+      "agent": "muse-desktop",
+      "route": "bundle_ids",
+      "value": "com.meta.endo",
+      "agent_version": "12.0",
+      "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "42938165864"
+      "run": "43463357710"
     }
   ]
 }
