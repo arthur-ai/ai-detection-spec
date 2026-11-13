@@ -5,61 +5,61 @@
       "agent": "crush",
       "route": "deb_packages",
       "value": "crush",
-      "agent_version": "0.100.0",
+      "agent_version": "0.101.0",
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "42950761536"
+      "run": "43463357710"
     },
     {
       "agent": "crush",
       "route": "deb_packages",
       "value": "crush",
-      "agent_version": "0.100.0",
+      "agent_version": "0.101.0",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "42950761536"
+      "run": "43463357710"
     },
     {
       "agent": "crush",
       "route": "deb_packages",
       "value": "crush",
-      "agent_version": "0.100.0",
+      "agent_version": "0.101.0",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "42950761536"
+      "run": "43463357710"
     },
     {
       "agent": "crush",
       "route": "rpm_packages",
       "value": "crush",
-      "agent_version": "0.100.0",
+      "agent_version": "0.101.0",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "42950761536"
+      "run": "43463357710"
     },
     {
       "agent": "crush",
       "route": "rpm_packages",
       "value": "crush",
-      "agent_version": "0.100.0",
+      "agent_version": "0.101.0",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "42950761536"
+      "run": "43463357710"
     },
     {
       "agent": "crush",
       "route": "rpm_packages",
       "value": "crush",
-      "agent_version": "0.100.0",
+      "agent_version": "0.101.0",
       "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
-      "run": "42950761536"
+      "run": "43463357710"
     }
   ]
 }

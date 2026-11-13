@@ -25,11 +25,11 @@
       "agent": "amazon-q",
       "route": "jetbrains_plugins",
       "value": "plugin-amazonq",
-      "agent_version": "4.11.262",
+      "agent_version": "4.12.262",
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "42938165864"
+      "run": "43463357710"
     },
     {
       "agent": "amazon-q",
@@ -75,11 +75,11 @@
       "agent": "amazon-q",
       "route": "vscode_extensions",
       "value": "amazonwebservices.amazon-q-vscode",
-      "agent_version": "2.9.0",
+      "agent_version": "2.10.0",
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "42938165864"
+      "run": "43463357710"
     },
     {
       "agent": "amazon-q",
@@ -129,7 +129,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "42938165864"
+      "run": "43463357710"
     },
     {
       "agent": "blackbox",
@@ -175,11 +175,11 @@
       "agent": "codegpt",
       "route": "vscode_extensions",
       "value": "danielsanmedium.dscodegpt",
-      "agent_version": "3.24.82",
+      "agent_version": "3.24.84",
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "42938165864"
+      "run": "43463357710"
     },
     {
       "agent": "codegpt",
@@ -229,7 +229,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "42938165864"
+      "run": "43463357710"
     },
     {
       "agent": "cody",
@@ -279,7 +279,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "42938165864"
+      "run": "43463357710"
     },
     {
       "agent": "gemini-code-assist",
@@ -329,7 +329,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "42938165864"
+      "run": "43463357710"
     },
     {
       "agent": "roo-code",

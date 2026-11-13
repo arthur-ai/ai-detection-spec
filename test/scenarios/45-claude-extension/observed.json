@@ -9,7 +9,7 @@
       "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64",
-      "run": "42950761536"
+      "run": "43463357710"
     },
     {
       "agent": "chatgpt-extension",
@@ -29,7 +29,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "42950761536"
+      "run": "43463357710"
     },
     {
       "agent": "chatgpt-extension",
@@ -45,11 +45,11 @@
       "agent": "claude-in-chrome",
       "route": "extension_ids",
       "value": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
-      "agent_version": "1.0.106",
+      "agent_version": "1.0.107",
       "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64",
-      "run": "42950761536"
+      "run": "43463357710"
     },
     {
       "agent": "claude-in-chrome",
@@ -75,11 +75,11 @@
       "agent": "claude-in-chrome",
       "route": "extension_ids",
       "value": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
-      "agent_version": "1.0.106",
+      "agent_version": "1.0.107",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "42950761536"
+      "run": "43463357710"
     },
     {
       "agent": "claude-in-chrome",
@@ -99,7 +99,7 @@
       "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64",
-      "run": "42950761536"
+      "run": "43463357710"
     },
     {
       "agent": "harpa",
@@ -129,7 +129,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "42950761536"
+      "run": "43463357710"
     },
     {
       "agent": "harpa",
@@ -145,11 +145,11 @@
       "agent": "merlin",
       "route": "extension_ids",
       "value": "camppjleccjaphfdbohjdohecfnoikec",
-      "agent_version": "8.4.1",
+      "agent_version": "8.4.2",
       "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64",
-      "run": "42950761536"
+      "run": "43463357710"
     },
     {
       "agent": "merlin",
@@ -175,11 +175,11 @@
       "agent": "merlin",
       "route": "extension_ids",
       "value": "camppjleccjaphfdbohjdohecfnoikec",
-      "agent_version": "8.4.1",
+      "agent_version": "8.4.2",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "42950761536"
+      "run": "43463357710"
     },
     {
       "agent": "merlin",
@@ -199,7 +199,7 @@
       "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64",
-      "run": "42950761536"
+      "run": "43463357710"
     },
     {
       "agent": "monica",
@@ -229,7 +229,7 @@
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "42950761536"
+      "run": "43463357710"
     },
     {
       "agent": "monica",
@@ -245,11 +245,11 @@
       "agent": "sider",
       "route": "extension_ids",
       "value": "difoiogjjojoaoomphldepapgpbgkhkb",
-      "agent_version": "5.35.7",
+      "agent_version": "5.35.8",
       "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64",
-      "run": "42950761536"
+      "run": "43463357710"
     },
     {
       "agent": "sider",
@@ -275,11 +275,11 @@
       "agent": "sider",
       "route": "extension_ids",
       "value": "difoiogjjojoaoomphldepapgpbgkhkb",
-      "agent_version": "5.35.7",
+      "agent_version": "5.35.8",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "42950761536"
+      "run": "43463357710"
     },
     {
       "agent": "sider",
