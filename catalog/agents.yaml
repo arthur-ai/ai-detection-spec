@@ -81,6 +81,12 @@ removed:
 #             ai_tools' other types, which describe what an agent USES
 #   herdr     not from ai_tools: a terminal multiplexer that hosts agents. It runs no model and
 #             acts on nothing itself; each agent in its panes is found by that agent's own values
+#   eve       not from ai_tools: Vercel's framework for backend agents (eve.dev, vercel/eve),
+#             mcp-sdk's reason. It ships as a project dependency, `npm install eve`, and its
+#             terminal UI (`npx eve dev`) chats with the agent being built. No desktop app, global
+#             install or extension. npm `eve` dates from 2011 under other code and PyPI `Eve` is
+#             an unrelated REST framework, so neither name would identify it. Read 2026-11-04 off
+#             the README, Getting Started page and npm manifest in vercel/eve
 #   ChatGPT Atlas (com.openai.atlas)
 #             not from ai_tools: OpenAI's AI browser, shut down on 2026-08-09. OpenAI's notice
 #             (help.openai.com/articles/20001371) says it may no longer open, browse or run
