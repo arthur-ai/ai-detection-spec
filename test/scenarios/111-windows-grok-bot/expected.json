@@ -1,0 +1,32 @@
+{
+  "description": "Grok Bot through the installer its update feed names, launched.",
+  "platform": "windows",
+  "counts": {
+    "ext": ">=0",
+    "file": ">=1",
+    "msix": ">=1",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "proc": ">=1",
+    "scan": ">=1",
+    "uninstall": ">=2",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "grok-bot"
+    ],
+    "forbid": [
+      "cursor"
+    ]
+  },
+  "require_rows": [
+    {"kind": "proc", "id": "\\AppData\\Local\\Programs\\Grok Bot\\"},
+    {"kind": "uninstall", "id": "8db316bb-b3e2-5dd2-9554-ecccb62be362", "extra": "Grok Bot"}
+  ],
+  "why": "One install writes both values, so must_find alone would pass with either broken; require_rows names the running process and the Uninstall key each. Cursor is forbidden because Anysphere builds both, and its values are the other per-user install under ~\\AppData\\Local\\Programs and the other Anysphere Uninstall key.",
+  "known_gaps": [
+    "A match says the Grok Bot app is installed, not that a Bot ran or that a plan includes it.",
+    "The arm64 installer is not run: the runner is x64."
+  ]
+}

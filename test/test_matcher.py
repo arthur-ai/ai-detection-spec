@@ -1631,6 +1631,29 @@ check("...and Atlas, and an id one of them prefixes, claim nothing",
       {"com.openai.atlas", "com.openai.atlas.update-helper",
        "im.manus.desktop.computer-use"} <= set(_u), f"got {_c}")
 
+# GROK BOT, read off probe run 43928980619. Anysphere builds it and Cursor, and xAI's Grok name
+# is on it and Grok Build, so each must keep its own values. `sand` is the name the deb
+# Provides and nothing installed; the Windows DisplayName and the updater carry no value.
+_c, _u = _claims(_kind("app", "com.anysphere.sand", "com.anysphere.sand.helper",
+                       "com.todesktop.230313mzl4w4u92")
+                 + _kind("deb", "grok-bot", "sand", "grok", "cursor")
+                 + _kind("desktop", "grok-bot.desktop", "cursor.desktop", "grok.desktop")
+                 + _kind("uninstall", "8db316bb-b3e2-5dd2-9554-ecccb62be362", "Grok Bot 1.1.0")
+                 + _kind("proc", "C:\\Users\\dana\\AppData\\Local\\Programs\\Grok Bot\\Grok Bot.exe",
+                         "C:\\Users\\dana\\AppData\\Local\\sand-updater\\installer.exe",
+                         "C:\\Users\\dana\\AppData\\Local\\Programs\\cursor\\Cursor.exe")
+                 + _kind("file", "/home/dana/.grok/"))
+check("Grok Bot, Cursor and Grok Build are told apart on every route",
+      _c == {"com.anysphere.sand": "grok-bot", "com.todesktop.230313mzl4w4u92": "cursor",
+             "grok-bot": "grok-bot", "cursor": "cursor", "grok-bot.desktop": "grok-bot",
+             "cursor.desktop": "cursor", "8db316bb-b3e2-5dd2-9554-ecccb62be362": "grok-bot",
+             "C:\\Users\\dana\\AppData\\Local\\Programs\\Grok Bot\\Grok Bot.exe": "grok-bot",
+             "C:\\Users\\dana\\AppData\\Local\\Programs\\cursor\\Cursor.exe": "cursor",
+             "/home/dana/.grok/": "grok"}, f"got {_c}")
+check("...and its helper id, `sand`, a bare `grok`, its versioned name and its updater claim nothing",
+      {"com.anysphere.sand.helper", "sand", "grok", "grok.desktop", "Grok Bot 1.1.0",
+       "C:\\Users\\dana\\AppData\\Local\\sand-updater\\installer.exe"} <= set(_u), f"got {_c}")
+
 # META'S TWO MUSE PRODUCTS, read off real installs on 2026-10-19 and told apart by route: a
 # bundle id for the desktop agent, a ~/.local/bin launcher for the coding agent. The launcher
 # fetches the binary beside it under a versioned name, and the launcher alone finds it.
