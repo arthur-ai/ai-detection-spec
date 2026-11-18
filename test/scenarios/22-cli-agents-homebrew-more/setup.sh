@@ -8,6 +8,10 @@
 set -e
 source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest.sh"
 need_brew
+# FRESH METADATA, as 13 does for Dia: Devin's CDN serves only recent builds. On 2026-11-18 the
+# macos-26 image's cached cask still named devin-cli 3000.12.43 while homebrew-cask was at
+# 3000.14.30821, and the old URL answered 403 (run 44229247235).
+brew update >/dev/null 2>&1 || echo "WARN: brew update failed; cask metadata may be stale"
 brew install maki || echo "WARN: formula maki failed"
 brew install --cask devin-cli || echo "WARN: cask devin-cli failed"
 brew install --cask warp-agent-cli || echo "WARN: cask warp-agent-cli failed"
