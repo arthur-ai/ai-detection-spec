@@ -17,8 +17,13 @@
 set -e
 source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest-linux.sh"
 need_curl
-# 22 because @qwen-code/qwen-code declares node >=22. The other packages accept 20.
-need_node 22 || echo "WARN: Node 22 did not install"
+# 24 because @deepseek-ai/dsh's `latest` tag names a prerelease that declares node >=24.9.0,
+# from 0.2.2 on. npm passes over a `latest` the running Node cannot take and looks for
+# another version, and a bare name never matches a prerelease, which every version of this
+# package is. So under Node 22 the install failed with ETARGET, "No matching version found
+# for @deepseek-ai/dsh@*", from run 42645047807 on 2026-11-09. @qwen-code/qwen-code declares
+# node >=22, and the other packages accept 20.
+need_node 24 || echo "WARN: Node 24 did not install"
 # NO COMPILER, unlike 96's for Letta: DeepSeek Harness pins node-pty 1.2.0-beta.15, which ships
 # linux-x64 and linux-arm64 prebuilds, and installed without make or g++ in node:22-bookworm-slim
 # on both arches on 2026-11-03.
