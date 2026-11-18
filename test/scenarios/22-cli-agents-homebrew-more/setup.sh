@@ -14,3 +14,5 @@ brew update >/dev/null 2>&1 || echo "WARN: brew update failed; cask metadata may
 brew install maki || echo "WARN: formula maki failed"
 brew install --cask devin-cli || echo "WARN: cask devin-cli failed"
 brew list --versions maki devin-cli 2>/dev/null | sed 's/^/  /'
+# PROBE ONLY, not for main.
+echo "::notice title=probe 22 macOS $(sw_vers -productVersion)::$(brew list --versions maki 2>&1) $(brew list --cask --versions devin-cli 2>&1) brew=$(brew --version 2>&1 | head -1)"
