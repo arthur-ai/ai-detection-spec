@@ -49,7 +49,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "antigravity",
@@ -99,7 +99,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "antigravity",
@@ -149,7 +149,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "antigravity",
@@ -199,7 +199,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "chatgpt-desktop",
@@ -249,7 +249,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "chatgpt-desktop",
@@ -299,7 +299,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "claude-desktop",
@@ -349,7 +349,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "claude-desktop",
@@ -399,7 +399,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "cursor",
@@ -449,7 +449,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "cursor",
@@ -499,7 +499,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "kiro",
@@ -549,7 +549,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "kiro",
@@ -599,7 +599,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "orion",
@@ -649,7 +649,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "orion",
@@ -699,7 +699,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "perplexity-comet",
@@ -745,11 +745,11 @@
       "agent": "perplexity-comet",
       "route": "bundle_ids",
       "value": "ai.perplexity.comet",
-      "agent_version": "156.0.8078.130",
+      "agent_version": "157.0.8103.366",
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "perplexity-comet",
@@ -799,7 +799,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "windsurf",
@@ -849,7 +849,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "windsurf",
@@ -899,7 +899,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     }
   ]
 }
