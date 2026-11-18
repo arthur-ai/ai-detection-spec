@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Static checks on the osquery binding: the queries, the composed and rendered artifacts, the
-# two endpoint scripts and the bundle. No VM and no osquery needed. The repository's
+# endpoint scripts and the bundle. No VM and no osquery needed. The repository's
 # test/lint.sh runs this file, so every caller of that one still runs it.
 #
 # EVERY GLOB HERE MUST MATCH SOMETHING. These checks moved from test/lint.sh when osquery/ was
@@ -21,7 +21,7 @@ need() {  # need <description> <path>... : every path must exist
   done
 }
 need "query contract" "$OSQ"/queries/*.sql
-need "endpoint scripts" "$OSQ/bin/discover" "$OSQ/bin/container-scan"
+need "endpoint scripts" "$OSQ/bin/discover" "$OSQ/bin/container-scan" "$OSQ/bin/discover.ps1"
 need "artifacts" "$OSQ"/dist/*.sql "$OSQ"/dist/*.conf "$OSQ"/dist/*.yml
 
 for q in "$OSQ"/queries/*.sql; do
@@ -325,6 +325,132 @@ ROOTS
 for f in "$HERE"/docker_states.sh "$OSQ"/bin/container-scan "$OSQ"/bin/discover; do
   bash -n "$f" || { echo "FAIL: bash syntax in $f"; fail=1; }
 done
+
+# THE WINDOWS WRITER IS WINDOWS POWERSHELL 5.1, held as the root test/lint.sh holds every
+# setup.ps1: ASCII, because 5.1 reads a script with no byte order mark as ANSI, and parsed
+# by PowerShell's own parser. pwsh is REQUIRED where REQUIRE_PWSH=1, which is ci.yml's lint
+# job, and skipped LOUDLY otherwise. ps_parse also reads the generated bundle, below.
+ps_parse() {  # ps_parse <file>... : every file must parse
+  local parse rc=0
+  parse="$(mktemp "${TMPDIR:-/tmp}/lint-parse.XXXXXX")"
+  printf '%s\n' '$bad = 0' \
+    'foreach ($f in $args) {' \
+    '  $errs = $null' \
+    '  [void][System.Management.Automation.Language.Parser]::ParseFile($f, [ref]$null, [ref]$errs)' \
+    '  foreach ($e in $errs) { "FAIL: ${f}:$($e.Extent.StartLineNumber): $($e.Message)"; $bad = 1 }' \
+    '}' 'exit $bad' > "$parse.ps1"
+  pwsh -NoProfile -NonInteractive -File "$parse.ps1" "$@" || rc=1
+  rm -f "$parse" "$parse.ps1"
+  return "$rc"
+}
+need "the Windows writer and its test" "$OSQ/bin/discover.ps1" "$HERE/discover_windows.ps1"
+_ps1=("$OSQ/bin/discover.ps1" "$HERE/discover_windows.ps1")
+if LC_ALL=C grep -n $'[^\t -~]' "${_ps1[@]}"; then
+  echo "FAIL: the PowerShell lines above are not ASCII"; fail=1
+fi
+_have_pwsh=0
+if command -v pwsh >/dev/null; then
+  _have_pwsh=1
+  if ps_parse "${_ps1[@]}"; then echo "PowerShell: ok, ${#_ps1[@]} files parse"; else fail=1; fi
+elif [ "${REQUIRE_PWSH:-0}" = 1 ]; then
+  echo "FAIL: REQUIRE_PWSH=1 and pwsh is not installed, so bin/discover.ps1 is unparsed and its statements are unchecked"
+  fail=1
+else
+  echo "SKIP: pwsh not found; bin/discover.ps1 is unparsed and its statements are not held to bin/discover's (brew install --cask powershell)"
+fi
+
+# bin/discover.ps1 RUNS UNSIGNED WHERE APPLOCKER OR WDAC IS ENFORCED, and there PowerShell
+# puts it in ConstrainedLanguage mode: cmdlets, and the methods of a short list of core
+# types. ci.yml runs the writer in that mode on a Windows runner; this names the reach
+# before a runner is booted. A DENY-LIST, like the one for python below: what someone
+# reaches for to write a file or decode a string, never every type there is.
+python3 - "$OSQ/bin/discover.ps1" <<'CLM' || fail=1
+import re, sys
+code = "\n".join(l for l in open(sys.argv[1]).read().splitlines() if not l.lstrip().startswith("#"))
+hits = sorted({m.group(0) for m in re.finditer(
+    r"\b(?:Add-Type|New-Object|Invoke-Expression)\b"
+    r"|\[(?:System|IO|Text|Net|Reflection|Diagnostics)\.[\w.]+\]"
+    r"|\[(?:Convert|Console|Math|Environment|Activator|scriptblock|type|pscustomobject)\]",
+    code, re.I)})
+if hits:
+    print(f"FAIL: bin/discover.ps1 reaches for {', '.join(hits)}, which ConstrainedLanguage mode "
+          f"refuses or restricts, so the writer could stop wherever AppLocker or WDAC is enforced. "
+          f"osquery/CLAUDE.md has the closed list.")
+    sys.exit(1)
+print("bin/discover.ps1: ok, nothing ConstrainedLanguage mode refuses")
+CLM
+
+# ONE MERGE AND ONE STATUS, IN TWO SHELLS. PowerShell cannot source bash, so bin/discover.ps1
+# carries the statements bin/container-scan and bin/discover build: the merge, the payload
+# CTE and the status expression. A copy drifts in silence, and here the drift would be two
+# platforms meaning different things by one payload. Each statement is rendered by both
+# runners from the same documents and compared with its SQL comments and spacing removed.
+python3 - "$OSQ" "${REQUIRE_PWSH:-0}" <<'SAMESQL' || fail=1
+import pathlib, re, shutil, subprocess, sys, tempfile
+osq, require = pathlib.Path(sys.argv[1]), sys.argv[2] == "1"
+if not shutil.which("pwsh"):
+    # The parse check above has already failed or skipped by name; say only what this one is.
+    print(("FAIL" if require else "SKIP") + ": pwsh not found, so the statements in "
+          "bin/discover.ps1 are not compared with bin/discover's")
+    sys.exit(1 if require else 0)
+
+def norm(sql):
+    return " ".join("\n".join(l for l in sql.splitlines() if not l.lstrip().startswith("--")).split())
+
+with tempfile.TemporaryDirectory() as tmp:
+    tmp = pathlib.Path(tmp)
+    # A quote, a percent sign and a backslash: what each shell's escaping must leave alone.
+    (tmp / "good").write_text(
+        '[{"kind":"app","id":"it\'s","ver":"%s","loc":"C:\\\\Users\\\\x","extra":"","perms":""}]\n')
+    (tmp / "bad").write_text("[]\n")
+    (tmp / "bad.failed").write_text("")
+    bash = {
+        "merge": ['. "$1/bin/container-scan" && merge_sql "$2" good bad'],
+        # bin/discover runs when sourced, so its two functions are lifted out by name. The
+        # tail is summary()'s, for a payload with no --names.
+        "summary": ["""eval "$(sed -n '/^payload_cte() {/,/^}/p; /^status_sql() {/,/^}/p' "$1/bin/discover")"
+payload_cte "$2/good"; printf "SELECT '' AS names, "; status_sql; printf " AS status;"
+"""],
+    }
+    (tmp / "render.ps1").write_text(""". $args[0]
+$doc = Get-Content -LiteralPath (Join-Path $args[1] 'good') -Raw
+$rows = @(@{ Name = 'good'; Failed = 0; Doc = $doc }, @{ Name = 'bad'; Failed = 1; Doc = "[]`n" })
+Write-Text (Join-Path $args[1] 'merge.ps') (Get-MergeSql $rows)
+Write-Text (Join-Path $args[1] 'summary.ps') (Get-SummarySql $doc)
+""")
+    ps = subprocess.run(["pwsh", "-NoProfile", "-NonInteractive", "-File", str(tmp / "render.ps1"),
+                         str(osq / "bin" / "discover.ps1"), str(tmp)], capture_output=True, text=True)
+    bad = []
+    if ps.returncode != 0:
+        bad.append(f"bin/discover.ps1 could not be dot-sourced for its statements: "
+                   f"{(ps.stdout + ps.stderr).strip()[:300]}")
+    for name, script in bash.items():
+        if bad:
+            break
+        run = subprocess.run(["bash", "-c", script[0], "_", str(osq), str(tmp)],
+                             capture_output=True, text=True)
+        want = norm(run.stdout)
+        # An empty statement on both sides would compare equal, and prove nothing.
+        if run.returncode != 0 or "json_each" not in want:
+            bad.append(f"the {name} statement could not be rendered from the bash runner: "
+                       f"{run.stderr.strip()[:300]}")
+            continue
+        if not (tmp / f"{name}.ps").exists():
+            bad.append(f"bin/discover.ps1 rendered no {name} statement: "
+                       f"{(ps.stdout + ps.stderr).strip()[:300]}")
+            continue
+        got = norm((tmp / f"{name}.ps").read_text())
+        if got != want:
+            at = next((i for i, (a, b) in enumerate(zip(got, want)) if a != b), min(len(got), len(want)))
+            bad.append(f"the {name} statement differs between the runners at character {at}: "
+                       f"bin/discover.ps1 has ...{got[max(0, at - 40):at + 40]!r}, the bash "
+                       f"runner ...{want[max(0, at - 40):at + 40]!r}")
+for b in bad:
+    print(f"FAIL: {b}")
+if bad:
+    sys.exit(1)
+print("statements: ok, bin/discover.ps1 builds the merge and the status as the bash runner does")
+SAMESQL
 
 # bin/container-scan is SOURCED by test/docker_states.sh and by bin/discover, so that it
 # lends out the guard and the bound rather than having them copied. Two things can break
@@ -727,6 +853,33 @@ for _p in darwin linux; do
     || { echo "FAIL: a freshly built $_p bundle does not pass --check"; fail=1; _bundle_ok=0; }
 done
 
+# THE WINDOWS BUNDLE IS GENERATED POWERSHELL, read by nobody as the generated shell is: built
+# and checked the same way, and parsed wherever pwsh is.
+_bundle_win=1
+python3 "$OSQ/tools/bundle.py" --platform windows --out "$_bundle_tmp/windows.ps1" >/dev/null \
+  || { echo "FAIL: tools/bundle.py --platform windows did not build"; fail=1; _bundle_win=0; }
+if [ "$_bundle_win" = 1 ]; then
+  python3 "$OSQ/tools/bundle.py" --platform windows --check "$_bundle_tmp/windows.ps1" >/dev/null \
+    || { echo "FAIL: a freshly built windows bundle does not pass --check"; fail=1; }
+  if LC_ALL=C grep -n $'[^\t -~]' "$_bundle_tmp/windows.ps1"; then
+    echo "FAIL: the windows bundle lines above are not ASCII"; fail=1
+  fi
+  if [ "$_have_pwsh" = 1 ]; then
+    ps_parse "$_bundle_tmp/windows.ps1" || { echo "FAIL: PowerShell syntax in the windows bundle"; fail=1; }
+    # IT REFUSES EVERY OTHER PLATFORM BY NAME, as the shell bundles do below. Lint runs on
+    # macOS or Linux, where pwsh is PowerShell 7: exactly where the guard has to fire.
+    if _out="$(pwsh -NoProfile -NonInteractive -File "$_bundle_tmp/windows.ps1" 2>&1)"; then
+      echo "FAIL: the windows bundle ran on $(uname -s) instead of refusing"; fail=1
+    else
+      case "$_out" in
+        *"runs on Windows only"*"--platform darwin"*) : ;;
+        *) echo "FAIL: the windows bundle refused without naming the cause and the bundle to" \
+                "build: $_out"; fail=1 ;;
+      esac
+    fi
+  fi
+fi
+
 # THE BUNDLE REFUSES THE OTHER PLATFORM BY NAME. The composed artifacts name disjoint sets
 # of tables, so the wrong bundle would die on a missing path and report a file when the
 # truth is about the build. Run here because the guard is the first thing in the script and
@@ -801,6 +954,36 @@ for plat in ("darwin", "linux"):
     if "trap " not in code or "rm -rf" not in code:
         bad.append(f"{plat}: the wrapper does not remove its working directory")
 
+# THE WINDOWS BUNDLE, read back through the reader a consumer uses. Its payload is text, so
+# what is in it can be read off the file, and what must hold is that the reader and the
+# wrapper agree on it: every declared file, byte for byte, and nothing else.
+_wpath = tmp / "windows.ps1"
+if not _wpath.exists():
+    bad.append("windows: not built")
+else:
+    _wtext = _wpath.read_text()
+    _whead, _wbody = B._ps_split(_wtext)
+    _wfiles = B._ps_members(_wtext)
+    _wwant = sorted(B.payload_files("windows"))
+    if sorted(_wfiles) != _wwant:
+        bad.append(f"windows: payload is {sorted(_wfiles)}, declared {_wwant}")
+    for _n in _wwant:
+        if _wfiles.get(_n) != (root / _n).read_bytes():
+            bad.append(f"windows: {_n} does not read back byte for byte")
+    for leak in B.FORBIDDEN:
+        if any(leak in n for n in _wfiles) or leak in _wtext:
+            bad.append(f"windows: the bundle carries or names {leak!r}")
+    # THE WRAPPER RUNS WHERE bin/discover.ps1 DOES, so it lives under the same rule: nothing
+    # ConstrainedLanguage mode refuses, or it fails before the writer it carries starts.
+    _wcode = "\n".join(l for l in _whead.splitlines() if not l.strip().startswith("#"))
+    hit = re.search(r"\b(Add-Type|New-Object|Invoke-Expression)\b|\[(System|IO|Text)\.[\w.]+\]"
+                    r"|\[(Convert|Console|Math|Environment)\]", _wcode, re.I)
+    if hit:
+        bad.append(f"windows: the wrapper reaches for {hit.group(0)}, which ConstrainedLanguage "
+                   f"mode refuses")
+    if "finally" not in _wcode or "Remove-Item" not in _wcode:
+        bad.append("windows: the wrapper does not remove its working directory")
+
 # --driver IS THE ONE THING A CONSUMER BUILDS ON, AND IT SHIPPED WITH NO TEST AT ALL.
 # release.yml names it in a comment; nothing exercised it. The first repo to adopt it made
 # its entire deployable out of it -- a wrapper around its own script -- so a --driver that
@@ -874,23 +1057,87 @@ for _what, _text in (
         bad.append(f"read_member() raised {type(exc).__name__} on {_what}; every decode "
                    f"failure must arrive as CorruptBundle")
 
+# THE SAME HOOK AND THE SAME ANSWERS ON WINDOWS, where the payload is lines of text and not
+# a compressed tar: the driver embedded and read back under the one name every platform
+# uses, a --check that reads it, and damage answered rather than raised.
+_wdrv = tmp / "driver.ps1"
+_wdrv.write_text("Write-Host marker-in-driver\nexit 7\n")
+_wps = B.build(root, "windows", driver=str(_wdrv), label="lint")
+if B.read_member(_wps, "driver") != _wdrv.read_bytes():
+    bad.append("windows: --driver did not put the driver in the payload byte for byte")
+if "AI_DETECTION_SPEC_ROOT" not in B._ps_split(_wps)[0]:
+    bad.append("windows: a --driver bundle does not set AI_DETECTION_SPEC_ROOT")
+if not B.matches(_wps, root, "windows", driver=str(_wdrv), label="lint"):
+    bad.append("windows: --check rejects a bundle it has just built with a driver")
+if B.matches(_wps, root, "windows", label="lint"):
+    bad.append("windows: --check accepts a driver bundle as a plain one")
+try:
+    B.read_member(B.build(root, "windows", label="lint"), "driver")
+    bad.append("windows: a bundle built without --driver carries a driver anyway")
+except KeyError:
+    pass
+# ONE PLATFORM'S BUNDLE IS NOT ANOTHER'S, in either direction, and saying so may not raise.
+for _what, _text, _plat in (("a shell bundle as the windows one", _wrapped, "windows"),
+                            ("the windows bundle as a shell one", _wps, "darwin")):
+    try:
+        if B.matches(_text, root, _plat, driver=str(_wdrv if _plat == "windows" else _drv), label="lint"):
+            bad.append(f"matches() accepted {_what}")
+    except Exception as exc:
+        bad.append(f"matches() raised {type(exc).__name__} on {_what}")
+_wh, _wb = B._ps_split(_wps)
+for _what, _text, _corrupt in (
+        ("a payload line that is not the payload's", _wh + _wb.replace("#|", "|", 1), True),
+        ("a file's line before any file's name", _wh + "#|orphan\n" + _wb, True),
+        ("a payload that names no file", _wh, True),
+        # NOT CORRUPT, AND NOT THIS TREE: one changed line reads back fine and must not match.
+        ("one changed line", _wh + _wb.replace("#|exit 7", "#|exit 0"), False)):
+    try:
+        if B.matches(_text, root, "windows", driver=str(_wdrv), label="lint"):
+            bad.append(f"windows: matches() accepted {_what}")
+    except Exception as exc:
+        bad.append(f"windows: matches() raised {type(exc).__name__} on {_what} instead of "
+                   f"answering False")
+    try:
+        B.read_member(_text, "driver")
+        if _corrupt:
+            bad.append(f"windows: read_member() returned a member out of {_what}")
+    except B.CorruptBundle:
+        if not _corrupt:
+            bad.append(f"windows: read_member() called {_what} corrupt")
+    except Exception as exc:
+        bad.append(f"windows: read_member() raised {type(exc).__name__} on {_what}; every "
+                   f"unreadable payload must arrive as CorruptBundle")
+# A MEMBER THAT WOULD NOT SURVIVE THE WRAPPER IS REFUSED AT BUILD TIME. The wrapper reads
+# lines and joins them, so a carriage return or a missing final newline would come back
+# changed, and 5.1 reads a byte outside ASCII as another character.
+for _what, _bytes in (("a byte outside ASCII", "caf\u00e9\n".encode()),
+                      ("a carriage return", b"a\r\nb\r\n"), ("no final newline", b"exit 0")):
+    _odd = tmp / "odd.ps1"
+    _odd.write_bytes(_bytes)
+    try:
+        B.build(root, "windows", driver=str(_odd))
+        bad.append(f"windows: a driver with {_what} was packed, and would not unpack as it was")
+    except SystemExit:
+        pass
+
 # A LABEL IS THE ONLY CALLER TEXT THAT REACHES THE GENERATED SHELL, and it lands in a
 # comment line. A newline in it ends the comment and the rest becomes shell, in a file
 # that still looks exactly like a bundle. The refusal lives in wrapper(), so --check is
 # covered too; asserted here because a guard nothing exercises is a guard that can be
 # removed without anything going red.
-try:
-    B.wrapper("darwin", list(B.payload_files("darwin")), None, "v1\necho pwned")
-    bad.append("a --label containing a newline was accepted")
-except SystemExit:
-    pass
+for _plat in ("darwin", "windows"):
+    try:
+        B.wrapper(_plat, list(B.payload_files(_plat)), None, "v1\necho pwned")
+        bad.append(f"{_plat}: a --label containing a newline was accepted")
+    except SystemExit:
+        pass
 
 for b in bad:
     print(f"FAIL: bundle: {b}")
 if bad:
     sys.exit(1)
-print("bundle: ok, both platforms build, carry only endpoint material, embed and compare a "
-      "--driver, refuse a label that would escape the banner, and clean up after themselves")
+print("bundle: ok, every platform builds, carries only endpoint material, embeds and compares "
+      "a --driver, refuses a label that would escape the banner, and cleans up after itself")
 BUNDLE
 
 [ "$fail" -eq 0 ] && echo "osquery lint: PASS" || echo "osquery lint: FAIL"

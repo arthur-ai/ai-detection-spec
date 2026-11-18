@@ -455,8 +455,10 @@ if _rel.exists():
     # Basenames, because a claimant names what lands on the release page and the workflow names
     # where each file came from -- artifacts/ai-detection-spec-darwin.sh uploads as its own name.
     _uploaded = {t.rsplit("/", 1)[-1]
-                 for t in re.findall(r"[\w./-]+\.(?:sql|conf|yaml|yml|sh|json)\b", _run)}
-    _uploaded |= {t.rsplit("/", 1)[-1] for t in re.findall(r"\bbin/[\w-]+", _run)}
+                 for t in re.findall(r"[\w./-]+\.(?:sql|conf|yaml|yml|sh|json|ps1)\b", _run)}
+    # A script with no extension. The lookahead keeps bin/discover.ps1, already taken whole
+    # above, from being counted a second time as bin/discover.
+    _uploaded |= {t.rsplit("/", 1)[-1] for t in re.findall(r"\bbin/[\w-]+(?![\w.-])", _run)}
     if not _run:
         print("FAIL: release.yml has no step running `gh release upload`. The release skill and "
               "README both tell a reader to check the attached assets against a list; nothing "
