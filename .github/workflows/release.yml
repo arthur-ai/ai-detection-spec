@@ -83,6 +83,7 @@ jobs:
         run: |
           python3 osquery/tools/bundle.py --platform darwin --label "$TAG"
           python3 osquery/tools/bundle.py --platform linux  --label "$TAG"
+          python3 osquery/tools/bundle.py --platform windows --label "$TAG"
 
       # THE CATALOG AS THE SPEC DEFINES IT, for a tool that is not this repository's
       # classifier: every identifier with its status, its package URL and the runs that
@@ -112,14 +113,15 @@ jobs:
       # tag and downloads these files; they are the deliverable, not a convenience.
       #
       # The osquery/dist/ files are rebuilt from osquery/queries/ at the tagged commit above,
-      # so they are derived from the tagged source by construction. The three scripts are NOT
+      # so they are derived from the tagged source by construction. The four scripts are NOT
       # generated -- they come from the checkout, and the tag-is-on-main check is the whole
       # of their provenance.
       #
       # container-scan resolves dist/discovery-deep.sql relative to its own parent directory,
       # discover sources container-scan, and classify reads catalog/ the same way. Downloaded
       # loose into one folder they will not find each other: the layout a download needs is
-      # bin/ (all three scripts), dist/ and catalog/ side by side. In the repo, discover,
+      # bin/ (every script), dist/ and catalog/ side by side: discover.ps1 reads the pack
+      # from dist/ beside its own bin/ too. In the repo, discover, discover.ps1,
       # container-scan and dist/ sit under osquery/ instead. Say so in the release notes.
       #
       # THE BUNDLES ARE THAT LAYOUT, INSIDE ONE FILE, for a consumer whose platform can
@@ -154,7 +156,8 @@ jobs:
             osquery/dist/discovery-deep.sql osquery/dist/ai-detection-spec.conf \
             osquery/dist/signatures.sql osquery/dist/agents-darwin.sql osquery/dist/agents-linux.sql \
             osquery/dist/agents-windows.sql osquery/dist/fleet-policies.yml \
-            osquery/bin/discover osquery/bin/container-scan bin/classify \
+            osquery/bin/discover osquery/bin/discover.ps1 osquery/bin/container-scan bin/classify \
             catalog/agents.yaml catalog/routes.yaml artifacts/catalog.json \
             schema/catalog.schema.json schema/evidence.schema.json \
-            artifacts/ai-detection-spec-darwin.sh artifacts/ai-detection-spec-linux.sh --clobber
+            artifacts/ai-detection-spec-darwin.sh artifacts/ai-detection-spec-linux.sh \
+            artifacts/ai-detection-spec-windows.ps1 --clobber

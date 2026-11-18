@@ -577,6 +577,36 @@ except SystemExit as _exc:
           "99-no-such-scenario" in str(_exc), str(_exc))
 
 print()
+print("the split names the scenarios our own Macs take, per macOS job")
+_mac = _JOBS["scenario"]
+_so, _sr = ci_scope.self_hosted_outputs([_mac[3], _mac[0], _mac[0]], _reader())
+_sd = dict(line.split("=", 1) for line in _so)
+check("the named scenarios are the job's share, once each, in the matrix's order",
+      json.loads(_sd[ci_scope.output_key("self_hosted", "scenario")]) == [_mac[0], _mac[3]],
+      str(_so))
+check("only a matrix job with a macOS label gets a share",
+      set(_sd) == {ci_scope.output_key("self_hosted", j) for j in _JOBS if j not in _HARNESS
+                   and any("macos" in str(l)
+                           for l in _WF["jobs"][j]["strategy"]["matrix"].get("os", []))},
+      str(sorted(_sd)))
+check("the report says how many of the job's list the lab takes",
+      any(f"2 of {len(_mac)}" in l for l in _sr), str(_sr))
+for _bad, _what in (("73-linux-deb", "a Linux scenario"),
+                    ("90-demo-fleet", "a macOS scenario no job lists"),
+                    ("99-no-such-scenario", "a name nothing has")):
+    try:
+        ci_scope.self_hosted_outputs([_mac[0], _bad], _reader())
+        check(f"{_what} is an error, not a route to nowhere", False)
+    except SystemExit as _exc:
+        check(f"{_what} is an error, not a route to nowhere", _bad in str(_exc), str(_exc))
+try:
+    ci_scope.self_hosted_outputs([], _reader())
+    check("no name at all is an error, not every scenario left on GitHub's runners", False)
+except SystemExit as _exc:
+    check("no name at all is an error, not every scenario left on GitHub's runners",
+          "names no scenario" in str(_exc), str(_exc))
+
+print()
 print("which scenarios -- the cheap direction, where it is unambiguous")
 check("a scenario's own file runs that scenario alone",
       scenarios(["test/scenarios/00-baseline/setup.sh"]) == {"00-baseline"})
