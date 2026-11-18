@@ -65,8 +65,9 @@ removed:
 #
 #   gpt4all, msty, anythingllm, lm-studio-cli
 #             model runners and local chat, on the side of the line jan is on
-#   crewai, langgraph, langchain, autogen, openai-agents, semantic-kernel
-#             libraries an agent is built with -- mcp-sdk's reason
+#   crewai, langgraph, langchain, autogen, openai-agents, semantic-kernel, eve
+#             libraries an agent is built with -- mcp-sdk's reason. eve is Vercel's (eve.dev),
+#             not from ai_tools, and has not been read off an install yet
 #   tabnine, supermaven, codeium, intellicode
 #             completion engines; they suggest and the user accepts
 #   aws-toolkit, mintlify, sourcery, phind, genieai

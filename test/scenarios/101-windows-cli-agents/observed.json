@@ -5,11 +5,11 @@
       "agent": "claude-code",
       "route": "npm",
       "value": "@anthropic-ai/claude-code",
-      "agent_version": "2.1.323",
+      "agent_version": "2.1.325",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "codex-cli",
@@ -19,17 +19,17 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "copilot-cli",
       "route": "npm",
       "value": "@github/copilot",
-      "agent_version": "1.0.111",
+      "agent_version": "1.0.112",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "gemini-cli",
@@ -39,7 +39,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "43463357710"
+      "run": "43892773260"
     }
   ]
 }

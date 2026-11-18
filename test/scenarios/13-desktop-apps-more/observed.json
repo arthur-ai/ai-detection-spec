@@ -49,7 +49,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "dia",
@@ -99,7 +99,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "goose",
@@ -145,11 +145,11 @@
       "agent": "goose",
       "route": "bundle_ids",
       "value": "com.electron.goose",
-      "agent_version": "1.59.0",
+      "agent_version": "1.59.2",
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "goose",
@@ -195,11 +195,11 @@
       "agent": "goose",
       "route": "homebrew",
       "value": "block-goose",
-      "agent_version": "1.59.0",
+      "agent_version": "1.59.2",
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "trae",
@@ -245,11 +245,11 @@
       "agent": "trae",
       "route": "bundle_ids",
       "value": "cn.trae.app",
-      "agent_version": "3.4.18",
+      "agent_version": "3.4.20",
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "trae",
@@ -299,7 +299,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "trae",
@@ -349,7 +349,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     },
     {
       "agent": "trae",
@@ -395,11 +395,11 @@
       "agent": "trae",
       "route": "homebrew",
       "value": "trae-cn",
-      "agent_version": "2.3.102387",
+      "agent_version": "2.3.103559",
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "43892773260"
     }
   ]
 }
