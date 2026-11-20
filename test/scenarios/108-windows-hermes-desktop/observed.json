@@ -1,0 +1,15 @@
+{
+  "scenario": "108-windows-hermes-desktop",
+  "identifiers": [
+    {
+      "agent": "hermes",
+      "route": "msix_families",
+      "value": "NousResearch.HermesBundled_e60prshbsznhj",
+      "agent_version": "2026.6864.2132.0",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "44693430337"
+    }
+  ]
+}
