@@ -10,6 +10,16 @@
 set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$HERE/lib/assert.sh"
+# PROBE ONLY: the rows the new values are read off.
+echo "::group::PROBE rows"
+python3 -c '
+import json, re, sys
+for r in json.load(open(sys.argv[1])):
+    s = json.dumps(r)
+    if re.search(r"(?i)warp|kilo|webui|thebrowser", s):
+        print("PROBE", s)
+' "$1" || true
+echo "::endgroup::"
 rc=0
 assert_counts "$1" "$2" || rc=1
 assert_classified "$1" "$2" || rc=1

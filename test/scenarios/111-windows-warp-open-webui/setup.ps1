@@ -42,4 +42,23 @@ Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall' |
   ForEach-Object { Write-Host "  uninstall: $($_.PSChildName) = $($_.GetValue('DisplayName'))" }
 $tools = Join-Path $env:APPDATA 'uv\tools\open-webui'
 if (Test-Path $tools) { Write-Host "  landed: $tools" } else { Write-Host "WARN: no $tools" }
+
+# PROBE ONLY: the case of %LOCALAPPDATA%\warp once the app has run, and where the CLI's
+# installer puts its launcher on top of it.
+function Show-Warp([string]$When) {
+  Get-ChildItem $env:LOCALAPPDATA | Where-Object { $_.Name -ieq 'warp' } |
+    ForEach-Object { Write-Host "PROBE $When dir: $($_.FullName)"
+      Get-ChildItem $_.FullName | ForEach-Object { Write-Host "PROBE $When   $($_.FullName)" } }
+  Get-ChildItem (Join-Path $env:LOCALAPPDATA 'Programs') -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -match 'warp|webui' } | ForEach-Object { Write-Host "PROBE $When prog: $($_.FullName)" }
+}
+Show-Warp 'app-installed'
+$ps1 = Join-Path $env:RUNNER_TEMP 'warp-agent-cli.ps1'
+if (Get-Download 'https://app.warp.dev/download/agent-cli.ps1' $ps1) {
+  [void](Invoke-Bounded 'the Warp Agent CLI installer' 10 'powershell.exe' @('-NoProfile',
+         '-ExecutionPolicy', 'Bypass', '-File', $ps1))
+}
+Show-Warp 'cli-after-app'
+Get-ChildItem 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall' |
+  ForEach-Object { Write-Host "PROBE uninstall: $($_.PSChildName) = $($_.GetValue('DisplayName'))" }
 exit 0
