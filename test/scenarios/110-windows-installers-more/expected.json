@@ -1,0 +1,36 @@
+{
+  "description": "The Warp Agent CLI and Kilo CLI through their vendors' installers on Windows, installed and not run.",
+  "platform": "windows",
+  "counts": {
+    "ext": ">=0",
+    "file": ">=2",
+    "msix": ">=1",
+    "nmh": ">=1",
+    "npm": ">=0",
+    "proc": ">=0",
+    "scan": ">=1",
+    "uninstall": ">=2",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "warp",
+      "kilo-code"
+    ],
+    "forbid": [
+      "hermes",
+      "opencode",
+      "cline",
+      "roo-code"
+    ]
+  },
+  "require_rows": [
+    {"kind": "file", "id": "\\AppData\\Local\\Warp\\bin\\warp.cmd"},
+    {"kind": "uninstall", "id": "warp-agent-cli-stable_is1"},
+    {"kind": "file", "id": "\\.kilo\\"}
+  ],
+  "why": "Nothing else here names either agent, so Kilo's witness is ~\\.kilo\\ alone, and Warp's are the two things its CLI installer writes, each held by require_rows: the launcher under %LOCALAPPDATA%\\Warp\\bin\\ and its Uninstall key. hermes is forbidden because its launcher is read by the same per-user branch; opencode because Kilo's CLI forks it and its installer writes the same shape of directory; cline and roo-code because Kilo Code forks them.",
+  "known_gaps": [
+    "Installed, never run, and never signed in: what either CLI writes on first use is not read here."
+  ]
+}
