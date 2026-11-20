@@ -97,9 +97,16 @@ retry "pull lettaai/letta:latest" try "pull lettaai/letta:latest" \
 # instead, and that bare name is not catalogued: it is shaped like anyone's local build.
 retry "pull nousresearch/hermes-agent:latest" try "pull nousresearch/hermes-agent:latest" \
   docker pull nousresearch/hermes-agent:latest || true
+# OPEN WEBUI'S IMAGE, ghcr.io/open-webui/open-webui, the install its README leads with. The
+# `main-slim` tag because the value is the repository, which every tag shares: read off the
+# registry on 2026-11-20, `main` was 1.65GB compressed on amd64 and `main-slim` 0.2GB, and
+# both carried the same OCI `source` label.
+retry "pull ghcr.io/open-webui/open-webui:main-slim" \
+  try "pull ghcr.io/open-webui/open-webui:main-slim" \
+  docker pull ghcr.io/open-webui/open-webui:main-slim || true
 echo "--- pulled agent images:"
 docker images --format '  {{.Repository}}:{{.Tag}} {{.ID}} {{.Size}}' \
-  | grep -Ei 'openhands|goose|swe-agent|aider|letta|hermes' || true
+  | grep -Ei 'openhands|goose|swe-agent|aider|letta|hermes|open-webui' || true
 
 # --- A RUNNING CONTAINER, which is a different row and a different claim ---------------
 #

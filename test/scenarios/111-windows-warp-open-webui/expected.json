@@ -1,0 +1,41 @@
+{
+  "description": "The Warp app with its Agent CLI installed after it, Open WebUI Desktop, and Open WebUI from PyPI on Windows.",
+  "platform": "windows",
+  "counts": {
+    "ext": ">=0",
+    "file": ">=2",
+    "msix": ">=1",
+    "nmh": ">=1",
+    "npm": ">=0",
+    "proc": ">=0",
+    "scan": ">=1",
+    "uninstall": ">=4",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "warp",
+      "open-webui"
+    ],
+    "forbid": [
+      "cursor",
+      "windsurf",
+      "aider",
+      "hermes"
+    ]
+  },
+  "require_rows": [
+    {"kind": "uninstall", "id": "warp-terminal-stable_is1", "extra": "Warp"},
+    {"kind": "file", "id": "\\AppData\\Local\\warp\\bin\\warp.cmd"},
+    {"kind": "uninstall", "id": "9ff447fd-c978-5e9a-bd5b-350e7a68afc0", "extra": "Open WebUI"},
+    {"kind": "file", "id": "\\AppData\\Roaming\\uv\\tools\\open-webui\\"}
+  ],
+  "forbid_rows": [
+    {"kind": "proc", "id": "C:\\Users\\runneradmin\\AppData\\Local\\Programs\\Warp\\warp.exe"}
+  ],
+  "why": "require_rows holds each value this scenario exists to produce: the app's Uninstall key, the CLI's launcher in the lowercase directory the app's install left (setup.ps1 says why that is its own value), Open WebUI Desktop's Uninstall key and the uv tool directory. forbid_rows holds the app stopped, which its installer had started. cursor and windsurf are forbidden because their Uninstall keys are read by the same branch, aider because its uv tool directory is, and hermes because its launcher is read by the per-user branch warp.cmd is.",
+  "known_gaps": [
+    "Open WebUI's Docker image is read on Linux only, in 79-linux-image; the Windows runner has no Linux container daemon.",
+    "Warp's installer starts the app and setup stops it, and Open WebUI Desktop is never launched, so neither is proved running and what a full first run writes is not read."
+  ]
+}

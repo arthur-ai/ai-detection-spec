@@ -81,6 +81,11 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 108-windows-hermes-desktop | The Microsoft Store package is a different identity, NousResearchInc.HermesAgent with the Store's publisher hash, and Server 2025 has no Store, so it is not installed here (docs/blind-spots.yaml, Store-only apps). |
 | 108-windows-hermes-desktop | Read while its user is signed in: an MSIX package installed for one user is in HKEY_USERS only then (docs/blind-spots.yaml). |
 | 109-windows-hermes-idle | An install with HERMES_HOME set, or install.ps1's -HermesHome pointed elsewhere, puts its launchers in that directory's bin\, which no catalogued value names, so it is invisible while idle. |
+| 110-windows-installers-more | Installed, never run, and never signed in: what either CLI writes on first use is not read here. |
+| 111-windows-warp-open-webui | Open WebUI's Docker image is read on Linux only, in 79-linux-image; the Windows runner has no Linux container daemon. |
+| 111-windows-warp-open-webui | Warp's installer starts the app and setup stops it, and Open WebUI Desktop is never launched, so neither is proved running and what a full first run writes is not read. |
+| 112-linux-warp-app | The AppImage and the pacman package are not installed; an AppImage registers no package, so it is reachable only once run. |
+| 113-linux-open-webui-desktop | The AppImage, snap and flatpak are not installed; docs/blind-spots.yaml has why none of them registers a package the enumeration reads. |
 | 12-chatgpt-pre-rename | The bundle id only. A direct download leaves no Homebrew record, so the `chatgpt` brew route is not exercised here; 10-desktop-apps covers it. |
 | 13-desktop-apps-more | Trae and Trae CN were read off their dmgs' Info.plist rather than a local install: the VM this was developed in had no IPv4 route to their CDNs. CI is the first real install of both. |
 | 13-desktop-apps-more | Sign-in gated, like 10: nothing exercises behaviour that appears once a user signs in. |
@@ -93,6 +98,7 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 16-hermes-desktop | The source-built desktop (`hermes desktop`, bundle id com.nousresearch.hermes) and the remote-only Light client are other bundle ids, and neither is installed here. |
 | 20-cli-agents, 71-linux-cli-agents | The shim's `ver` is checked for presence, not against the installed release: the shim's path names no release, and the release changes with every install, so expected.json cannot hold it. A join onto the wrong versions/ file would pass. |
 | 23-kiro-cli-app-era | The bundle id only. The app is installed and never launched, so the LaunchAgent the cask's old uninstall stanza named, com.amazon.codewhisperer.launcher, is unverified and not in the catalog. |
+| 24-warp-open-webui | Sign-in gated: neither app is launched, so nothing exercises what each writes once used. |
 | 40-browser | The planted extension is unreferenced by construction, so the sideloaded token is exercised only by 45-claude-extension. |
 | 45-claude-extension | Chrome for Testing registers the extension, because branded Chrome 137 and later refuse --load-extension. Branded Chrome's own install, update and ExtensionInstallForcelist paths are untested, and whether the policy needs an MDM-delivered profile on macOS is UNVERIFIED. |
 | 55-openclaw-npm | The gateway runs with --allow-unconfigured --auth none, which is not how a real deployment runs it: enough to open the listener and keep the process this scenario asserts running, with no channel connected and no model reachable. |
@@ -144,7 +150,7 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 96-linux-cli-agents-npm | Editor surfaces are not installed: the CodeBuddy IDE and extensions, and the Qoder IDE. |
 | 97-linux-cli-agents-npm-more | MastraCode's ~/.mastracode, where herdr's integration writes its hook, is not created by --version or -p and is unread. |
 | 97-linux-cli-agents-npm-more | Command Code's and Devin CLI's npm packages on Windows, and Devin CLI's winget package, are not exercised. |
-| 98-linux-installers-more | Maki's, Devin CLI's and Oh My Pi's Windows installers are not exercised. |
+| 98-linux-installers-more | Maki's, Devin CLI's and Oh My Pi's Windows installers are not exercised; Warp's and Kilo's are 110-windows-installers-more's. |
 | 99-linux-prime-agent | The installer refuses glibc below 2.35, so the scenario exits 3 on Rocky 9 and Amazon Linux 2023. |
 | 99-linux-prime-agent | The Windows installer (install.ps1) is not exercised. |
 
