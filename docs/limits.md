@@ -76,6 +76,10 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 105-windows-desktop-apps | Windsurf is not launched, so its liveness is unproven. |
 | 105-windows-desktop-apps | Sign-in gated, as on macOS: nothing exercises behaviour that appears once a user signs in. |
 | 106-windows-python-agents | Installed, never run, so aider's own state directory is not produced here. |
+| 107-windows-hermes-installer | Running is witnessed by the launcher only. The gateway's Python child, under %LOCALAPPDATA%\hermes\tools\, is matched by nothing, so a gateway started without a launcher in bin\ reads as installed and not running. |
+| 107-windows-hermes-installer | The installer's MSIX desktop stage (-IncludeDesktop) is not run; 108-windows-hermes-desktop installs the packaged desktop app instead. |
+| 108-windows-hermes-desktop | The Microsoft Store package is a different identity, NousResearchInc.HermesAgent with the Store's publisher hash, and Server 2025 has no Store, so it is not installed here (docs/blind-spots.yaml, Store-only apps). |
+| 108-windows-hermes-desktop | Read while its user is signed in: an MSIX package installed for one user is in HKEY_USERS only then (docs/blind-spots.yaml). |
 | 111-windows-grok-bot, 69-linux-grok-bot | A match says the Grok Bot app is installed, not that a Bot ran or that a plan includes it. |
 | 111-windows-grok-bot | The arm64 installer is not run: the runner is x64. |
 | 12-chatgpt-pre-rename | The bundle id only. A direct download leaves no Homebrew record, so the `chatgpt` brew route is not exercised here; 10-desktop-apps covers it. |
@@ -88,6 +92,8 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 15-manus | Manus's Windows build is not installed anywhere. |
 | 16-grok-bot | A match says the Grok Bot app is installed, not that a Bot ran or that a plan includes it: Bots run on a cloud computer, and no route reads either. |
 | 16-grok-bot | Grok Bot is never launched, so no running-app value is read on macOS. |
+| 16-hermes-desktop | Not launched, so running_apps is not exercised for Hermes, and what the app writes on first run is read only on the probe run the catalog cites. |
+| 16-hermes-desktop | The source-built desktop (`hermes desktop`, bundle id com.nousresearch.hermes) and the remote-only Light client are other bundle ids, and neither is installed here. |
 | 20-cli-agents, 71-linux-cli-agents | The shim's `ver` is checked for presence, not against the installed release: the shim's path names no release, and the release changes with every install, so expected.json cannot hold it. A join onto the wrong versions/ file would pass. |
 | 23-kiro-cli-app-era | The bundle id only. The app is installed and never launched, so the LaunchAgent the cask's old uninstall stanza named, com.amazon.codewhisperer.launcher, is unverified and not in the catalog. |
 | 40-browser | The planted extension is unreferenced by construction, so the sideloaded token is exercised only by 45-claude-extension. |
@@ -113,7 +119,7 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 78-linux-vscode | min-osquery for this branch is 5.15.0, for the vscode_edition column, above the 5.10.0 the rest of the repo declares. On an older endpoint the query returns [] and exits 1, which is why it is its own pack entry and its own composed branch. |
 | 78-linux-vscode | Neither agent's state directory is exercised. ~/.continue does not exist after `code --install-extension` -- verified on a real install -- because it appears on first activation in the editor, and nothing here opens a GUI session. So this proves the extension route and says nothing about the path routes for either. |
 | 78-linux-vscode | vscode_edition is reported but not asserted beyond the forbid: this installs into VS Code only, so the cursor, windsurf, vscodium and trae editions the column can report are unexercised. |
-| 79-linux-image | A pull proves the registry still serves this repository under this name. It does not prove the image is the vendor's: an image name is chosen by whoever tags it, so `docker tag alpine paulgauthier/aider` produces the same finding. The `image_labels` route is the answer to that for the agents whose vendors set labels, and aider and swe-agent are exactly the ones who do not -- so for those two the finding remains as forgeable as the tag. |
+| 79-linux-image | A pull proves the registry still serves this repository under this name. It does not prove the image is the vendor's: an image name is chosen by whoever tags it, so `docker tag alpine paulgauthier/aider` produces the same finding. The `image_labels` route is the answer to that for the agents whose vendors set labels, and aider, swe-agent and Hermes Agent are exactly the ones who do not -- so for those three the finding remains as forgeable as the tag. |
 | 79-linux-image | The container probe runs `sleep`, not the agent. It proves the daemon reports a running container from a catalogued image and that the route matches it; it proves nothing about an agent actually working, which would need credentials and a model endpoint this scenario deliberately does not hold. |
 | 79-linux-image | Nothing here reads processes inside the container. docker_container_processes requires a constraint on the container id and can be reached through a join, but the cmdline it returns can carry an API key, so it is not collected until redaction is designed. |
 | 79-linux-image | swe-agent's `latest` tag was built 2024-12-07, twenty-one months before this scenario was written. The pull proves the registry still serves it; it does not prove anyone still publishes there. |

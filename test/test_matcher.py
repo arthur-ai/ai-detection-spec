@@ -363,6 +363,14 @@ def _ids(rows):
         input=json.dumps(rows), capture_output=True, text=True, check=True).stdout)
     return {f["id"] for f in r["findings"]}
 
+def _kind(kind, *ids, extra=""):
+    return [{"kind": kind, "id": i, "ver": "1.0", "loc": i, "extra": extra, "perms": ""}
+            for i in ids]
+
+def _claims(rows):
+    r = classify_json(rows)
+    return {e["id"]: f["id"] for f in r["findings"] for e in f["evidence"]}, unmatched_ids(r)
+
 # `matches` NAMES THE IDENTIFIER BEHIND EACH EVIDENCE ROW, in evidence order and on the route
 # that holds it: a container row is credited to `images`, whose values container_images
 # borrows, and a uv directory to `pypi`.
@@ -454,6 +462,44 @@ for near in ("C:\\Users\\dana\\.claudefoo\\", "C:\\users\\dana\\.claude\\",
 check("claude.exe is Claude Code by its own value, and claude.exe-helper is nothing",
       _ids(_rows("C:\\Users\\dana\\.local\\bin\\claude.exe")) == {"claude-code"}
       and _ids(_rows("C:\\Users\\dana\\.local\\bin\\claude.exe-helper")) == set())
+
+# HERMES, BY THE ROUTES ITS INSTALLER, DESKTOP APPS AND IMAGE ADD. Each value is the narrowest one
+# that is the agent, so the lookalikes are the generic `hermes` names other software uses. One
+# classifier run, and each check names the agent a row lands on, so a value moved to another
+# entry turns it red.
+_H = "C:\\Users\\dana\\AppData\\Local\\hermes\\bin\\"
+_hrun = classify_json(
+    [*_kind("proc", *(_H + n for n in ("hermes.exe", "hermes.exe.deleteme",
+                                       "hermes.exe.4242.deleteme", "hermes-acp.exe")),
+            "C:\\Users\\dana\\.cargo\\bin\\hermes.exe",
+            "C:\\Users\\dana\\AppData\\Local\\hermes\\hermes.exe",
+            "C:\\Users\\dana\\AppData\\Local\\hermes-engine\\bin\\hermes.exe",
+            "C:\\Users\\dana\\AppData\\Local\\Programs\\hermes\\hermes.exe"),
+     *_kind("file", _H + "hermes-acp.exe", _H + "hermes.exe",
+            "C:\\Users\\dana\\AppData\\Local\\other\\bin\\hermes-acp.exe"),
+     *_kind("msix", "NousResearch.HermesBundled_e60prshbsznhj",
+            "NousResearch.HermesLight_e60prshbsznhj"),
+     *_kind("app", "com.nousresearch.hermes-bundled", "com.nousresearch.hermes-light"),
+     *_kind("image", "docker.io/nousresearch/hermes-agent:latest", "hermes-agent:latest",
+            "nousresearch/hermes-sandbox:latest", "nousresearch/hermes-agent-fork:latest")])
+_hc = {(e["kind"], e["id"]): f["id"] for f in _hrun["findings"] for e in f["evidence"]}
+check("the Windows installer's launchers, running, are Hermes, renamed aside or not",
+      all(_hc.get(("proc", _H + n)) == "hermes"
+          for n in ("hermes.exe", "hermes.exe.deleteme", "hermes.exe.4242.deleteme",
+                    "hermes-acp.exe")), f"got {_hc}")
+check("a hermes.exe outside the agent's launcher directory is NOT claimed",
+      not [k for k in _hc if k[0] == "proc" and not k[1].startswith(_H)], f"got {_hc}")
+check("the installer's hermes-acp.exe, idle, is Hermes; its generic hermes.exe and another "
+      "app's hermes-acp.exe are not",
+      [k for k in _hc if k[0] == "file"] == [("file", _H + "hermes-acp.exe")]
+      and _hc[("file", _H + "hermes-acp.exe")] == "hermes", f"got {_hc}")
+check("Hermes Desktop's MSIX family and bundle id are Hermes, and the Light client's are not",
+      {k: v for k, v in _hc.items() if k[0] in ("msix", "app")}
+      == {("msix", "NousResearch.HermesBundled_e60prshbsznhj"): "hermes",
+          ("app", "com.nousresearch.hermes-bundled"): "hermes"}, f"got {_hc}")
+check("the vendor's image is Hermes; a local build, the sandbox and a fork are not",
+      {k: v for k, v in _hc.items() if k[0] == "image"}
+      == {("image", "docker.io/nousresearch/hermes-agent:latest"): "hermes"}, f"got {_hc}")
 
 
 # --- the Linux package routes, and the lookalikes the base OS ships ----------------
@@ -1421,14 +1467,6 @@ check("three routes agreeing produce ONE agent, with all three as evidence",
 # Every identifier here was produced by a real install on 2026-10-07, and so was every
 # lookalike: they sat in the same payloads, and they are what a substring match, a guessed
 # package name or a generic filename would claim.
-def _kind(kind, *ids, extra=""):
-    return [{"kind": kind, "id": i, "ver": "1.0", "loc": i, "extra": extra, "perms": ""}
-            for i in ids]
-
-def _claims(rows):
-    r = classify_json(rows)
-    return {e["id"]: f["id"] for f in r["findings"] for e in f["evidence"]}, unmatched_ids(r)
-
 _c, _u = _claims(_kind("vscodeext", "rooveterinaryinc.roo-cline", "saoudrizwan.claude-dev",
                        "anthropic.claude-code", "openai.chatgpt", "openai.codex-audio",
                        extra="vscode"))
