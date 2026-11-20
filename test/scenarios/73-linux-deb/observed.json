@@ -5,31 +5,31 @@
       "agent": "cursor",
       "route": "deb_packages",
       "value": "cursor",
-      "agent_version": "3.30.14-1794552202",
+      "agent_version": "3.31.11-1795070917",
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44693430337"
     },
     {
       "agent": "cursor",
       "route": "deb_packages",
       "value": "cursor",
-      "agent_version": "3.30.14-1794552413",
+      "agent_version": "3.31.11-1795070921",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "43892773260"
+      "run": "44693430337"
     },
     {
       "agent": "cursor",
       "route": "deb_packages",
       "value": "cursor",
-      "agent_version": "3.30.14-1794552202",
+      "agent_version": "3.31.11-1795070917",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44693430337"
     },
     {
       "agent": "cursor",
@@ -38,7 +38,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44693430337"
     },
     {
       "agent": "cursor",
@@ -47,7 +47,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "43892773260"
+      "run": "44693430337"
     },
     {
       "agent": "cursor",
@@ -56,7 +56,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44693430337"
     }
   ]
 }

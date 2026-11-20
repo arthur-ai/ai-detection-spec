@@ -1,0 +1,25 @@
+{
+  "scenario": "16-hermes-desktop",
+  "identifiers": [
+    {
+      "agent": "hermes",
+      "route": "bundle_ids",
+      "value": "com.nousresearch.hermes-bundled",
+      "agent_version": "0.22.0",
+      "platform": "darwin",
+      "os": "15.8.2",
+      "arch": "arm64",
+      "run": "44693430337"
+    },
+    {
+      "agent": "hermes",
+      "route": "bundle_ids",
+      "value": "com.nousresearch.hermes-bundled",
+      "agent_version": "0.22.0",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "44693430337"
+    }
+  ]
+}

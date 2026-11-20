@@ -9,7 +9,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44693430337"
     },
     {
       "agent": "cursor",
@@ -18,27 +18,27 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44693430337"
     },
     {
       "agent": "cursor",
       "route": "uninstall_keys",
       "value": "{DADADADA-ADAD-ADAD-ADAD-ADADADADADAD}}_is1",
-      "agent_version": "3.30.14",
+      "agent_version": "3.31.11",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44693430337"
     },
     {
       "agent": "windsurf",
       "route": "uninstall_keys",
       "value": "{5A8B7D94-9B5F-4D1F-93FC-5609F7159349}_is1",
-      "agent_version": "3.12.59",
+      "agent_version": "3.14.30825",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44693430337"
     }
   ]
 }
