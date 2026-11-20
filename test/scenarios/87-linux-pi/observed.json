@@ -5,31 +5,31 @@
       "agent": "pi",
       "route": "npm",
       "value": "@earendil-works/pi-coding-agent",
-      "agent_version": "1.5.2",
+      "agent_version": "1.6.0",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "44693430337"
+      "run": "44772519062"
     },
     {
       "agent": "pi",
       "route": "npm",
       "value": "@earendil-works/pi-coding-agent",
-      "agent_version": "1.5.2",
+      "agent_version": "1.6.0",
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "44693430337"
+      "run": "44772519062"
     },
     {
       "agent": "pi",
       "route": "npm",
       "value": "@earendil-works/pi-coding-agent",
-      "agent_version": "1.5.2",
+      "agent_version": "1.6.0",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "44693430337"
+      "run": "44772519062"
     },
     {
       "agent": "pi",
@@ -45,31 +45,31 @@
       "agent": "pi",
       "route": "npm",
       "value": "@earendil-works/pi-coding-agent",
-      "agent_version": "1.5.2",
+      "agent_version": "1.6.0",
       "platform": "linux",
       "os": "rocky-9.9",
       "arch": "x86_64",
-      "run": "44693430337"
+      "run": "44772519062"
     },
     {
       "agent": "pi",
       "route": "npm",
       "value": "@earendil-works/pi-coding-agent",
-      "agent_version": "1.5.2",
+      "agent_version": "1.6.0",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "44693430337"
+      "run": "44772519062"
     },
     {
       "agent": "pi",
       "route": "npm",
       "value": "@earendil-works/pi-coding-agent",
-      "agent_version": "1.5.2",
+      "agent_version": "1.6.0",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "44693430337"
+      "run": "44772519062"
     }
   ]
 }

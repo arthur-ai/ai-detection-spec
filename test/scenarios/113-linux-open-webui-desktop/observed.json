@@ -1,0 +1,35 @@
+{
+  "scenario": "113-linux-open-webui-desktop",
+  "identifiers": [
+    {
+      "agent": "open-webui",
+      "route": "deb_packages",
+      "value": "open-webui",
+      "agent_version": "0.1.4",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "open-webui",
+      "route": "deb_packages",
+      "value": "open-webui",
+      "agent_version": "0.1.4",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "open-webui",
+      "route": "deb_packages",
+      "value": "open-webui",
+      "agent_version": "0.1.4",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "44772519062"
+    }
+  ]
+}
