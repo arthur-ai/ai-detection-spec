@@ -1,0 +1,23 @@
+{
+  "scenario": "107-windows-hermes-installer",
+  "identifiers": [
+    {
+      "agent": "hermes",
+      "route": "binaries",
+      "value": "~/AppData/Local/hermes/bin/hermes-acp.exe",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "44693430337"
+    },
+    {
+      "agent": "hermes",
+      "route": "process_paths",
+      "value": "~/AppData/Local/hermes/bin/",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "44693430337"
+    }
+  ]
+}
