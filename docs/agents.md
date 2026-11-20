@@ -32,7 +32,7 @@ Proof is counted **per identifier**, not per agent. Installing an agent vouches
 only for the identifiers that run actually matched, so a sibling identifier on the
 same agent is not covered by association.
 
-> **This number is a floor.** `00-baseline`, `100-windows-baseline`, `109-windows-hermes-idle`, `70-linux-baseline`, `74-linux-dpkg-removed`, `75-linux-browser`, `76-linux-systemd` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
+> **This number is a floor.** `00-baseline`, `100-windows-baseline`, `70-linux-baseline`, `74-linux-dpkg-removed`, `75-linux-browser`, `76-linux-systemd` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
 
 # Agents (64)
 

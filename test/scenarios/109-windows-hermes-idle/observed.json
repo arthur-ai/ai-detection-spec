@@ -1,0 +1,14 @@
+{
+  "scenario": "109-windows-hermes-idle",
+  "identifiers": [
+    {
+      "agent": "hermes",
+      "route": "binaries",
+      "value": "~/AppData/Local/hermes/bin/hermes-acp.exe",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "44697264543"
+    }
+  ]
+}
