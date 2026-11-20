@@ -9,10 +9,9 @@
 #
 # A SCENARIO OF ITS OWN for size: the dmg is 1.5GB, the agent's Python and tools inside it.
 #
-# NOT LAUNCHED, ON PURPOSE. A first launch links ~/.local/bin/hermes into the bundle and
-# creates ~/.hermes (probe run 41870942008), both values the hermes entry already carries,
-# so a launched app would pass must_find with the bundle id broken. Installed only, the
-# bundle id is the one witness.
+# NOT LAUNCHED, ON PURPOSE: a first launch writes values the hermes entry already carries
+# (catalog/agents.yaml says which), so a launched app would pass must_find with the bundle
+# id broken.
 #
 # WARN rather than exit: the assertion names what is missing.
 set -e

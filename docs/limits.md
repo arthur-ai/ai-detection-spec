@@ -76,7 +76,7 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 105-windows-desktop-apps | Windsurf is not launched, so its liveness is unproven. |
 | 105-windows-desktop-apps | Sign-in gated, as on macOS: nothing exercises behaviour that appears once a user signs in. |
 | 106-windows-python-agents | Installed, never run, so aider's own state directory is not produced here. |
-| 107-windows-hermes-installer | Installed and not running, this install is invisible on Windows: filesystem-windows.sql reads ~\.local\bin and the home's dot-directories, and the installer writes to neither. |
+| 107-windows-hermes-installer | Running is witnessed by the launcher only. The gateway's Python child, under %LOCALAPPDATA%\hermes\tools\, is matched by nothing, so a gateway started without a launcher in bin\ reads as installed and not running. |
 | 107-windows-hermes-installer | The installer's MSIX desktop stage (-IncludeDesktop) is not run; 108-windows-hermes-desktop installs the packaged desktop app instead. |
 | 108-windows-hermes-desktop | The Microsoft Store package is a different identity, NousResearchInc.HermesAgent with the Store's publisher hash, and Server 2025 has no Store, so it is not installed here (docs/blind-spots.yaml, Store-only apps). |
 | 108-windows-hermes-desktop | Read while its user is signed in: an MSIX package installed for one user is in HKEY_USERS only then (docs/blind-spots.yaml). |
