@@ -15,11 +15,11 @@
       "agent": "devin-cli",
       "route": "homebrew",
       "value": "devin-cli",
-      "agent_version": "3000.12.43",
+      "agent_version": "3000.14.30821",
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "devin-cli",
@@ -35,11 +35,31 @@
       "agent": "devin-cli",
       "route": "homebrew",
       "value": "devin-cli",
-      "agent_version": "3000.11.234",
+      "agent_version": "3000.14.30821",
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "44772519062"
+    },
+    {
+      "agent": "kilo-code",
+      "route": "homebrew",
+      "value": "kilo",
+      "agent_version": "7.8.32",
+      "platform": "darwin",
+      "os": "15.8.2",
+      "arch": "arm64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "kilo-code",
+      "route": "homebrew",
+      "value": "kilo",
+      "agent_version": "7.8.32",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "44772519062"
     },
     {
       "agent": "maki",
@@ -55,11 +75,11 @@
       "agent": "maki",
       "route": "homebrew",
       "value": "maki",
-      "agent_version": "0.7.1",
+      "agent_version": "0.7.3",
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "maki",
@@ -75,11 +95,31 @@
       "agent": "maki",
       "route": "homebrew",
       "value": "maki",
-      "agent_version": "0.7.0",
+      "agent_version": "0.7.3",
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43463357710"
+      "run": "44772519062"
+    },
+    {
+      "agent": "warp",
+      "route": "homebrew",
+      "value": "warp-agent-cli",
+      "agent_version": "0.2026.11.18.08.17.stable_01",
+      "platform": "darwin",
+      "os": "15.8.2",
+      "arch": "arm64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "warp",
+      "route": "homebrew",
+      "value": "warp-agent-cli",
+      "agent_version": "0.2026.11.18.08.17.stable_01",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "44772519062"
     }
   ]
 }

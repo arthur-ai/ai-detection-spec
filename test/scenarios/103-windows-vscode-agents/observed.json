@@ -9,7 +9,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "44693430337"
+      "run": "44772519062"
     },
     {
       "agent": "cline",
@@ -19,7 +19,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "44693430337"
+      "run": "44772519062"
     },
     {
       "agent": "codex-cli",
@@ -29,7 +29,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "44693430337"
+      "run": "44772519062"
     },
     {
       "agent": "continue",
@@ -39,17 +39,17 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "44693430337"
+      "run": "44772519062"
     },
     {
       "agent": "kilo-code",
       "route": "vscode_extensions",
       "value": "kilocode.kilo-code",
-      "agent_version": "7.8.27",
+      "agent_version": "7.8.32",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "44693430337"
+      "run": "44772519062"
     },
     {
       "agent": "roo-code",
@@ -59,7 +59,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "44693430337"
+      "run": "44772519062"
     }
   ]
 }

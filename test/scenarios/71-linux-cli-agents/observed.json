@@ -5,11 +5,31 @@
       "agent": "augment",
       "route": "npm",
       "value": "@augmentcode/auggie",
-      "agent_version": "1.2.1",
+      "agent_version": "1.2.2",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
+    },
+    {
+      "agent": "augment",
+      "route": "npm",
+      "value": "@augmentcode/auggie",
+      "agent_version": "1.2.2",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "augment",
+      "route": "npm",
+      "value": "@augmentcode/auggie",
+      "agent_version": "1.2.2",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "44772519062"
     },
     {
       "agent": "augment",
@@ -17,26 +37,6 @@
       "value": "@augmentcode/auggie",
       "agent_version": "0.37.1",
       "platform": "linux",
-      "os": "debian-12",
-      "arch": "x86_64",
-      "run": "43892773260"
-    },
-    {
-      "agent": "augment",
-      "route": "npm",
-      "value": "@augmentcode/auggie",
-      "agent_version": "0.37.1",
-      "platform": "linux",
-      "os": "fedora-41",
-      "arch": "x86_64",
-      "run": "43892773260"
-    },
-    {
-      "agent": "augment",
-      "route": "npm",
-      "value": "@augmentcode/auggie",
-      "agent_version": "0.37.1",
-      "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
       "run": "43892773260"
@@ -45,21 +45,31 @@
       "agent": "augment",
       "route": "npm",
       "value": "@augmentcode/auggie",
-      "agent_version": "0.37.1",
+      "agent_version": "1.2.2",
       "platform": "linux",
-      "os": "ubuntu-24.04",
-      "arch": "aarch64",
-      "run": "43892773260"
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
     },
     {
       "agent": "augment",
       "route": "npm",
       "value": "@augmentcode/auggie",
-      "agent_version": "0.37.1",
+      "agent_version": "1.2.2",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "augment",
+      "route": "npm",
+      "value": "@augmentcode/auggie",
+      "agent_version": "1.2.2",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "claude-code",
@@ -68,7 +78,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "claude-code",
@@ -77,7 +87,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "claude-code",
@@ -86,7 +96,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "claude-code",
@@ -102,9 +112,18 @@
       "route": "binaries",
       "value": "~/.local/bin/claude",
       "platform": "linux",
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "claude-code",
+      "route": "binaries",
+      "value": "~/.local/bin/claude",
+      "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "claude-code",
@@ -113,7 +132,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "claude-code",
@@ -122,7 +141,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "claude-code",
@@ -131,7 +150,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "claude-code",
@@ -140,7 +159,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "claude-code",
@@ -156,9 +175,18 @@
       "route": "state_dirs",
       "value": "~/.claude",
       "platform": "linux",
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "claude-code",
+      "route": "state_dirs",
+      "value": "~/.claude",
+      "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "claude-code",
@@ -167,7 +195,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "cline",
@@ -177,7 +205,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "cline",
@@ -187,7 +215,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "cline",
@@ -197,7 +225,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "cline",
@@ -215,9 +243,19 @@
       "value": "cline",
       "agent_version": "3.0.74",
       "platform": "linux",
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "cline",
+      "route": "npm",
+      "value": "cline",
+      "agent_version": "3.0.74",
+      "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "cline",
@@ -227,37 +265,37 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "codex-cli",
       "route": "npm",
       "value": "@openai/codex",
-      "agent_version": "0.169.0",
+      "agent_version": "0.171.0",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "codex-cli",
       "route": "npm",
       "value": "@openai/codex",
-      "agent_version": "0.169.0",
+      "agent_version": "0.171.0",
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "codex-cli",
       "route": "npm",
       "value": "@openai/codex",
-      "agent_version": "0.169.0",
+      "agent_version": "0.171.0",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "codex-cli",
@@ -273,21 +311,31 @@
       "agent": "codex-cli",
       "route": "npm",
       "value": "@openai/codex",
-      "agent_version": "0.169.0",
+      "agent_version": "0.171.0",
       "platform": "linux",
-      "os": "ubuntu-24.04",
-      "arch": "aarch64",
-      "run": "43892773260"
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
     },
     {
       "agent": "codex-cli",
       "route": "npm",
       "value": "@openai/codex",
-      "agent_version": "0.169.0",
+      "agent_version": "0.171.0",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "codex-cli",
+      "route": "npm",
+      "value": "@openai/codex",
+      "agent_version": "0.171.0",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "codex-cli",
@@ -296,7 +344,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "codex-cli",
@@ -305,7 +353,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "codex-cli",
@@ -314,7 +362,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "codex-cli",
@@ -330,9 +378,18 @@
       "route": "state_dirs",
       "value": "~/.codex",
       "platform": "linux",
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "codex-cli",
+      "route": "state_dirs",
+      "value": "~/.codex",
+      "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "codex-cli",
@@ -341,7 +398,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "continue",
@@ -351,7 +408,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "continue",
@@ -361,7 +418,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "continue",
@@ -371,7 +428,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "continue",
@@ -389,9 +446,19 @@
       "value": "@continuedev/cli",
       "agent_version": "1.5.47",
       "platform": "linux",
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "continue",
+      "route": "npm",
+      "value": "@continuedev/cli",
+      "agent_version": "1.5.47",
+      "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "continue",
@@ -401,37 +468,37 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "copilot-cli",
       "route": "npm",
       "value": "@github/copilot",
-      "agent_version": "1.0.112",
+      "agent_version": "1.0.114",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "copilot-cli",
       "route": "npm",
       "value": "@github/copilot",
-      "agent_version": "1.0.112",
+      "agent_version": "1.0.114",
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "copilot-cli",
       "route": "npm",
       "value": "@github/copilot",
-      "agent_version": "1.0.112",
+      "agent_version": "1.0.114",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "copilot-cli",
@@ -447,21 +514,31 @@
       "agent": "copilot-cli",
       "route": "npm",
       "value": "@github/copilot",
-      "agent_version": "1.0.112",
+      "agent_version": "1.0.114",
       "platform": "linux",
-      "os": "ubuntu-24.04",
-      "arch": "aarch64",
-      "run": "43892773260"
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
     },
     {
       "agent": "copilot-cli",
       "route": "npm",
       "value": "@github/copilot",
-      "agent_version": "1.0.112",
+      "agent_version": "1.0.114",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "copilot-cli",
+      "route": "npm",
+      "value": "@github/copilot",
+      "agent_version": "1.0.114",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "gemini-cli",
@@ -471,27 +548,27 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "gemini-cli",
       "route": "npm",
       "value": "@google/gemini-cli",
-      "agent_version": "0.68.0",
+      "agent_version": "0.70.0",
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "gemini-cli",
       "route": "npm",
       "value": "@google/gemini-cli",
-      "agent_version": "0.68.0",
+      "agent_version": "0.70.0",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "gemini-cli",
@@ -507,51 +584,61 @@
       "agent": "gemini-cli",
       "route": "npm",
       "value": "@google/gemini-cli",
-      "agent_version": "0.68.0",
+      "agent_version": "0.70.0",
       "platform": "linux",
-      "os": "ubuntu-24.04",
-      "arch": "aarch64",
-      "run": "43892773260"
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
     },
     {
       "agent": "gemini-cli",
       "route": "npm",
       "value": "@google/gemini-cli",
-      "agent_version": "0.68.0",
+      "agent_version": "0.70.0",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "gemini-cli",
+      "route": "npm",
+      "value": "@google/gemini-cli",
+      "agent_version": "0.70.0",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "kilo-code",
       "route": "npm",
       "value": "@kilocode/cli",
-      "agent_version": "7.8.27",
+      "agent_version": "7.8.32",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "kilo-code",
       "route": "npm",
       "value": "@kilocode/cli",
-      "agent_version": "7.8.27",
+      "agent_version": "7.8.32",
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "kilo-code",
       "route": "npm",
       "value": "@kilocode/cli",
-      "agent_version": "7.8.27",
+      "agent_version": "7.8.32",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "kilo-code",
@@ -567,51 +654,61 @@
       "agent": "kilo-code",
       "route": "npm",
       "value": "@kilocode/cli",
-      "agent_version": "7.8.27",
+      "agent_version": "7.8.32",
       "platform": "linux",
-      "os": "ubuntu-24.04",
-      "arch": "aarch64",
-      "run": "43892773260"
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
     },
     {
       "agent": "kilo-code",
       "route": "npm",
       "value": "@kilocode/cli",
-      "agent_version": "7.8.27",
+      "agent_version": "7.8.32",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "kilo-code",
+      "route": "npm",
+      "value": "@kilocode/cli",
+      "agent_version": "7.8.32",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "opencode",
       "route": "npm",
       "value": "opencode-ai",
-      "agent_version": "1.19.5",
+      "agent_version": "1.19.6",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "opencode",
       "route": "npm",
       "value": "opencode-ai",
-      "agent_version": "1.19.5",
+      "agent_version": "1.19.6",
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "opencode",
       "route": "npm",
       "value": "opencode-ai",
-      "agent_version": "1.19.5",
+      "agent_version": "1.19.6",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "opencode",
@@ -627,21 +724,31 @@
       "agent": "opencode",
       "route": "npm",
       "value": "opencode-ai",
-      "agent_version": "1.19.5",
+      "agent_version": "1.19.6",
       "platform": "linux",
-      "os": "ubuntu-24.04",
-      "arch": "aarch64",
-      "run": "43892773260"
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
     },
     {
       "agent": "opencode",
       "route": "npm",
       "value": "opencode-ai",
-      "agent_version": "1.19.5",
+      "agent_version": "1.19.6",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "opencode",
+      "route": "npm",
+      "value": "opencode-ai",
+      "agent_version": "1.19.6",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     }
   ]
 }
