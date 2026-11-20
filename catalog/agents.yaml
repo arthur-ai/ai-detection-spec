@@ -82,24 +82,12 @@ removed:
 #             ai_tools' other types, which describe what an agent USES
 #   herdr     not from ai_tools: a terminal multiplexer that hosts agents. It runs no model and
 #             acts on nothing itself; each agent in its panes is found by that agent's own values
-#   Warp, the terminal app (dev.warp.Warp-Stable, cask `warp`, Linux package `warp-terminal`)
-#             not from ai_tools, but in uber/ADR's test manifest: a terminal whose agent mode is
-#             a feature, as Zed's agent panel is the editor's, so the app's presence says a
-#             terminal is installed and not that its agent was used. Use is recorded in its
-#             warp.sqlite (`agent_conversations`), a file inside the app's data directory that no
-#             route reads, and producing it needs a logged-in Warp account. The agent shipped on
-#             its own is `warp-agent-cli`. Read 2026-11-05 off warpdotdev/warp and warpdotdev/docs
-#   Open WebUI (PyPI `open-webui`)
-#             in uber/ADR's catalog: a self-hosted web front end for model runners, which a
-#             browser chats through, on the side of the line jan and anythingllm are on. ADR
-#             files it under model runtimes too. Its tools and MCP servers run inside that
-#             server when a chat calls them, as AnythingLLM's agents do; contested as Desktop
-#             assistant was, and left out for the same consistency
 #   Arc (company.thebrowser.Browser)
-#             in uber/ADR's catalog, as an AI browser: The Browser Company's Chromium browser.
-#             Its AI features (Arc Max) are an opt-in setting that names and summarises tabs and
-#             acts on nothing, so a finding would report a browser. The company's AI browser is
-#             `dia`. UNVERIFIED on a real install; test_matcher holds the id unclaimed
+#             in uber/ADR's catalog, as an AI browser: The Browser Company's Chromium browser,
+#             whose AI features (Arc Max) are switched on in its settings and rename tabs and
+#             downloads or summarise pages, acting on nothing (TidBITS, 2023-10-06). A finding
+#             would report a browser; the company's AI browser is `dia`. 24-warp-open-webui
+#             installs cask `arc` and asserts its bundle id claims nothing
 #   ChatGPT Atlas (com.openai.atlas)
 #             not from ai_tools: OpenAI's AI browser, shut down on 2026-08-09. OpenAI's notice
 #             (help.openai.com/articles/20001371) says it may no longer open, browse or run
@@ -913,16 +901,19 @@ agents:
     # fixture carries it as a negative control.
     npm: ["@kilocode/cli"]
     # THE CLI'S CURL INSTALLER, kilo.ai/cli/install (`install` in Kilo-Org/kilocode), puts the
-    # binary at ~/.kilo/bin/kilo. bin/ is a level deeper than the enumeration reads, so the
-    # directory is the identifier, as ~/.opencode is for the opencode it forks; the CLI also
-    # reads ~/.kilo for config and skills. Its own state is under XDG directories. Read off
+    # binary at ~/.kilo/bin/. bin/ is a level deeper than the enumeration reads, so the
+    # directory is the identifier, as ~/.opencode is for the opencode it forks. Read off
     # 98-linux-installers-more in CI run 42100036985 on 2026-11-05: /home/dana/.kilo/, with
     # bin/kilo 7.8.27 under it, on Ubuntu 24.04 x86_64 and arm64 and the four container images.
-    #
-    # NOT HERE: the Kilo-Org/tap formula, which homebrew_packages reports as a bare `kilo`
-    # with no tap, the name of antirez's text editor too; and ~/.kilocode, which only the
-    # pre-1.0 CLI wrote and no scenario installs.
+    # The same script takes Git Bash as Windows: C:\Users\runneradmin\.kilo\ in
+    # 110-windows-installers-more, Windows Server 2025 (26100), probe run 44703507946 on
+    # 2026-11-20.
     state_dirs: ["~/.kilo"]
+    # Kilo-Org/tap's formula, which homebrew_packages names `kilo`, without the tap. A value
+    # while homebrew-core and homebrew-cask have no `kilo`, which 22's setup asserts before it
+    # taps. Read off 22-cli-agents-homebrew-more in the same run: formula kilo 7.8.27 on macOS
+    # 15.8.2 and 26.7.2.
+    homebrew: [kilo]
 
   - id: augment
     name: Augment Code
@@ -1436,36 +1427,60 @@ agents:
     # and Amazon Linux 2023 cannot run it; the scenario skips there.
     binaries: ["~/.local/bin/prime-agent"]
 
-  # Warp's Agent CLI (warp.dev/agent-cli), the agent alone: a terminal UI that takes prompts,
-  # runs commands and edits files after a permission prompt. Warp's docs say it is a separate
-  # install from the desktop terminal and does not need it, and it is built from
-  # crates/warp_tui in warpdotdev/warp. The terminal app is in the considered block above:
-  # its agent mode is a feature of the terminal, and no value here is one the app writes.
+  # Warp (warp.dev): a terminal sold as an agentic development environment, whose agent takes
+  # prompts, runs commands and edits files. One entry for the app and its Agent CLI
+  # (crates/warp_tui in warpdotdev/warp), which Warp ships separately and which does not need
+  # the app, as Cursor's entry carries cursor-agent: a host with either has Warp's agent.
   #
-  # NOT HERE: ~/.warp, which both the app (settings and themes on macOS, MCP config and
-  # skills everywhere) and this CLI use, so it cannot tell them apart; ~/.warp/tui, the
-  # installer's install root, a level deeper than the enumeration reads; and ~/.agents, a
-  # directory several agents share. Windows' %LOCALAPPDATA%\Warp\bin\warp.cmd, a path from
-  # Warp's docs, is in what filesystem-windows.sql's per-user launcher branch reads, but no
-  # scenario installs the CLI on Windows, so it is no value yet and a Windows host with the
-  # CLI reads as having no Warp Agent CLI.
-  - id: warp-agent-cli
-    name: Warp Agent CLI
+  # Read off probe run 44703507946 on 2026-11-20 unless a value says otherwise: macOS 15.8.2
+  # and 26.7.2 on arm64, Ubuntu 24.04 on x86_64 and arm64, Debian 12, Rocky 9.9, Fedora 41 and
+  # Amazon Linux 2023 on x86_64, and Windows Server 2025 (26100) on x86_64.
+  #
+  # NOT HERE: ~/.warp, which the CLI's curl installer writes beside ~/.local/bin/warp (98
+  # holds both), because every install read here is found without it.
+  - id: warp
+    name: Warp
     classification: Coding agent
-    platforms: [darwin, linux]
-    # The curl installer, app.warp.dev/download/agent-cli, links ~/.local/bin/warp to the
-    # build under ~/.warp/tui (Warp's uninstall page names both). Read off
-    # 98-linux-installers-more in CI run 42100036985 on 2026-11-05: /home/dana/.local/bin/warp
-    # -> ~/.warp/tui/current/warp-tui-stable, v0.2026.11.03.17.08.stable_00, on Ubuntu 24.04
-    # x86_64 and arm64 and the four container images.
-    #
-    # UNMEASURED: that the desktop app never writes ~/.local/bin/warp. Its Linux package is
-    # named `warp-terminal`, but no scenario installs the app, so this is inferred. The name is
-    # not Warp's alone either: MinIO's S3 benchmark is a binary called `warp`, and a copy a
-    # user puts in ~/.local/bin is reported as this agent.
-    binaries: ["~/.local/bin/warp"]
-    # homebrew-cask's `warp-agent-cli`, which links its binary as `warp` under Homebrew's
-    # prefix. Not `warp`, the cask for the terminal app. Read off 22-cli-agents-homebrew-more
-    # in the same run on macOS 15.8.2 and 26.7.2: /opt/homebrew/bin/warp,
-    # v0.2026.10.21.08.25.stable_02, and no ~/.warp written by the install or --version.
-    homebrew: [warp-agent-cli]
+    platforms: [darwin, linux, windows]
+    # The app. 24-warp-open-webui, cask `warp`: dev.warp.Warp-Stable 0.2026.11.11.08.17.01.
+    # 112-linux-warp-app, Warp's own packages: the .deb on Debian 12 and the .rpm on the three
+    # rpm images, both 0.2026.11.18.08.17.stable_01.
+    bundle_ids: [dev.warp.Warp-Stable]
+    deb_packages: [warp-terminal]
+    rpm_packages: [warp-terminal]
+    # `warp` is the app's cask and `warp-agent-cli` the CLI's. Each is a value while
+    # homebrew-core has no formula of that name, which 22's and 24's setups assert. The CLI's,
+    # 22-cli-agents-homebrew-more: v0.2026.10.21.08.25.stable_02 in run 42100036985 on
+    # 2026-11-05, and 0.2026.11.18.08.17.stable_01 here. The app's, 24.
+    homebrew: [warp, warp-agent-cli]
+    # The CLI's installers. The curl one, app.warp.dev/download/agent-cli, wrote
+    # /home/dana/.local/bin/warp in 98-linux-installers-more, v0.2026.11.03.17.08.stable_00 in
+    # run 42100036985 and again here. The PowerShell one, agent-cli.ps1, runs an Inno Setup
+    # installer that wrote %LOCALAPPDATA%\Warp\bin\warp.cmd in 110-windows-installers-more.
+    binaries: ["~/.local/bin/warp", "~/AppData/Local/Warp/bin/warp.cmd"]
+    # Each Inno Setup installer's key under HKCU. The CLI's in 110: warp-agent-cli-stable_is1,
+    # DisplayName "WarpAgentCLI v0.2026.11.18.08.17.stable_01". The app's PENDING
+    # 111-windows-warp-open-webui.
+    uninstall_keys: [warp-agent-cli-stable_is1, warp-terminal-stable_is1]
+
+  # Open WebUI (openwebui.com): a self-hosted chat client whose Tools and Functions are Python
+  # run by its server and which calls MCP servers, so on a workstation it runs tools on the
+  # machine, which is the Desktop assistant definition. Not a model runner: it drives one.
+  # Read off probe run 44703507946 on 2026-11-20, on the hosts listed for warp above.
+  - id: open-webui
+    name: Open WebUI
+    classification: Desktop assistant
+    platforms: [darwin, linux, windows]
+    # The server from PyPI, through the tool directory uv names for it: 24's
+    # ~/.local/share/uv/tools/open-webui/. Windows' PENDING 111.
+    pypi: [open-webui]
+    # Its desktop app, open-webui/desktop, 0.1.4: the cask's bundle id and token in 24, and its
+    # .deb in 113-linux-open-webui-desktop on Ubuntu 24.04 x86_64 and Debian 12. Its Windows
+    # installer's key PENDING 111.
+    bundle_ids: [com.openwebui.desktop]
+    homebrew: [open-webui]
+    deb_packages: [open-webui]
+    # The image its README leads with, and the OCI `source` label it carries: 79-linux-image
+    # pulled ghcr.io/open-webui/open-webui:main-slim on Ubuntu 24.04 x86_64 and arm64.
+    images: [ghcr.io/open-webui/open-webui]
+    image_labels: ["https://github.com/open-webui/open-webui"]

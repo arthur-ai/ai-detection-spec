@@ -9,9 +9,9 @@
 Every AI agent this repo finds, every identifier it is matched on,
 and the CI test behind each one.
 
-![agents](https://img.shields.io/badge/agents-64-1D4E89)
-![identifiers](https://img.shields.io/badge/identifiers-182-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-179%2F182-A26A16)
+![agents](https://img.shields.io/badge/agents-65-1D4E89)
+![identifiers](https://img.shields.io/badge/identifiers-196-1D4E89)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-179%2F196-A26A16)
 ![real install](https://img.shields.io/badge/by_real_install-179-2E7D57)
 
 </div>
@@ -19,7 +19,7 @@ and the CI test behind each one.
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 179 of 182. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
+**Every identifier is proved by a real install in CI** — 179 of 196. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
 
 ## 🧪 Why a real install is the bar
 
@@ -32,9 +32,9 @@ Proof is counted **per identifier**, not per agent. Installing an agent vouches
 only for the identifiers that run actually matched, so a sibling identifier on the
 same agent is not covered by association.
 
-> **This number is a floor.** `00-baseline`, `100-windows-baseline`, `109-windows-hermes-idle`, `70-linux-baseline`, `74-linux-dpkg-removed`, `75-linux-browser`, `76-linux-systemd` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
+> **This number is a floor.** `110-windows-installers-more`, `111-windows-warp-open-webui`, `112-linux-warp-app`, `113-linux-open-webui-desktop`, `24-warp-open-webui` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
 
-# Agents (64)
+# Agents (65)
 
 Software that acts on the user's behalf. This is what the catalog is for.
 
@@ -70,7 +70,7 @@ Operates on a codebase, usually with shell access.
 | **Grok Build** | macOS, Linux | **`~/.grok`** | 20-cli-agents, 84-linux-installers |
 | **Jules CLI** | Linux | **`@google/jules`**, **`~/.jules`** | 93-linux-cli-agents-more |
 | **Junie CLI** | Linux | **`@jetbrains/junie`**, **`@jetbrains/junie-cli`**, **`~/.junie`**, **`~/.local/bin/junie`** | 93-linux-cli-agents-more, 94-linux-cli-agents-legacy |
-| **Kilo Code** | macOS, Linux, Windows | **`@kilocode/cli`**, **`kilocode.kilo-code`**, ~/.kilo ⚠ | 103-windows-vscode-agents, 20-cli-agents, 71-linux-cli-agents, 85-linux-vscode-agents, 98-linux-installers-more |
+| **Kilo Code** | macOS, Linux, Windows | kilo ⚠, **`@kilocode/cli`**, **`kilocode.kilo-code`**, ~/.kilo ⚠ | 103-windows-vscode-agents, 110-windows-installers-more, 20-cli-agents, 22-cli-agents-homebrew-more, 71-linux-cli-agents, 85-linux-vscode-agents, 98-linux-installers-more |
 | **Kimi Code** | macOS, Linux | **`kimi-code`**, **`@moonshot-ai/kimi-code`**, **`kimi-cli`**, **`~/.kimi-code`**, **`~/.kimi`** | 21-cli-agents-homebrew, 84-linux-installers, 94-linux-cli-agents-legacy, 96-linux-cli-agents-npm |
 | **Kiro** | macOS | **`dev.kiro.desktop`**, **`kiro`** | 10-desktop-apps |
 | **Kiro CLI** | macOS, Linux | **`com.amazon.codewhisperer`**, **`kiro-cli`**, **`~/.local/bin/kiro-cli`** | 21-cli-agents-homebrew, 23-kiro-cli-app-era, 84-linux-installers |
@@ -89,7 +89,7 @@ Operates on a codebase, usually with shell access.
 | **Roo Code** | macOS, Linux, Windows | **`rooveterinaryinc.roo-cline`** | 103-windows-vscode-agents, 30-ide-agents, 85-linux-vscode-agents |
 | **SWE-agent** | Linux | **`sweagent/swe-agent`** | 79-linux-image |
 | **Trae** | macOS | **`com.trae.app`**, **`cn.trae.app`**, **`trae`**, **`trae-cn`** | 13-desktop-apps-more |
-| **Warp Agent CLI** | macOS, Linux | warp-agent-cli ⚠, ~/.local/bin/warp ⚠ | 22-cli-agents-homebrew-more, 98-linux-installers-more |
+| **Warp** | macOS, Linux, Windows | dev.warp.Warp-Stable ⚠, warp ⚠, warp-agent-cli ⚠, ~/.local/bin/warp ⚠, ~/AppData/Local/Warp/bin/warp.cmd ⚠, warp-terminal ⚠, warp-terminal ⚠, warp-agent-cli-stable_is1, warp-terminal-stable_is1 | 110-windows-installers-more, 111-windows-warp-open-webui, 112-linux-warp-app, 22-cli-agents-homebrew-more, 24-warp-open-webui, 98-linux-installers-more |
 | **Windsurf** | macOS, Windows | **`com.exafunction.windsurf`**, **`devin-desktop`**, **`{5A8B7D94-9B5F-4D1F-93FC-5609F7159349}_is1`** | 10-desktop-apps, 105-windows-desktop-apps |
 
 ## Personal agent
@@ -135,6 +135,7 @@ A chat client that can run tools on the machine, for example through MCP.
 |---|---|---|---|
 | **ChatGPT Desktop** | macOS | **`com.openai.codex`**, **`com.openai.chat`**, **`chatgpt`** | 10-desktop-apps, 12-chatgpt-pre-rename |
 | **Claude Desktop** | macOS, Windows | **`com.anthropic.claudefordesktop`**, **`claude`**, **`com.anthropic.claude_browser_extension.json`**, **`Claude_pzs8sxrjxfjjc`** | 10-desktop-apps, 104-windows-browser, 105-windows-desktop-apps, 40-browser |
+| **Open WebUI** | macOS, Linux, Windows | com.openwebui.desktop, open-webui, open-webui ⚠, ghcr.io/open-webui/open-webui ⚠, https://github.com/open-webui/open-webui ⚠, open-webui ⚠ | 111-windows-warp-open-webui, 113-linux-open-webui-desktop, 24-warp-open-webui, 79-linux-image |
 | **Perplexity** | macOS | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
 
 > **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = superseded: a run proved it and the current release no longer emits it. ∅ = no CI runner for its platform. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it.
@@ -145,9 +146,23 @@ Each one needs work, and the state column says what kind. **did not appear** mea
 
 | agent | route | identifier | state | reached by |
 |---|---|---|---|---|
-| Kilo Code | state dir | `~/.kilo` | did not appear | 103-windows-vscode-agents, 20-cli-agents, 71-linux-cli-agents, 85-linux-vscode-agents, 98-linux-installers-more |
-| Warp Agent CLI | homebrew | `warp-agent-cli` | did not appear | 22-cli-agents-homebrew-more |
-| Warp Agent CLI | binary | `~/.local/bin/warp` | did not appear | 22-cli-agents-homebrew-more, 98-linux-installers-more |
+| Kilo Code | homebrew | `kilo` | did not appear | 20-cli-agents, 22-cli-agents-homebrew-more |
+| Kilo Code | state dir | `~/.kilo` | did not appear | 103-windows-vscode-agents, 20-cli-agents, 22-cli-agents-homebrew-more, 71-linux-cli-agents, 85-linux-vscode-agents, 98-linux-installers-more |
+| Open WebUI | bundle id | `com.openwebui.desktop` | no test | -- |
+| Open WebUI | homebrew | `open-webui` | no test | -- |
+| Open WebUI | PyPI | `open-webui` | did not appear | 79-linux-image |
+| Open WebUI | image | `ghcr.io/open-webui/open-webui` | did not appear | 79-linux-image |
+| Open WebUI | image_labels | `https://github.com/open-webui/open-webui` | did not appear | 79-linux-image |
+| Open WebUI | deb_packages | `open-webui` | did not appear | 79-linux-image |
+| Warp | bundle id | `dev.warp.Warp-Stable` | did not appear | 22-cli-agents-homebrew-more |
+| Warp | homebrew | `warp` | did not appear | 22-cli-agents-homebrew-more |
+| Warp | homebrew | `warp-agent-cli` | did not appear | 22-cli-agents-homebrew-more |
+| Warp | binary | `~/.local/bin/warp` | did not appear | 22-cli-agents-homebrew-more, 98-linux-installers-more |
+| Warp | binary | `~/AppData/Local/Warp/bin/warp.cmd` | did not appear | 22-cli-agents-homebrew-more, 98-linux-installers-more |
+| Warp | deb_packages | `warp-terminal` | did not appear | 98-linux-installers-more |
+| Warp | rpm_packages | `warp-terminal` | did not appear | 98-linux-installers-more |
+| Warp | uninstall_keys | `warp-agent-cli-stable_is1` | no test | -- |
+| Warp | uninstall_keys | `warp-terminal-stable_is1` | no test | -- |
 
 **What it cannot see is a separate page.** [`docs/limits.md`](limits.md) carries what osquery cannot see on any machine and what each scenario leaves unproved after its install succeeds -- rendered from the same inputs, gated the same way.
 

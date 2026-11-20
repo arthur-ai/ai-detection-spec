@@ -1,0 +1,34 @@
+{
+  "description": "The Warp app, Open WebUI Desktop and Open WebUI from PyPI on Windows, installed and not run.",
+  "platform": "windows",
+  "counts": {
+    "ext": ">=0",
+    "file": ">=2",
+    "msix": ">=1",
+    "nmh": ">=1",
+    "npm": ">=0",
+    "proc": ">=0",
+    "scan": ">=1",
+    "uninstall": ">=3",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "warp",
+      "open-webui"
+    ],
+    "forbid": [
+      "cursor",
+      "windsurf",
+      "aider"
+    ]
+  },
+  "require_rows": [
+    {"kind": "file", "id": "\\AppData\\Roaming\\uv\\tools\\open-webui\\"}
+  ],
+  "why": "Warp's witness is the Uninstall key its app installer writes, since nothing from its Agent CLI is installed here. Open WebUI has two: the desktop app's Uninstall key and the uv tool directory, which require_rows holds. cursor and windsurf are forbidden because their Uninstall keys are read by the same branch, and aider because its uv tool directory is too.",
+  "known_gaps": [
+    "Open WebUI's Docker image is read on Linux only, in 79-linux-image; the Windows runner has no Linux container daemon.",
+    "Warp's installer starts the app and setup stops it at once, and Open WebUI Desktop is never launched, so neither is proved running and what a full first run writes is not read."
+  ]
+}

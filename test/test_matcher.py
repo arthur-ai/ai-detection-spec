@@ -753,6 +753,18 @@ _kp = {n: json.loads((ROOT / "test" / "scenarios" / n / "expected.json").read_te
 check("a Windows-only identifier is expected only of Windows scenarios",
       bool(_kp) and set(_kp.values()) == {"windows"}, str(_kp))
 
+# THE FLOOR NOTE NAMES ONLY SCENARIOS THAT CAN MOVE A COUNT. It named every unrecorded one,
+# 00-baseline among them, whose empty must_find can never produce an identifier.
+_data = _st.collect()
+_short = {s for a in _data["agents"] for i in a["identifiers"]
+          if i["state"] in ("none", "tested-absent") for s in i["asserted_by_ci"]}
+check("the floor note names no scenario that asserts no uncovered identifier",
+      set(_data["floor_scenarios"]) <= _short, f"got {_data['floor_scenarios']}")
+_bare = [n for n in _st.ci_scenarios()
+         if not _st._scenarios.must_find(n, lambda m: _st._scenarios.read(m)[0], _cat["agents"])]
+check("...and a scenario with an empty must_find is never one of them",
+      _bare and not set(_bare) & set(_data["floor_scenarios"]), f"empty must_find: {_bare}")
+
 # classify tries the tool dir `loc` names when `id`'s is unlisted (the tool-dir vectors'
 # shape); the recorder must credit what classify matched.
 _mixed = [{"kind": "file", "id": "/Users/x/.local/pipx/venvs/not-an-agent/", "ver": "",
@@ -1694,36 +1706,48 @@ check("the updater bundled inside it claims nothing",
       "org.sparkle-project.Sparkle.Updater" in _u,
       "Sparkle ships inside Muse.app; a nested bundle is not a second agent")
 
-# WARP AND KILO, from uber/ADR's catalog. The Warp Agent CLI is its installer's shim and its
-# cask; the terminal app is in the considered block, so its bundle id, cask, package and
-# the ~/.warp both write claim nothing. Kilo's curl installer is ~/.kilo, and the legacy
-# CLI's ~/.kilocode is not a value. Open WebUI and Arc were considered and left out too.
+# WARP, KILO AND OPEN WEBUI, from uber/ADR's catalog. Warp is one entry for its app and its
+# Agent CLI; the lookalikes are a longer name beside each path value and ~/.warp, which is not
+# one (catalog/agents.yaml says why). Arc is declined, and Dia, from Arc's vendor, is not.
 _c, _u = _claims(_kind("file", "/home/dana/.local/bin/warp", "/Users/dana/.local/bin/warp",
-                       "/home/dana/.kilo/", "/home/dana/.warp/", "/home/dana/.kilocode/",
-                       "/home/dana/.kilo-dev/", "/home/dana/.local/bin/warp-cli",
-                       "/home/dana/.local/bin/warp-terminal",
-                       "/home/dana/.local/pipx/venvs/open-webui/",
-                       "/home/dana/.local/share/uv/tools/open-webui/"))
-check("the Warp Agent CLI's shim and Kilo's installer directory resolve to their agents",
-      _c == {"/home/dana/.local/bin/warp": "warp-agent-cli",
-             "/Users/dana/.local/bin/warp": "warp-agent-cli",
-             "/home/dana/.kilo/": "kilo-code"}, f"got {_c}")
-check("...and ~/.warp, ~/.kilocode, a longer name and Open WebUI's tool dirs claim nothing",
-      {"/home/dana/.warp/", "/home/dana/.kilocode/", "/home/dana/.kilo-dev/",
-       "/home/dana/.local/bin/warp-cli", "/home/dana/.local/bin/warp-terminal",
-       "/home/dana/.local/pipx/venvs/open-webui/",
-       "/home/dana/.local/share/uv/tools/open-webui/"} <= set(_u),
-      "~/.warp is the terminal app's as much as the CLI's")
-_c, _u = _claims(_kind("brew", "warp-agent-cli", "warp", "kilo"))
-check("the Warp Agent CLI's cask is not the terminal's, and a bare `kilo` claims nothing",
-      _c == {"warp-agent-cli": "warp-agent-cli"} and {"warp", "kilo"} <= set(_u), f"got {_c}")
-_c, _u = _claims(_kind("app", "dev.warp.Warp-Stable", "company.thebrowser.Browser",
-                       "company.thebrowser.dia"))
-check("the Warp terminal and Arc claim nothing; Dia, from Arc's vendor, is still Dia",
-      _c == {"company.thebrowser.dia": "dia"}
-      and {"dev.warp.Warp-Stable", "company.thebrowser.Browser"} <= set(_u), f"got {_c}")
-_c, _u = _claims(_kind("deb", "warp-terminal"))
-check("the Warp terminal's Linux package claims nothing", "warp-terminal" in _u, f"got {_c}")
+                       "C:\\Users\\dana\\AppData\\Local\\Warp\\bin\\warp.cmd",
+                       "/home/dana/.kilo/", "C:\\Users\\dana\\.kilo\\",
+                       "/home/dana/.local/share/uv/tools/open-webui/",
+                       "C:\\Users\\dana\\AppData\\Roaming\\uv\\tools\\open-webui\\",
+                       "/home/dana/.warp/", "/home/dana/.kilo-dev/",
+                       "/home/dana/.local/bin/warp-cli", "/home/dana/.local/bin/warp-terminal",
+                       "C:\\Users\\dana\\AppData\\Local\\Warp\\bin\\warp-preview.cmd",
+                       "/home/dana/.local/share/uv/tools/open-webui-pipelines/"))
+check("Warp's launchers, Kilo's installer directory and Open WebUI's tool dir resolve",
+      _c == {"/home/dana/.local/bin/warp": "warp", "/Users/dana/.local/bin/warp": "warp",
+             "C:\\Users\\dana\\AppData\\Local\\Warp\\bin\\warp.cmd": "warp",
+             "/home/dana/.kilo/": "kilo-code", "C:\\Users\\dana\\.kilo\\": "kilo-code",
+             "/home/dana/.local/share/uv/tools/open-webui/": "open-webui",
+             "C:\\Users\\dana\\AppData\\Roaming\\uv\\tools\\open-webui\\": "open-webui"},
+      f"got {_c}")
+check("...and ~/.warp and a longer name beside each claim nothing",
+      {"/home/dana/.warp/", "/home/dana/.kilo-dev/", "/home/dana/.local/bin/warp-cli",
+       "/home/dana/.local/bin/warp-terminal",
+       "C:\\Users\\dana\\AppData\\Local\\Warp\\bin\\warp-preview.cmd",
+       "/home/dana/.local/share/uv/tools/open-webui-pipelines/"} <= set(_u), f"got {_u}")
+_c, _u = _claims(_kind("brew", "warp", "warp-agent-cli", "kilo", "open-webui", "kilo-code"))
+check("Warp's two casks, Kilo's tap formula and Open WebUI's cask resolve; `kilo-code` does not",
+      _c == {"warp": "warp", "warp-agent-cli": "warp", "kilo": "kilo-code",
+             "open-webui": "open-webui"} and "kilo-code" in _u, f"got {_c}")
+_c, _u = _claims(_kind("app", "dev.warp.Warp-Stable", "com.openwebui.desktop",
+                       "company.thebrowser.Browser", "company.thebrowser.dia"))
+check("the Warp and Open WebUI apps resolve, Arc claims nothing, and Dia is still Dia",
+      _c == {"dev.warp.Warp-Stable": "warp", "com.openwebui.desktop": "open-webui",
+             "company.thebrowser.dia": "dia"}
+      and "company.thebrowser.Browser" in _u, f"got {_c}")
+_c, _u = _claims(_kind("uninstall", "warp-agent-cli-stable_is1", "warp-terminal-stable_is1"))
+check("Warp's two Inno Setup keys, the CLI's and the app's, resolve",
+      _c == {"warp-agent-cli-stable_is1": "warp", "warp-terminal-stable_is1": "warp"},
+      f"got {_c}")
+_c, _u = _claims(_kind("deb", "warp-terminal", "open-webui", "warp"))
+check("Warp's and Open WebUI Desktop's Linux packages resolve; a bare `warp` does not",
+      _c == {"warp-terminal": "warp", "open-webui": "open-webui"} and "warp" in _u,
+      f"got {_c}")
 
 # --- an extension's provenance is read from `extra`, after the browser ---------------
 _cspec = _ilu.spec_from_loader("classify",
