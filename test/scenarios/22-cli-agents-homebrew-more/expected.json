@@ -1,8 +1,8 @@
 {
-  "description": "Maki's Homebrew formula and Devin CLI's cask, installed and not run.",
+  "description": "Maki's and Kilo CLI's Homebrew formulae and the Devin CLI and Warp Agent CLI casks, installed and not run.",
   "platform": "darwin",
   "counts": {
-    "brew": ">=2",
+    "brew": ">=4",
     "app": ">=0",
     "npm": ">=0",
     "file": ">=0",
@@ -17,15 +17,20 @@
   "classified": {
     "must_find": [
       "maki",
-      "devin-cli"
+      "devin-cli",
+      "warp",
+      "kilo-code"
     ],
     "forbid": [
-      "windsurf"
+      "windsurf",
+      "opencode"
     ]
   },
-  "why": "Nothing else on this machine names either agent, so each Homebrew token is its only witness. windsurf is forbidden because its cask is devin-desktop, and the devin-cli token must not be read as it.",
+  "why": "Nothing else on this machine names any of these agents, so each Homebrew token is its only witness. windsurf is forbidden because its cask is devin-desktop, and the devin-cli token must not be read as it; opencode because Kilo's CLI forks it.",
   "must_contain": [
     "\"id\": \"maki\"",
-    "\"id\": \"devin-cli\""
+    "\"id\": \"devin-cli\"",
+    "\"id\": \"warp-agent-cli\"",
+    "\"id\": \"kilo\""
   ]
 }
