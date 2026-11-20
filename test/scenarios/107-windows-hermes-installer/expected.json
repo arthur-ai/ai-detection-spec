@@ -1,0 +1,29 @@
+{
+  "description": "Hermes Agent through the vendor's PowerShell installer, found by the launchers it writes, installed and running.",
+  "platform": "windows",
+  "counts": {
+    "ext": ">=0",
+    "file": ">=1",
+    "msix": ">=1",
+    "nmh": ">=1",
+    "npm": ">=0",
+    "proc": ">=1",
+    "scan": ">=1",
+    "uninstall": ">=1",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "hermes"
+    ]
+  },
+  "require_rows": [
+    {"kind": "file", "id": "\\AppData\\Local\\hermes\\bin\\hermes-acp.exe"},
+    {"kind": "proc", "id": "\\AppData\\Local\\hermes\\bin\\"}
+  ],
+  "why": "The vendor's native Windows route puts the whole install under %LOCALAPPDATA%\\hermes. The file row is the installed witness, read by filesystem-windows.sql's per-user launcher branch, and the proc row is the running one. require_rows holds each witness separately, so the scenario cannot pass on one route while the other is broken. Nothing is forbidden: no file this install writes is a catalogued agent's lookalike.",
+  "known_gaps": [
+    "Running is witnessed by the launcher only. The gateway's Python child, under %LOCALAPPDATA%\\hermes\\tools\\, is matched by nothing, so a gateway started without a launcher in bin\\ reads as installed and not running.",
+    "The installer's MSIX desktop stage (-IncludeDesktop) is not run; 108-windows-hermes-desktop installs the packaged desktop app instead."
+  ]
+}
