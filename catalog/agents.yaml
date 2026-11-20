@@ -661,7 +661,7 @@ agents:
     # hermes-acp.exe, to the bin\ there. hermes-acp.exe, the Agent Client Protocol adapter, is
     # the value, because it is the launcher another tool called hermes would not write. It is
     # found installed and idle, through filesystem-windows.sql's per-user launcher branch;
-    # 109-windows-hermes-idle proves it with nothing of Hermes running.
+    # 109-windows-hermes-idle proves it with nothing launched.
     binaries: ["~/.local/bin/hermes", "~/AppData/Local/hermes/bin/hermes-acp.exe"]
     # HERMES_HOME, and WHEN IT APPEARS DEPENDS ON THE ROUTE -- the distinction that made
     # ~/.aider read DID NOT APPEAR while a scenario installed aider on every run. The

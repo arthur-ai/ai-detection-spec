@@ -23,8 +23,8 @@
       "id": "\\AppData\\Local\\hermes\\bin\\hermes-acp.exe"
     }
   ],
-  "why": "The idle twin of 107. Nothing is launched, so the launcher on disk is the only witness: filesystem-windows.sql's per-user launcher branch reads %LOCALAPPDATA%\\<app>\\bin\\, and require_rows holds the file row to hermes-acp.exe, the catalogued value. setup prints the hermes process rows, which must be none. 107 requires the same file row beside a running process; this scenario proves the file route with no process to lean on.",
+  "why": "The idle twin of 107, which launches Hermes before rows are collected; setup.ps1 says why that leaves the installer's own launchers unproved. Nothing is launched here, so require_rows holds the file row to hermes-acp.exe, the catalogued value, as the installer left it.",
   "known_gaps": [
-    "Only a launcher one level under %LOCALAPPDATA% is read: an installer that keeps its commands deeper, or outside bin\\, is still invisible while idle."
+    "An install with HERMES_HOME set, or install.ps1's -HermesHome pointed elsewhere, puts its launchers in that directory's bin\\, which no catalogued value names, so it is invisible while idle."
   ]
 }

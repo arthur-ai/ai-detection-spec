@@ -175,11 +175,12 @@ artifact.
 | `osquery/dist/discovery-windows.sql` | composed | 1.12 | 491 |
 
 **The per-user launcher branch**, `%LOCALAPPDATA%\<app>\bin\<file>`, added to
-`filesystem-windows.sql` in November 2026: an `.exe`-only form of it returned **no rows on
-the stock image** (the query's total stayed at 6, inside the `fast` band) and **2** after
-Hermes Agent's installer, `hermes.exe` and `hermes-acp.exe` (109-windows-hermes-idle, run
-41898072302). The branch as shipped also lists a bin\'s other files; a developer machine
-with more per-user installers will list more, and neither has been measured.
+`filesystem-windows.sql` in November 2026, returns **no rows on the stock image**: the query
+still read 6 rows, in 0.25s against the table's 0.10s, within its `fast` band (CI run
+44689852142, the `performance-windows` artifact). After Hermes Agent's installer, with
+nothing launched, it returns **2**, `hermes.exe` and `hermes-acp.exe`
+(109-windows-hermes-idle, run 44690332131). A machine with more per-user installers lists
+more, and none has been measured.
 
 `programs-windows.sql` is `slow` for its **cold** run, 7.2s on a fresh runner against 0.4s
 warm, because `programs` reads every MSIX package's manifest off disk (survey run
