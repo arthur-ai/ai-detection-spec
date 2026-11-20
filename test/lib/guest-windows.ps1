@@ -43,6 +43,25 @@ function Invoke-Try([string]$Label, [string]$Exe, [string[]]$ArgList) {
   return ($rc -eq 0)
 }
 
+# A long native command, streamed and bounded. Invoke-Try holds a command's output until it
+# exits, so an installer that stalls leaves nothing in the log when the job's timeout kills
+# the step. Here the child writes straight to the step's log, and is stopped, with its
+# children, after $Minutes. True on exit 0.
+function Invoke-Bounded([string]$Label, [int]$Minutes, [string]$Exe, [string[]]$ArgList) {
+  $p = Start-Process -FilePath $Exe -ArgumentList $ArgList -NoNewWindow -PassThru
+  $null = $p.Handle   # without a handle taken now, ExitCode reads empty after the exit
+  if (-not $p.WaitForExit($Minutes * 60000)) {
+    & "$env:SystemRoot\System32\taskkill.exe" /T /F /PID $p.Id | Out-Null
+    Write-Host "WARN: $Label did not finish in $Minutes minutes and was stopped"
+    return $false
+  }
+  if ($p.ExitCode -ne 0) {
+    Write-Host "WARN: $Label failed (exit $($p.ExitCode)); its output is above"
+    return $false
+  }
+  return $true
+}
+
 # curl.exe, the real one: in 5.1 `curl` is an alias for Invoke-WebRequest. -Compressed for a
 # server that answers gzip unasked, as the Marketplace's VSIX URL does.
 function Get-Download([string]$Url, [string]$Dest, [switch]$Compressed) {

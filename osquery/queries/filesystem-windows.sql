@@ -1,5 +1,5 @@
 -- name: filesystem-windows
--- description: Home-directory install locations on Windows: CLI shims, state dotdirs, tool venvs
+-- description: Home-directory install locations on Windows: CLI shims, state dotdirs, tool venvs, per-user launchers
 -- tables: users, file
 -- min-osquery: 5.10.0
 -- cost: fast
@@ -39,4 +39,14 @@ SELECT 'file', f.path, '', f.path, '', ''
 UNION ALL
 SELECT 'file', f.path, '', f.path, '', ''
   FROM users u CROSS JOIN file f ON f.path LIKE u.directory || '\AppData\Roaming\uv\tools\%\'
+ WHERE u.directory LIKE '_:\Users\%'
+UNION ALL
+-- PER-USER INSTALLERS' LAUNCHERS, %LOCALAPPDATA%\<app>\bin\<file>: the Windows counterpart of
+-- ~\.local\bin, for an installer that keeps its own home under %LOCALAPPDATA% and puts that
+-- bin\ on the user PATH. Hermes Agent's install.ps1 writes nothing anywhere else this file
+-- reads. Files rather than the directory, as in ~\.local\bin, because the launcher's name
+-- is what tells one <app> from another tool of the same name. One `%` is one component, so
+-- deeper bin\ directories, such as an app's under Programs\, are not read.
+SELECT 'file', f.path, '', f.path, '', ''
+  FROM users u CROSS JOIN file f ON f.path LIKE u.directory || '\AppData\Local\%\bin\%'
  WHERE u.directory LIKE '_:\Users\%'
