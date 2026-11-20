@@ -1330,6 +1330,46 @@ agents:
     # The same run's homebrew_packages rows: manus 2.0.6 and 1.7.4, type cask.
     homebrew: [manus]
 
+  # SpaceXAI's Grok Bot, built by Anysphere (Cursor's maker): always-on agents that work on a
+  # cloud computer, sign into the user's apps and websites, and stop for approval. The desktop
+  # app is the client that starts and steers them. A match says the app is installed, never
+  # that a Bot ran or that a plan includes it: no route reads either. Its own entry, not a
+  # route on `cursor` (an editor) or `grok` (a terminal agent): no value is shared, and a
+  # fleet can have any one without the others. 1.0 shipped on 2026-11-11.
+  #
+  # Probe run 43928980619 (2026-11-16) found every download through the app's update feed,
+  # api2.cursor.sh/updates/api/update/<platform>/sand/0.0.0/stable, and cursor.com/download/bot.
+  # `sand` is the product's internal name, in the feed path, the bundle id and the deb's
+  # `Provides: sand`. A deb named `sand` is NOT a value: nothing here installed one.
+  - id: grok-bot
+    name: Grok Bot
+    classification: Personal agent
+    platforms: [darwin, linux, windows]
+    # Read off the probe's cask install, /Applications/Grok Bot.app/Contents/Info.plist, 1.0.1
+    # on macos-15. The cask's zap list names the same id, which is not where it came from.
+    # 16-grok-bot installs the cask, and read both values off osquery in run 43931210037 on
+    # macos-26.
+    bundle_ids: [com.anysphere.sand]
+    homebrew: [grok-bot]
+    # The probe's deb on Ubuntu 24.04 x86_64, grok-bot_1.1.0_amd64.deb: deb_packages
+    # name=grok-bot, version 1.1.0, maintainer "SpaceXAI <hi@cursor.com>". The package writes
+    # /usr/share/applications/grok-bot.desktop and installs under /opt/Grok Bot/.
+    # 69-linux-grok-bot read both in run 43931210037 on Ubuntu 24.04 x86_64 and arm64. The
+    # AppImage, the feed's own Linux download, leaves neither.
+    deb_packages: [grok-bot]
+    desktop_ids: [grok-bot.desktop]
+    # WINDOWS, Grok_Bot_1.1.0_Setup.exe /S on windows-2025, signed "Anysphere, Inc.": an
+    # electron-builder NSIS per-user install. Its HKCU Uninstall key is a GUID, which
+    # electron-builder derives from the app id, so it should hold across versions; only 1.1.0
+    # was installed. DisplayName "Grok Bot 1.1.0", publisher SpaceXAI. The
+    # DisplayName and the `programs` name carry the version, so neither is a value.
+    # 111-windows-grok-bot read it and the process below in run 43931210037.
+    uninstall_keys: ["8db316bb-b3e2-5dd2-9554-ecccb62be362"]
+    # RUNNING, from where that installer puts it: ~\AppData\Local\Programs\Grok Bot\Grok Bot.exe,
+    # read off the same install, launched. Its updater, ~\AppData\Local\sand-updater\, is not
+    # a value.
+    process_paths: ["~/AppData/Local/Programs/Grok Bot/"]
+
   # ---------------------------------------------------------------------------------------
   # FROM HERE, terminal coding agents added 2026-11-02, the ones herdr (a terminal
   # multiplexer, in the considered block above) lists as agents it runs and this catalog did

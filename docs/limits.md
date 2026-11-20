@@ -82,6 +82,8 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 108-windows-hermes-desktop | Read while its user is signed in: an MSIX package installed for one user is in HKEY_USERS only then (docs/blind-spots.yaml). |
 | 109-windows-hermes-idle | An install with HERMES_HOME set, or install.ps1's -HermesHome pointed elsewhere, puts its launchers in that directory's bin\, which no catalogued value names, so it is invisible while idle. |
 | 110-windows-installers-more | Installed, never run, and never signed in: what either CLI writes on first use is not read here. |
+| 111-windows-grok-bot, 69-linux-grok-bot | A match says the Grok Bot app is installed, not that a Bot ran or that a plan includes it. |
+| 111-windows-grok-bot | The arm64 installer is not run: the runner is x64. |
 | 111-windows-warp-open-webui | Open WebUI's Docker image is read on Linux only, in 79-linux-image; the Windows runner has no Linux container daemon. |
 | 111-windows-warp-open-webui | Warp's installer starts the app and setup stops it, and Open WebUI Desktop is never launched, so neither is proved running and what a full first run writes is not read. |
 | 112-linux-warp-app | The AppImage and the pacman package are not installed; an AppImage registers no package, so it is reachable only once run. |
@@ -94,6 +96,8 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 14-meta-muse | The DMG is whatever the production Sparkle channel serves on the day. A build that changes its bundle id shows up as a missing com.meta.endo, which is the point; a build that only bumps the version is recorded as that version. |
 | 15-manus | Manus is never launched: its computer-use and capture helpers, which its cask's uninstall stanza names as launchd jobs, are never registered, so no launchd value is read. |
 | 15-manus | Manus's Windows build is not installed anywhere. |
+| 16-grok-bot | A match says the Grok Bot app is installed, not that a Bot ran or that a plan includes it: Bots run on a cloud computer, and no route reads either. |
+| 16-grok-bot | Grok Bot is never launched, so no running-app value is read on macOS. |
 | 16-hermes-desktop | Not launched, so running_apps is not exercised for Hermes, and what the app writes on first run is read only on the probe run the catalog cites. |
 | 16-hermes-desktop | The source-built desktop (`hermes desktop`, bundle id com.nousresearch.hermes) and the remote-only Light client are other bundle ids, and neither is installed here. |
 | 20-cli-agents, 71-linux-cli-agents | The shim's `ver` is checked for presence, not against the installed release: the shim's path names no release, and the release changes with every install, so expected.json cannot hold it. A join onto the wrong versions/ file would pass. |
@@ -105,6 +109,8 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 56-openclaw-retired-names | The npm names only. The macOS side of this lineage is 57-clawdbot-era, which installs the Clawdbot-era app and proves its bundle id. |
 | 57-clawdbot-era | The bundle id only. com.clawdbot. as a launchd prefix is NOT asserted: the binary contains com.clawdbot.gateway, but a LaunchAgent is registered when the app RUNS and this scenario only installs. Unverified, so not in the catalog either. |
 | 57-clawdbot-era | Clawdis, the generation before this one, ships its own macOS app and is not covered. Its bundle id has not been read off the artifact, so nothing is claimed about it. |
+| 69-linux-grok-bot | The rpm family is not installed: the rpm cursor.com/download/bot links was not served on 2026-11-16. |
+| 69-linux-grok-bot | The AppImage, the feed's own download, leaves no package record and no .desktop file unless the user integrates it. |
 | 70-linux-baseline | Runs on whatever base image the job uses, so it proves nothing about a loaded desktop. 00-baseline has the same limitation on macOS. |
 | 71-linux-cli-agents | Claude Code's npm identifier is not exercised here -- the native installer is its primary route and the two would fight over the same binary name. 21-cli-agents-homebrew makes the same argument on macOS. |
 | 72-linux-python-agents | Whether ~/.hermes appears depends on the install route: the vendor's curl installer creates it, a uv install does not until the agent runs. The run records what appeared rather than asserting it. |

@@ -274,6 +274,7 @@ jobs:
           - 13-desktop-apps-more
           - 14-meta-muse
           - 15-manus
+          - 16-grok-bot
           - 16-hermes-desktop
           - 20-cli-agents
           - 21-cli-agents-homebrew
@@ -457,6 +458,7 @@ jobs:
         # whose software ships no arm64 build says so by exiting 3, as it would on a Mac.
         os: [ubuntu-24.04, ubuntu-24.04-arm]
         scenario:
+          - 69-linux-grok-bot
           - 70-linux-baseline
           - 71-linux-cli-agents
           - 72-linux-python-agents
@@ -618,6 +620,7 @@ jobs:
           - 108-windows-hermes-desktop
           - 109-windows-hermes-idle
           - 110-windows-installers-more
+          - 111-windows-grok-bot
           - 111-windows-warp-open-webui
         exclude: ${{ fromJSON(needs.scope.outputs.exclude_scenario_windows || '[]') }}
     steps:
