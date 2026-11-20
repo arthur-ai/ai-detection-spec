@@ -80,6 +80,7 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 107-windows-hermes-installer | The installer's MSIX desktop stage (-IncludeDesktop) is not run; 108-windows-hermes-desktop installs the packaged desktop app instead. |
 | 108-windows-hermes-desktop | The Microsoft Store package is a different identity, NousResearchInc.HermesAgent with the Store's publisher hash, and Server 2025 has no Store, so it is not installed here (docs/blind-spots.yaml, Store-only apps). |
 | 108-windows-hermes-desktop | Read while its user is signed in: an MSIX package installed for one user is in HKEY_USERS only then (docs/blind-spots.yaml). |
+| 109-windows-hermes-idle | An install with HERMES_HOME set, or install.ps1's -HermesHome pointed elsewhere, puts its launchers in that directory's bin\, which no catalogued value names, so it is invisible while idle. |
 | 110-windows-opera-neon | An installed Opera Neon that is not running is not found: its Uninstall key and `programs` name both carry the version. |
 | 110-windows-opera-neon | A match says Opera Neon is installed, not that Neon Do ran or a subscription is active. |
 | 12-chatgpt-pre-rename | The bundle id only. A direct download leaves no Homebrew record, so the `chatgpt` brew route is not exercised here; 10-desktop-apps covers it. |

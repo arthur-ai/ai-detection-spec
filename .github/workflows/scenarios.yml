@@ -614,6 +614,7 @@ jobs:
           - 106-windows-python-agents
           - 107-windows-hermes-installer
           - 108-windows-hermes-desktop
+          - 109-windows-hermes-idle
           - 110-windows-opera-neon
         exclude: ${{ fromJSON(needs.scope.outputs.exclude_scenario_windows || '[]') }}
     steps:

@@ -1,0 +1,30 @@
+{
+  "description": "Hermes Agent through the vendor's PowerShell installer, installed and never launched, found by the hermes-acp.exe launcher it writes under %LOCALAPPDATA%.",
+  "platform": "windows",
+  "counts": {
+    "ext": ">=0",
+    "file": ">=1",
+    "msix": ">=1",
+    "nmh": ">=1",
+    "npm": ">=0",
+    "proc": ">=0",
+    "scan": ">=1",
+    "uninstall": ">=1",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "hermes"
+    ]
+  },
+  "require_rows": [
+    {
+      "kind": "file",
+      "id": "\\AppData\\Local\\hermes\\bin\\hermes-acp.exe"
+    }
+  ],
+  "why": "The idle twin of 107, which launches Hermes before rows are collected; setup.ps1 says why that leaves the installer's own launchers unproved. Nothing is launched here, so require_rows holds the file row to hermes-acp.exe, the catalogued value, as the installer left it.",
+  "known_gaps": [
+    "An install with HERMES_HOME set, or install.ps1's -HermesHome pointed elsewhere, puts its launchers in that directory's bin\\, which no catalogued value names, so it is invisible while idle."
+  ]
+}
