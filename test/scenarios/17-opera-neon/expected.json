@@ -1,0 +1,35 @@
+{
+  "description": "Opera Neon, an agentic browser, through the installer Opera's site serves.",
+  "platform": "darwin",
+  "counts": {
+    "app": ">=1",
+    "brew": ">=0",
+    "npm": ">=0",
+    "file": ">=0",
+    "ext": ">=0",
+    "nmh": ">=0",
+    "daemon": ">=0",
+    "port": ">=0",
+    "vscodeext": ">=0",
+    "jbplugin": ">=0",
+    "proc": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "opera-neon"
+    ],
+    "forbid": [
+      "perplexity-comet",
+      "dia",
+      "orion"
+    ]
+  },
+  "why": "The bundle id is Opera Neon's only value on macOS, so must_find proves it; must_contain names it as well, so a second value added later cannot stand in for it. The other AI browsers are forbidden: a new Chromium fork must not be read as one already catalogued.",
+  "must_contain": [
+    "com.operasoftware.OperaNeon"
+  ],
+  "known_gaps": [
+    "A match says Opera Neon is installed, not that Neon Do ran or a subscription is active: no route reads either.",
+    "The browser is stopped before the query, so no launchd or running-app value is read on macOS."
+  ]
+}

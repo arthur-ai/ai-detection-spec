@@ -275,6 +275,7 @@ jobs:
           - 14-meta-muse
           - 15-manus
           - 16-hermes-desktop
+          - 17-opera-neon
           - 20-cli-agents
           - 21-cli-agents-homebrew
           - 22-cli-agents-homebrew-more
@@ -617,6 +618,7 @@ jobs:
           - 107-windows-hermes-installer
           - 108-windows-hermes-desktop
           - 109-windows-hermes-idle
+          - 110-windows-opera-neon
           - 110-windows-installers-more
           - 111-windows-warp-open-webui
         exclude: ${{ fromJSON(needs.scope.outputs.exclude_scenario_windows || '[]') }}

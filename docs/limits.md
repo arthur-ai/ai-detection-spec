@@ -82,6 +82,8 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 108-windows-hermes-desktop | Read while its user is signed in: an MSIX package installed for one user is in HKEY_USERS only then (docs/blind-spots.yaml). |
 | 109-windows-hermes-idle | An install with HERMES_HOME set, or install.ps1's -HermesHome pointed elsewhere, puts its launchers in that directory's bin\, which no catalogued value names, so it is invisible while idle. |
 | 110-windows-installers-more | Installed, never run, and never signed in: what either CLI writes on first use is not read here. |
+| 110-windows-opera-neon | An installed Opera Neon that is not running is not found: its Uninstall key and `programs` name both carry the version. |
+| 110-windows-opera-neon | A match says Opera Neon is installed, not that Neon Do ran or a subscription is active. |
 | 111-windows-warp-open-webui | Open WebUI's Docker image is read on Linux only, in 79-linux-image; the Windows runner has no Linux container daemon. |
 | 111-windows-warp-open-webui | Warp's installer starts the app and setup stops it, and Open WebUI Desktop is never launched, so neither is proved running and what a full first run writes is not read. |
 | 112-linux-warp-app | The AppImage and the pacman package are not installed; an AppImage registers no package, so it is reachable only once run. |
@@ -96,6 +98,8 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 15-manus | Manus's Windows build is not installed anywhere. |
 | 16-hermes-desktop | Not launched, so running_apps is not exercised for Hermes, and what the app writes on first run is read only on the probe run the catalog cites. |
 | 16-hermes-desktop | The source-built desktop (`hermes desktop`, bundle id com.nousresearch.hermes) and the remote-only Light client are other bundle ids, and neither is installed here. |
+| 17-opera-neon | A match says Opera Neon is installed, not that Neon Do ran or a subscription is active: no route reads either. |
+| 17-opera-neon | The browser is stopped before the query, so no launchd or running-app value is read on macOS. |
 | 20-cli-agents, 71-linux-cli-agents | The shim's `ver` is checked for presence, not against the installed release: the shim's path names no release, and the release changes with every install, so expected.json cannot hold it. A join onto the wrong versions/ file would pass. |
 | 23-kiro-cli-app-era | The bundle id only. The app is installed and never launched, so the LaunchAgent the cask's old uninstall stanza named, com.amazon.codewhisperer.launcher, is unverified and not in the catalog. |
 | 24-warp-open-webui | Sign-in gated: neither app is launched, so nothing exercises what each writes once used. |
