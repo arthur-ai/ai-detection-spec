@@ -280,6 +280,7 @@ jobs:
           - 21-cli-agents-homebrew
           - 22-cli-agents-homebrew-more
           - 23-kiro-cli-app-era
+          - 24-warp-open-webui
           - 25-python-agents
           - 30-ide-agents
           - 40-browser
@@ -485,6 +486,8 @@ jobs:
           - 97-linux-cli-agents-npm-more
           - 98-linux-installers-more
           - 99-linux-prime-agent
+          - 112-linux-warp-app
+          - 113-linux-open-webui-desktop
           # 77-linux-rpm and 91-linux-claude-rpm need dnf, which no ubuntu label has, so
           # they are under the container job only. A scenario listed where it can never
           # run spends a runner on exiting 3; tools/check_workflows.py still fails one
@@ -616,7 +619,9 @@ jobs:
           - 107-windows-hermes-installer
           - 108-windows-hermes-desktop
           - 109-windows-hermes-idle
+          - 110-windows-installers-more
           - 111-windows-grok-bot
+          - 111-windows-warp-open-webui
         exclude: ${{ fromJSON(needs.scope.outputs.exclude_scenario_windows || '[]') }}
     steps:
       - uses: actions/checkout@v4

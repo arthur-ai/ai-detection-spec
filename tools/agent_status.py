@@ -623,7 +623,15 @@ def collect():
     # data now; README points at this report.
     blind = yaml.safe_load((ROOT / "docs" / "blind-spots.yaml").read_text())["blind_spots"]
 
-    return {"observed_os": sorted(observed_os), "blind_spots": blind, "ci_unrecorded": unrecorded,
+    # THE SCENARIOS THAT MAKE THE COUNT A FLOOR: unrecorded ones that assert an identifier
+    # still short of a real install. Every unrecorded scenario was named before, so the note
+    # blamed 00-baseline, whose must_find is empty and can never move a count, while the
+    # shortfall was a recorded scenario whose observation predated a new value.
+    floor = sorted({s for a in agents for i in a["identifiers"]
+                    if i["state"] in ("none", "tested-absent")
+                    for s in i["asserted_by_ci"] if s in unrecorded})
+
+    return {"observed_os": sorted(observed_os), "blind_spots": blind, "floor_scenarios": floor,
             "removed": catalog.get("removed", []),
             "classifications": [c["name"] for c in catalog["classifications"]],
             "definitions": {c["name"]: c["definition"] for c in catalog["classifications"]},
@@ -790,15 +798,13 @@ def markdown(data):  # noqa: C901
         # osquery/bin/discover --deep. A generated page is the wrong place for a standing excuse:
         # this names the identifier and where its evidence comes from, and the sentence
         # disappears on its own when a real install records one.
-        # The floor note names scenarios in CI that have recorded nothing yet -- but only
-        # where that actually costs coverage. It used to fire for ANY unrecorded scenario,
-        # including `76-linux-systemd`, which asserts no identifiers at all, so it warned
-        # that a number was a floor while the table beside it read zero.
-        *((["> **This number is a floor.** `" + "`, `".join(data["ci_unrecorded"])
+        # The floor note names the unrecorded scenarios that collect() found holding a count
+        # down, and only those.
+        *((["> **This number is a floor.** `" + "`, `".join(data["floor_scenarios"])
             + "` are in the CI matrix and have recorded nothing yet. Absence of an "
               "observation is not absence of a test, and the count corrects itself once "
               "each has run.", ""])
-          if data.get("ci_unrecorded") and n_st("none") + n_st("tested-absent") else []),
+          if data["floor_scenarios"] else []),
         # The enforcement sentence sits beside the headline count above, not here: this
         # section answers "why", and "there is no block that buys an exception" argued
         # against a removed `unverified:` block the reader never saw.
@@ -1246,13 +1252,11 @@ def main():
         print(f"\n  {n('superseded')} superseded identifier(s) are excluded: nothing installs them any "
               f"more, so no\n  scenario can cover one. Their fixture rows are the only "
               f"evidence there is.")
-    # Only where an unrecorded scenario actually costs coverage. It used to fire for any
-    # scenario without an observation -- including one that asserts no identifiers at all,
-    # so it announced a floor while every gap count read zero.
-    if data.get("ci_unrecorded") and n("none") + n("tested-absent"):
-        print(f"\n  THIS IS A FLOOR. {len(data['ci_unrecorded'])} scenario(s) are in the CI "
+    # Only the unrecorded scenarios collect() found holding a count down.
+    if data["floor_scenarios"]:
+        print(f"\n  THIS IS A FLOOR. {len(data['floor_scenarios'])} scenario(s) are in the CI "
               f"matrix and have recorded\n  nothing yet: "
-              f"{', '.join(data['ci_unrecorded'])}")
+              f"{', '.join(data['floor_scenarios'])}")
 
 
 if __name__ == "__main__":

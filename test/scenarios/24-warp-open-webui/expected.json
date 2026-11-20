@@ -1,0 +1,38 @@
+{
+  "description": "The Warp app and Open WebUI's desktop app and PyPI package on macOS, beside Arc, which must claim nothing.",
+  "platform": "darwin",
+  "counts": {
+    "brew": ">=3",
+    "app": ">=3",
+    "npm": ">=0",
+    "file": ">=1",
+    "ext": ">=0",
+    "nmh": ">=0",
+    "daemon": ">=0",
+    "port": ">=0",
+    "vscodeext": ">=0",
+    "jbplugin": ">=0",
+    "proc": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "warp",
+      "open-webui"
+    ],
+    "forbid": [
+      "dia",
+      "perplexity-comet",
+      "aider"
+    ]
+  },
+  "why": "Each bundle id is a raw probe, for 13's reason: Warp and Open WebUI also match on the brew route, so must_find alone would pass with either bundle id broken. Open WebUI's uv tool directory is a third witness, held by must_contain. Arc is installed so that its bundle id is a real row the catalog declines, and the scenario finds exactly its must_find, so Arc claiming anything fails it. dia is forbidden because Arc's vendor makes it, perplexity-comet because it is another Chromium browser, and aider because its uv tool directory is read by the same route.",
+  "must_contain": [
+    "dev.warp.Warp-Stable",
+    "com.openwebui.desktop",
+    "company.thebrowser.Browser",
+    "/.local/share/uv/tools/open-webui/"
+  ],
+  "known_gaps": [
+    "Sign-in gated: neither app is launched, so nothing exercises what each writes once used."
+  ]
+}

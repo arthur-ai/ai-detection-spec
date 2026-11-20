@@ -1,0 +1,32 @@
+{
+  "description": "The Warp app from Warp's .deb or .rpm, found through the package name.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "deb+rpm": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=0",
+    "jbplugin": ">=0",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "port": ">=0",
+    "proc": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "warp"
+    ]
+  },
+  "why": "Nothing from Warp's Agent CLI is installed here, so the deb or rpm row is Warp's only witness and removing the value turns must_find red.",
+  "must_contain": [
+    "\"id\": \"warp-terminal\""
+  ],
+  "known_gaps": [
+    "The AppImage and the pacman package are not installed; an AppImage registers no package, so it is reachable only once run."
+  ]
+}

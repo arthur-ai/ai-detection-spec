@@ -1,0 +1,32 @@
+{
+  "description": "Open WebUI Desktop from its release's .deb, found through the package name.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=1",
+    "deb+rpm": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=0",
+    "jbplugin": ">=0",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "port": ">=0",
+    "proc": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "open-webui"
+    ]
+  },
+  "why": "Nothing else on this host names Open WebUI, so the deb row is its only witness and removing the value turns must_find red.",
+  "must_contain": [
+    "\"id\": \"open-webui\""
+  ],
+  "known_gaps": [
+    "The AppImage, snap and flatpak are not installed; docs/blind-spots.yaml has why none of them registers a package the enumeration reads."
+  ]
+}
