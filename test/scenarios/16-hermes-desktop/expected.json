@@ -22,7 +22,7 @@
   "must_contain": [
     "com.nousresearch.hermes-bundled"
   ],
-  "why": "The app is installed and never launched, so its bundle id is the only witness: a first launch writes ~/.local/bin/hermes and ~/.hermes, which the hermes entry already carries. must_contain names the id as well, so a rename turns this red even if something else on the runner ever named Hermes. Nothing is forbidden: no catalogued agent shares the com.nousresearch namespace.",
+  "why": "The app is installed and never launched, so its bundle id is the only witness; setup.sh says why it is not launched. must_contain names the id as well, so a rename turns this red even if something else on the runner ever named Hermes. Nothing is forbidden: no catalogued agent shares the com.nousresearch namespace.",
   "known_gaps": [
     "Not launched, so running_apps is not exercised for Hermes, and what the app writes on first run is read only on the probe run the catalog cites.",
     "The source-built desktop (`hermes desktop`, bundle id com.nousresearch.hermes) and the remote-only Light client are other bundle ids, and neither is installed here."

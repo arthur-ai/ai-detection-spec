@@ -97,7 +97,7 @@ General-purpose, and often bridged to messaging.
 
 | name | platforms | identifiers | scenarios |
 |---|---|---|---|
-| **Hermes Agent** | macOS, Linux, Windows | com.nousresearch.hermes-bundled ⚠, **`hermes-agent`**, **`hermes-agent`**, nousresearch/hermes-agent ⚠, **`~/.hermes`**, **`~/.local/bin/hermes`**, ~/AppData/Local/hermes/bin/hermes.exe ⚠, ~/AppData/Local/hermes/bin/ ⚠, NousResearch.HermesBundled_e60prshbsznhj | 107-windows-hermes-installer, 108-windows-hermes-desktop, 109-windows-hermes-idle, 16-hermes-desktop, 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
+| **Hermes Agent** | macOS, Linux, Windows | com.nousresearch.hermes-bundled ⚠, **`hermes-agent`**, **`hermes-agent`**, nousresearch/hermes-agent ⚠, **`~/.hermes`**, **`~/.local/bin/hermes`**, ~/AppData/Local/hermes/bin/hermes-acp.exe ⚠, ~/AppData/Local/hermes/bin/ ⚠, NousResearch.HermesBundled_e60prshbsznhj | 107-windows-hermes-installer, 108-windows-hermes-desktop, 109-windows-hermes-idle, 16-hermes-desktop, 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
 | **Letta server** | Linux | **`lettaai/letta`** | 79-linux-image |
 | **Manus** | macOS | **`im.manus.desktop`**, **`manus`** | 15-manus |
 | **Muse for Mac** | macOS | **`com.meta.endo`** | 14-meta-muse |
@@ -146,7 +146,7 @@ Each one needs work, and the state column says what kind. **did not appear** mea
 |---|---|---|---|---|
 | Hermes Agent | bundle id | `com.nousresearch.hermes-bundled` | did not appear | 21-cli-agents-homebrew, 25-python-agents |
 | Hermes Agent | image | `nousresearch/hermes-agent` | did not appear | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
-| Hermes Agent | binary | `~/AppData/Local/hermes/bin/hermes.exe` | did not appear | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
+| Hermes Agent | binary | `~/AppData/Local/hermes/bin/hermes-acp.exe` | did not appear | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
 | Hermes Agent | process_paths | `~/AppData/Local/hermes/bin/` | did not appear | 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
 | Hermes Agent | msix_families | `NousResearch.HermesBundled_e60prshbsznhj` | no test | -- |
 

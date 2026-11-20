@@ -1,5 +1,5 @@
 {
-  "description": "Hermes Agent through the vendor's PowerShell installer, installed and never launched, found by the launcher it writes under %LOCALAPPDATA%.",
+  "description": "Hermes Agent through the vendor's PowerShell installer, installed and never launched, found by the hermes-acp.exe launcher it writes under %LOCALAPPDATA%.",
   "platform": "windows",
   "counts": {
     "ext": ">=0",
@@ -15,17 +15,15 @@
   "classified": {
     "must_find": [
       "hermes"
-    ],
-    "forbid": [
-      "claude-code",
-      "codex-cli",
-      "aider"
     ]
   },
   "require_rows": [
-    {"kind": "file", "id": "\\AppData\\Local\\hermes\\bin\\hermes.exe"}
+    {
+      "kind": "file",
+      "id": "\\AppData\\Local\\hermes\\bin\\hermes-acp.exe"
+    }
   ],
-  "why": "The idle twin of 107. Nothing is launched, so the launcher on disk is the only witness: filesystem-windows.sql's %LOCALAPPDATA%\\<app>\\bin\\*.exe branch reads it, and require_rows holds the file row to its path. setup prints the hermes process rows, which must be none. `forbid` matches 107's.",
+  "why": "The idle twin of 107. Nothing is launched, so the launcher on disk is the only witness: filesystem-windows.sql's per-user launcher branch reads %LOCALAPPDATA%\\<app>\\bin\\, and require_rows holds the file row to hermes-acp.exe, the catalogued value. setup prints the hermes process rows, which must be none. 107 requires the same file row beside a running process; this scenario proves the file route with no process to lean on.",
   "known_gaps": [
     "Only a launcher one level under %LOCALAPPDATA% is read: an installer that keeps its commands deeper, or outside bin\\, is still invisible while idle."
   ]

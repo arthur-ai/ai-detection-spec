@@ -631,7 +631,8 @@ agents:
   # namespace pushed from NousResearch/hermes-agent's release workflow:
   #
   #   install.ps1  `iex (irm https://hermes-agent.nousresearch.com/install.ps1)`, native
-  #              Windows. Everything under %LOCALAPPDATA%\hermes, launchers in its bin\.
+  #              Windows. Everything under %LOCALAPPDATA%\hermes, launchers in its bin\,
+  #              and nothing under ~\.hermes or ~\.local\bin.
   #   msix       Hermes Desktop for Windows, an .appinstaller feed naming a signed bundle.
   #   dmg        Hermes Desktop for macOS, Apple Silicon only, never on Intel.
   #   image      nousresearch/hermes-agent on Docker Hub.
@@ -655,14 +656,13 @@ agents:
     # hermes-agent, so the install is found by this one, and a prefix would also claim any
     # other tool named hermes-<something>.
     #
-    # THE WINDOWS INSTALLER, INSTALLED AND IDLE, is the second value. install.ps1 writes that
-    # launcher and adds its bin\ to the user PATH, and filesystem-windows.sql lists
-    # %LOCALAPPDATA%\<app>\bin\*.exe for it. Read off 109-windows-hermes-idle on windows-2025,
-    # installed and never launched. The launcher and not its siblings, for the reason above:
-    # hermes-acp.exe sits beside it. A launch can leave the running copy renamed aside as
-    # hermes.exe.deleteme while a new hermes.exe is written, so this path is there either
-    # way; the aside copy is not .exe and is not listed.
-    binaries: ["~/.local/bin/hermes", "~/AppData/Local/hermes/bin/hermes.exe"]
+    # THE WINDOWS INSTALLER, read off 107-windows-hermes-installer on windows-2025: install.ps1
+    # makes %LOCALAPPDATA%\hermes its HERMES_HOME and writes its launchers, hermes.exe and
+    # hermes-acp.exe, to the bin\ there. hermes-acp.exe, the Agent Client Protocol adapter, is
+    # the value, because it is the launcher another tool called hermes would not write. It is
+    # found installed and idle, through filesystem-windows.sql's per-user launcher branch;
+    # 109-windows-hermes-idle proves it with nothing of Hermes running.
+    binaries: ["~/.local/bin/hermes", "~/AppData/Local/hermes/bin/hermes-acp.exe"]
     # HERMES_HOME, and WHEN IT APPEARS DEPENDS ON THE ROUTE -- the distinction that made
     # ~/.aider read DID NOT APPEAR while a scenario installed aider on every run. The
     # installer puts the checkout at $HERMES_HOME/hermes-agent, so a curl install creates
@@ -685,26 +685,15 @@ agents:
     # It is in the fixture as a negative control, for the same reason `libxdmcp` is: it is
     # the row a substring match would claim.
     #
-    # THE WINDOWS INSTALLER, FOUND RUNNING AND ONLY RUNNING. Read off 107-windows-hermes-installer
-    # on windows-2025, v0.22.7: install.ps1 writes ~\AppData\Local\hermes\bin\hermes.exe and
-    # hermes-acp.exe, PM's Python under ~\AppData\Local\hermes\tools\, and NO ~\.hermes and
-    # nothing in ~\.local\bin -- the two places filesystem-windows.sql then read. The
-    # launcher is now also read on disk (`binaries` above, 109-windows-hermes-idle); this
-    # value is the RUNNING install, which says Hermes is live and not just present.
-    #
-    # THE LAUNCHER'S DIRECTORY, NOT ITS FILE NAME, and CI is what taught that. The probe run
-    # read the gateway as ...\hermes\bin\hermes.exe; the PR's first run read the same process
-    # as ...\hermes\bin\hermes.exe.deleteme (run 41880268740). The first launch after an
-    # install republishes the launchers, and Windows will not delete a mapped image, so
-    # Hermes's own _launchers.py renames the RUNNING hermes.exe aside (`.deleteme`, or
-    # `.<pid>.deleteme`) and writes a new one -- and `processes.path` follows the rename. A
-    # value naming hermes.exe matched one run and missed the next. Every file in this bin\ is
-    # a Hermes launcher the vendor writes, so the directory is the value.
-    #
-    # Still the narrowest thing that is the agent: `hermes` is a generic name to find under
-    # %LOCALAPPDATA%, so not the whole ~\AppData\Local\hermes\, and not
-    # ~/.cargo/bin/hermes.exe, which is informalsystems' IBC relayer, nor a bare hermes.exe,
-    # which is also Meta's JavaScript engine's CLI.
+    # THE WINDOWS INSTALLER RUNNING: the launcher DIRECTORY, because the running file has no
+    # stable name. A launch that republishes the launchers renames the running hermes.exe
+    # aside, since Windows will not delete a mapped image, and processes.path follows it to
+    # hermes.exe.deleteme or hermes.exe.<pid>.deleteme (run 41880268740). That is a guess as
+    # well as a value: it claims any process in a %LOCALAPPDATA%\hermes\bin\, and nothing
+    # here can show that no other tool called hermes installs there. Neither
+    # ~/.cargo/bin/hermes.exe, informalsystems' IBC relayer, nor a bare hermes.exe, which is
+    # also Meta's JavaScript engine's CLI, is claimed. The gateway's Python child, under
+    # %LOCALAPPDATA%\hermes\tools\, is not claimed either.
     process_paths: ["~/AppData/Local/hermes/bin/"]
     # HERMES DESKTOP FOR WINDOWS. Read off 108-windows-hermes-desktop on windows-2025: the
     # stable feed, hermes-assets.nousresearch.com/releases/win32/stable/stable.appinstaller,

@@ -585,9 +585,10 @@ jobs:
     if: needs.scope.outputs.runtime == 'true' && needs.scope.outputs.skip_scenario_windows != 'true'
     name: ${{ matrix.scenario }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
-    # The survey's slowest install, VS Code and five extensions, took under two minutes, so
-    # this is a ceiling for a hang rather than a budget.
-    timeout-minutes: 30
+    # The slowest job is 108-windows-hermes-desktop, 10 to 15 minutes across five runs in
+    # November 2026, nearly all of it the msixbundle's download and install. Three times that
+    # is a ceiling for a hang rather than a budget.
+    timeout-minutes: 45
     defaults:
       run:
         shell: bash

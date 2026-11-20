@@ -174,11 +174,12 @@ artifact.
 | `vscode-windows.sql` | fast | 0.26 | 0 |
 | `osquery/dist/discovery-windows.sql` | composed | 1.12 | 491 |
 
-**The `%LOCALAPPDATA%\<app>\bin\*.exe` branch** added to `filesystem-windows.sql` on
-2026-11-04 returned **no rows on the stock image**: the query's total stayed at 6, and
-`measure.py --check` kept it in the `fast` band. After Hermes Agent's installer it added
-**2** rows, `hermes.exe` and `hermes-acp.exe` (109-windows-hermes-idle, run 41898072302). A
-developer machine with more per-user installers will list more; that has not been measured.
+**The per-user launcher branch**, `%LOCALAPPDATA%\<app>\bin\<file>`, added to
+`filesystem-windows.sql` in November 2026: an `.exe`-only form of it returned **no rows on
+the stock image** (the query's total stayed at 6, inside the `fast` band) and **2** after
+Hermes Agent's installer, `hermes.exe` and `hermes-acp.exe` (109-windows-hermes-idle, run
+41898072302). The branch as shipped also lists a bin\'s other files; a developer machine
+with more per-user installers will list more, and neither has been measured.
 
 `programs-windows.sql` is `slow` for its **cold** run, 7.2s on a fresh runner against 0.4s
 warm, because `programs` reads every MSIX package's manifest off disk (survey run
