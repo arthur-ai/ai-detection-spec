@@ -1445,18 +1445,24 @@ agents:
   # NOT HERE: ~/.warp, which both the app (settings and themes on macOS, MCP config and
   # skills everywhere) and this CLI use, so it cannot tell them apart; ~/.warp/tui, the
   # installer's install root, a level deeper than the enumeration reads; and ~/.agents, a
-  # directory several agents share. Windows' %LOCALAPPDATA%\Warp\bin\warp.cmd is outside
-  # what the Windows enumeration reads.
+  # directory several agents share. Windows' %LOCALAPPDATA%\Warp\bin\warp.cmd, a path from
+  # Warp's docs, is in what filesystem-windows.sql's per-user launcher branch reads, but no
+  # scenario installs the CLI on Windows, so it is no value yet and a Windows host with the
+  # CLI reads as having no Warp Agent CLI.
   - id: warp-agent-cli
     name: Warp Agent CLI
     classification: Coding agent
     platforms: [darwin, linux]
     # The curl installer, app.warp.dev/download/agent-cli, links ~/.local/bin/warp to the
-    # build under ~/.warp/tui (Warp's uninstall page names both). The desktop app writes no
-    # ~/.local/bin entry: its Linux packages are `warp-terminal`. Read off
+    # build under ~/.warp/tui (Warp's uninstall page names both). Read off
     # 98-linux-installers-more in CI run 42100036985 on 2026-11-05: /home/dana/.local/bin/warp
     # -> ~/.warp/tui/current/warp-tui-stable, v0.2026.11.03.17.08.stable_00, on Ubuntu 24.04
     # x86_64 and arm64 and the four container images.
+    #
+    # UNMEASURED: that the desktop app never writes ~/.local/bin/warp. Its Linux package is
+    # named `warp-terminal`, but no scenario installs the app, so this is inferred. The name is
+    # not Warp's alone either: MinIO's S3 benchmark is a binary called `warp`, and a copy a
+    # user puts in ~/.local/bin is reported as this agent.
     binaries: ["~/.local/bin/warp"]
     # homebrew-cask's `warp-agent-cli`, which links its binary as `warp` under Homebrew's
     # prefix. Not `warp`, the cask for the terminal app. Read off 22-cli-agents-homebrew-more
