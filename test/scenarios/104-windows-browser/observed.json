@@ -5,11 +5,11 @@
       "agent": "chatgpt-extension",
       "route": "extension_ids",
       "value": "hehggadaopoacecdllhhajmbjkdcmajg",
-      "agent_version": "1.26.1102.11740",
+      "agent_version": "1.26.1112.10914",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44693430337"
     },
     {
       "agent": "claude-desktop",
@@ -19,7 +19,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44693430337"
     },
     {
       "agent": "claude-desktop",
@@ -28,7 +28,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44693430337"
     },
     {
       "agent": "claude-in-chrome",
@@ -38,27 +38,27 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44693430337"
     },
     {
       "agent": "harpa",
       "route": "extension_ids",
       "value": "eanggfilgoajaocelnaflolkadkeghjp",
-      "agent_version": "17.0.0",
+      "agent_version": "18.0.1",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44693430337"
     },
     {
       "agent": "merlin",
       "route": "extension_ids",
       "value": "camppjleccjaphfdbohjdohecfnoikec",
-      "agent_version": "8.4.2",
+      "agent_version": "8.4.6",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44693430337"
     },
     {
       "agent": "monica",
@@ -68,7 +68,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44693430337"
     },
     {
       "agent": "sider",
@@ -78,7 +78,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44693430337"
     }
   ]
 }
