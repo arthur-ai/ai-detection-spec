@@ -1,0 +1,53 @@
+{
+  "scenario": "111-windows-warp-open-webui",
+  "identifiers": [
+    {
+      "agent": "open-webui",
+      "route": "pypi",
+      "value": "open-webui",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "open-webui",
+      "route": "uninstall_keys",
+      "value": "9ff447fd-c978-5e9a-bd5b-350e7a68afc0",
+      "agent_version": "0.1.4",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "warp",
+      "route": "binaries",
+      "value": "~/AppData/Local/warp/bin/warp.cmd",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "warp",
+      "route": "uninstall_keys",
+      "value": "warp-agent-cli-stable_is1",
+      "agent_version": "v0.2026.11.18.08.17.stable_01",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "warp",
+      "route": "uninstall_keys",
+      "value": "warp-terminal-stable_is1",
+      "agent_version": "v0.2026.11.18.08.17.stable_01",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "44772519062"
+    }
+  ]
+}

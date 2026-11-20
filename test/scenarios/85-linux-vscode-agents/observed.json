@@ -5,11 +5,31 @@
       "agent": "amazon-q",
       "route": "vscode_extensions",
       "value": "amazonwebservices.amazon-q-vscode",
-      "agent_version": "2.10.0",
+      "agent_version": "2.11.0",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
+    },
+    {
+      "agent": "amazon-q",
+      "route": "vscode_extensions",
+      "value": "amazonwebservices.amazon-q-vscode",
+      "agent_version": "2.11.0",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "amazon-q",
+      "route": "vscode_extensions",
+      "value": "amazonwebservices.amazon-q-vscode",
+      "agent_version": "2.11.0",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "44772519062"
     },
     {
       "agent": "amazon-q",
@@ -17,26 +37,6 @@
       "value": "amazonwebservices.amazon-q-vscode",
       "agent_version": "2.10.0",
       "platform": "linux",
-      "os": "debian-12",
-      "arch": "x86_64",
-      "run": "43892773260"
-    },
-    {
-      "agent": "amazon-q",
-      "route": "vscode_extensions",
-      "value": "amazonwebservices.amazon-q-vscode",
-      "agent_version": "2.10.0",
-      "platform": "linux",
-      "os": "fedora-41",
-      "arch": "x86_64",
-      "run": "43892773260"
-    },
-    {
-      "agent": "amazon-q",
-      "route": "vscode_extensions",
-      "value": "amazonwebservices.amazon-q-vscode",
-      "agent_version": "2.10.0",
-      "platform": "linux",
       "os": "rocky-9.8",
       "arch": "x86_64",
       "run": "43892773260"
@@ -45,21 +45,31 @@
       "agent": "amazon-q",
       "route": "vscode_extensions",
       "value": "amazonwebservices.amazon-q-vscode",
-      "agent_version": "2.10.0",
+      "agent_version": "2.11.0",
       "platform": "linux",
-      "os": "ubuntu-24.04",
-      "arch": "aarch64",
-      "run": "43892773260"
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
     },
     {
       "agent": "amazon-q",
       "route": "vscode_extensions",
       "value": "amazonwebservices.amazon-q-vscode",
-      "agent_version": "2.10.0",
+      "agent_version": "2.11.0",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "amazon-q",
+      "route": "vscode_extensions",
+      "value": "amazonwebservices.amazon-q-vscode",
+      "agent_version": "2.11.0",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "augment",
@@ -69,7 +79,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "augment",
@@ -79,7 +89,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "augment",
@@ -89,7 +99,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "augment",
@@ -107,9 +117,19 @@
       "value": "augment.vscode-augment",
       "agent_version": "0.904.1",
       "platform": "linux",
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "augment",
+      "route": "vscode_extensions",
+      "value": "augment.vscode-augment",
+      "agent_version": "0.904.1",
+      "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "augment",
@@ -119,7 +139,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "blackbox",
@@ -129,7 +149,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "blackbox",
@@ -139,7 +159,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "blackbox",
@@ -149,7 +169,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "blackbox",
@@ -167,9 +187,19 @@
       "value": "blackboxapp.blackbox",
       "agent_version": "2.8.53",
       "platform": "linux",
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "blackbox",
+      "route": "vscode_extensions",
+      "value": "blackboxapp.blackbox",
+      "agent_version": "2.8.53",
+      "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "blackbox",
@@ -179,7 +209,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "blackbox",
@@ -189,7 +219,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "blackbox",
@@ -199,7 +229,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "blackbox",
@@ -209,7 +239,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "blackbox",
@@ -227,9 +257,19 @@
       "value": "blackboxapp.blackboxagent",
       "agent_version": "3.7.0",
       "platform": "linux",
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "blackbox",
+      "route": "vscode_extensions",
+      "value": "blackboxapp.blackboxagent",
+      "agent_version": "3.7.0",
+      "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "blackbox",
@@ -239,37 +279,37 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "claude-code",
       "route": "vscode_extensions",
       "value": "anthropic.claude-code",
-      "agent_version": "2.1.325",
+      "agent_version": "2.1.329",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "claude-code",
       "route": "vscode_extensions",
       "value": "anthropic.claude-code",
-      "agent_version": "2.1.325",
+      "agent_version": "2.1.329",
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "claude-code",
       "route": "vscode_extensions",
       "value": "anthropic.claude-code",
-      "agent_version": "2.1.325",
+      "agent_version": "2.1.329",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "claude-code",
@@ -285,21 +325,31 @@
       "agent": "claude-code",
       "route": "vscode_extensions",
       "value": "anthropic.claude-code",
-      "agent_version": "2.1.325",
+      "agent_version": "2.1.329",
       "platform": "linux",
-      "os": "ubuntu-24.04",
-      "arch": "aarch64",
-      "run": "43892773260"
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
     },
     {
       "agent": "claude-code",
       "route": "vscode_extensions",
       "value": "anthropic.claude-code",
-      "agent_version": "2.1.325",
+      "agent_version": "2.1.329",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "claude-code",
+      "route": "vscode_extensions",
+      "value": "anthropic.claude-code",
+      "agent_version": "2.1.329",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "codegpt",
@@ -309,7 +359,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "codegpt",
@@ -319,7 +369,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "codegpt",
@@ -329,7 +379,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "codegpt",
@@ -347,9 +397,19 @@
       "value": "danielsanmedium.dscodegpt",
       "agent_version": "3.24.84",
       "platform": "linux",
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "codegpt",
+      "route": "vscode_extensions",
+      "value": "danielsanmedium.dscodegpt",
+      "agent_version": "3.24.84",
+      "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "codegpt",
@@ -359,37 +419,37 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "codex-cli",
       "route": "vscode_extensions",
       "value": "openai.chatgpt",
-      "agent_version": "26.1111.21308",
+      "agent_version": "26.1117.31558",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "codex-cli",
       "route": "vscode_extensions",
       "value": "openai.chatgpt",
-      "agent_version": "26.1111.21308",
+      "agent_version": "26.1117.31558",
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "codex-cli",
       "route": "vscode_extensions",
       "value": "openai.chatgpt",
-      "agent_version": "26.1111.21308",
+      "agent_version": "26.1117.31558",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "codex-cli",
@@ -405,21 +465,31 @@
       "agent": "codex-cli",
       "route": "vscode_extensions",
       "value": "openai.chatgpt",
-      "agent_version": "26.1111.21308",
+      "agent_version": "26.1117.31558",
       "platform": "linux",
-      "os": "ubuntu-24.04",
-      "arch": "aarch64",
-      "run": "43892773260"
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
     },
     {
       "agent": "codex-cli",
       "route": "vscode_extensions",
       "value": "openai.chatgpt",
-      "agent_version": "26.1111.21308",
+      "agent_version": "26.1117.31558",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "codex-cli",
+      "route": "vscode_extensions",
+      "value": "openai.chatgpt",
+      "agent_version": "26.1117.31558",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "cody",
@@ -429,7 +499,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "cody",
@@ -439,7 +509,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "cody",
@@ -449,7 +519,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "cody",
@@ -467,9 +537,19 @@
       "value": "sourcegraph.cody-ai",
       "agent_version": "1.156.0",
       "platform": "linux",
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "cody",
+      "route": "vscode_extensions",
+      "value": "sourcegraph.cody-ai",
+      "agent_version": "1.156.0",
+      "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "cody",
@@ -479,37 +559,37 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "gemini-code-assist",
       "route": "vscode_extensions",
       "value": "google.geminicodeassist",
-      "agent_version": "2.107.0",
+      "agent_version": "2.110.0",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "gemini-code-assist",
       "route": "vscode_extensions",
       "value": "google.geminicodeassist",
-      "agent_version": "2.107.0",
+      "agent_version": "2.110.0",
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "gemini-code-assist",
       "route": "vscode_extensions",
       "value": "google.geminicodeassist",
-      "agent_version": "2.107.0",
+      "agent_version": "2.110.0",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "gemini-code-assist",
@@ -525,51 +605,61 @@
       "agent": "gemini-code-assist",
       "route": "vscode_extensions",
       "value": "google.geminicodeassist",
-      "agent_version": "2.107.0",
+      "agent_version": "2.110.0",
       "platform": "linux",
-      "os": "ubuntu-24.04",
-      "arch": "aarch64",
-      "run": "43892773260"
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
     },
     {
       "agent": "gemini-code-assist",
       "route": "vscode_extensions",
       "value": "google.geminicodeassist",
-      "agent_version": "2.107.0",
+      "agent_version": "2.110.0",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "gemini-code-assist",
+      "route": "vscode_extensions",
+      "value": "google.geminicodeassist",
+      "agent_version": "2.110.0",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "kilo-code",
       "route": "vscode_extensions",
       "value": "kilocode.kilo-code",
-      "agent_version": "7.8.27",
+      "agent_version": "7.8.32",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "kilo-code",
       "route": "vscode_extensions",
       "value": "kilocode.kilo-code",
-      "agent_version": "7.8.27",
+      "agent_version": "7.8.32",
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "kilo-code",
       "route": "vscode_extensions",
       "value": "kilocode.kilo-code",
-      "agent_version": "7.8.27",
+      "agent_version": "7.8.32",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "kilo-code",
@@ -585,21 +675,31 @@
       "agent": "kilo-code",
       "route": "vscode_extensions",
       "value": "kilocode.kilo-code",
-      "agent_version": "7.8.27",
+      "agent_version": "7.8.32",
       "platform": "linux",
-      "os": "ubuntu-24.04",
-      "arch": "aarch64",
-      "run": "43892773260"
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
     },
     {
       "agent": "kilo-code",
       "route": "vscode_extensions",
       "value": "kilocode.kilo-code",
-      "agent_version": "7.8.27",
+      "agent_version": "7.8.32",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "kilo-code",
+      "route": "vscode_extensions",
+      "value": "kilocode.kilo-code",
+      "agent_version": "7.8.32",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "roo-code",
@@ -609,7 +709,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "roo-code",
@@ -619,7 +719,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "roo-code",
@@ -629,7 +729,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "roo-code",
@@ -647,9 +747,19 @@
       "value": "rooveterinaryinc.roo-cline",
       "agent_version": "3.54.0",
       "platform": "linux",
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "roo-code",
+      "route": "vscode_extensions",
+      "value": "rooveterinaryinc.roo-cline",
+      "agent_version": "3.54.0",
+      "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "roo-code",
@@ -659,7 +769,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     }
   ]
 }

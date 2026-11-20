@@ -8,7 +8,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "devin-cli",
@@ -17,7 +17,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "devin-cli",
@@ -26,7 +26,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "devin-cli",
@@ -42,9 +42,18 @@
       "route": "binaries",
       "value": "~/.local/bin/devin",
       "platform": "linux",
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "devin-cli",
+      "route": "binaries",
+      "value": "~/.local/bin/devin",
+      "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "devin-cli",
@@ -53,7 +62,61 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
+    },
+    {
+      "agent": "kilo-code",
+      "route": "state_dirs",
+      "value": "~/.kilo",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "kilo-code",
+      "route": "state_dirs",
+      "value": "~/.kilo",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "kilo-code",
+      "route": "state_dirs",
+      "value": "~/.kilo",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "kilo-code",
+      "route": "state_dirs",
+      "value": "~/.kilo",
+      "platform": "linux",
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "kilo-code",
+      "route": "state_dirs",
+      "value": "~/.kilo",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "kilo-code",
+      "route": "state_dirs",
+      "value": "~/.kilo",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "44772519062"
     },
     {
       "agent": "maki",
@@ -62,7 +125,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "maki",
@@ -71,7 +134,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "maki",
@@ -80,7 +143,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "maki",
@@ -96,9 +159,18 @@
       "route": "binaries",
       "value": "~/.local/bin/maki",
       "platform": "linux",
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "maki",
+      "route": "binaries",
+      "value": "~/.local/bin/maki",
+      "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "maki",
@@ -107,7 +179,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "oh-my-pi",
@@ -116,7 +188,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "oh-my-pi",
@@ -125,7 +197,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "oh-my-pi",
@@ -134,7 +206,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "oh-my-pi",
@@ -150,9 +222,18 @@
       "route": "state_dirs",
       "value": "~/.omp",
       "platform": "linux",
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "oh-my-pi",
+      "route": "state_dirs",
+      "value": "~/.omp",
+      "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "43892773260"
+      "run": "44772519062"
     },
     {
       "agent": "oh-my-pi",
@@ -161,7 +242,61 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "44772519062"
+    },
+    {
+      "agent": "warp",
+      "route": "binaries",
+      "value": "~/.local/bin/warp",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "warp",
+      "route": "binaries",
+      "value": "~/.local/bin/warp",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "warp",
+      "route": "binaries",
+      "value": "~/.local/bin/warp",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "warp",
+      "route": "binaries",
+      "value": "~/.local/bin/warp",
+      "platform": "linux",
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "warp",
+      "route": "binaries",
+      "value": "~/.local/bin/warp",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "44772519062"
+    },
+    {
+      "agent": "warp",
+      "route": "binaries",
+      "value": "~/.local/bin/warp",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "44772519062"
     }
   ]
 }
