@@ -1858,6 +1858,22 @@ check("two agents' paths that differ only in ASCII case are refused: both claim 
 check("...but not paths that differ in a letter outside ASCII, which is compared as itself",
       _oe([{"id": "a", "state_dirs": ["~/.\u00c4gent"]},
            {"id": "b", "state_dirs": ["~/.\u00e4gent"]}], _reg) == [])
+_oo_root = pathlib.Path(_tf2.mkdtemp())
+(_oo_root / "test" / "scenarios" / "s").mkdir(parents=True)
+(_oo_root / "test" / "scenarios" / "s" / "observed.json").write_text(json.dumps(
+    {"scenario": "s", "identifiers": [
+        {"agent": "a", "route": "bundle_ids", "value": "com.example.a", "platform": "darwin",
+         "run": "1"},
+        {"agent": "a", "route": "running_apps", "value": "com.example.a", "platform": "darwin",
+         "run": "1"},
+        {"agent": "a", "route": "bundle_ids", "value": "com.example.gone", "platform": "darwin",
+         "run": "1"}]}))
+_ooe = _vc.orphan_observation_errors(
+    {"agents": [{"id": "a", "bundle_ids": ["com.example.a"]}]}, _reg, _oo_root)
+check("a committed record of a value the catalog no longer carries is refused, and only it",
+      len(_ooe) == 1 and "com.example.gone" in _ooe[0], str(_ooe))
+check("...a record on a route that borrows the value (`values_from`) is not an orphan",
+      not any("running_apps" in e for e in _ooe), str(_ooe))
 _lse = _vc.live_superseded_errors
 check("a superseded value a run still observes is refused: it is current",
       bool(_lse("a", {"superseded": [{"route": "npm", "value": "x"}]},

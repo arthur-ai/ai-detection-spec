@@ -350,6 +350,23 @@ def unprovable_observation_errors(root):
             if not observations.provable(r)]
 
 
+def orphan_observation_errors(doc, reg, root):
+    """EVERY COMMITTED RECORD NAMES A VALUE THE CATALOG STILL CARRIES. The collect job only
+    adds and refreshes records, so one whose value a catalog edit removed stays, and the
+    record step's shrink guard refuses the next run of its scenario on that platform. That
+    happened in CI, after the install: 111 on windows-2025, for the second spelling of Warp's
+    launcher that spec 0.3 made redundant. Here it fails lint, in the change that removed the
+    value. A superseded value stays on its route, so its records are not orphans."""
+    held = {(agent.get("id"), name, str(v))
+            for agent in doc["agents"] for name, r in reg["routes"].items()
+            for v in agent.get(r.get("values_from", name), []) or []}
+    live, _ = observations.read(root / "test" / "scenarios")
+    return [f"test/scenarios/{scenario}/observed.json: {a} {route}:{v} is no value in the "
+            f"catalog, so no run can prove it again; delete its record from that file"
+            for (a, route, v), recs in sorted(live.items()) if (a, route, v) not in held
+            for scenario in sorted({r["scenario"] for r in recs})]
+
+
 def live_superseded_errors(aid, agent, live):
     """A superseded value is one the release CI installs no longer produces. One a run
     still produces is current, and marking it superseded would label live evidence as an
@@ -587,6 +604,7 @@ def main():
     errors.extend(classification_errors(doc))
     errors.extend(overlap_errors(doc["agents"], reg))
     errors.extend(unprovable_observation_errors(ROOT))
+    errors.extend(orphan_observation_errors(doc, reg, ROOT))
 
     if errors:
         print("catalog: FAIL")
