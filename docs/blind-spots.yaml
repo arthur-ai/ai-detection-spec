@@ -51,6 +51,8 @@ blind_spots:
     why: "`jetbrains_plugins` reads `%APPDATA%\\JetBrains\\<Product>*\\plugins` on Windows (jetbrains_plugins.h at 5.23.1), and no Windows query or scenario reads it yet, so the route claims macOS and Linux only"
   - spot: "Store-only apps on Windows"
     why: "The CI runner is Windows Server 2025, which has no Microsoft Store, so an agent sold only through the Store, ChatGPT's desktop app among them, cannot be installed there and has no Windows identifier. Claude Desktop is a signed MSIX installed without the Store, and is covered"
+  - spot: "Mac apps sold only through Setapp or the Mac App Store"
+    why: "A CI runner cannot sign in to either store, so an agent distributed only there cannot be installed in CI and has no identifier, though the `apps` table would read its bundle id on a Mac that has it. MacPaw's Eney, an assistant that carries out tasks on the Mac, is the case: no Homebrew cask, and on 2026-11-23 eney.ai's page served no download, Setapp or App Store link to a runner and eney.ai/download answered 404 (probe run 45238894100). The Windows counterpart is the Store-only entry above"
   - spot: "Which filesystem roots an MCP server exposes"
     why: "Requires parsing arbitrary JSON config; osquery has no table for it"
   - spot: "Outbound destinations by hostname"

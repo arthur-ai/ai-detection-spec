@@ -1,0 +1,58 @@
+{
+  "description": "Craft Agents and Octomind through their vendors' PowerShell installers, and Codewhale and Momentic's Mo from npm, on Windows, installed and not run.",
+  "platform": "windows",
+  "counts": {
+    "ext": ">=0",
+    "file": ">=2",
+    "msix": ">=1",
+    "nmh": ">=1",
+    "npm": ">=2",
+    "proc": ">=0",
+    "scan": ">=1",
+    "uninstall": ">=1",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "craft-agents",
+      "octomind",
+      "codewhale",
+      "momentic-qa"
+    ],
+    "forbid": [
+      "claude-code",
+      "claude-desktop",
+      "pi",
+      "deepseek-harness",
+      "hermes",
+      "warp"
+    ]
+  },
+  "require_rows": [
+    {
+      "kind": "uninstall",
+      "id": "61dc82ee-e3b9-557b-98c4-20b9178a0f78"
+    },
+    {
+      "kind": "file",
+      "id": "\\AppData\\Local\\Craft Agents\\bin\\craft-agents.cmd"
+    },
+    {
+      "kind": "file",
+      "id": "\\AppData\\Local\\octomind\\bin\\octomind.exe"
+    },
+    {
+      "kind": "npm",
+      "id": "codewhale"
+    },
+    {
+      "kind": "npm",
+      "id": "qa"
+    }
+  ],
+  "why": "Octomind's witness is its launcher under %LOCALAPPDATA%\\octomind\\bin\\ alone, and each npm package is its agent's only witness, because neither CLI is run. Craft Agents has more than one: the Uninstall key its installer writes, the launcher install-app.ps1 adds, and ~\\.craft-agent once the app has started, so require_rows holds the first two and removing either value leaves the rest to find it. claude-code and claude-desktop are forbidden because Craft Agents embeds the Claude Agent SDK and its native `claude` binary, pi because it embeds the Pi SDK, deepseek-harness because Codewhale started as deepseek-tui and defaults to DeepSeek's models, and hermes and warp because their launchers are read by the same per-user branch.",
+  "known_gaps": [
+    "Installed, never run, and never signed in: what each agent writes on first use is not read here.",
+    "Codewhale's winget package and its own archive installer, which writes %USERPROFILE%\\bin, are not exercised; no Windows branch reads that directory."
+  ]
+}

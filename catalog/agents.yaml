@@ -1491,3 +1491,102 @@ agents:
     # pulled ghcr.io/open-webui/open-webui:main-slim on Ubuntu 24.04 x86_64 and arm64.
     images: [ghcr.io/open-webui/open-webui]
     image_labels: ["https://github.com/open-webui/open-webui"]
+
+  # ---------------------------------------------------------------------------------------
+  # FROM HERE, the weekly discovery pass of 2026-11-23. Read off probe run 45238894100 on
+  # that date unless a value says otherwise: macOS 26 on arm64, Ubuntu 24.04 on x86_64 and
+  # arm64, Debian 12, Rocky 9, Fedora 41 and Amazon Linux 2023 on x86_64, and Windows Server
+  # 2025 on x86_64, osquery 5.23.1. The scenarios named below re-read each value in this
+  # PR's run.
+  # ---------------------------------------------------------------------------------------
+
+  # Codewhale (codewhale-hq/Codewhale), a terminal coding agent that edits the repository and
+  # runs commands; it started as deepseek-tui and defaults to DeepSeek's models, but is not
+  # `deepseek-harness`, DeepSeek's own `dsh`. 0.10.3 everywhere below.
+  #
+  # NOT HERE: ~/.local/bin/codew, a hard link to the same binary its installer and npm
+  # package both write, because every install read here is found without it; and Cargo's
+  # ~/.cargo/bin/codewhale, which no route reads. Its winget package (HunterBown.CodeWhale)
+  # and its Windows archive installer, which writes %USERPROFILE%\bin, are not installed by
+  # any scenario.
+  - id: codewhale
+    name: Codewhale
+    classification: Coding agent
+    platforms: [darwin, linux, windows]
+    # npm's `codewhale`, whose postinstall fetches the release binaries: 115-linux-npm-
+    # codewhale-qa on Linux and 112-windows-craft-octomind-npm under %APPDATA%\npm.
+    npm: [codewhale]
+    # Its curl installer, codewhale.net/install.sh, writes ~/.local/bin/codewhale; the
+    # directory ~/.codewhale is written when it is first run, not on --version (`codewhale
+    # exec` without a key wrote sessions/ and setup_state.json and stopped at provider
+    # setup). 114-linux-codewhale-octomind.
+    binaries: ["~/.local/bin/codewhale"]
+    state_dirs: ["~/.codewhale"]
+    # Hmbown/deepseek-tui's formula, which homebrew_packages renders as `codewhale`, type
+    # formula, without its tap. A value while homebrew-core and homebrew-cask have no
+    # `codewhale`, which 18-craft-codewhale-octomind asserts before tapping.
+    homebrew: [codewhale]
+
+  # Octomind (Muvon/octomind), a terminal coding agent and agent runtime: its lead agent reads
+  # the code and runs commands itself. 0.73.0 everywhere below, from its GitHub release.
+  #
+  # NOT HERE: its data directory, ~/.local/share/octomind on macOS and Linux, one level below
+  # what the enumeration reads; Cargo's `octomind`, which no route reads; and npm's `octomind`,
+  # a 0.1.0 package of 2026-04-06 that is not this project's.
+  - id: octomind
+    name: Octomind
+    classification: Coding agent
+    platforms: [darwin, linux, windows]
+    # Its installers: install.sh writes ~/.local/bin/octomind (114-linux-codewhale-octomind),
+    # install.ps1 %LOCALAPPDATA%\octomind\bin\octomind.exe (112-windows-craft-octomind-npm).
+    binaries: ["~/.local/bin/octomind", "~/AppData/Local/octomind/bin/octomind.exe"]
+    # muvon/tap's formula, Apple silicon only, rendered as `octomind`, type formula, without
+    # its tap; a value while nothing official shares the name, as codewhale's above.
+    # 18-craft-codewhale-octomind.
+    homebrew: [octomind]
+
+  # Craft Agents (lukilabs/craft-agents-oss, by Craft Docs), a desktop app that runs the
+  # Claude Agent SDK and the Pi SDK side by side, connects its own sources and MCP servers,
+  # runs local tools and bridges to messaging, so a Personal agent. It is not `claude-desktop`
+  # or `claude-code`, though it ships the SDK's native `claude` binary inside its bundle.
+  # 0.15.11 on Linux and Windows.
+  #
+  # NOT HERE: the Linux AppImage at ~/.craft-agent/app/, below what the enumeration reads.
+  - id: craft-agents
+    name: Craft Agents
+    classification: Personal agent
+    platforms: [darwin, linux, windows]
+    # The cask `craft-agents`, the app. 18-craft-codewhale-octomind reads both values; the
+    # bundle id is electron-builder's appId and the one the cask's zap list names, which is
+    # not where it came from.
+    bundle_ids: [com.lukilabs.craft-agent]
+    homebrew: [craft-agents]
+    # Its own installer, install-app.sh, creates ~/.craft-agent before downloading anything and
+    # on Linux writes the launcher ~/.local/bin/craft-agents last (116-linux-craft-agents, x86_64
+    # only). On Windows ~\.craft-agent appeared as well, which the probe did not attribute to
+    # the installer or the app, and install-app.ps1 writes
+    # %LOCALAPPDATA%\Craft Agents\bin\craft-agents.cmd (112-windows-craft-octomind-npm).
+    state_dirs: ["~/.craft-agent"]
+    binaries: ["~/.local/bin/craft-agents", "~/AppData/Local/Craft Agents/bin/craft-agents.cmd"]
+    # The electron-builder NSIS installer's per-user key under HKCU, a GUID electron-builder
+    # derives from the app id, so it should hold across versions; only 0.15.11 was installed.
+    # DisplayName "Craft Agents 0.15.11", publisher "Craft Docs Ltd.", which carry the version
+    # and are not values. 112-windows-craft-octomind-npm.
+    uninstall_keys: [61dc82ee-e3b9-557b-98c4-20b9178a0f78]
+
+  # Mo, Momentic's QA agent: pointed at a URL, it drives a real browser through the app and
+  # reports the bugs it reproduces, and it installs as a skill for coding agents. The
+  # 2026-11-16 pass found it in private beta; its npm README now offers sign-up. A Coding
+  # agent by deployment shape, as a developer's terminal tool.
+  #
+  # NOT HERE: ~/.local/bin/qa, which its curl installer (cli.momentic.ai/qa) writes, because
+  # `qa` names no product; test_matcher asserts it is declined. Releases before 0.18 named the
+  # command `mo`. npm's `qa` was someone else's 0.0.1 in 2015, so a fleet still holding that
+  # package would match; the name has been Momentic's since.
+  - id: momentic-qa
+    name: Momentic Mo
+    classification: Coding agent
+    platforms: [linux, windows]
+    # npm's `qa`, 0.37.2, a launcher whose optional dependencies are @momentic/qa-<platform>
+    # binaries: 115-linux-npm-codewhale-qa and 112-windows-craft-octomind-npm.
+    npm: [qa]

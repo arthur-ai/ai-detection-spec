@@ -1668,6 +1668,30 @@ check("~/.local/bin/omp, ~/.prime and Command Code's `cmd` are evidence, not val
       "three letters, a vendor directory shared with Prime Intellect's other CLI, and a "
       "command name every shell user knows")
 
+# THE 2026-11-23 DISCOVERY PASS, read off probe run 45238894100. Momentic's curl installer
+# writes ~/.local/bin/qa, two letters that name no product, so only npm's `qa` is a value; npm's
+# `octomind` is someone else's package; Codewhale's `codew` alias is a hard link its
+# installers write beside it, evidence rather than a value; and a directory under
+# ~/.local/share, where Octomind keeps its data, is below what the enumeration reads.
+_c, _u = _claims(_kind("npm", "qa", "codewhale", "octomind", "@momentic/qa-linux-x64"))
+check("npm's `qa` and `codewhale` resolve to their agents",
+      _c == {"qa": "momentic-qa", "codewhale": "codewhale"}, f"got {_c}")
+check("...and npm's `octomind` and Mo's platform package claim nothing",
+      {"octomind", "@momentic/qa-linux-x64"} <= set(_u), f"got {_c}")
+_c, _u = _claims(_kind("file", "/home/dana/.local/bin/codewhale", "/home/dana/.local/bin/codew",
+                       "/home/dana/.codewhale/", "/home/dana/.local/bin/octomind",
+                       "/home/dana/.local/bin/qa", "/home/dana/.local/bin/craft-agents",
+                       "/home/dana/.craft-agent/", "/home/dana/.craft/",
+                       "/home/dana/.deepseek/"))
+check("the curl installers' paths and state directories resolve to their agents",
+      _c == {"/home/dana/.local/bin/codewhale": "codewhale", "/home/dana/.codewhale/": "codewhale",
+             "/home/dana/.local/bin/octomind": "octomind",
+             "/home/dana/.local/bin/craft-agents": "craft-agents",
+             "/home/dana/.craft-agent/": "craft-agents"}, f"got {_c}")
+check("~/.local/bin/qa, `codew`, ~/.craft and ~/.deepseek are evidence, not values",
+      {"/home/dana/.local/bin/qa", "/home/dana/.local/bin/codew", "/home/dana/.craft/",
+       "/home/dana/.deepseek/"} <= set(_u), f"got {_c}")
+
 # MANUS AND ATLAS, read off CI run 40914014884. Atlas is not an agent (the considered block
 # in agents.yaml) and shares ChatGPT's com.openai. namespace, and each app's helpers extend
 # its id, so exact means Atlas, its helper and Manus's helper claim nothing.

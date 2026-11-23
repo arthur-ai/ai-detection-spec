@@ -39,6 +39,7 @@ they are stated once. No amount of test coverage moves them.
 | MSIX packages on osquery below 5.17.0 | `programs` learned MSIX packages in 5.17.0 (osquery/osquery#8585), so `osquery/queries/programs-windows.sql` declares that floor and returns nothing on an older endpoint, Claude Desktop's identity on Windows with it |
 | JetBrains plugins on Windows | `jetbrains_plugins` reads `%APPDATA%\JetBrains\<Product>*\plugins` on Windows (jetbrains_plugins.h at 5.23.1), and no Windows query or scenario reads it yet, so the route claims macOS and Linux only |
 | Store-only apps on Windows | The CI runner is Windows Server 2025, which has no Microsoft Store, so an agent sold only through the Store, ChatGPT's desktop app among them, cannot be installed there and has no Windows identifier. Claude Desktop is a signed MSIX installed without the Store, and is covered |
+| Mac apps sold only through Setapp or the Mac App Store | A CI runner cannot sign in to either store, so an agent distributed only there cannot be installed in CI and has no identifier, though the `apps` table would read its bundle id on a Mac that has it. MacPaw's Eney, an assistant that carries out tasks on the Mac, is the case: no Homebrew cask, and on 2026-11-23 eney.ai's page served no download, Setapp or App Store link to a runner and eney.ai/download answered 404 (probe run 45238894100). The Windows counterpart is the Store-only entry above |
 | Which filesystem roots an MCP server exposes | Requires parsing arbitrary JSON config; osquery has no table for it |
 | Outbound destinations by hostname | `process_open_sockets` returns an IP, not a name |
 | Which agent holds a listening port | A port is only attributable when the process holding it already names the agent, so it never identifies anything on its own -- 8080-held-by-java would read as llama.cpp. Ports are collected as evidence and are never a signature |
@@ -85,7 +86,13 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 111-windows-warp-open-webui | Open WebUI's Docker image is read on Linux only, in 79-linux-image; the Windows runner has no Linux container daemon. |
 | 111-windows-warp-open-webui | Warp's installer starts the app and setup stops it, and Open WebUI Desktop is never launched, so neither is proved running and what a full first run writes is not read. |
 | 112-linux-warp-app | The AppImage and the pacman package are not installed; an AppImage registers no package, so it is reachable only once run. |
+| 112-windows-craft-octomind-npm | Installed, never run, and never signed in: what each agent writes on first use is not read here. |
+| 112-windows-craft-octomind-npm | Codewhale's winget package and its own archive installer, which writes %USERPROFILE%\bin, are not exercised; no Windows branch reads that directory. |
 | 113-linux-open-webui-desktop | The AppImage, snap and flatpak are not installed; docs/blind-spots.yaml has why none of them registers a package the enumeration reads. |
+| 114-linux-codewhale-octomind | Octomind's ~/.local/share/octomind is one level below what the enumeration reads, so a run leaves nothing new for it. |
+| 114-linux-codewhale-octomind | Codewhale's Windows archive installer writes %USERPROFILE%\bin, which no Windows branch reads. |
+| 116-linux-craft-agents | The AppImage writes no .desktop entry and leaves no package record, so on Linux the launcher and the directory are all there is to read. |
+| 116-linux-craft-agents | x86_64 only: the vendor ships no arm64 Linux build, so the arm64 runner skips. |
 | 12-chatgpt-pre-rename | The bundle id only. A direct download leaves no Homebrew record, so the `chatgpt` brew route is not exercised here; 10-desktop-apps covers it. |
 | 13-desktop-apps-more | Trae and Trae CN were read off their dmgs' Info.plist rather than a local install: the VM this was developed in had no IPv4 route to their CDNs. CI is the first real install of both. |
 | 13-desktop-apps-more | Sign-in gated, like 10: nothing exercises behaviour that appears once a user signs in. |
@@ -96,6 +103,8 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 15-manus | Manus's Windows build is not installed anywhere. |
 | 16-hermes-desktop | Not launched, so running_apps is not exercised for Hermes, and what the app writes on first run is read only on the probe run the catalog cites. |
 | 16-hermes-desktop | The source-built desktop (`hermes desktop`, bundle id com.nousresearch.hermes) and the remote-only Light client are other bundle ids, and neither is installed here. |
+| 18-craft-codewhale-octomind | Craft Agents' own installer, install-app.sh, unzips the same app into /Applications and creates ~/.craft-agent; that directory is read on Linux, in 116-linux-craft-agents. |
+| 18-craft-codewhale-octomind | Octomind's tap ships Apple silicon builds only, so an Intel Mac has no Homebrew route to it. |
 | 20-cli-agents, 71-linux-cli-agents | The shim's `ver` is checked for presence, not against the installed release: the shim's path names no release, and the release changes with every install, so expected.json cannot hold it. A join onto the wrong versions/ file would pass. |
 | 23-kiro-cli-app-era | The bundle id only. The app is installed and never launched, so the LaunchAgent the cask's old uninstall stanza named, com.amazon.codewhisperer.launcher, is unverified and not in the catalog. |
 | 24-warp-open-webui | Sign-in gated: neither app is launched, so nothing exercises what each writes once used. |
