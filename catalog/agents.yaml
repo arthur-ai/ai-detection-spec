@@ -1496,8 +1496,8 @@ agents:
   # FROM HERE, the weekly discovery pass of 2026-11-23. Read off probe run 45238894100 on
   # that date unless a value says otherwise: macOS 26 on arm64, Ubuntu 24.04 on x86_64 and
   # arm64, Debian 12, Rocky 9, Fedora 41 and Amazon Linux 2023 on x86_64, and Windows Server
-  # 2025 on x86_64, osquery 5.23.1. The scenarios named below re-read each value in this
-  # PR's run.
+  # 2025 on x86_64, osquery 5.23.1. The scenarios named below re-read each value in CI run
+  # 45240729122, which read craft-agents' bundle id and cask token for the first time.
   # ---------------------------------------------------------------------------------------
 
   # Codewhale (codewhale-hq/Codewhale), a terminal coding agent that edits the repository and
@@ -1556,9 +1556,9 @@ agents:
     name: Craft Agents
     classification: Personal agent
     platforms: [darwin, linux, windows]
-    # The cask `craft-agents`, the app. 18-craft-codewhale-octomind reads both values; the
-    # bundle id is electron-builder's appId and the one the cask's zap list names, which is
-    # not where it came from.
+    # The cask `craft-agents`, the app: 18-craft-codewhale-octomind read both values off
+    # osquery on macos-26 in run 45240729122. The bundle id is electron-builder's appId and
+    # the one the cask's zap list names, which is not where it came from.
     bundle_ids: [com.lukilabs.craft-agent]
     homebrew: [craft-agents]
     # Its own installer, install-app.sh, creates ~/.craft-agent before downloading anything and
