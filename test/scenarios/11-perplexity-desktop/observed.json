@@ -25,11 +25,11 @@
       "agent": "perplexity-desktop",
       "route": "bundle_ids",
       "value": "ai.perplexity.macv3",
-      "agent_version": "26.44.0",
+      "agent_version": "26.46.0",
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "43892773260"
+      "run": "45229382214"
     },
     {
       "agent": "perplexity-desktop",
@@ -45,11 +45,11 @@
       "agent": "perplexity-desktop",
       "route": "bundle_ids",
       "value": "ai.perplexity.macv3",
-      "agent_version": "26.44.0",
+      "agent_version": "26.46.0",
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43892773260"
+      "run": "45229382214"
     },
     {
       "agent": "perplexity-desktop",
@@ -75,11 +75,11 @@
       "agent": "perplexity-desktop",
       "route": "homebrew",
       "value": "perplexity",
-      "agent_version": "26.43.0",
+      "agent_version": "26.44.0",
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "43892773260"
+      "run": "45229382214"
     },
     {
       "agent": "perplexity-desktop",
@@ -95,11 +95,11 @@
       "agent": "perplexity-desktop",
       "route": "homebrew",
       "value": "perplexity",
-      "agent_version": "26.43.0",
+      "agent_version": "26.44.0",
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43892773260"
+      "run": "45229382214"
     }
   ]
 }

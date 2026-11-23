@@ -5,61 +5,61 @@
       "agent": "warp",
       "route": "deb_packages",
       "value": "warp-terminal",
-      "agent_version": "0.2026.11.18.08.17.stable.01",
+      "agent_version": "0.2026.11.18.08.17.stable.04",
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "44772519062"
+      "run": "45229382214"
     },
     {
       "agent": "warp",
       "route": "deb_packages",
       "value": "warp-terminal",
-      "agent_version": "0.2026.11.18.08.17.stable.01",
+      "agent_version": "0.2026.11.18.08.17.stable.04",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "44772519062"
+      "run": "45229382214"
     },
     {
       "agent": "warp",
       "route": "deb_packages",
       "value": "warp-terminal",
-      "agent_version": "0.2026.11.18.08.17.stable.01",
+      "agent_version": "0.2026.11.18.08.17.stable.04",
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "44772519062"
+      "run": "45229382214"
     },
     {
       "agent": "warp",
       "route": "rpm_packages",
       "value": "warp-terminal",
-      "agent_version": "v0.2026.11.18.08.17.stable_01",
+      "agent_version": "v0.2026.11.18.08.17.stable_04",
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "44772519062"
+      "run": "45229382214"
     },
     {
       "agent": "warp",
       "route": "rpm_packages",
       "value": "warp-terminal",
-      "agent_version": "v0.2026.11.18.08.17.stable_01",
+      "agent_version": "v0.2026.11.18.08.17.stable_04",
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "44772519062"
+      "run": "45229382214"
     },
     {
       "agent": "warp",
       "route": "rpm_packages",
       "value": "warp-terminal",
-      "agent_version": "v0.2026.11.18.08.17.stable_01",
+      "agent_version": "v0.2026.11.18.08.17.stable_04",
       "platform": "linux",
       "os": "rocky-9.9",
       "arch": "x86_64",
-      "run": "44772519062"
+      "run": "45229382214"
     }
   ]
 }

@@ -9,7 +9,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "45229382214"
     },
     {
       "agent": "cline",
@@ -19,7 +19,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "45229382214"
     },
     {
       "agent": "cline",
@@ -29,7 +29,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "45229382214"
     },
     {
       "agent": "cline",
@@ -47,9 +47,19 @@
       "value": "cline",
       "agent_version": "2.0.9",
       "platform": "linux",
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "45229382214"
+    },
+    {
+      "agent": "cline",
+      "route": "jetbrains_plugins",
+      "value": "cline",
+      "agent_version": "2.0.9",
+      "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "43892773260"
+      "run": "45229382214"
     },
     {
       "agent": "cline",
@@ -59,7 +69,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "45229382214"
     },
     {
       "agent": "continue",
@@ -69,7 +79,7 @@
       "platform": "linux",
       "os": "amzn-2023",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "45229382214"
     },
     {
       "agent": "continue",
@@ -79,7 +89,7 @@
       "platform": "linux",
       "os": "debian-12",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "45229382214"
     },
     {
       "agent": "continue",
@@ -89,7 +99,7 @@
       "platform": "linux",
       "os": "fedora-41",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "45229382214"
     },
     {
       "agent": "continue",
@@ -107,9 +117,19 @@
       "value": "continue-intellij-extension",
       "agent_version": "1.0.67",
       "platform": "linux",
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "45229382214"
+    },
+    {
+      "agent": "continue",
+      "route": "jetbrains_plugins",
+      "value": "continue-intellij-extension",
+      "agent_version": "1.0.67",
+      "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "aarch64",
-      "run": "43892773260"
+      "run": "45229382214"
     },
     {
       "agent": "continue",
@@ -119,7 +139,7 @@
       "platform": "linux",
       "os": "ubuntu-24.04",
       "arch": "x86_64",
-      "run": "43892773260"
+      "run": "45229382214"
     }
   ]
 }
