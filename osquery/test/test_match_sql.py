@@ -235,7 +235,7 @@ def main():
     routes = classify.load_routes()
     registry = classify.Registry(routes)
     sigs = R.signatures(classify, catalog, registry)
-    tool_dirs = [p.pattern for p in classify.TOOL_DIRS]
+    tool_dirs = R.tool_dir_patterns(classify)
     frag = R.fragment(sigs, tool_dirs)
 
     # --- the shipped fragment is the one under test, not a fresh render -------------
@@ -273,7 +273,9 @@ def main():
         ("file", "C:\\Users\\dana\\.claude\\", "claude-code"),   # a Windows root, SPEC.md 6.4.7
         ("file", "d:/Users/dana/.claude", "claude-code"),        # ...either separator, any drive
         ("file", "C:\\Users\\dana\\.claudefoo\\", None),
-        ("file", "C:\\users\\dana\\.claude\\", None),            # `Users` is compared as written
+        ("file", "c:\\users\\dana\\.CLAUDE\\", "claude-code"),   # ASCII case folds under Windows
+        ("file", "C:\\Users\\dana\\AppData\\Roaming\\UV\\tools\\Aider-Chat", "aider"),
+        ("file", "/home/dana/.CLAUDE/", None),                   # ...and is compared under /home
         ("file", "/home/dana\\.claude", None),                   # `\` is no separator under /home
         ("file", "C:\\Users\\dana\\.local\\bin\\hermes", "hermes"),
         ("file", "C:\\Users\\dana\\.local\\bin\\hermes-acp", None),
@@ -343,7 +345,7 @@ def main():
         vcat, vroutes = conformance.authoring_form(classify, v["catalog"])
         vreg = classify.Registry(vroutes)
         vhits = sql_hits(osqi, v["rows"], R.fragment(R.signatures(classify, vcat, vreg),
-                                                     [p.pattern for p in classify.TOOL_DIRS]))
+                                                     R.tool_dir_patterns(classify)))
         got = []
         for r in v["rows"]:
             key = (str(r.get("kind")), str(r.get("id", "")), str(r.get("loc", "")))
@@ -448,7 +450,7 @@ def main():
     inline_kinds = {k for q in qs for k in q["kinds"]}
     image_only = R.image_only_agents(sigs, inline_kinds)
     by_kinds = sorted({a for a, *_ in sigs}
-                      - {a for a, _, _, k, _, _, _ in sigs if k not in {"image", "container", "ilabel"}})
+                      - {a for a, _, _, k, *_ in sigs if k not in {"image", "container", "ilabel"}})
     check(f"image-only agents are exactly those with no inline kind: {image_only}",
           image_only == by_kinds, str(by_kinds))
     for p in [o for o in R.OUTPUTS if o != "signatures.sql"]:

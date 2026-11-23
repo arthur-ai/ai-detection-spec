@@ -34,10 +34,10 @@
 
 # The authoring form's version, which ships and moves with bin/classify; bin/classify refuses
 # any other, as it refuses an unsupported `format` in a catalog document (SPEC.md 10).
-# 4: `~/` values also match under Windows home roots (SPEC.md 6.4.7). 3: `classifications`
-# became {name, definition}. 2: `platforms:` became required, and the route vocabulary moved
-# to catalog/routes.yaml.
-version: 4
+# 5: under a Windows home root an ASCII letter matches either case (SPEC.md 6.4.7). 4: `~/`
+# values also match under Windows home roots. 3: `classifications` became {name, definition}.
+# 2: `platforms:` became required, and the route vocabulary moved to catalog/routes.yaml.
+version: 5
 
 # REMOVED FOR FAILING SPEC.md 3, with the reason, because the temptation to re-add each is
 # obvious: all were easy to detect and belong in some AI inventory. Their rows stay in the
@@ -1457,12 +1457,11 @@ agents:
     # The CLI's installers. The curl one, app.warp.dev/download/agent-cli, wrote
     # /home/dana/.local/bin/warp in 98-linux-installers-more, v0.2026.11.03.17.08.stable_00 in
     # run 42100036985 and again here. The PowerShell one, agent-cli.ps1, runs an Inno Setup
-    # installer into %LOCALAPPDATA%\Warp, whose launcher is TWO VALUES because SPEC.md 6.4.7
-    # compares case: Warp\bin\warp.cmd where no app came first (110-windows-installers-more),
-    # and warp\bin\warp.cmd after the app, whose install leaves %LOCALAPPDATA%\warp\Warp
-    # lowercase for the CLI to write into (111-windows-warp-open-webui).
-    binaries: ["~/.local/bin/warp", "~/AppData/Local/Warp/bin/warp.cmd",
-               "~/AppData/Local/warp/bin/warp.cmd"]
+    # installer into %LOCALAPPDATA%\Warp: Warp\bin\warp.cmd where no app came first
+    # (110-windows-installers-more), and warp\bin\warp.cmd after the app, whose install leaves
+    # %LOCALAPPDATA%\warp\Warp lowercase for the CLI to write into (111-windows-warp-open-webui).
+    # One value reads both, because SPEC.md 6.4.7 folds ASCII case under a Windows home.
+    binaries: ["~/.local/bin/warp", "~/AppData/Local/Warp/bin/warp.cmd"]
     # Each Inno Setup installer's key under HKCU, whatever the directory's case: the CLI's in
     # 110 and 111, DisplayName "WarpAgentCLI v0.2026.11.18.08.17.stable_01", and the app's in
     # 111, DisplayName "Warp", the ProductCode winget's Warp.Warp manifest names.

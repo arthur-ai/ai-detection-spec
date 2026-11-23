@@ -444,18 +444,23 @@ check("a path outside every home root is not claimed",
       _ids(_rows("/opt/dana/.claude/", "/srv/home/dana/.claude/")) == set())
 
 # WINDOWS ROOTS (SPEC.md 6.4.7), on real catalog values: either separator, any drive, every
-# path route. `\` separates only under a Windows root.
+# path route, and either case of an ASCII letter. `\` separates, and case folds, only under a
+# Windows root.
 check("a Windows home root resolves on every path route",
       _ids(_rows("C:\\Users\\dana\\.claude\\")) == {"claude-code"}
       and _ids(_rows("d:/Users/dana/.claude")) == {"claude-code"}
+      and _ids(_rows("c:\\users\\dana\\.CLAUDE\\")) == {"claude-code"}
+      and _ids(_rows("C:\\Users\\dana\\AppData\\Roaming\\UV\\tools\\Aider-Chat"))
+      == {"aider"}
       and _ids(_rows("C:\\Users\\dana\\.local\\bin\\hermes")) == {"hermes"}
       and _ids(_rows("C:\\Users\\dana\\.local\\pipx\\venvs\\aider-chat\\")) == {"aider"}
       and _ids([{"kind": "proc", "id": p, "ver": "", "loc": p, "extra": "", "perms": ""}
                 for p in ("C:\\Users\\dana\\.local\\share\\claude\\versions\\2.1.292",)])
       == {"claude-code"})
-for near in ("C:\\Users\\dana\\.claudefoo\\", "C:\\users\\dana\\.claude\\",
-             "C:\\Users\\dana\\.local\\bin\\hermes-acp", "/home/dana\\.claude"):
-    check(f"a Windows near miss is NOT claimed ({near})", _ids(_rows(near)) == set())
+for near in ("C:\\Users\\dana\\.claudefoo\\", "C:\\Users\\dana\\.CLAUDEFOO\\",
+             "C:\\Users\\dana\\.local\\bin\\hermes-acp", "/home/dana\\.claude",
+             "/home/dana/.CLAUDE/", "/home/dana/.local/share/uv/tools/Aider-Chat/"):
+    check(f"a near miss is NOT claimed ({near})", _ids(_rows(near)) == set())
 # `claude.exe` is not `~/.local/bin/claude`: the anchor that refuses claude-monitor refuses it
 # too, so the Windows installer's binary is a value of its own, and one that claims nothing
 # beside it.
@@ -1709,6 +1714,9 @@ check("the updater bundled inside it claims nothing",
 # WARP, KILO AND OPEN WEBUI, from uber/ADR's catalog. Warp is one entry for its app and its
 # Agent CLI; the lookalikes are a longer name beside each path value and ~/.warp, which is not
 # one (catalog/agents.yaml says why). Arc is declined, and Dia, from Arc's vendor, is not.
+# Warp's CLI launcher is one value, `Warp`, which reads the lowercase `warp` directory the app
+# leaves only because SPEC.md 6.4.7 folds ASCII case under a Windows home; under a POSIX home
+# it does not, so `WARP` there is a lookalike.
 _c, _u = _claims(_kind("file", "/home/dana/.local/bin/warp", "/Users/dana/.local/bin/warp",
                        "C:\\Users\\dana\\AppData\\Local\\Warp\\bin\\warp.cmd",
                        "C:\\Users\\dana\\AppData\\Local\\warp\\bin\\warp.cmd",
@@ -1718,7 +1726,8 @@ _c, _u = _claims(_kind("file", "/home/dana/.local/bin/warp", "/Users/dana/.local
                        "/home/dana/.warp/", "/home/dana/.kilo-dev/",
                        "/home/dana/.local/bin/warp-cli", "/home/dana/.local/bin/warp-terminal",
                        "C:\\Users\\dana\\AppData\\Local\\Warp\\bin\\warp-preview.cmd",
-                       "/home/dana/.local/share/uv/tools/open-webui-pipelines/"))
+                       "/home/dana/.local/share/uv/tools/open-webui-pipelines/",
+                       "/home/dana/.local/bin/WARP"))
 check("Warp's launchers, Kilo's installer directory and Open WebUI's tool dir resolve",
       _c == {"/home/dana/.local/bin/warp": "warp", "/Users/dana/.local/bin/warp": "warp",
              "C:\\Users\\dana\\AppData\\Local\\Warp\\bin\\warp.cmd": "warp",
@@ -1727,11 +1736,12 @@ check("Warp's launchers, Kilo's installer directory and Open WebUI's tool dir re
              "/home/dana/.local/share/uv/tools/open-webui/": "open-webui",
              "C:\\Users\\dana\\AppData\\Roaming\\uv\\tools\\open-webui\\": "open-webui"},
       f"got {_c}")
-check("...and ~/.warp and a longer name beside each claim nothing",
+check("...and ~/.warp, a longer name beside each, and `WARP` under a POSIX home claim nothing",
       {"/home/dana/.warp/", "/home/dana/.kilo-dev/", "/home/dana/.local/bin/warp-cli",
        "/home/dana/.local/bin/warp-terminal",
        "C:\\Users\\dana\\AppData\\Local\\Warp\\bin\\warp-preview.cmd",
-       "/home/dana/.local/share/uv/tools/open-webui-pipelines/"} <= set(_u), f"got {_u}")
+       "/home/dana/.local/share/uv/tools/open-webui-pipelines/",
+       "/home/dana/.local/bin/WARP"} <= set(_u), f"got {_u}")
 _c, _u = _claims(_kind("brew", "warp", "warp-agent-cli", "kilo", "open-webui", "kilo-code"))
 check("Warp's two casks, Kilo's tap formula and Open WebUI's cask resolve; `kilo-code` does not",
       _c == {"warp": "warp", "warp-agent-cli": "warp", "kilo": "kilo-code",
@@ -1839,6 +1849,15 @@ check("...and distinct exact values on those routes pass",
 check("a path that claims another agent's pipx or uv directory is refused",
       bool(_oe([{"id": "a", "binaries": ["~/.local/share/uv/"]},
                 {"id": "b", "pypi": ["agent-chat"]}], _reg)))
+# Every `~/` value is also tried under a Windows home, where SPEC.md 6.4.7 folds ASCII case.
+check("two agents' paths that differ only in ASCII case are refused: both claim the Windows row",
+      bool(_oe([{"id": "a", "state_dirs": ["~/.Agent"]},
+                {"id": "b", "state_dirs": ["~/.agent"]}], _reg))
+      and bool(_oe([{"id": "a", "pypi": ["Agent-Chat"]},
+                    {"id": "b", "pypi": ["agent-chat"]}], _reg)))
+check("...but not paths that differ in a letter outside ASCII, which is compared as itself",
+      _oe([{"id": "a", "state_dirs": ["~/.\u00c4gent"]},
+           {"id": "b", "state_dirs": ["~/.\u00e4gent"]}], _reg) == [])
 _lse = _vc.live_superseded_errors
 check("a superseded value a run still observes is refused: it is current",
       bool(_lse("a", {"superseded": [{"route": "npm", "value": "x"}]},

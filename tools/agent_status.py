@@ -152,10 +152,12 @@ def replay(paths, catalog):
                 # row whose `id` named an unlisted directory and `loc` a listed one. Not
                 # `_meta`, which names the one value classify picked, where this loop
                 # credits every value the row proves.
-                for name in classify_mod.tool_names(ident, loc):
+                for name, fold in classify_mod.tool_names(ident, loc):
+                    key = classify_mod.tool_key(name, fold)
                     for route in REGISTRY.bridged():
-                        if name in [str(v) for v in agent.get(route, [])]:
-                            credit(route, name)
+                        for v in agent.get(route, []):
+                            if classify_mod.tool_key(str(v), fold) == key:
+                                credit(route, str(v))
     return values, routes, seen_ver
 
 

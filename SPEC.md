@@ -1,6 +1,6 @@
 # ai-detection-spec
 
-Version 0.2.0. Draft. Published at https://github.com/arthur-ai/ai-detection-spec under the
+Version 0.3.0. Draft. Published at https://github.com/arthur-ai/ai-detection-spec under the
 Apache License 2.0.
 
 ai-detection-spec is an open specification for telling whether an AI agent is installed or
@@ -83,7 +83,7 @@ MUST reject a catalog that does not.
 
 | member | |
 |---|---|
-| `format` | REQUIRED. `ai-detection-spec/<major>.<minor>`; this version is `ai-detection-spec/0.2` |
+| `format` | REQUIRED. `ai-detection-spec/<major>.<minor>`; this version is `ai-detection-spec/0.3` |
 | `platforms` | REQUIRED. The platform names a route may use: `darwin`, `linux`, `windows` |
 | `platform_groups` | REQUIRED. Names for sets of platforms, usable wherever a route names a platform. `posix`, for example, is `darwin` and `linux` |
 | `classifications` | REQUIRED. §4.2 |
@@ -133,8 +133,10 @@ A conforming catalog MUST meet all of these:
 6. **No two agents claim the same row.** No value of one agent may match a row that a value of
    another agent matches on a route of the same kind. This covers equal values, and also
    containment: a `prefix` value that another agent's value starts with, or a `home-prefix`
-   value that another agent's path sits under. Because of this rule, the order in which a
-   matcher tries identifiers (§6.5) can never decide which agent a row belongs to.
+   value that another agent's path sits under. Two `~/` values that differ only in the case of
+   ASCII letters are equal here, because both match the same row under a Windows home root
+   (§6.4.7). Because of this rule, the order in which a matcher tries identifiers (§6.5) can
+   never decide which agent a row belongs to.
 7. An identifier on a route that declares `purl` carries `purl`: the package URL of that
    type that the identifier names, with no version. One on any other route carries none.
    Route names are the catalog's own, so the schema cannot check this.
@@ -220,9 +222,10 @@ An identifier matched this way keeps the status it has on `R`.
 
 ### 6.4 Match modes
 
-Every comparison is case-sensitive. A line break is a character like any other, so where a
-mode compares up to the end of a row's value, a path followed by a line break is not that path.
-Only `exact-normalised` trims whitespace (§6.4.3).
+Every comparison is case-sensitive, except an ASCII letter under a Windows home root (§6.4.7).
+A line break is a character like any other, so where a mode compares up to the end of a row's
+value, a path followed by a line break is not that path. Only `exact-normalised` trims
+whitespace (§6.4.3).
 
 #### 6.4.1 `exact`
 
@@ -271,21 +274,28 @@ optionally followed by `/`, yields `<name>`: one or more characters other than a
 `H`'s root. `L` is one of `.local/pipx/venvs/`, `.local/share/uv/tools/`,
 `AppData/Local/pipx/pipx/venvs/` and `AppData/Roaming/uv/tools/`, the last two being pipx's and
 uv's defaults on Windows, and every `L` is tried under every home root. The route matches when
-either name equals one of its identifiers.
+either name equals one of its identifiers, compared as §6.4.7 says for `H`'s root.
 
 #### 6.4.7 Home roots
 
-| home root | its separators |
-|---|---|
-| `/Users/<segment>/`, `/home/<segment>/`, `/root/` | `/` |
-| `<drive>:\Users\<segment>\` | `\` and `/` |
+| home root | its separators | an ASCII letter matches |
+|---|---|---|
+| `/Users/<segment>/`, `/home/<segment>/`, `/root/` | `/` | itself |
+| `<drive>:\Users\<segment>\` | `\` and `/` | itself in either case |
 
 `<drive>` is one ASCII letter. `<segment>` is one or more characters other than the root's
 separators. Each separator written in a root, and each `/` that §6.4.4 to §6.4.6 write after
 `H`, including those in `P`, matches any one of that root's separators: `C:\Users\u\.agent`,
 `C:/Users/u/.agent` and `C:\Users\u/.agent` are each `H` + `.agent`. Under a root whose only
-separator is `/`, `\` is an ordinary character. Every other character compares as §6.4 says,
-`Users` included.
+separator is `/`, `\` is an ordinary character.
+
+The letter rule covers the root itself and everything §6.4.4 to §6.4.6 compare after `H`,
+including the name §6.4.6 yields: `c:\users\u\AppData\Local\Agent` is `H` +
+`AppData/Local/agent`. Windows treats two names that differ only in case as one file, and which
+case is on disk can depend on which installer created a directory first. Under a root whose only
+separator is `/`, a letter matches only itself, because Linux, and macOS on a case-sensitive
+volume, can hold both spellings as two files. Every other character compares as §6.4 says,
+including a letter outside ASCII under either root.
 
 A matcher MUST try every home root for every row, whatever platform the row came from.
 
@@ -417,7 +427,7 @@ The binding named `osquery` declares two fields on each route:
 - **A binding conforms** when its output validates against `schema/evidence.schema.json` and it
   meets §8.
 
-Conformance is claimed per role and per version: *an ai-detection-spec 0.2 matcher*. A catalog
+Conformance is claimed per role and per version: *an ai-detection-spec 0.3 matcher*. A catalog
 states its version in `format`.
 
 Each vector names the section it tests. It carries a catalog, a list of rows and the expected
@@ -433,7 +443,7 @@ Every match mode has at least one row that must match and one that must not.
 
 ## 10. Versioning
 
-The `format` member carries the major and minor version. This document is version 0.2.0.
+The `format` member carries the major and minor version. This document is version 0.3.0.
 
 - A change that alters what a conforming matcher reports for an existing catalog and rows, or
   that removes or renames a member, increases the major version.

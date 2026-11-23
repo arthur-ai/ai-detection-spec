@@ -42,7 +42,8 @@ side by side. What keeps the rendered files honest:
   to carry identifiers; every other file in `osquery/dist/` must carry none.
 - `regex_match` returns NULL on a miss, an invalid pattern aborts the statement, and `LIKE` is
   case-insensitive, so the join is a `CASE`, every regex is compiled before it is written,
-  and a prefix is `substr`.
+  and a prefix is `substr`. A pattern over 256 bytes is invalid too, so the renderer refuses
+  one, and a Windows home's case is folded by `lower()` on the row, never a class per letter.
 - **On Windows `^` and `$` match at every line break** (osquery's regex there is MSVC's
   `std::regex`, measured on windows-2025). So the end is `(?![\s\S])`, and the start is checked
   as `instr(x, regex_match(x, p, 0)) = 1`: the leftmost match begins at the start exactly when
@@ -156,8 +157,9 @@ shipped a pack query osqueryd never scheduled. A tool that runs queries here ask
 40396366136):
 
 - **A glob echoes its own pattern's case** in the literal part of a path: `c:\users\%` comes
-  back as `c:\users\...`. Write `C:\Users\` as SPEC.md 6.4.7 compares it. A directory comes
-  back with a trailing `\` either way, and never as `.` or `..`.
+  back as `c:\users\...`. Write `C:\Users\` anyway: SPEC.md 6.4.7 folds ASCII case under a
+  Windows home, so the glob's case decides how a row reads, not whether it matches. A
+  directory comes back with a trailing `\` either way, and never as `.` or `..`.
 - **Take homes from `users`, not a `C:\Users\%` glob.** `f.path LIKE u.directory || '\...'`
   pushes down per home, reaches a profile on any drive and skips the Default template.
 - **`HKEY_USERS` holds signed-in users' hives only**, so a per-user registry or MSIX row

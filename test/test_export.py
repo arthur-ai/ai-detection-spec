@@ -231,7 +231,8 @@ def main():
         exact, prefix, glob = classify.build_index(catalog, classify.Registry(routes))
         return sorted([repr((k, sorted(m.items()))) for k, m in exact.items()]
                       + [repr((v, r, sorted(m.items()))) for v, r, m in prefix]
-                      + [repr((p.pattern, r, sorted(m.items()))) for p, r, m in glob])
+                      + [repr(([(rx.pattern, f) for rx, f in p.parts], r, sorted(m.items())))
+                         for p, r, m in glob])
     # The whole index, because the fixtures reach only some identifiers. Superseded ones are
     # conformance/vectors.json's to cover: this catalog has none today.
     check("classify indexes the same identifiers from both forms",

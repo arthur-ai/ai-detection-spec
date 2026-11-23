@@ -10,8 +10,8 @@
 # THE CLI AFTER THE APP, because the order moves its launcher. The app's install, which starts
 # the app, leaves %LOCALAPPDATA%\warp\Warp, lowercase, and the CLI's installer then writes
 # into that same directory, so its launcher is warp\bin\warp.cmd here and Warp\bin\warp.cmd in
-# 110, where no app came first (probe run 44709924340). SPEC.md 6.4.7 compares that case, so each
-# spelling is its own value, and this is the scenario that produces the lowercase one.
+# 110, where no app came first (probe run 44709924340). SPEC.md 6.4.7 folds ASCII case under a
+# Windows home, so one value reads both, and this is the scenario that produces the lowercase one.
 #
 # BOUNDED, NOT Install-Exe: Start-Process -Wait waits for every process the installer starts,
 # and Warp's starts the app when it finishes, even silent. The first run of this scenario sat

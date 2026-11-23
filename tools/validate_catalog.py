@@ -277,11 +277,17 @@ def path_errors(aid, agent, path_routes):
     return errors
 
 
-def claims(mode, p, q):
+def claims(mode, p, q, fold=str):
     """Does every row the value `q` can match also match `p`, under `p`'s mode?
-    The modes are bin/classify's home_pattern() and prefix rule, read as containment."""
+    The modes are bin/classify's home_pattern() and prefix rule, read as containment.
+
+    A `~/` value is compared through `fold`, bin/classify's ascii_lower(): every value is also
+    tried under a Windows root, where an ASCII letter matches either case (SPEC.md 6.4.7),
+    so `~/.Agent` and `~/.agent` claim one row there."""
     if mode == "prefix":
         return q.startswith(p)
+    if mode.startswith("home-"):
+        p, q = fold(p), fold(q)
     if mode == "home-prefix":
         return q.rstrip("/") == p.rstrip("/") or q.startswith(p if p.endswith("/") else p + "/")
     if mode == "home-dir":
@@ -300,7 +306,8 @@ def overlap_errors(agents, reg, layouts=None):
     hit in catalog order, so an overlap would be settled by where an entry sits in the file
     -- `binaries: ~/.local/bin/kiro` would take kiro-cli's binary. With none allowed, a row
     satisfies at most one agent and order decides nothing."""
-    layouts = load_classify().TOOL_LAYOUTS if layouts is None else layouts
+    classify = load_classify()
+    layouts = classify.TOOL_LAYOUTS if layouts is None else layouts
     entries = []
     for agent in agents:
         for name, r in reg["routes"].items():
@@ -318,7 +325,7 @@ def overlap_errors(agents, reg, layouts=None):
     errors = []
     for kind, mode, aid, route, p in entries:
         for kind2, _, aid2, route2, q in entries:
-            if kind2 == kind and aid2 != aid and claims(mode, p, q):
+            if kind2 == kind and aid2 != aid and claims(mode, p, q, classify.ascii_lower):
                 errors.append(f"{aid}: {route} {p!r} ({mode}) also matches {aid2}'s "
                               f"{route2} {q!r}, so catalog order would decide the row")
     return errors
