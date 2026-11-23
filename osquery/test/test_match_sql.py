@@ -354,6 +354,25 @@ def main():
         check(f"vector {v['id']} ({v['section']}): the SQL gives each row its expected agent",
               got == v["expect"]["matches"], f"got {got}")
 
+    # --- the renderer's own duplicate guard, where case is not compared -------------
+    # Two agents' values that differ only in ASCII case are one claim under a Windows root
+    # (SPEC.md 6.4.7): their case-sensitive regexes differ and their Windows ones are equal.
+    # The validator refuses that catalog; the renderer must too, without it.
+    wcase = next(v["catalog"] for v in conformance.load() if v["id"] == "windows-case")
+    for route, value in (("state_dirs", "~/.Agent"), ("pypi", "Agent-Chat")):
+        dup = json.loads(json.dumps(wcase))
+        dup["agents"].append({"id": "c", "name": "C", "classification": "Coding agent",
+                              "platforms": ["windows"], "identifiers": [
+                                  {"route": route, "value": value, "status": "current"}]})
+        try:
+            dcat, droutes = conformance.authoring_form(classify, dup)
+            R.signatures(classify, dcat, classify.Registry(droutes))
+            check(f"the renderer refuses a second agent's {route} {value!r}", False,
+                  "it rendered")
+        except SystemExit as exc:
+            check(f"the renderer refuses a second agent's {route} {value!r}",
+                  "claimed by both a and c" in str(exc), str(exc))
+
     # --- the image regex, rule for rule, in osquery's regex engine ------------------
     table = [
         ("paulgauthier/aider", "paulgauthier/aider:latest", True),

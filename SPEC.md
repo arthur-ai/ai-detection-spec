@@ -133,10 +133,12 @@ A conforming catalog MUST meet all of these:
 6. **No two agents claim the same row.** No value of one agent may match a row that a value of
    another agent matches on a route of the same kind. This covers equal values, and also
    containment: a `prefix` value that another agent's value starts with, or a `home-prefix`
-   value that another agent's path sits under. Two `~/` values that differ only in the case of
-   ASCII letters are equal here, because both match the same row under a Windows home root
-   (§6.4.7). Because of this rule, the order in which a matcher tries identifiers (§6.5) can
-   never decide which agent a row belongs to.
+   value that another agent's path sits under. On `home-dir`, `home-prefix` and `tool-dir`
+   routes both are judged without regard to the case of ASCII letters, because such values
+   match the same rows under a Windows home root (§6.4.7): `~/.Agent` equals `~/.agent` and
+   contains `~/.agent/bin`, and the `tool-dir` identifier `Agent-Chat` equals `agent-chat`.
+   Because of this rule, the order in which a matcher tries identifiers (§6.5) can never
+   decide which agent a row belongs to.
 7. An identifier on a route that declares `purl` carries `purl`: the package URL of that
    type that the identifier names, with no version. One on any other route carries none.
    Route names are the catalog's own, so the schema cannot check this.

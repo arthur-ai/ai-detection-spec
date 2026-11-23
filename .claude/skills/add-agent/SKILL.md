@@ -98,7 +98,8 @@ What makes the scenario prove the identifier rather than the agent:
   for, and the converse, so that a change to one reruns the scenario: 85 forbids `cline`
   because `roo-cline` contains its id, and 78 forbids `claude-code` while installing Cline.
   `tools/scenarios.py` holds every other key and what it asserts (`must_contain`,
-  `require_rows`, `forbid_rows`, `forbid_evidence`), and refuses one it does not read.
+  `require_rows`, `forbid_rows`, `forbid_evidence`, `require_evidence`), and refuses one it
+  does not read.
 - **A Chrome extension is added to no scenario by hand.** For each scenario that declares
   `every_extension`, `python3 tools/scenarios.py --write` lists the catalog's ids in its
   `extension-ids.txt`, its setup installs them, and each agent is in its `must_find`.

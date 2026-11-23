@@ -81,9 +81,11 @@ checks the new identifiers against that run's uploads instead, and the badge and
 A CI run that proves fewer identifiers than the committed record on its own platform, OS and
 architecture is refused, because that is also what a broken query looks like. Two modes of
 `tools/agent_status.py --record` edit the committed record, and only to take records out:
-`--allow-shrink` drops them, for an identifier genuinely removed, and `--supersede` moves them
-to `archived`. Each takes the refused run's `--platform`, `--os` and `--arch`, because the
-guard compares on those. When an identifier stops appearing,
+`--allow-shrink` drops them, for an identifier a scenario genuinely stopped producing, and
+`--supersede` moves them to `archived`. Each takes the refused run's `--platform`, `--os` and
+`--arch`, because the guard compares on those. A value removed from the catalog needs no run:
+`tools/agent_status.py --drop-removed` takes out its records, and lint refuses the tree until
+it has. When an identifier stops appearing,
 [the triage](docs/signature-lifecycle.md#triage-why-did-it-stop-appearing) tells a wrong
 identifier from one that is no longer installable.
 

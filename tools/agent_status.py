@@ -456,6 +456,37 @@ def ci_platforms():
     return plats
 
 
+def drop_removed(scenarios=None, catalog=None):
+    """Take out every committed record of a value the catalog no longer carries; the count.
+
+    THE ONE REMOVAL THAT NEEDS NO RUN. --allow-shrink and --supersede replay a run's payload
+    to learn what it stopped proving. A value removed from the catalog is one no payload can
+    prove, so the catalog alone decides, and the Windows jobs upload no payload to replay.
+    tools/validate_catalog.py refuses such a record and names this mode. The archive is not
+    read: a superseded value stays on its route, so its records are not these."""
+    scenarios = SCENARIOS if scenarios is None else pathlib.Path(scenarios)
+    if catalog is None:
+        catalog = yaml.safe_load((ROOT / "catalog" / "agents.yaml").read_text())
+    keys = _observations.catalog_keys(catalog["agents"], ALL_ROUTES)
+    dropped = 0
+    for path in sorted(scenarios.glob("*/observed.json")):
+        doc = json.loads(path.read_text())
+        gone = [r for r in doc.get("identifiers", [])
+                if (r["agent"], r["route"], str(r["value"])) not in keys]
+        if not gone:
+            continue
+        for r in gone:
+            print(f"  dropped  {path.parent.name}: {r['agent']} {r['route']}:{r['value']} "
+                  f"({r.get('platform') or '?'} {r.get('os') or '?'})")
+        ids = {id(r) for r in gone}
+        doc["identifiers"] = [r for r in doc["identifiers"] if id(r) not in ids]
+        path.write_text(json.dumps(doc, indent=2) + "\n")
+        dropped += len(gone)
+    print(f"dropped {dropped} record(s) of values the catalog no longer carries"
+          if dropped else "nothing to drop: every committed record names a catalog value")
+    return dropped
+
+
 def observations(scenarios=None):
     """tools/observations.py's reader, over this module's SCENARIOS, which tests repoint."""
     return _observations.read(SCENARIOS if scenarios is None else scenarios)
@@ -1079,6 +1110,9 @@ def _pending_note(msgs, reported_any):
 
 
 def main():
+    if "--drop-removed" in sys.argv:
+        drop_removed()
+        return
     data = collect()
     if "--record" in sys.argv:
         i = sys.argv.index("--record")

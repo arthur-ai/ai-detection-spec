@@ -277,13 +277,14 @@ def path_errors(aid, agent, path_routes):
     return errors
 
 
-def claims(mode, p, q, fold=str):
+def claims(mode, p, q, fold):
     """Does every row the value `q` can match also match `p`, under `p`'s mode?
     The modes are bin/classify's home_pattern() and prefix rule, read as containment.
 
     A `~/` value is compared through `fold`, bin/classify's ascii_lower(): every value is also
     tried under a Windows root, where an ASCII letter matches either case (SPEC.md 6.4.7),
-    so `~/.Agent` and `~/.agent` claim one row there."""
+    so `~/.Agent` and `~/.agent` claim one row there. Required, because a default would be
+    the rule this replaced."""
     if mode == "prefix":
         return q.startswith(p)
     if mode.startswith("home-"):
@@ -301,12 +302,12 @@ def claims(mode, p, q, fold=str):
     return False
 
 
-def overlap_errors(agents, reg, layouts=None):
+def overlap_errors(agents, reg, layouts=None, classify=None):
     """NO VALUE CLAIMS ANOTHER AGENT'S ROWS on the same kind. The matcher takes the first
     hit in catalog order, so an overlap would be settled by where an entry sits in the file
     -- `binaries: ~/.local/bin/kiro` would take kiro-cli's binary. With none allowed, a row
     satisfies at most one agent and order decides nothing."""
-    classify = load_classify()
+    classify = load_classify() if classify is None else classify
     layouts = classify.TOOL_LAYOUTS if layouts is None else layouts
     entries = []
     for agent in agents:
@@ -350,21 +351,19 @@ def unprovable_observation_errors(root):
             if not observations.provable(r)]
 
 
-def orphan_observation_errors(doc, reg, root):
+def orphan_observation_errors(doc, reg, live):
     """EVERY COMMITTED RECORD NAMES A VALUE THE CATALOG STILL CARRIES. The collect job only
     adds and refreshes records, so one whose value a catalog edit removed stays, and the
     record step's shrink guard refuses the next run of its scenario on that platform. That
     happened in CI, after the install: 111 on windows-2025, for the second spelling of Warp's
     launcher that spec 0.3 made redundant. Here it fails lint, in the change that removed the
-    value. A superseded value stays on its route, so its records are not orphans."""
-    held = {(agent.get("id"), name, str(v))
-            for agent in doc["agents"] for name, r in reg["routes"].items()
-            for v in agent.get(r.get("values_from", name), []) or []}
-    live, _ = observations.read(root / "test" / "scenarios")
+    value. `live` is live_observations()."""
+    held = observations.catalog_keys(doc["agents"], reg["routes"])
     return [f"test/scenarios/{scenario}/observed.json: {a} {route}:{v} is no value in the "
-            f"catalog, so no run can prove it again; delete its record from that file"
-            for (a, route, v), recs in sorted(live.items()) if (a, route, v) not in held
-            for scenario in sorted({r["scenario"] for r in recs})]
+            f"catalog, so no run can prove it again. `python3 tools/agent_status.py "
+            f"--drop-removed` takes its records out"
+            for (a, route, v), scenarios in sorted(live.items()) if (a, route, v) not in held
+            for scenario in sorted(scenarios)]
 
 
 def live_superseded_errors(aid, agent, live):
@@ -591,20 +590,20 @@ def main():
 
     # A removed entry must not also be a live one, and must say what it is -- the table in
     # the report is rendered straight from this.
-    live = {a.get("id") for a in doc["agents"]}
+    live_ids = {a.get("id") for a in doc["agents"]}
     for r in doc.get("removed", []) or []:
         if not {"id", "what_it_is"} <= set(r):
             errors.append(f"removed entry {r!r} needs both `id` and `what_it_is`")
-        elif r["id"] in live:
+        elif r["id"] in live_ids:
             errors.append(f"{r['id']} is listed under `removed:` and is also a live agent. "
                           f"One of the two is wrong.")
 
     errors.extend(top_level_errors(doc))
     errors.extend(version_errors(doc, classify.CATALOG_VERSION))
     errors.extend(classification_errors(doc))
-    errors.extend(overlap_errors(doc["agents"], reg))
+    errors.extend(overlap_errors(doc["agents"], reg, classify=classify))
     errors.extend(unprovable_observation_errors(ROOT))
-    errors.extend(orphan_observation_errors(doc, reg, ROOT))
+    errors.extend(orphan_observation_errors(doc, reg, live))
 
     if errors:
         print("catalog: FAIL")

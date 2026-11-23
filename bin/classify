@@ -256,11 +256,11 @@ class Registry:
 # `/home/u\.claude` is not `~/.claude` and `C:\Users\u/.claude` is.
 #
 # UNDER A WINDOWS ROOT AN ASCII LETTER MATCHES EITHER CASE, `Users` included, because Windows
-# treats the two spellings as one file and the one on disk can depend on install order:
-# Warp's app leaves %LOCALAPPDATA%\warp, and its CLI alone makes %LOCALAPPDATA%\Warp (probe
-# run 44709924340). Under a POSIX root case is compared, because Linux, and a Mac formatted
-# case-sensitive, can hold both spellings as two files. A `fold` root is written lowercase and
-# matched against the path through ascii_lower(), which the rendered SQL does with lower().
+# treats the two spellings as one file and the one on disk can depend on install order, as
+# catalog/agents.yaml records of `warp`. Under a POSIX root case is compared, because Linux,
+# and a Mac formatted case-sensitive, can hold both spellings as two files. A `fold` root is
+# written lowercase and matched against the path through ascii_lower(), which the rendered
+# SQL does with lower().
 #
 # /root gets its own alternative: root's home is not under /home, and a `[^/]+`
 # component cannot reach it. Verified against `users.directory` on Ubuntu and Fedora.
@@ -293,21 +293,49 @@ MATCH_MODES = frozenset({"exact", "prefix", "exact-normalised", "home-dir", "hom
                          "tool-dir"})
 
 
+def home_views(*paths):
+    """Each path as the home patterns read it: (kind, text) pairs, `kind` an index into
+    ROOT_KINDS and `text` the path, lowered where that kind folds. A path under no home root
+    yields nothing, so no pattern is tried on it.
+
+    ONCE PER ROW, NOT ONCE PER PATTERN. Lowering inside every pattern's match took classify()
+    from 0.6s to 4.6s on 60,000 file rows; this is one prefix match per kind per path."""
+    views = []
+    for path in paths:
+        for kind, (rx, fold) in enumerate(_ROOTS):
+            text = ascii_lower(path) if fold else path
+            if rx.match(text):
+                views.append((kind, text))
+    return views
+
+
+_ROOTS = tuple((re.compile("^" + root), fold) for root, _, _, fold in ROOT_KINDS)
+
+
 class HomePattern:
-    """A `~/` value's regexes, one per kind of root, as `parts`: (compiled, fold) pairs.
+    """A `~/` value's regexes, one per kind of root, in ROOT_KINDS' order, as `parts`:
+    (compiled, fold) pairs.
 
     ONE REGEX PER KIND OF ROOT, NOT ONE ALTERNATION, because a `fold` regex reads the path
     lowered and the others read it as it is. Rejected: one alternation with a class per
-    letter, `[Ww][Aa][Rr][Pp]`, under the Windows root, which overran osquery's regex_match
-    limit (osqueryi 5.24.0: "Invalid regex: too big, max size is 256 bytes")."""
+    letter, `[Ww][Aa][Rr][Pp]`, under the Windows root, which overran the size osquery's
+    regex_match accepts (REGEX_MAX in osquery/tools/render_match.py)."""
 
     __slots__ = ("parts",)
 
     def __init__(self, parts):
         self.parts = tuple(parts)
 
+    def match_views(self, views):
+        """Does any of home_views()'s readings of a row match?"""
+        parts = self.parts
+        for kind, text in views:
+            if parts[kind][0].match(text):
+                return True
+        return False
+
     def match(self, path):
-        return any(rx.match(ascii_lower(path) if fold else path) for rx, fold in self.parts)
+        return self.match_views(home_views(path))
 
 
 def home_pattern(value, mode):
@@ -327,13 +355,14 @@ def home_pattern(value, mode):
                    itself is always written with them, so the agent is found anyway.
     """
     # `\Z`, NOT `$`: Python's `$` also matches before a final newline, which neither the
-    # format nor osquery's regex_match does. osquery/tools/render_match.py writes it as `$`.
+    # format nor osquery's regex_match does. osquery/tools/render_match.py's ecma() rewrites it
+    # for osquery, as a lookahead.
     rel = value[2:]                                  # strip the leading '~/'
     if mode == "home-dir":
         return HomePattern((re.compile("^" + _under(root, sep, rel, fold) + sep + r"?\Z"), fold)
                            for root, sep, _, fold in ROOT_KINDS)
-    # A group rather than a lookahead: osquery/dist/signatures.sql hands this pattern to osquery's
-    # regex_match, and a pattern it cannot compile aborts the whole statement.
+    # osquery/dist/signatures.sql hands this pattern to osquery's regex_match, and a pattern
+    # it cannot compile aborts the whole statement.
     return HomePattern(
         (re.compile("^" + _under(root, sep, rel, fold)
                     + ("" if value.endswith("/") else "(?:" + sep + r"|\Z)")), fold)
@@ -520,16 +549,16 @@ TOOL_DIRS = tuple(
     for root, sep, part, fold in ROOT_KINDS)
 
 
-def tool_names(*paths):
+def tool_names(*paths, views=None):
     """The package each path names as a pipx or uv tool directory, in the order given, as
     (name, fold): `fold` when the path is under a Windows root, where the name comes from the
-    lowered path and is compared to a value with tool_key() (SPEC.md 6.4.6 and 6.4.7)."""
-    for path in paths:
-        for pattern, fold in TOOL_DIRS:
-            m = pattern.match(ascii_lower(path) if fold else path)
-            if m:
-                yield m.group(1), fold
-                break
+    lowered path and is compared to a value with tool_key() (SPEC.md 6.4.6 and 6.4.7).
+    `views` is home_views(*paths), for a caller that already has it."""
+    for kind, text in home_views(*paths) if views is None else views:
+        pattern, fold = TOOL_DIRS[kind]
+        m = pattern.match(text)
+        if m:
+            yield m.group(1), fold
 
 
 def tool_key(name, fold):
@@ -708,19 +737,24 @@ def classify(rows, catalog, routes=None):
     exact, prefix, glob = build_index(catalog, registry)
     kind_routes = registry.kind_routes
     tool_kinds = {registry.routes[r]["kind"] for r in registry.bridged()}
-    # The bridged values keyed as tool_names() compares them, one table per `fold`. First
-    # wins, as in `exact`; SPEC.md 4.4 rule 6 leaves only one agent's values to collide.
+    # The bridged values keyed as tool_names() compares them, one table per `fold`. The
+    # first value in catalog order wins a key, as SPEC.md 6.5 credits the first identifier
+    # that matches; rule 6 of 4.4 leaves only one agent's values to share one.
     bridged = set(registry.bridged())
     tool_index = {False: {}, True: {}}
     for (route, value), meta in exact.items():
         if route in bridged:
             for fold, table in tool_index.items():
                 table.setdefault((route, tool_key(str(value), fold)), meta)
+    # The home patterns by route, in catalog order, so a row's loop reads only its route's.
+    home_routes = defaultdict(list)
+    for pattern, route, meta in glob:
+        home_routes[route].append((pattern, meta))
     findings, unmatched, gaps, scans, absences, dropped = defaultdict(list), [], [], [], [], []
 
     for row in rows:
         kind, ident, loc = row.get("kind"), row.get("id", ""), row.get("loc", "")
-        hit = None
+        hit, views = None, None
 
         if kind == SCAN_KIND:
             # A dated success is provenance, not a gap. Splitting them here is what lets
@@ -742,7 +776,8 @@ def classify(rows, catalog, routes=None):
         # each yield a name (SPEC.md 6.4.6); taking only the first that parsed missed a row
         # whose `id` named another directory.
         if kind in tool_kinds:
-            for name, fold in tool_names(ident, loc):
+            views = home_views(ident, loc)
+            for name, fold in tool_names(views=views):
                 table, key = tool_index[fold], tool_key(name, fold)
                 hit = next((table[(r, key)] for r in registry.bridged() if (r, key) in table),
                            None)
@@ -772,10 +807,14 @@ def classify(rows, catalog, routes=None):
                     break
             if hit:
                 break
-            for pattern, proute, meta in glob:
-                if proute == route and (pattern.match(ident) or pattern.match(loc)):
-                    hit = meta
-                    break
+            if route in home_routes:
+                if views is None:
+                    views = home_views(ident, loc)
+                # No view, no home root: the row is under none, and no pattern is tried.
+                for pattern, meta in home_routes[route] if views else ():
+                    if pattern.match_views(views):
+                        hit = meta
+                        break
             if hit:
                 break
         if hit:

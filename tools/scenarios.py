@@ -59,6 +59,12 @@ def _names(v):
     return None if ok else "a list of distinct names"
 
 
+def _evidence(v):
+    ok = (isinstance(v, dict) and v
+          and all(_text(k) is None and _texts(p) is None for k, p in v.items()))
+    return None if ok else "an object of agent id to a non-empty list of non-empty strings"
+
+
 def _true(v):
     # One spelling per meaning: absent is false.
     return None if v is True else "true, or left out"
@@ -150,6 +156,10 @@ CLASSIFIED = {
     # A string that must appear in no finding's evidence: rows a stock machine carries,
     # like libxcursor1, that must not become evidence for Cursor.
     "forbid_evidence": (False, _texts),
+    # {agent: [string]}: each string must appear in a row that is evidence for THAT agent.
+    # must_find is met by any one of an agent's identifiers, so it cannot hold a scenario to
+    # the row it exists to produce: 111's lowercase launcher, beside two Uninstall keys.
+    "require_evidence": (False, _evidence),
     "every_extension": (False, _true),
 }
 # requires.json: a macOS floor, for a scenario whose software needs a newer guest than a
@@ -361,8 +371,11 @@ def catalog_errors(name, docs, agents, platforms, where=SCENARIOS):
                                or exp.get("composes")):
         errors.append(f"{name}: a control finds nothing, so it may not name or derive must_find")
     if not sibling_errors:
-        clash = must_find(name, docs.__getitem__, agents) & set(cls.get("forbid") or [])
+        found = must_find(name, docs.__getitem__, agents)
+        clash = found & set(cls.get("forbid") or [])
         errors += [f"{name}: {aid!r} is both found and forbidden" for aid in sorted(clash)]
+        errors += [f"{name}: classified.require_evidence names {aid!r}, which is not in its "
+                   f"must_find" for aid in sorted(set(cls.get("require_evidence") or {}) - found)]
     # THE LIST A SETUP INSTALLS FROM IS GENERATED, and an empty one would install nothing and
     # assert nothing, which is green.
     listed = pathlib.Path(where) / name / EXTENSIONS
@@ -504,7 +517,8 @@ def counts_verdict(rows, exp):
 def classified_verdict(result, exp, want, evidence=()):
     """(lines, ok) for what bin/classify concluded: every agent in `want` (must_find, as
     derived) is found, each (agent, id) in `evidence` is found through a row with that id,
-    nothing else is found, and no finding rests on forbid_evidence."""
+    each require_evidence string is in a row of its agent's evidence, nothing else is found,
+    and no finding rests on forbid_evidence."""
     found = {f["id"] for f in result["findings"]}
     cls = exp["classified"]
     lines, ok_all = [], True
@@ -518,6 +532,16 @@ def classified_verdict(result, exp, want, evidence=()):
                  for f in result["findings"])
         lines.append(f"  classified {agent!r} through {value!r}: {'ok' if ok else 'FAIL'}")
         ok_all &= ok
+    # Against each field's VALUE, as forbid_evidence below and for its reason.
+    for agent, probes in sorted((cls.get("require_evidence") or {}).items()):
+        for probe in probes:
+            ok = any(f["id"] == agent and any(
+                         probe in str(v) for e in f.get("evidence", [])
+                         for v in (e.values() if isinstance(e, dict) else [e]))
+                     for f in result["findings"])
+            lines.append(f"  require_evidence {agent!r} through {probe!r}: "
+                         f"{'ok' if ok else 'FAIL'}")
+            ok_all &= ok
     extra = sorted(found - want)
     lookalike = set(cls.get("forbid") or [])
     lines.append("  classified nothing else: " + (

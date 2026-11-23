@@ -1858,22 +1858,57 @@ check("two agents' paths that differ only in ASCII case are refused: both claim 
 check("...but not paths that differ in a letter outside ASCII, which is compared as itself",
       _oe([{"id": "a", "state_dirs": ["~/.\u00c4gent"]},
            {"id": "b", "state_dirs": ["~/.\u00e4gent"]}], _reg) == [])
-_oo_root = pathlib.Path(_tf2.mkdtemp())
-(_oo_root / "test" / "scenarios" / "s").mkdir(parents=True)
-(_oo_root / "test" / "scenarios" / "s" / "observed.json").write_text(json.dumps(
-    {"scenario": "s", "identifiers": [
-        {"agent": "a", "route": "bundle_ids", "value": "com.example.a", "platform": "darwin",
-         "run": "1"},
-        {"agent": "a", "route": "running_apps", "value": "com.example.a", "platform": "darwin",
-         "run": "1"},
-        {"agent": "a", "route": "bundle_ids", "value": "com.example.gone", "platform": "darwin",
-         "run": "1"}]}))
-_ooe = _vc.orphan_observation_errors(
-    {"agents": [{"id": "a", "bundle_ids": ["com.example.a"]}]}, _reg, _oo_root)
-check("a committed record of a value the catalog no longer carries is refused, and only it",
-      len(_ooe) == 1 and "com.example.gone" in _ooe[0], str(_ooe))
-check("...a record on a route that borrows the value (`values_from`) is not an orphan",
-      not any("running_apps" in e for e in _ooe), str(_ooe))
+# THE COVERAGE REPLAY CREDITS THE CATALOG'S SPELLING, not the directory's: a record is keyed
+# by the catalog value, so crediting the name on disk would leave a mixed-case value matched
+# on Windows and never recorded as observed.
+with _tf2.TemporaryDirectory() as _d:
+    _payload = pathlib.Path(_d) / "out.json"
+    _payload.write_text(json.dumps([
+        {"kind": "file", "id": _p, "ver": "", "loc": _p, "extra": "", "perms": ""}
+        for _p in ("C:\\Users\\dana\\AppData\\Roaming\\uv\\tools\\agent-chat\\",
+                   "/home/dana/.local/share/uv/tools/agent-chat/")]))
+    _credited = _st.replay([_payload], {"agents": [
+        {"id": "a", "name": "A", "classification": "Coding agent", "pypi": ["Agent-Chat"]}]})[0]
+check("the replay credits a Windows tool directory to the catalog's spelling of its value",
+      dict(_credited) == {"a": {("pypi", "Agent-Chat")}}, f"got {dict(_credited)}")
+# A RECORD OF A VALUE THE CATALOG DROPPED: refused in the tree, taken out with no run, and
+# refused by the merge when a run queued before the change uploads it afterwards.
+_oo_scen = pathlib.Path(_tf2.mkdtemp()) / "test" / "scenarios"
+(_oo_scen / "s").mkdir(parents=True)
+_oo_file = _oo_scen / "s" / "observed.json"
+_oo_doc = {"agents": [{"id": "a", "bundle_ids": ["com.example.a"]}]}
+
+
+def _oo_rec(route, value):
+    return {"agent": "a", "route": route, "value": value, "platform": "darwin",
+            "os": "26.7.2", "arch": "arm64", "run": "1"}
+
+
+_oo_file.write_text(json.dumps({"scenario": "s", "identifiers": [
+    _oo_rec("bundle_ids", "com.example.a"), _oo_rec("running_apps", "com.example.a"),
+    _oo_rec("bundle_ids", "com.example.gone")]}))
+_ooe = _vc.orphan_observation_errors(_oo_doc, _reg, _vc.live_observations(_oo_scen.parent.parent))
+check("a committed record of a value the catalog no longer carries is refused",
+      any("com.example.gone" in e and "--drop-removed" in e for e in _ooe), str(_ooe))
+check("...so is one under a route that borrows the value, which no recorder writes",
+      any("running_apps" in e for e in _ooe) and len(_ooe) == 2, str(_ooe))
+with _ctx.redirect_stdout(_io.StringIO()):
+    _oo_n = _st.drop_removed(_oo_scen, _oo_doc)
+_oo_left = [(r["route"], r["value"]) for r in json.loads(_oo_file.read_text())["identifiers"]]
+check("--drop-removed takes out exactly those records, with no run to replay",
+      _oo_n == 2 and _oo_left == [("bundle_ids", "com.example.a")], f"{_oo_n}, {_oo_left}")
+check("...and the tree then passes",
+      _vc.orphan_observation_errors(_oo_doc, _reg,
+                                    _vc.live_observations(_oo_scen.parent.parent)) == [])
+_oo_art = _oo_scen.parent / "art"
+_artifact(_oo_art, "s", "26.7.2", [_oo_rec("bundle_ids", "com.example.a") | {"run": "2"},
+                                    _oo_rec("bundle_ids", "com.example.gone") | {"run": "2"}])
+with _ctx.redirect_stdout(_io.StringIO()) as _oo_out:
+    _mo.merge(_oo_art, _oo_scen, _st._observations.catalog_keys(_oo_doc["agents"], _reg["routes"]))
+_oo_left = [(r["value"], r["run"]) for r in json.loads(_oo_file.read_text())["identifiers"]]
+check("the merge refuses an uploaded record of a dropped value, and says so",
+      _oo_left == [("com.example.a", "2")] and "does not carry" in _oo_out.getvalue(),
+      f"{_oo_left} {_oo_out.getvalue()!r}")
 _lse = _vc.live_superseded_errors
 check("a superseded value a run still observes is refused: it is current",
       bool(_lse("a", {"superseded": [{"route": "npm", "value": "x"}]},
@@ -2066,6 +2101,19 @@ check("every_extension wants each id as evidence for its agent, not one id per a
 _win = {"findings": [{"id": "cli", "evidence": [{"kind": "npm", "loc": "C:\\Users\\dana\\npm"}]}]}
 check("...a Windows path among them, which the evidence's JSON text would have escaped",
       not _sc.classified_verdict(_win, _exp({"forbid_evidence": ["C:\\Users\\dana"]}), {"cli"})[1])
+check("a require_evidence string must be in a row of that agent's evidence, by field value",
+      _sc.classified_verdict(_win, _exp({"require_evidence": {"cli": ["\\dana\\npm"]}}),
+                             {"cli"})[1]
+      and not _sc.classified_verdict(
+          _win, _exp({"require_evidence": {"cli": ["\\dana\\pip"]}}), {"cli"})[1]
+      and not _sc.classified_verdict(
+          {"findings": _win["findings"] + [{"id": "e1", "evidence": [{"id": "only-e1"}]}]},
+          _exp({"require_evidence": {"cli": ["only-e1"]}}), {"cli", "e1"})[1])
+check("...its shape is agent to strings, and its agent must be in must_find",
+      _se(_exp({"require_evidence": ["cli"]})) != []
+      and _se(_exp({"require_evidence": {"cli": ["x"]}})) == []
+      and any("not in its must_find" in e for e in _ce({"s": _exp(
+          {"must_find": ["cli"], "require_evidence": {"e1": ["x"]}}, platform="linux")})))
 check("a harness reads a field's default where the scenario is silent, and its value where it says",
       _sc.field("00-baseline", "deep") is False and _sc.field("79-linux-image", "deep") is True)
 def _raises(exc, fn):

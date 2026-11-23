@@ -28,7 +28,7 @@ import pathlib
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from observations import provable  # noqa: E402
+from observations import catalog_keys, provable  # noqa: E402
 
 # The merge key. `run` is deliberately NOT in it: two runs on the same (platform, os, arch)
 # are one observation re-proved, not two, so including the run id would append a duplicate
@@ -63,10 +63,11 @@ def uploaded(artifacts):
         yield doc.get("scenario") or f.parent.name.split("--")[0].removeprefix("observed-"), doc
 
 
-def merge(artifacts, scenarios):
+def merge(artifacts, scenarios, known=None):
     """Union every artifact's identifiers into the scenario files under `scenarios`.
 
-    Returns {scenario: record count} for the files it wrote.
+    `known` is observations.catalog_keys() for the catalog beside those files; None merges
+    whatever is uploaded. Returns {scenario: record count} for the files it wrote.
     """
     # THE NEWEST RUN WINS A KEY, NOT THE LAST ARTIFACT. Uploads once carried copies of the
     # other runners' committed records, and the label that sorted last overwrote fresh
@@ -79,12 +80,21 @@ def merge(artifacts, scenarios):
     # committed file from before its runless records were deleted. Run 41675520427, queued
     # before the change merged, put 22 back into 85-linux-vscode-agents.
     # tools/validate_catalog.py refuses them in the tree; this keeps them from reaching it.
+    #
+    # SO IS A RECORD OF A VALUE THE CATALOG HERE DOES NOT CARRY, for the same reason: a run
+    # queued before a change that removes a value merges after it, and would put the value's
+    # record back. validate_catalog refuses that record too, so every later pull request
+    # would fail lint on a file it never touched.
     incoming = collections.defaultdict(dict)
-    refused = collections.Counter()
+    refused, removed = collections.Counter(), collections.Counter()
     for scen, doc in uploaded(artifacts):
         for rec in doc.get("identifiers", []):
             if not provable(rec):
                 refused[scen] += 1
+                continue
+            if known is not None and (rec.get("agent"), rec.get("route"),
+                                      str(rec.get("value"))) not in known:
+                removed[scen] += 1
                 continue
             k = _key(rec)
             held = incoming[scen].get(k)
@@ -93,6 +103,9 @@ def merge(artifacts, scenarios):
     for scen, n in sorted(refused.items()):
         print(f"::warning::{scen}: refused {n} uploaded record(s) naming no run or platform. "
               f"Only a CI run's own records are merged.")
+    for scen, n in sorted(removed.items()):
+        print(f"::warning::{scen}: refused {n} uploaded record(s) of a value the catalog here "
+              f"does not carry. The run predates the change that removed it.")
 
     written = {}
     for scen, recs in sorted(incoming.items()):
@@ -146,6 +159,15 @@ def seen_scenarios(artifacts):
     return {scen for scen, _ in uploaded(artifacts)}
 
 
+def known_keys(scenarios):
+    """catalog_keys() for the catalog in the tree `scenarios` (its test/scenarios) belongs to:
+    the checkout the merge writes into, which is the base the records must agree with."""
+    import yaml  # here, so importing this module to test merge() needs no PyYAML
+    catalog = scenarios.resolve().parent.parent / "catalog"
+    agents = yaml.safe_load((catalog / "agents.yaml").read_text())["agents"]
+    return catalog_keys(agents, yaml.safe_load((catalog / "routes.yaml").read_text())["routes"])
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -155,7 +177,7 @@ def main():
                     help="write the comma-separated list of scenarios that reported")
     args = ap.parse_args()
     artifacts, scenarios = args.artifacts, args.scenarios
-    written = merge(artifacts, scenarios)
+    written = merge(artifacts, scenarios, known_keys(pathlib.Path(scenarios)))
     if args.reported_out:
         reported = sorted(seen_scenarios(artifacts))
         pathlib.Path(args.reported_out).write_text(",".join(reported))

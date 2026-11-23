@@ -20,8 +20,9 @@
 --
 -- A Windows glob returns a directory with a trailing `\` whether the pattern ends in one or
 -- not, and never `.` or `..`, so neither POSIX guard is needed here. The literal part of a
--- path comes back in the pattern's own case, which is why `\Users\` is written as SPEC.md
--- compares it. All measured on windows-2025, osquery 5.23.1 (survey run 40393754308).
+-- path comes back in the pattern's own case, which decides how a row reads and not whether
+-- it matches: SPEC.md 6.4.7 folds ASCII case under a Windows home. All measured on
+-- windows-2025, osquery 5.23.1 (survey run 40393754308).
 SELECT 'file' AS kind, f.path AS id, '' AS ver, f.path AS loc, '' AS extra, '' AS perms
   FROM users u CROSS JOIN file f ON f.path LIKE u.directory || '\.local\bin\%'
  WHERE u.directory LIKE '_:\Users\%'

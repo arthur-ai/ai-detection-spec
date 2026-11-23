@@ -267,6 +267,8 @@ def scenarios(paths, base=None, head=None):
 
 
 _cat = (ROOT / ci_scope.CATALOG).read_text()
+# The catalog's own version, read here so a bump edits no fixture.
+_cat_version = int(re.search(r"^version: (\d+)$", _cat, re.M).group(1))
 _catdoc = yaml.safe_load(_cat)
 
 
@@ -325,7 +327,8 @@ check("a catalog with no base runs every scenario",
       scenarios([ci_scope.CATALOG], base={ci_scope.CATALOG: None}) == _LISTED)
 check("a catalog edit outside `agents:` runs every scenario",
       scenarios([ci_scope.CATALOG], head={ci_scope.CATALOG: _replaced(
-          _cat, "\nversion: 5\n", "\nversion: 6\n")}) == _LISTED)
+          _cat, f"\nversion: {_cat_version}\n", f"\nversion: {_cat_version + 1}\n")})
+      == _LISTED)
 _out, _ = ci_scope.scenarios_outputs(None, _reader())
 check("and every scenario means every exclusion is empty, the direction that runs more",
       all(line.endswith("=[]") for line in _out if line.startswith("exclude_")), str(_out))

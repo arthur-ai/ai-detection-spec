@@ -12,6 +12,15 @@ import pathlib
 SCENARIOS = pathlib.Path(__file__).resolve().parent.parent / "test" / "scenarios"
 
 
+def catalog_keys(agents, routes):
+    """The (agent, route, value) keys a record may name: every value on a route's own list.
+    A superseded value stays on its route, so it is among them. A route that borrows its
+    values (`values_from`) lists none, and no recorder writes a record under one. Takes the
+    catalog's agents and route names, so this module still reads neither file."""
+    return {(a.get("id"), route, str(v))
+            for a in agents for route in routes for v in a.get(route, []) or []}
+
+
 def provable(rec):
     """Can this observation be published as proof (SPEC.md 7.2)? It needs the run that
     produced it and the platform it ran on. A local `--record` names no run. Coverage counts

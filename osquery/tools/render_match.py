@@ -252,14 +252,24 @@ def signatures(classify, catalog, registry):
     # signature it meets; a join reports every one. The two agree only while no value is
     # claimed twice, so a duplicate is refused here rather than discovered as a
     # disagreement in CI.
+    #
+    # EACH THING THE SQL COMPARES IS ITS OWN CLAIM. Under a Windows root a path is compared
+    # by its `fold` regex and a tool directory's name by its lowered value (SPEC.md 6.4.7),
+    # so `~/.Agent` and `~/.agent` differ in `value` and are one claim there. The validator
+    # refuses that catalog, and this renderer does not run the validator.
     seen = {}
-    for agent, _, _, kind, mode, value, *_ in rows:
-        key = (kind, mode, value)
-        if key in seen and seen[key] != agent:
-            sys.exit(f"render_match: {kind} {mode} {value!r} is claimed by both "
-                     f"{seen[key]} and {agent}; the classifier would pick one and this "
-                     f"SQL would report both")
-        seen[key] = agent
+    for agent, _, _, kind, mode, value, fold, _ in rows:
+        claims = [(mode, value)]
+        if fold:
+            claims.append((f"{mode}, under a Windows home", fold))
+        if mode == "tool-dir":
+            claims.append((f"{mode}, under a Windows home", classify.ascii_lower(value)))
+        for how, what in claims:
+            other = seen.setdefault((kind, how, what), agent)
+            if other != agent:
+                sys.exit(f"render_match: {kind} {how} {what!r} is claimed by both "
+                         f"{other} and {agent}; the classifier would pick one and this "
+                         f"SQL would report both")
     for agent, _, _, kind, mode, value, fold, _ in rows:
         if any("\n" in t or "\r" in t for t in (value, fold)):
             sys.exit(f"render_match: {agent}'s {kind} value contains a line break")
