@@ -8,11 +8,9 @@
 # thebrowsercompany-dia >= 14 and arm64 only, trae, trae-cn and block-goose >= 12.
 set -e
 source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest.sh"
+# need_brew refreshes Homebrew's metadata, which Dia needs: its vendor serves only the
+# current zip.
 need_brew
-# FRESH METADATA, because Dia's vendor serves only the current zip. Both runner images'
-# cached casks still named 1.47.2 on 2026-10-08, and that URL answered 404. Stale metadata is
-# what 12-chatgpt-pre-rename relies on to reach an old build; here it reaches nothing.
-brew update >/dev/null 2>&1 || echo "WARN: brew update failed; cask metadata may be stale"
 # Through retry, because a CDN can reset a transfer mid-download. Run 37829705185 lost
 # trae-cn to `Connection reset by peer` on macos-15, the same day the same URL installed on
 # both runners. Running out still WARNs rather than exits, for the reason 10 gives: the
