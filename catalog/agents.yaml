@@ -851,11 +851,12 @@ agents:
     bundle_ids: [com.operasoftware.OperaNeon]
     # WINDOWS, THE PER-USER INSTALL. The installer writes ~\AppData\Local\Programs\Opera Neon\:
     # the launcher opera.exe, and the build under a version directory (probe run
-    # 42675163069). Its Uninstall key is `Opera Neon 139.0.6053.39`, the version in the key's
-    # own name, so uninstall_keys, which compares the name exactly, would lose it at the next
-    # update; it is not a value, and `programs` names it the same way. The launcher is the
-    # installed witness, read by filesystem-windows.sql's per-user app branch and proved with
-    # nothing launched in 118-windows-opera-neon-idle. PENDING CI: no run has read it yet.
+    # 42675163069). Its Uninstall key has the version in its own name, `Opera Neon
+    # 139.0.6053.39` in the probe and `Opera Neon 139.0.6053.75` in run 45353320365, so
+    # uninstall_keys, which compares the name exactly, loses it at each update; it is not a
+    # value, and `programs` names it the same way. The launcher is the installed witness,
+    # read by filesystem-windows.sql's per-user app branch with nothing launched, in
+    # 118-windows-opera-neon-idle on windows-2025, run 45353320365.
     binaries: ["~/AppData/Local/Programs/Opera Neon/opera.exe"]
     # RUNNING, by the install directory, so a process started from the launcher and one from
     # the build under the version directory both match. Read in 117-windows-opera-neon, as
