@@ -14,12 +14,6 @@
 set -e
 source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest.sh"
 need_brew
-# FRESH METADATA, as 13 does for Dia: Devin's CDN serves only recent builds. On 2026-11-18 the
-# macos-26 image's cached cask still named devin-cli 3000.12.43 while homebrew-cask was at
-# 3000.14.30821, and the old URL answered 403 (run 44229247235). Its output is kept for a
-# failure, so a stale-metadata 403 below can be told from a failed update.
-out=$(brew update 2>&1) || { echo "WARN: brew update failed; cask metadata may be stale:"
-                              print -r -- "$out" | tail -5 | sed 's/^/      /'; }
 # THE TAP'S NAME IS NOT IN THE ROW, so `kilo` is a value only while nothing official shares
 # it. Asserted before the tap is added, against the two repositories by name, so a tap left
 # on a reused runner cannot answer for them.

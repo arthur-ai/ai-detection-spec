@@ -57,13 +57,36 @@ need_clt() {
   xcode-select -p >/dev/null 2>&1
 }
 
+# FRESH METADATA, ONCE, FOR EVERY HOMEBREW INSTALL. A runner image carries the formula and
+# cask lists it was built with, and an install does not refresh them. The version they name
+# installs until the vendor deletes that file, and then fails with no commit behind it:
+#
+#   node               26.8.1 listed, 26.12.1 served             2026-10-25
+#   thebrowsercompany-dia  1.47.2 listed, 404                    2026-10-08, in 13
+#   devin-cli          3000.12.43 listed, 403                    run 44229247235, in 22
+#   devin-desktop      3.12.59 listed, 404; the cask had been at 3.14 for three days
+#                                                                runs 45229382214, 45272022980, in 10
+#
+# Each was refreshed where it failed, which left every other install to fail the same way.
+# The output is kept for a failure, so a stale-metadata error after it can be told from a
+# failed update. 12-chatgpt-pre-rename wants an old build and takes it by direct download.
 need_brew() {
-  if [ -x /opt/homebrew/bin/brew ]; then eval "$(/opt/homebrew/bin/brew shellenv)"; return 0; fi
-  need_clt || { echo "FAIL: Command Line Tools are a Homebrew prerequisite" >&2; return 1; }
-  echo "--- installing Homebrew"
-  NONINTERACTIVE=1 /bin/bash -c \
-    "$(curl --retry 3 -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || return 1
+  if [ ! -x /opt/homebrew/bin/brew ]; then
+    need_clt || { echo "FAIL: Command Line Tools are a Homebrew prerequisite" >&2; return 1; }
+    echo "--- installing Homebrew"
+    NONINTERACTIVE=1 /bin/bash -c \
+      "$(curl --retry 3 -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" || return 1
+  fi
   eval "$(/opt/homebrew/bin/brew shellenv)"
+  [ -n "${BREW_METADATA_FRESH:-}" ] && return 0
+  local out
+  if out=$(brew update 2>&1); then
+    BREW_METADATA_FRESH=1
+  else
+    echo "WARN: brew update failed; formula and cask metadata may be stale:"
+    printf '%s\n' "$out" | tail -5 | sed 's/^/      /'
+  fi
+  return 0
 }
 
 # need_node [min]   min: a major (24) or a full version (26.12.1)
@@ -112,12 +135,8 @@ need_node() {
     if [ -n "$have" ] && version_at_least "$have" "$min"; then return 0; fi
     echo "--- node ${have:-unknown} is below the $min this scenario needs; upgrading"
   fi
+  # need_brew refreshes Homebrew's metadata, or this would install the version that failed.
   need_brew || return 1
-  # FRESH METADATA FIRST. The runner images cache Homebrew's formula list, and on 2026-10-25
-  # it still named node 26.8.1 while Homebrew served 26.12.1, so `brew install node` installed
-  # the very version that had failed. The same staleness 13-desktop-apps-more refreshes for Dia.
-  # Only on this path, which only an upgrade reaches.
-  brew update >/dev/null 2>&1 || echo "WARN: brew update failed; node metadata may be stale"
   # Tolerant, because the VERIFICATION BELOW IS THE GATE, not these three. `brew install`
   # on an already-current formula and `brew link` on an already-linked one both exit
   # non-zero for reasons that are not failures, and a `set -e` caller would take the exit
