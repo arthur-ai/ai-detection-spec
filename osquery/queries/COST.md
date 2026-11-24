@@ -182,6 +182,11 @@ nothing launched, it returns **2**, `hermes.exe` and `hermes-acp.exe`
 (109-windows-hermes-idle, run 44690332131). A machine with more per-user installers lists
 more, and none has been measured.
 
+**The per-user app branch**, `%LOCALAPPDATA%\Programs\<app>\<file>.exe`, added the same
+month, also returns **no rows on the stock image**: 6 rows in 0.24s (CI run 45353320489).
+After Opera Neon's installer, with nothing launched, it returns **1**, `opera.exe`
+(118-windows-opera-neon-idle, run 45353320365). The same caveat holds.
+
 `programs-windows.sql` is `slow` for its **cold** run, 7.2s on a fresh runner against 0.4s
 warm, because `programs` reads every MSIX package's manifest off disk (survey run
 40396366136). That cold number is what an endpoint's first scheduled scan pays. The 429
