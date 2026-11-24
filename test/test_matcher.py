@@ -1703,18 +1703,24 @@ check("Grok Bot, Cursor and Grok Build are told apart on every route",
 check("...and its helper id, `sand`, a bare `grok`, its versioned name and its updater claim nothing",
       {"com.anysphere.sand.helper", "sand", "grok", "grok.desktop", "Grok Bot 1.1.0",
        "C:\\Users\\dana\\AppData\\Local\\sand-updater\\installer.exe"} <= set(_u), f"got {_c}")
-# The rpm's rows carry the deb's ids, and _claims keys by id, so the rpm is asked on its own.
+# The rpm's and the cask's rows carry the deb's ids, and _claims keys by id, so each is asked
+# on its own.
 _c, _u = _claims(_kind("rpm", "grok-bot", "sand", "cursor"))
 check("...and its rpm is its own, while an rpm named `sand` claims nothing",
       _c == {"grok-bot": "grok-bot", "cursor": "cursor"} and "sand" in _u, f"got {_c}")
+_c, _u = _claims(_kind("brew", "grok-bot", "sand", "cursor"))
+check("...and so is its cask",
+      _c == {"grok-bot": "grok-bot", "cursor": "cursor"} and "sand" in _u, f"got {_c}")
 # THE UNINSTALL KEY IS DERIVED, NOT ONE RELEASE'S NUMBER: electron-builder's NSIS installer
 # writes UUIDv5(its fixed namespace, appId), and the appId is the bundle id macOS reports. The
-# key moves only when the bundle id does.
+# key moves only when the bundle id does. Each key against ANY bundle id listed, because a
+# superseded bundle id stays on its route beside the new one.
 import uuid as _uuid
 _gb = next(a for a in _cat["agents"] if a["id"] == "grok-bot")
-check("Grok Bot's Uninstall key is electron-builder's UUIDv5 of its bundle id",
-      [str(_uuid.uuid5(_uuid.UUID("50e065bc-3134-11e6-9bab-38c9862bdaf3"), b))
-       for b in _gb["bundle_ids"]] == _gb["uninstall_keys"], f"got {_gb['uninstall_keys']}")
+check("Grok Bot's Uninstall key is electron-builder's UUIDv5 of a bundle id it lists",
+      set(_gb["uninstall_keys"]) <= {
+          str(_uuid.uuid5(_uuid.UUID("50e065bc-3134-11e6-9bab-38c9862bdaf3"), b))
+          for b in _gb["bundle_ids"]}, f"got {_gb['uninstall_keys']}")
 
 # META'S TWO MUSE PRODUCTS, read off real installs on 2026-10-19 and told apart by route: a
 # bundle id for the desktop agent, a ~/.local/bin launcher for the coding agent. The launcher

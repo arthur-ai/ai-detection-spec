@@ -40,9 +40,12 @@ pkg=$(mktemp --suffix="$sfx")
 retry "the Grok Bot download" curl --retry 3 -fsSLo "$pkg" "$url" \
   || { rm -f "$pkg"; echo "FAIL: the Grok Bot package did not download"; exit 1; }
 case "$sfx" in
+  # FRESH LISTS FIRST, for the reason 112 gives: the deb's dependencies come from the
+  # distribution, and a runner's lists can name a build the mirror has dropped.
   # apt, not dpkg -i alone: dpkg leaves a package with unmet dependencies unconfigured, and
   # the query reads only `install ok installed`.
-  .deb) try "installing the Grok Bot .deb" sudo_maybe env DEBIAN_FRONTEND=noninteractive \
+  .deb) retry "apt-get update" try "apt-get update" sudo_maybe apt-get -qq update || true
+        try "installing the Grok Bot .deb" sudo_maybe env DEBIAN_FRONTEND=noninteractive \
             apt-get -qq install -y "$pkg" \
           || echo "WARN: Grok Bot did not install" ;;
   .rpm) try "installing the Grok Bot .rpm" sudo_maybe dnf -q -y install "$pkg" \
@@ -50,5 +53,7 @@ case "$sfx" in
 esac
 rm -f "$pkg"
 echo "--- what the package manager recorded:"
-{ dpkg -l 2>/dev/null | grep -E "^ii +grok-bot "; rpm -q grok-bot 2>/dev/null | grep -v "not installed"; } \
-  || echo "      no grok-bot package"
+case "$sfx" in
+  .deb) dpkg -l 2>/dev/null | grep -E "^ii +grok-bot " ;;
+  .rpm) rpm -q grok-bot 2>/dev/null | grep -v "not installed" ;;
+esac || echo "      no grok-bot package"

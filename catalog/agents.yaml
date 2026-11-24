@@ -1360,9 +1360,9 @@ agents:
     # THE RPM IS NOT THE FILE THE DOWNLOAD PAGE LINKS. cursor.com/download/bot links
     # Grok_Bot_<ver>.rpm, which answered an error body on 2026-11-16 (probe run 43929616449)
     # and 403 on 2026-11-24. The package is served beside the deb as
-    # grok-bot-<ver>-1.<arch>.rpm. 69-linux-grok-bot read it off 1.2.3 on 2026-11-24, run
-    # locally on Rocky 9, Fedora 41 and Amazon Linux 2023 aarch64: rpm_packages name=grok-bot,
-    # the same packager and the same .desktop file.
+    # grok-bot-<ver>-1.<arch>.rpm. Run 45351499839 read 1.2.3 through 69-linux-grok-bot on
+    # Rocky 9, Fedora 41 and Amazon Linux 2023 x86_64: rpm_packages name=grok-bot and the same
+    # .desktop file. The same scenario read both on aarch64 in local containers.
     rpm_packages: [grok-bot]
     desktop_ids: [grok-bot.desktop]
     # WINDOWS, Grok_Bot_1.1.0_Setup.exe /S on windows-2025, signed "Anysphere, Inc.": an
