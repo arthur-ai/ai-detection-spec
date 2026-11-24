@@ -49,7 +49,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "44772519062"
+      "run": "45419143651"
     },
     {
       "agent": "claude-code",
@@ -94,7 +94,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "44772519062"
+      "run": "45419143651"
     },
     {
       "agent": "claude-code",
@@ -139,7 +139,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "44772519062"
+      "run": "45419143651"
     },
     {
       "agent": "cline",
@@ -185,11 +185,11 @@
       "agent": "cline",
       "route": "npm",
       "value": "cline",
-      "agent_version": "3.0.74",
+      "agent_version": "3.0.75",
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "44772519062"
+      "run": "45419143651"
     },
     {
       "agent": "codex-cli",
@@ -235,11 +235,11 @@
       "agent": "codex-cli",
       "route": "npm",
       "value": "@openai/codex",
-      "agent_version": "0.171.0",
+      "agent_version": "0.172.0",
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "44772519062"
+      "run": "45419143651"
     },
     {
       "agent": "codex-cli",
@@ -284,7 +284,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "44772519062"
+      "run": "45419143651"
     },
     {
       "agent": "continue",
@@ -334,7 +334,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "44772519062"
+      "run": "45419143651"
     },
     {
       "agent": "copilot-cli",
@@ -380,11 +380,11 @@
       "agent": "copilot-cli",
       "route": "npm",
       "value": "@github/copilot",
-      "agent_version": "1.0.114",
+      "agent_version": "1.0.115",
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "44772519062"
+      "run": "45419143651"
     },
     {
       "agent": "gemini-cli",
@@ -430,11 +430,11 @@
       "agent": "gemini-cli",
       "route": "npm",
       "value": "@google/gemini-cli",
-      "agent_version": "0.70.0",
+      "agent_version": "0.71.1",
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "44772519062"
+      "run": "45419143651"
     },
     {
       "agent": "grok",
@@ -479,7 +479,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "44772519062"
+      "run": "45419143651"
     },
     {
       "agent": "kilo-code",
@@ -529,7 +529,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "44772519062"
+      "run": "45419143651"
     },
     {
       "agent": "opencode",
@@ -579,7 +579,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "44772519062"
+      "run": "45419143651"
     },
     {
       "agent": "pi",
@@ -624,7 +624,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "44772519062"
+      "run": "45419143651"
     }
   ]
 }
