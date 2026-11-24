@@ -1,8 +1,8 @@
 {
-  "description": "Maki's and Kilo CLI's Homebrew formulae and the Devin CLI and Warp Agent CLI casks, installed and not run.",
+  "description": "Maki's and Kilo CLI's Homebrew formulae, the Devin CLI and Warp Agent CLI casks, and Codewhale's formula from before its rename, installed and not run.",
   "platform": "darwin",
   "counts": {
-    "brew": ">=4",
+    "brew": ">=5",
     "app": ">=0",
     "npm": ">=0",
     "file": ">=0",
@@ -19,18 +19,21 @@
       "maki",
       "devin-cli",
       "warp",
-      "kilo-code"
+      "kilo-code",
+      "codewhale"
     ],
     "forbid": [
       "windsurf",
-      "opencode"
+      "opencode",
+      "deepseek-harness"
     ]
   },
-  "why": "Nothing else on this machine names any of these agents, so each Homebrew token is its only witness. windsurf is forbidden because its cask is devin-desktop, and the devin-cli token must not be read as it; opencode because Kilo's CLI forks it.",
+  "why": "Nothing else on this machine names any of these agents, so each Homebrew token is its only witness. windsurf is forbidden because its cask is devin-desktop, and the devin-cli token must not be read as it; opencode because Kilo's CLI forks it. Codewhale is here through `deepseek-tui`, the formula its tap kept from before the rename; the current formula is 19's, so the old token is its only witness on this machine. deepseek-harness is forbidden because the token's name is DeepSeek's.",
   "must_contain": [
     "\"id\": \"maki\"",
     "\"id\": \"devin-cli\"",
     "\"id\": \"warp-agent-cli\"",
-    "\"id\": \"kilo\""
+    "\"id\": \"kilo\"",
+    "\"id\": \"deepseek-tui\""
   ]
 }

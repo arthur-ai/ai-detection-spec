@@ -1,0 +1,48 @@
+{
+  "description": "Codewhale under its npm name from before the rename, deepseek-tui, run once without a key.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "deb+rpm": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=0",
+    "jbplugin": ">=0",
+    "nmh": ">=0",
+    "npm": ">=1",
+    "port": ">=0",
+    "proc": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "codewhale"
+    ],
+    "forbid": [
+      "deepseek-harness",
+      "claude-code",
+      "codex-cli"
+    ],
+    "forbid_evidence": [
+      "/.deepseek/",
+      "/.codewhale/"
+    ]
+  },
+  "why": "deepseek-tui 0.8.39 is Codewhale before its rename and its only witness here, so removing the value turns must_find red: must_contain pins the package row, forbid_rows holds npm's codewhale absent, and forbid_evidence holds ~/.codewhale absent too. It also holds ~/.deepseek, which `deepseek exec` names for its key, unwritten after that run stops, so a run that writes it fails here rather than leaving the catalog's reason for declining the directory untrue. deepseek-harness is forbidden because the package's name is DeepSeek's; claude-code and codex-cli because npm globals are their route too.",
+  "must_contain": [
+    "\"id\": \"deepseek-tui\", \"kind\": \"npm\""
+  ],
+  "forbid_rows": [
+    {
+      "kind": "npm",
+      "id": "codewhale"
+    }
+  ],
+  "known_gaps": [
+    "npm's deepseek-tui is a deprecation notice with no binary from 0.8.41 on. The npm route compares the name alone, so a machine holding only the notice is reported as Codewhale; the row's `ver` is what tells it from 0.8.39 and earlier.",
+    "0.8.39's binary needs glibc 2.39, so this scenario skips on a distro below it, where npm cannot install the package either."
+  ]
+}

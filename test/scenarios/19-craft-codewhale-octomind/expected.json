@@ -1,10 +1,10 @@
 {
-  "description": "Craft Agents' cask, and Codewhale's and Octomind's tap formulae, on macOS, installed and not run.",
+  "description": "Craft Agents' cask, Codewhale's and Octomind's tap formulae, and Momentic's Mo from npm, on macOS, installed and not run.",
   "platform": "darwin",
   "counts": {
     "brew": ">=3",
     "app": ">=1",
-    "npm": ">=0",
+    "npm": ">=1",
     "file": ">=0",
     "ext": ">=0",
     "nmh": ">=0",
@@ -18,7 +18,8 @@
     "must_find": [
       "craft-agents",
       "codewhale",
-      "octomind"
+      "octomind",
+      "momentic-qa"
     ],
     "forbid": [
       "claude-code",
@@ -27,12 +28,13 @@
       "deepseek-harness"
     ]
   },
-  "why": "Craft Agents has two witnesses, its bundle id and its cask token, so must_contain names both, for 13's reason: must_find alone would pass with either broken. Codewhale and Octomind are not run, so each formula token is its agent's only witness, and must_contain pins the brew row; each token is a value only while homebrew-core and homebrew-cask have none of the same name, which setup.sh asserts before tapping. claude-code and claude-desktop are forbidden because Craft Agents embeds the Claude Agent SDK and its native `claude` binary, pi because it embeds the Pi SDK, and deepseek-harness because Codewhale started as deepseek-tui and defaults to DeepSeek's models.",
+  "why": "Craft Agents has two witnesses, its bundle id and its cask token, so must_contain names both, for 13's reason: must_find alone would pass with either broken. Codewhale and Octomind are not run, so each formula token is its agent's only witness, and must_contain pins the brew row; each token is a value only while homebrew-core and homebrew-cask have none of the same name, which setup.sh asserts before tapping. Mo is not run either, so npm's `qa` is its only witness, and must_contain pins the package row. claude-code and claude-desktop are forbidden because Craft Agents embeds the Claude Agent SDK and its native `claude` binary, pi because it embeds the Pi SDK, and deepseek-harness because Codewhale started as deepseek-tui and defaults to DeepSeek's models.",
   "must_contain": [
     "com.lukilabs.craft-agent",
     "\"id\": \"craft-agents\"",
     "\"id\": \"codewhale\"",
-    "\"id\": \"octomind\""
+    "\"id\": \"octomind\"",
+    "\"id\": \"qa\""
   ],
   "known_gaps": [
     "Craft Agents' own installer, install-app.sh, unzips the same app into /Applications and creates ~/.craft-agent; that directory is read on Linux, in 116-linux-craft-agents.",

@@ -1,9 +1,9 @@
 {
-  "description": "Craft Agents and Octomind through their vendors' PowerShell installers, and Codewhale and Momentic's Mo from npm, on Windows, installed and not run.",
+  "description": "Craft Agents and Octomind through their vendors' PowerShell installers, and Codewhale and Momentic's Mo from npm, on Windows. Craft Agents' installer starts the app, which setup stops; the three CLIs are not run.",
   "platform": "windows",
   "counts": {
     "ext": ">=0",
-    "file": ">=2",
+    "file": ">=4",
     "msix": ">=1",
     "nmh": ">=1",
     "npm": ">=2",
@@ -39,6 +39,14 @@
     },
     {
       "kind": "file",
+      "id": "\\.craft-agent\\"
+    },
+    {
+      "kind": "file",
+      "id": "\\AppData\\Local\\Programs\\@craft-agentelectron\\Craft Agents.exe"
+    },
+    {
+      "kind": "file",
       "id": "\\AppData\\Local\\octomind\\bin\\octomind.exe"
     },
     {
@@ -50,9 +58,19 @@
       "id": "qa"
     }
   ],
-  "why": "Octomind's witness is its launcher under %LOCALAPPDATA%\\octomind\\bin\\ alone, and each npm package is its agent's only witness, because neither CLI is run. Craft Agents has more than one: the Uninstall key its installer writes, the launcher install-app.ps1 adds, and ~\\.craft-agent once the app has started, so require_rows holds the first two and removing either value leaves the rest to find it. claude-code and claude-desktop are forbidden because Craft Agents embeds the Claude Agent SDK and its native `claude` binary, pi because it embeds the Pi SDK, deepseek-harness because Codewhale started as deepseek-tui and defaults to DeepSeek's models, and hermes and warp because their launchers are read by the same per-user branch.",
+  "forbid_rows": [
+    {
+      "kind": "proc",
+      "id": "C:\\Users\\runneradmin\\AppData\\Local\\Programs\\@craft-agentelectron\\Craft Agents.exe"
+    },
+    {
+      "kind": "file",
+      "id": "C:\\Users\\runneradmin\\.codewhale\\"
+    }
+  ],
+  "why": "Octomind's witness is its launcher under %LOCALAPPDATA%\\octomind\\bin\\ alone, and each npm package is its agent's only witness, because none of the three CLIs is run: forbid_rows holds ~\\.codewhale, which a first run writes, absent. Craft Agents has three witnesses: the Uninstall key its installer writes, the launcher install-app.ps1 adds, and ~\\.craft-agent, which the app writes when the installer starts it. require_rows holds all three, so removing any one value leaves the others to find it. forbid_rows holds the app stopped, and require_rows holds its executable at the path forbid_rows names, so a moved install fails here rather than leaving that row unable to match. claude-code and claude-desktop are forbidden because Craft Agents embeds the Claude Agent SDK and its native `claude` binary, pi because it embeds the Pi SDK, deepseek-harness because Codewhale started as deepseek-tui and defaults to DeepSeek's models, and hermes and warp because their launchers are read by the same per-user branch.",
   "known_gaps": [
-    "Installed, never run, and never signed in: what each agent writes on first use is not read here.",
-    "Codewhale's winget package and its own archive installer, which writes %USERPROFILE%\\bin, are not exercised; no Windows branch reads that directory."
+    "Craft Agents' installer starts the app and setup stops it, so it is not proved running, and no agent here is signed in: what each writes in use is not read.",
+    "Codewhale's archive installer, which writes %USERPROFILE%\\bin, is not exercised; no Windows branch reads that directory."
   ]
 }

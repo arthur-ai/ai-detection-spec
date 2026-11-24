@@ -104,9 +104,17 @@ retry "pull nousresearch/hermes-agent:latest" try "pull nousresearch/hermes-agen
 retry "pull ghcr.io/open-webui/open-webui:main-slim" \
   try "pull ghcr.io/open-webui/open-webui:main-slim" \
   docker pull ghcr.io/open-webui/open-webui:main-slim || true
+# CODEWHALE'S TWO REPOSITORIES AND OCTOMIND'S, read by probe run 45468880057. Codewhale
+# publishes under codewhale-hq, and ghcr.io/hmbown/codewhale still serves 0.10.0; each
+# carries its own OCI `source` label. Octomind's image sets no label, so its tag is its
+# only identifier here.
+for repo in ghcr.io/codewhale-hq/codewhale:latest ghcr.io/hmbown/codewhale:latest \
+            ghcr.io/muvon/octomind:latest; do
+  retry "pull $repo" try "pull $repo" docker pull "$repo" || true
+done
 echo "--- pulled agent images:"
 docker images --format '  {{.Repository}}:{{.Tag}} {{.ID}} {{.Size}}' \
-  | grep -Ei 'openhands|goose|swe-agent|aider|letta|hermes|open-webui' || true
+  | grep -Ei 'openhands|goose|swe-agent|aider|letta|hermes|open-webui|codewhale|octomind' || true
 
 # --- A RUNNING CONTAINER, which is a different row and a different claim ---------------
 #

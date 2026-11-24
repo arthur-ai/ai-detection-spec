@@ -34,6 +34,7 @@
   ],
   "known_gaps": [
     "The AppImage writes no .desktop entry and leaves no package record, so on Linux the launcher and the directory are all there is to read.",
-    "x86_64 only: the vendor ships no arm64 Linux build, so the arm64 runner skips."
+    "x86_64 only: the vendor ships no arm64 Linux build, so the arm64 runner skips.",
+    "The installer creates ~/.craft-agent/downloads before it fetches anything, so an install that stopped there is still reported as Craft Agents: the directory is a value, and only the launcher says the install finished."
   ]
 }

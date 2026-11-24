@@ -1,5 +1,5 @@
 #!/bin/bash
-# Two terminal coding agents through their vendors' curl installers, read off probe run
+# Codewhale and Octomind through their vendors' curl installers, read off probe run
 # 45238894100 on 2026-11-23:
 #
 #   Codewhale   codewhale.net/install.sh   ~/.local/bin/codewhale (and codew, a hard link

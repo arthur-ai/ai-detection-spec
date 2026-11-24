@@ -1,5 +1,5 @@
 {
-  "description": "Codewhale and Momentic's Mo through their npm names, installed and not run.",
+  "description": "Codewhale and Momentic's Mo through their npm names, each run only as `--version`.",
   "platform": "linux",
   "counts": {
     "deb": ">=0",
@@ -31,9 +31,12 @@
       "/.codewhale/"
     ]
   },
-  "why": "Neither agent is run, so each npm package is its only witness and removing it from the catalog turns must_find red; forbid_evidence holds ~/.codewhale absent, so a release that starts writing it on install fails here rather than adding a second witness unseen. deepseek-harness is forbidden because Codewhale started as deepseek-tui and defaults to DeepSeek's models; claude-code and codex-cli because npm globals are their route too.",
+  "why": "Each CLI is run only as `--version`, so each npm package is its agent's only witness and removing it from the catalog turns must_find red; forbid_evidence holds ~/.codewhale absent after both the install and `codewhale --version`, so a release that starts writing it on either fails here rather than adding a second witness unseen. deepseek-harness is forbidden because Codewhale started as deepseek-tui and defaults to DeepSeek's models; claude-code and codex-cli because npm globals are their route too.",
   "must_contain": [
     "\"id\": \"codewhale\"",
     "\"id\": \"qa\""
+  ],
+  "known_gaps": [
+    "Mo's curl installer, cli.momentic.ai/qa, writes ~/.local/bin/qa and nothing else a query reads (probe run 45238894100). The catalog declines that name, so an install made that way is not found."
   ]
 }

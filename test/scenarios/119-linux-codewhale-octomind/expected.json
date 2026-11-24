@@ -37,7 +37,6 @@
     "/home/dana/.local/bin/octomind"
   ],
   "known_gaps": [
-    "Octomind's ~/.local/share/octomind is one level below what the enumeration reads, so a run leaves nothing new for it.",
-    "Codewhale's Windows archive installer writes %USERPROFILE%\\bin, which no Windows branch reads."
+    "Octomind's ~/.local/share/octomind is one level below what the enumeration reads, so a run leaves nothing new for it."
   ]
 }

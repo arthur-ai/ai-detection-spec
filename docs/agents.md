@@ -10,8 +10,8 @@ Every AI agent this repo finds, every identifier it is matched on,
 and the CI test behind each one.
 
 ![agents](https://img.shields.io/badge/agents-71-1D4E89)
-![identifiers](https://img.shields.io/badge/identifiers-222-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-208%2F222-A26A16)
+![identifiers](https://img.shields.io/badge/identifiers-232-1D4E89)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-208%2F232-A26A16)
 ![real install](https://img.shields.io/badge/by_real_install-208-2E7D57)
 
 </div>
@@ -19,7 +19,7 @@ and the CI test behind each one.
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 208 of 222. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
+**Every identifier is proved by a real install in CI** — 208 of 232. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
 
 ## 🧪 Why a real install is the bar
 
@@ -32,7 +32,7 @@ Proof is counted **per identifier**, not per agent. Installing an agent vouches
 only for the identifiers that run actually matched, so a sibling identifier on the
 same agent is not covered by association.
 
-> **This number is a floor.** `115-linux-npm-codewhale-qa`, `116-linux-craft-agents`, `119-linux-codewhale-octomind`, `120-windows-craft-octomind-npm`, `19-craft-codewhale-octomind` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
+> **This number is a floor.** `115-linux-npm-codewhale-qa`, `116-linux-craft-agents`, `119-linux-codewhale-octomind`, `120-windows-craft-octomind-npm`, `121-windows-codewhale-installers`, `122-linux-codewhale-pre-rename`, `19-craft-codewhale-octomind` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
 
 # Agents (71)
 
@@ -54,7 +54,7 @@ Operates on a codebase, usually with shell access.
 | **Cline** | macOS, Linux, Windows | **`cline`**, **`saoudrizwan.claude-dev`**, **`cline`** | 103-windows-vscode-agents, 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode, 80-linux-jetbrains |
 | **CodeBuddy** | Linux | **`@tencent-ai/codebuddy-code`**, **`~/.codebuddy`** | 96-linux-cli-agents-npm |
 | **CodeGPT** | macOS, Linux | **`danielsanmedium.dscodegpt`** | 30-ide-agents, 85-linux-vscode-agents |
-| **Codewhale** | macOS, Linux, Windows | codewhale, codewhale, ~/.codewhale, ~/.local/bin/codewhale | 115-linux-npm-codewhale-qa, 119-linux-codewhale-octomind, 120-windows-craft-octomind-npm, 19-craft-codewhale-octomind |
+| **Codewhale** | macOS, Linux, Windows | codewhale ⚠, deepseek-tui ⚠, codewhale ⚠, deepseek-tui ⚠, ghcr.io/codewhale-hq/codewhale ⚠, ghcr.io/hmbown/codewhale ⚠, https://github.com/codewhale-hq/Codewhale ⚠, https://github.com/Hmbown/Codewhale ⚠, ~/.codewhale ⚠, ~/.local/bin/codewhale ⚠, ~/AppData/Local/Programs/CodeWhale/Uninstall.exe ⚠, CodeWhale, HunterBown.CodeWhale_Microsoft.Winget.Source_8wekyb3d8bbwe | 115-linux-npm-codewhale-qa, 119-linux-codewhale-octomind, 120-windows-craft-octomind-npm, 121-windows-codewhale-installers, 122-linux-codewhale-pre-rename, 19-craft-codewhale-octomind, 22-cli-agents-homebrew-more, 79-linux-image |
 | **Codex CLI** | macOS, Linux, Windows | **`codex`**, **`@openai/codex`**, **`openai.chatgpt`**, **`~/.codex`** | 101-windows-cli-agents, 103-windows-vscode-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 85-linux-vscode-agents |
 | **Cody** | macOS, Linux | **`sourcegraph.cody-ai`**, **`Sourcegraph`** | 30-ide-agents, 85-linux-vscode-agents, 86-linux-jetbrains-agents |
 | **Command Code** | Linux | **`command-code`**, **`~/.commandcode`** | 97-linux-cli-agents-npm-more |
@@ -79,9 +79,9 @@ Operates on a codebase, usually with shell access.
 | **Maki** | macOS, Linux | **`maki`**, **`~/.local/bin/maki`** | 22-cli-agents-homebrew-more, 98-linux-installers-more |
 | **MastraCode** | Linux | **`mastracode`** | 97-linux-cli-agents-npm-more |
 | **Mistral Vibe** | macOS, Linux | **`mistral-vibe`**, **`mistral-vibe`**, **`~/.vibe`** | 21-cli-agents-homebrew, 93-linux-cli-agents-more |
-| **Momentic Mo** | Linux, Windows | qa | 115-linux-npm-codewhale-qa, 120-windows-craft-octomind-npm |
+| **Momentic Mo** | macOS, Linux, Windows | qa | 115-linux-npm-codewhale-qa, 120-windows-craft-octomind-npm, 19-craft-codewhale-octomind |
 | **Muse Code** | macOS, Linux | **`muse-code`**, **`~/.local/bin/muse`** | 14-meta-muse, 21-cli-agents-homebrew, 84-linux-installers |
-| **Octomind** | macOS, Linux, Windows | octomind, ~/.local/bin/octomind, ~/AppData/Local/octomind/bin/octomind.exe | 119-linux-codewhale-octomind, 120-windows-craft-octomind-npm, 19-craft-codewhale-octomind |
+| **Octomind** | macOS, Linux, Windows | octomind, ghcr.io/muvon/octomind ⚠, ~/.local/bin/octomind ⚠, ~/AppData/Local/octomind/bin/octomind.exe ⚠ | 119-linux-codewhale-octomind, 120-windows-craft-octomind-npm, 19-craft-codewhale-octomind, 79-linux-image |
 | **Oh My Pi** | Linux | **`@oh-my-pi/pi-coding-agent`**, **`~/.omp`** | 97-linux-cli-agents-npm-more, 98-linux-installers-more |
 | **opencode** | macOS, Linux | **`opencode`**, **`opencode-ai`**, **`~/.opencode`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 84-linux-installers |
 | **OpenHands** | Linux | **`ghcr.io/openhands/openhands`**, **`ghcr.io/all-hands-ai/openhands`**, **`https://github.com/OpenHands/OpenHands`** | 79-linux-image |
@@ -152,10 +152,19 @@ Each one needs work, and the state column says what kind. **did not appear** mea
 
 | agent | route | identifier | state | reached by |
 |---|---|---|---|---|
-| Codewhale | homebrew | `codewhale` | no test | -- |
-| Codewhale | npm | `codewhale` | no test | -- |
-| Codewhale | state dir | `~/.codewhale` | no test | -- |
-| Codewhale | binary | `~/.local/bin/codewhale` | no test | -- |
+| Codewhale | homebrew | `codewhale` | did not appear | 22-cli-agents-homebrew-more |
+| Codewhale | homebrew | `deepseek-tui` | did not appear | 22-cli-agents-homebrew-more |
+| Codewhale | npm | `codewhale` | did not appear | 22-cli-agents-homebrew-more, 79-linux-image |
+| Codewhale | npm | `deepseek-tui` | did not appear | 22-cli-agents-homebrew-more, 79-linux-image |
+| Codewhale | image | `ghcr.io/codewhale-hq/codewhale` | did not appear | 22-cli-agents-homebrew-more, 79-linux-image |
+| Codewhale | image | `ghcr.io/hmbown/codewhale` | did not appear | 22-cli-agents-homebrew-more, 79-linux-image |
+| Codewhale | image_labels | `https://github.com/codewhale-hq/Codewhale` | did not appear | 22-cli-agents-homebrew-more, 79-linux-image |
+| Codewhale | image_labels | `https://github.com/Hmbown/Codewhale` | did not appear | 22-cli-agents-homebrew-more, 79-linux-image |
+| Codewhale | state dir | `~/.codewhale` | did not appear | 22-cli-agents-homebrew-more, 79-linux-image |
+| Codewhale | binary | `~/.local/bin/codewhale` | did not appear | 22-cli-agents-homebrew-more, 79-linux-image |
+| Codewhale | binary | `~/AppData/Local/Programs/CodeWhale/Uninstall.exe` | did not appear | 22-cli-agents-homebrew-more, 79-linux-image |
+| Codewhale | uninstall_keys | `CodeWhale` | no test | -- |
+| Codewhale | uninstall_keys | `HunterBown.CodeWhale_Microsoft.Winget.Source_8wekyb3d8bbwe` | no test | -- |
 | Craft Agents | bundle id | `com.lukilabs.craft-agent` | no test | -- |
 | Craft Agents | homebrew | `craft-agents` | no test | -- |
 | Craft Agents | state dir | `~/.craft-agent` | no test | -- |
@@ -164,8 +173,9 @@ Each one needs work, and the state column says what kind. **did not appear** mea
 | Craft Agents | uninstall_keys | `61dc82ee-e3b9-557b-98c4-20b9178a0f78` | no test | -- |
 | Momentic Mo | npm | `qa` | no test | -- |
 | Octomind | homebrew | `octomind` | no test | -- |
-| Octomind | binary | `~/.local/bin/octomind` | no test | -- |
-| Octomind | binary | `~/AppData/Local/octomind/bin/octomind.exe` | no test | -- |
+| Octomind | image | `ghcr.io/muvon/octomind` | did not appear | 79-linux-image |
+| Octomind | binary | `~/.local/bin/octomind` | did not appear | 79-linux-image |
+| Octomind | binary | `~/AppData/Local/octomind/bin/octomind.exe` | did not appear | 79-linux-image |
 
 **What it cannot see is a separate page.** [`docs/limits.md`](limits.md) carries what osquery cannot see on any machine and what each scenario leaves unproved after its install succeeds -- rendered from the same inputs, gated the same way.
 

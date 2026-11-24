@@ -1,13 +1,14 @@
 #!/bin/bash
-# Two agents through their npm names, installed and not run, read off probe run 45238894100
-# on 2026-11-23:
+# Codewhale and Momentic's Mo through their npm names, read off probe run 45238894100 on
+# 2026-11-23:
 #
 #   Codewhale      codewhale   npm -g; its postinstall fetches the release binaries
 #   Momentic's Mo  qa          npm -g; the CLI for Mo, Momentic's QA agent
 #
-# Neither is run, so each package is its agent's only witness here: Codewhale's curl
-# installer and its ~/.codewhale are 119-linux-codewhale-octomind's, on a host of its own
-# because both routes put `codewhale` on PATH.
+# Each is run only as `--version`, as the scenario's user, and expected.json holds
+# ~/.codewhale absent after it, so each package is its agent's only witness here: Codewhale's
+# curl installer and its ~/.codewhale are 119-linux-codewhale-octomind's, on a host of its
+# own because both routes put `codewhale` on PATH.
 set -e
 source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest-linux.sh"
 need_curl
