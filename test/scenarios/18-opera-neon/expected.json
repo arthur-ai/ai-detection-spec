@@ -1,0 +1,34 @@
+{
+  "description": "Opera Neon, an agentic browser, through the installer Opera's site serves, found by its bundle id.",
+  "platform": "darwin",
+  "counts": {
+    "app": ">=1",
+    "brew": ">=0",
+    "npm": ">=0",
+    "file": ">=0",
+    "ext": ">=0",
+    "nmh": ">=0",
+    "daemon": ">=0",
+    "port": ">=0",
+    "vscodeext": ">=0",
+    "jbplugin": ">=0",
+    "proc": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "opera-neon"
+    ]
+  },
+  "require_rows": [
+    {"kind": "app", "id": "com.operasoftware.OperaNeon", "loc": "/Applications/Opera Neon.app"}
+  ],
+  "forbid_rows": [
+    {"kind": "proc", "id": "com.operasoftware.OperaNeon"}
+  ],
+  "why": "The bundle id is Opera Neon's only value on macOS, and it is read two ways: off the installed app, and off a running one. The installer starts the browser, so setup.sh stops it, and forbid_rows holds that no `proc` row carries the id: must_find then rests on the `app` row, which require_rows names. Nothing is forbidden: the install writes no catalogued agent's lookalike, and test/test_matcher.py declines Opera's other bundle ids.",
+  "known_gaps": [
+    "A match says Opera Neon is installed, not that Neon Do ran or a subscription is active: no route reads either.",
+    "Stopped before the query, so running_apps is not exercised for Opera Neon.",
+    "Opera's 2017 concept browser, also called Neon, may carry the same bundle id. No run has installed one, and a match on it would read as this agent."
+  ]
+}

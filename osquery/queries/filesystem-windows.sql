@@ -1,5 +1,5 @@
 -- name: filesystem-windows
--- description: Home-directory install locations on Windows: CLI shims, state dotdirs, tool venvs, per-user launchers
+-- description: Home-directory install locations on Windows: CLI shims, state dotdirs, tool venvs, per-user launchers and app executables
 -- tables: users, file
 -- min-osquery: 5.10.0
 -- cost: fast
@@ -49,4 +49,15 @@ UNION ALL
 -- deeper bin\ directories, such as an app's under Programs\, are not read.
 SELECT 'file', f.path, '', f.path, '', ''
   FROM users u CROSS JOIN file f ON f.path LIKE u.directory || '\AppData\Local\%\bin\%'
+ WHERE u.directory LIKE '_:\Users\%'
+UNION ALL
+-- PER-USER INSTALLERS' APPS, %LOCALAPPDATA%\Programs\<app>\<file>.exe: where an installer
+-- run without elevation puts an app, as /Applications holds one on macOS. Opera Neon's
+-- installer writes nothing else this file reads, and its Uninstall key carries the version
+-- in its name. The executables rather than the directory, as in bin\ above, and `%.exe`
+-- rather than `%`, because a Chromium or Electron app keeps its libraries and resources
+-- beside its launcher. One `%` is one component, so a build under a version directory is
+-- not read.
+SELECT 'file', f.path, '', f.path, '', ''
+  FROM users u CROSS JOIN file f ON f.path LIKE u.directory || '\AppData\Local\Programs\%\%.exe'
  WHERE u.directory LIKE '_:\Users\%'

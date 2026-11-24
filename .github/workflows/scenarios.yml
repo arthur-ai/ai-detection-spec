@@ -276,6 +276,7 @@ jobs:
           - 15-manus
           - 16-hermes-desktop
           - 17-grok-bot
+          - 18-opera-neon
           - 19-craft-codewhale-octomind
           - 20-cli-agents
           - 21-cli-agents-homebrew
@@ -626,6 +627,8 @@ jobs:
           - 110-windows-installers-more
           - 111-windows-warp-open-webui
           - 114-windows-grok-bot
+          - 117-windows-opera-neon
+          - 118-windows-opera-neon-idle
           - 120-windows-craft-octomind-npm
         exclude: ${{ fromJSON(needs.scope.outputs.exclude_scenario_windows || '[]') }}
     steps:

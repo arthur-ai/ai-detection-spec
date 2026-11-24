@@ -91,6 +91,8 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 114-windows-grok-bot | The arm64 installer is not run: the runner is x64. |
 | 116-linux-craft-agents | The AppImage writes no .desktop entry and leaves no package record, so on Linux the launcher and the directory are all there is to read. |
 | 116-linux-craft-agents | x86_64 only: the vendor ships no arm64 Linux build, so the arm64 runner skips. |
+| 117-windows-opera-neon, 118-windows-opera-neon-idle, 18-opera-neon | A match says Opera Neon is installed, not that Neon Do ran or a subscription is active: no route reads either. |
+| 117-windows-opera-neon, 118-windows-opera-neon-idle | Only the per-user install is read. A machine-wide one (the installer's --allusers=1) is not installed here, and a path outside a home is one no `~/` value names. |
 | 119-linux-codewhale-octomind | Octomind's ~/.local/share/octomind is one level below what the enumeration reads, so a run leaves nothing new for it. |
 | 119-linux-codewhale-octomind | Codewhale's Windows archive installer writes %USERPROFILE%\bin, which no Windows branch reads. |
 | 12-chatgpt-pre-rename | The bundle id only. A direct download leaves no Homebrew record, so the `chatgpt` brew route is not exercised here; 10-desktop-apps covers it. |
@@ -106,6 +108,8 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 16-hermes-desktop | Not launched, so running_apps is not exercised for Hermes, and what the app writes on first run is read only on the probe run the catalog cites. |
 | 16-hermes-desktop | The source-built desktop (`hermes desktop`, bundle id com.nousresearch.hermes) and the remote-only Light client are other bundle ids, and neither is installed here. |
 | 17-grok-bot | Grok Bot is never launched, so no running-app value is read on macOS. |
+| 18-opera-neon | Stopped before the query, so running_apps is not exercised for Opera Neon. |
+| 18-opera-neon | Opera's 2017 concept browser, also called Neon, may carry the same bundle id. No run has installed one, and a match on it would read as this agent. |
 | 19-craft-codewhale-octomind | Craft Agents' own installer, install-app.sh, unzips the same app into /Applications and creates ~/.craft-agent; that directory is read on Linux, in 116-linux-craft-agents. |
 | 19-craft-codewhale-octomind | Octomind's tap ships Apple silicon builds only, so an Intel Mac has no Homebrew route to it. |
 | 20-cli-agents, 71-linux-cli-agents | The shim's `ver` is checked for presence, not against the installed release: the shim's path names no release, and the release changes with every install, so expected.json cannot hold it. A join onto the wrong versions/ file would pass. |
