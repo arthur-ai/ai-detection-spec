@@ -277,6 +277,7 @@ jobs:
           - 16-hermes-desktop
           - 17-grok-bot
           - 18-opera-neon
+          - 19-craft-codewhale-octomind
           - 20-cli-agents
           - 21-cli-agents-homebrew
           - 22-cli-agents-homebrew-more
@@ -489,6 +490,10 @@ jobs:
           - 99-linux-prime-agent
           - 112-linux-warp-app
           - 113-linux-open-webui-desktop
+          - 115-linux-npm-codewhale-qa
+          - 116-linux-craft-agents
+          - 119-linux-codewhale-octomind
+          - 122-linux-codewhale-pre-rename
           # 77-linux-rpm and 91-linux-claude-rpm need dnf, which no ubuntu label has, so
           # they are under the container job only. A scenario listed where it can never
           # run spends a runner on exiting 3; tools/check_workflows.py still fails one
@@ -625,6 +630,8 @@ jobs:
           - 114-windows-grok-bot
           - 117-windows-opera-neon
           - 118-windows-opera-neon-idle
+          - 120-windows-craft-octomind-npm
+          - 121-windows-codewhale-installers
         exclude: ${{ fromJSON(needs.scope.outputs.exclude_scenario_windows || '[]') }}
     steps:
       - uses: actions/checkout@v4

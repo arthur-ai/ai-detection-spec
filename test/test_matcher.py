@@ -1668,6 +1668,105 @@ check("~/.local/bin/omp, ~/.prime and Command Code's `cmd` are evidence, not val
       "three letters, a vendor directory shared with Prime Intellect's other CLI, and a "
       "command name every shell user knows")
 
+# THE 2026-11-23 DISCOVERY PASS, read off probe runs 45238894100 and 45468880057. Momentic's
+# curl installer writes ~/.local/bin/qa, two letters that name no product, so only npm's `qa`
+# is a value; npm's `octomind` is someone else's package; Codewhale's `codew` alias is a hard
+# link its installers write beside it, evidence rather than a value; and `deepseek-tui` is
+# Codewhale's name from before its rename, on npm and in its tap, which DeepSeek's own
+# harness must not be read as.
+_c, _u = _claims(_kind("npm", "qa", "codewhale", "deepseek-tui", "@deepseek-ai/dsh", "octomind",
+                       "deepseek", "@momentic/qa-linux-x64"))
+check("npm's `qa`, `codewhale` and `deepseek-tui` resolve to their agents, and dsh to its own",
+      _c == {"qa": "momentic-qa", "codewhale": "codewhale", "deepseek-tui": "codewhale",
+             "@deepseek-ai/dsh": "deepseek-harness"}, f"got {_c}")
+check("...and npm's `octomind`, a bare `deepseek` and Mo's platform package claim nothing",
+      {"octomind", "deepseek", "@momentic/qa-linux-x64"} <= set(_u), f"got {_c}")
+# A `proc` row's id is the package a process runs from, so npm's values name it running too.
+# `qa-runner` is a name `qa` prefixes.
+_c, _u = _claims(_kind("proc", "qa", "codewhale", "qa-runner"))
+check("a process running from npm's `qa` or `codewhale` is that agent running",
+      _c == {"qa": "momentic-qa", "codewhale": "codewhale"}, f"got {_c}")
+check("...and one from a package `qa` prefixes claims nothing", "qa-runner" in _u, f"got {_c}")
+_c, _u = _claims(_kind("brew", "codewhale", "deepseek-tui", "octomind", "craft-agents",
+                       "craft", "codew", "deepseek"))
+check("the Homebrew tokens resolve to their agents, the tap's old formula to Codewhale",
+      _c == {"codewhale": "codewhale", "deepseek-tui": "codewhale", "octomind": "octomind",
+             "craft-agents": "craft-agents"}, f"got {_c}")
+check("...and `craft`, `codew` and a bare `deepseek` claim nothing",
+      {"craft", "codew", "deepseek"} <= set(_u), f"got {_c}")
+_c, _u = _claims(_kind("app", "com.lukilabs.craft-agent", "com.lukilabs.craft-agent.helper",
+                       "com.lukilabs.craft"))
+check("Craft Agents is its bundle id",
+      _c == {"com.lukilabs.craft-agent": "craft-agents"}, f"got {_c}")
+check("...and an id it prefixes, and one that prefixes it, claim nothing",
+      {"com.lukilabs.craft-agent.helper", "com.lukilabs.craft"} <= set(_u), f"got {_c}")
+# ~/.craft is a directory Craft Agents' name extends, and ~/.deepseek the one Codewhale's CLI
+# from before the rename names for its key, which no install produced.
+_c, _u = _claims(_kind("file", "/home/dana/.local/bin/codewhale", "/home/dana/.local/bin/codew",
+                       "/home/dana/.codewhale/", "/home/dana/.local/bin/octomind",
+                       "/home/dana/.local/bin/qa", "/home/dana/.local/bin/craft-agents",
+                       "/home/dana/.craft-agent/", "/home/dana/.craft/",
+                       "/home/dana/.deepseek/"))
+check("the curl installers' paths and state directories resolve to their agents",
+      _c == {"/home/dana/.local/bin/codewhale": "codewhale", "/home/dana/.codewhale/": "codewhale",
+             "/home/dana/.local/bin/octomind": "octomind",
+             "/home/dana/.local/bin/craft-agents": "craft-agents",
+             "/home/dana/.craft-agent/": "craft-agents"}, f"got {_c}")
+check("~/.local/bin/qa, `codew`, ~/.craft and ~/.deepseek are evidence, not values",
+      {"/home/dana/.local/bin/qa", "/home/dana/.local/bin/codew", "/home/dana/.craft/",
+       "/home/dana/.deepseek/"} <= set(_u), f"got {_c}")
+# WINDOWS. The lookalikes are the same file name under another directory, a file renamed
+# aside beside one, and the executable Craft Agents' installer writes, which no value names.
+_W = "C:\\Users\\dana\\AppData\\Local\\"
+_c, _u = _claims(_kind("file", _W + "Craft Agents\\bin\\craft-agents.cmd",
+                       _W + "Craft\\bin\\craft-agents.cmd",
+                       _W + "octomind\\bin\\octomind.exe", _W + "octomind\\bin\\octomind.exe.old",
+                       _W + "Programs\\CodeWhale\\Uninstall.exe",
+                       _W + "Programs\\CodeWhale\\Uninstall.exe.old",
+                       _W + "Programs\\CodeWhale Beta\\Uninstall.exe",
+                       _W + "Programs\\@craft-agentelectron\\Craft Agents.exe",
+                       "C:\\Users\\dana\\.craft-agent\\", "C:\\Users\\dana\\.codewhale\\"))
+check("the Windows installers' launchers, uninstaller and state directories resolve to their agents",
+      _c == {_W + "Craft Agents\\bin\\craft-agents.cmd": "craft-agents",
+             _W + "octomind\\bin\\octomind.exe": "octomind",
+             _W + "Programs\\CodeWhale\\Uninstall.exe": "codewhale",
+             "C:\\Users\\dana\\.craft-agent\\": "craft-agents",
+             "C:\\Users\\dana\\.codewhale\\": "codewhale"}, f"got {_c}")
+check("...and the same file names under other directories, or renamed aside, claim nothing",
+      {_W + "Craft\\bin\\craft-agents.cmd", _W + "octomind\\bin\\octomind.exe.old",
+       _W + "Programs\\CodeWhale\\Uninstall.exe.old",
+       _W + "Programs\\CodeWhale Beta\\Uninstall.exe",
+       _W + "Programs\\@craft-agentelectron\\Craft Agents.exe"} <= set(_u), f"got {_c}")
+_c, _u = _claims(_kind("uninstall", "61dc82ee-e3b9-557b-98c4-20b9178a0f78", "CodeWhale",
+                       "HunterBown.CodeWhale_Microsoft.Winget.Source_8wekyb3d8bbwe",
+                       "Craft Agents 0.16.0", "CodeWhale 0.10.4", "HunterBown.CodeWhale"))
+check("Craft Agents' key, and the keys Codewhale's setup and winget write, resolve to them",
+      _c == {"61dc82ee-e3b9-557b-98c4-20b9178a0f78": "craft-agents", "CodeWhale": "codewhale",
+             "HunterBown.CodeWhale_Microsoft.Winget.Source_8wekyb3d8bbwe": "codewhale"},
+      f"got {_c}")
+check("...and a display name with its version, or winget's id without its source, claims nothing",
+      {"Craft Agents 0.16.0", "CodeWhale 0.10.4", "HunterBown.CodeWhale"} <= set(_u), f"got {_c}")
+# Both of Codewhale's repositories and each one's own `source` label, and Octomind's, which
+# sets no label. The lookalikes are a local build's bare name and repositories a value prefixes.
+_c, _u = _claims([*_kind("image", "ghcr.io/codewhale-hq/codewhale:latest",
+                         "ghcr.io/hmbown/codewhale:v0.10.0", "ghcr.io/muvon/octomind:latest",
+                         "codewhale:latest", "ghcr.io/hmbown/codewhale-dev:latest",
+                         "ghcr.io/muvon/octomind-tap:latest"),
+                  _ilabel("https://github.com/codewhale-hq/Codewhale"),
+                  _ilabel("https://github.com/Hmbown/Codewhale"),
+                  _ilabel("https://github.com/muvon/octomind")])
+check("Codewhale's two repositories and their labels, and Octomind's image, resolve to them",
+      _c == {"ghcr.io/codewhale-hq/codewhale:latest": "codewhale",
+             "ghcr.io/hmbown/codewhale:v0.10.0": "codewhale",
+             "ghcr.io/muvon/octomind:latest": "octomind",
+             "https://github.com/codewhale-hq/Codewhale": "codewhale",
+             "https://github.com/Hmbown/Codewhale": "codewhale"}, f"got {_c}")
+check("...while a local build, repositories a value prefixes and Octomind's repository URL "
+      "claim nothing",
+      {"codewhale:latest", "ghcr.io/hmbown/codewhale-dev:latest",
+       "ghcr.io/muvon/octomind-tap:latest", "https://github.com/muvon/octomind"} <= set(_u),
+      f"got {_c}")
+
 # MANUS AND ATLAS, read off CI run 40914014884. Atlas is not an agent (the considered block
 # in agents.yaml) and shares ChatGPT's com.openai. namespace, and each app's helpers extend
 # its id, so exact means Atlas, its helper and Manus's helper claim nothing.
@@ -1766,11 +1865,12 @@ check("...and so is its cask",
 # key moves only when the bundle id does. Each key against ANY bundle id listed, because a
 # superseded bundle id stays on its route beside the new one.
 import uuid as _uuid
-_gb = next(a for a in _cat["agents"] if a["id"] == "grok-bot")
-check("Grok Bot's Uninstall key is electron-builder's UUIDv5 of a bundle id it lists",
-      set(_gb["uninstall_keys"]) <= {
-          str(_uuid.uuid5(_uuid.UUID("50e065bc-3134-11e6-9bab-38c9862bdaf3"), b))
-          for b in _gb["bundle_ids"]}, f"got {_gb['uninstall_keys']}")
+for _eb in ("grok-bot", "craft-agents"):
+    _gb = next(a for a in _cat["agents"] if a["id"] == _eb)
+    check(f"{_eb}'s Uninstall key is electron-builder's UUIDv5 of a bundle id it lists",
+          set(_gb["uninstall_keys"]) <= {
+              str(_uuid.uuid5(_uuid.UUID("50e065bc-3134-11e6-9bab-38c9862bdaf3"), b))
+              for b in _gb["bundle_ids"]}, f"got {_gb['uninstall_keys']}")
 
 # META'S TWO MUSE PRODUCTS, read off real installs on 2026-10-19 and told apart by route: a
 # bundle id for the desktop agent, a ~/.local/bin launcher for the coding agent. The launcher

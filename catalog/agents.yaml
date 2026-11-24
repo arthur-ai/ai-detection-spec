@@ -1586,3 +1586,143 @@ agents:
     # pulled ghcr.io/open-webui/open-webui:main-slim on Ubuntu 24.04 x86_64 and arm64.
     images: [ghcr.io/open-webui/open-webui]
     image_labels: ["https://github.com/open-webui/open-webui"]
+
+  # ---------------------------------------------------------------------------------------
+  # FROM HERE, the weekly discovery pass of 2026-11-23. Read off probe run 45238894100 on
+  # that date unless a value says otherwise: macOS 26 on arm64, Ubuntu 24.04 on x86_64 and
+  # arm64, Debian 12, Rocky 9, Fedora 41 and Amazon Linux 2023 on x86_64, and Windows Server
+  # 2025 on x86_64, osquery 5.23.1. The scenarios named below re-read each value in CI run
+  # 45240729122, which read craft-agents' bundle id and cask token for the first time; 19,
+  # 119 and 120 ran there as 18, 114 and 112, numbers other scenarios have since taken.
+  # Probe run 45468880057 on 2026-11-24, "the second probe" below, read what a review of the
+  # pass found missing, on macOS 26, Ubuntu 24.04 on x86_64 and arm64 and Windows Server 2025:
+  # the names from before Codewhale's rename, its Windows installers, both vendors' container
+  # images, and what Craft Agents' Windows installer starts.
+  # ---------------------------------------------------------------------------------------
+
+  # Codewhale (codewhale-hq/Codewhale), a terminal coding agent that edits the repository and
+  # runs commands; it started as deepseek-tui and defaults to DeepSeek's models, but is not
+  # `deepseek-harness`, DeepSeek's own `dsh`. 0.10.3 below, and 0.10.4 where a value cites
+  # the second probe.
+  #
+  # NOT HERE: ~/.local/bin/codew, a hard link to the same binary its installer and npm
+  # package both write, because every install read here is found without it; Cargo's
+  # ~/.cargo/bin/codewhale, which no route reads; and ~/.deepseek, which the CLI from before
+  # the rename names for its key and did not create without one
+  # (122-linux-codewhale-pre-rename holds it unwritten). On Windows, its Scoop package, under
+  # ~\scoop (docs/blind-spots.yaml), and its archive installer, which writes %USERPROFILE%\bin
+  # and which no scenario installs.
+  - id: codewhale
+    name: Codewhale
+    classification: Coding agent
+    platforms: [darwin, linux, windows]
+    # npm's `codewhale`, whose postinstall fetches the release binaries: 115-linux-npm-
+    # codewhale-qa on Linux and 120-windows-craft-octomind-npm under %APPDATA%\npm.
+    # `deepseek-tui` is its name from before the rename: 0.8.39, the last version that ships
+    # the agent, in 122-linux-codewhale-pre-rename (the second probe). From 0.8.41 that
+    # package is a deprecation notice with no binary, which the row's `ver` tells apart and
+    # the route does not; 122 fails if `latest` declares a bin again.
+    npm: [codewhale, deepseek-tui]
+    # Its curl installer, codewhale.net/install.sh, writes ~/.local/bin/codewhale; the
+    # directory ~/.codewhale is written when it is first run, not on --version (`codewhale
+    # exec` without a key wrote sessions/ and setup_state.json and stopped at provider
+    # setup). 119-linux-codewhale-octomind. On Windows, CodeWhaleSetup.exe puts its
+    # uninstaller, alone of its files, at the depth filesystem-windows.sql reads, where it is
+    # still read once its user signs out and the Uninstall key below is not
+    # (docs/blind-spots.yaml). 121-windows-codewhale-installers, the second probe.
+    binaries: ["~/.local/bin/codewhale", "~/AppData/Local/Programs/CodeWhale/Uninstall.exe"]
+    state_dirs: ["~/.codewhale"]
+    # Hmbown/deepseek-tui's formulae, which homebrew_packages renders without their tap, type
+    # formula: `codewhale` (19-craft-codewhale-octomind) and `deepseek-tui`, kept from before
+    # the rename and installing the same binary (22-cli-agents-homebrew-more; 0.10.4, the
+    # second probe). Values while homebrew-core and homebrew-cask have neither name, which
+    # each scenario asserts before tapping.
+    homebrew: [codewhale, deepseek-tui]
+    # WINDOWS, per user, both read at 0.10.4 by the second probe and installed by
+    # 121-windows-codewhale-installers: `CodeWhale` is the key CodeWhaleSetup.exe, its NSIS
+    # installer, writes (DisplayName "CodeWhale", publisher "Hmbown"), and the other is the
+    # key winget writes for its portable package HunterBown.CodeWhale.
+    uninstall_keys: [CodeWhale, HunterBown.CodeWhale_Microsoft.Winget.Source_8wekyb3d8bbwe]
+    # Its images, read off docker_images by the second probe and pulled by 79-linux-image:
+    # ghcr.io/codewhale-hq/codewhale:latest, 0.10.4, and ghcr.io/hmbown/codewhale:latest,
+    # 0.10.0 of 2026-09-22. Each carries its own OCI `source` label.
+    images: [ghcr.io/codewhale-hq/codewhale, ghcr.io/hmbown/codewhale]
+    image_labels: ["https://github.com/codewhale-hq/Codewhale", "https://github.com/Hmbown/Codewhale"]
+
+  # Octomind (Muvon/octomind), a terminal coding agent and agent runtime: its lead agent reads
+  # the code and runs commands itself. 0.73.0 below, from its GitHub release, where no other
+  # is named.
+  #
+  # NOT HERE: its data directory, ~/.local/share/octomind on macOS and Linux, one level below
+  # what the enumeration reads; Cargo's `octomind`, which no route reads; its Scoop package,
+  # under ~\scoop (docs/blind-spots.yaml); and npm's `octomind`, a 0.1.0 package of
+  # 2026-04-06 that is not this project's.
+  - id: octomind
+    name: Octomind
+    classification: Coding agent
+    platforms: [darwin, linux, windows]
+    # Its installers: install.sh writes ~/.local/bin/octomind (119-linux-codewhale-octomind),
+    # install.ps1 %LOCALAPPDATA%\octomind\bin\octomind.exe (120-windows-craft-octomind-npm).
+    binaries: ["~/.local/bin/octomind", "~/AppData/Local/octomind/bin/octomind.exe"]
+    # muvon/tap's formula, Apple silicon only, rendered as `octomind`, type formula, without
+    # its tap; a value while nothing official shares the name, as codewhale's above.
+    # 19-craft-codewhale-octomind.
+    homebrew: [octomind]
+    # ghcr.io/muvon/octomind:latest, the build of 2026-11-24, read off docker_images by the
+    # second probe and pulled by 79-linux-image. It sets no OCI label, so the tag is its only
+    # container identifier.
+    images: [ghcr.io/muvon/octomind]
+
+  # Craft Agents (lukilabs/craft-agents-oss, by Craft Docs), a desktop app that runs the
+  # Claude Agent SDK and the Pi SDK side by side, connects its own sources and MCP servers,
+  # runs local tools and bridges to messaging, so a Personal agent. It is not `claude-desktop`
+  # or `claude-code`, though it ships the SDK's native `claude` binary inside its bundle.
+  # 0.15.11 on Linux and Windows.
+  #
+  # NOT HERE: the Linux AppImage at ~/.craft-agent/app/, below what the enumeration reads.
+  - id: craft-agents
+    name: Craft Agents
+    classification: Personal agent
+    platforms: [darwin, linux, windows]
+    # The cask `craft-agents`, the app: 19-craft-codewhale-octomind read both values off
+    # osquery on macos-26 in run 45240729122, as 18-craft-codewhale-octomind. The bundle id is
+    # electron-builder's appId and the one the cask's zap list names, which is not where it
+    # came from.
+    bundle_ids: [com.lukilabs.craft-agent]
+    homebrew: [craft-agents]
+    # Its own installer, install-app.sh, creates ~/.craft-agent before downloading anything and
+    # on Linux writes the launcher ~/.local/bin/craft-agents last (116-linux-craft-agents, x86_64
+    # only), so the directory alone also names an install that stopped part-way. On Windows
+    # install-app.ps1 runs the NSIS installer, which starts the app, and the app writes
+    # ~\.craft-agent: the second probe found it running, and the directory holding config.json
+    # and workspaces\, one second after the script returned. The script then writes
+    # %LOCALAPPDATA%\Craft Agents\bin\craft-agents.cmd. 120-windows-craft-octomind-npm waits
+    # for the directory, stops the app and holds all three.
+    state_dirs: ["~/.craft-agent"]
+    binaries: ["~/.local/bin/craft-agents", "~/AppData/Local/Craft Agents/bin/craft-agents.cmd"]
+    # The electron-builder NSIS installer's per-user key under HKCU: UUIDv5 of the bundle id
+    # above, which test_matcher derives, so it moves only when the bundle id does. The same
+    # key at 0.15.11 (run 45240729122) and 0.16.0 (run 45444804146). DisplayName "Craft Agents
+    # 0.16.0", publisher "Craft Docs Ltd.", which carry the version and are not values.
+    # 120-windows-craft-octomind-npm.
+    uninstall_keys: [61dc82ee-e3b9-557b-98c4-20b9178a0f78]
+
+  # Mo, Momentic's QA agent: pointed at a URL, it drives a real browser through the app and
+  # reports the bugs it reproduces, and it installs as a skill for coding agents. The
+  # 2026-11-16 pass found it in private beta; its npm README now offers sign-up. A Coding
+  # agent by deployment shape, as a developer's terminal tool.
+  #
+  # NOT HERE: ~/.local/bin/qa, which its curl installer (cli.momentic.ai/qa) writes, because
+  # `qa` names no product; test_matcher asserts it is declined. Releases before 0.18 named the
+  # command `mo`. npm's `qa` was someone else's 0.0.1 in 2015, and the name has been Momentic's
+  # since, so a fleet still holding that package would match. So would a process running
+  # from any node_modules/qa/, which osquery/queries/running.sql names `qa` whoever published
+  # it: a workspace's own package of that name reads as Mo running.
+  - id: momentic-qa
+    name: Momentic Mo
+    classification: Coding agent
+    platforms: [darwin, linux, windows]
+    # npm's `qa`, 0.37.2, a launcher whose optional dependencies are @momentic/qa-<platform>
+    # binaries: 19-craft-codewhale-octomind on macOS, 115-linux-npm-codewhale-qa and
+    # 120-windows-craft-octomind-npm.
+    npm: [qa]

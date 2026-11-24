@@ -1,0 +1,40 @@
+{
+  "description": "Craft Agents through its vendor's installer: the AppImage under ~/.craft-agent and a launcher in ~/.local/bin.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "deb+rpm": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=2",
+    "jbplugin": ">=0",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "port": ">=0",
+    "proc": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "craft-agents"
+    ],
+    "forbid": [
+      "claude-code",
+      "claude-desktop",
+      "pi"
+    ]
+  },
+  "why": "Two witnesses, ~/.craft-agent and ~/.local/bin/craft-agents, so must_contain names both and removing either value leaves the other to find it. The installer creates ~/.craft-agent before it downloads anything, so the launcher, written last, is what says the install finished. claude-code and claude-desktop are forbidden because the app embeds the Claude Agent SDK and its native `claude` binary, and pi because it embeds the Pi SDK.",
+  "must_contain": [
+    "/home/dana/.craft-agent/",
+    "/home/dana/.local/bin/craft-agents"
+  ],
+  "known_gaps": [
+    "The AppImage writes no .desktop entry and leaves no package record, so on Linux the launcher and the directory are all there is to read.",
+    "x86_64 only: the vendor ships no arm64 Linux build, so the arm64 runner skips.",
+    "The installer creates ~/.craft-agent/downloads before it fetches anything, so an install that stopped there is still reported as Craft Agents: the directory is a value, and only the launcher says the install finished."
+  ]
+}

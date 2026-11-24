@@ -1,0 +1,42 @@
+{
+  "description": "Codewhale and Octomind through their vendors' curl installers, Codewhale run once without a key.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "deb+rpm": ">=1",
+    "desktop": ">=0",
+    "ext": ">=0",
+    "file": ">=3",
+    "jbplugin": ">=0",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "port": ">=0",
+    "proc": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "codewhale",
+      "octomind"
+    ],
+    "forbid": [
+      "deepseek-harness",
+      "claude-code",
+      "codex-cli",
+      "opencode",
+      "kilo-code"
+    ]
+  },
+  "why": "Octomind's witness is ~/.local/bin/octomind alone; its data directory is ~/.local/share/octomind, which no route reads. Codewhale has two, the launcher its installer writes and ~/.codewhale, which it writes when run, so must_contain names both and removing either value leaves the other to find it: neither is the only witness, which is why each is also pinned. deepseek-harness is forbidden because Codewhale started as deepseek-tui and defaults to DeepSeek's models; claude-code and codex-cli because ~/.local/bin and top-level home directories are their routes too; opencode and kilo-code because their installers write the same shapes.",
+  "must_contain": [
+    "/home/dana/.local/bin/codewhale",
+    "/home/dana/.codewhale/",
+    "/home/dana/.local/bin/octomind"
+  ],
+  "known_gaps": [
+    "Octomind's ~/.local/share/octomind is one level below what the enumeration reads, so a run leaves nothing new for it."
+  ]
+}
