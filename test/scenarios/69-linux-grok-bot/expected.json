@@ -1,0 +1,40 @@
+{
+  "description": "Grok Bot's official .deb or .rpm, by its package and its desktop entry.",
+  "platform": "linux",
+  "counts": {
+    "deb": ">=0",
+    "deb+rpm": ">=1",
+    "desktop": ">=1",
+    "ext": ">=0",
+    "file": ">=0",
+    "jbplugin": ">=0",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "port": ">=0",
+    "proc": ">=0",
+    "rpm": ">=0",
+    "scan": ">=1",
+    "unit": ">=0",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "grok-bot"
+    ],
+    "forbid": [
+      "cursor",
+      "grok"
+    ]
+  },
+  "why": "One install writes a package row and a desktop entry, so must_find alone would pass with either broken. must_contain names the package row: the probe closes the quote after grok-bot, so the desktop entry's id does not satisfy it. require_rows names the desktop entry. Cursor is forbidden because Anysphere builds both and both ship a deb, an rpm and a .desktop file, and Grok Build because both carry the Grok name.",
+  "must_contain": [
+    "\"id\": \"grok-bot\""
+  ],
+  "require_rows": [
+    {"kind": "desktop", "id": "grok-bot.desktop"}
+  ],
+  "known_gaps": [
+    "The AppImage, the feed's own download, leaves no package record and no .desktop file unless the user integrates it.",
+    "A match says the Grok Bot app is installed, not that a Bot ran or that a plan includes it."
+  ]
+}

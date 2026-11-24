@@ -25,11 +25,11 @@
       "agent": "amazon-q",
       "route": "jetbrains_plugins",
       "value": "plugin-amazonq",
-      "agent_version": "4.12.262",
+      "agent_version": "4.13.263",
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "43892773260"
+      "run": "45419143651"
     },
     {
       "agent": "amazon-q",
@@ -45,11 +45,11 @@
       "agent": "amazon-q",
       "route": "jetbrains_plugins",
       "value": "plugin-amazonq",
-      "agent_version": "4.12.262",
+      "agent_version": "4.13.263",
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43892773260"
+      "run": "45419143651"
     },
     {
       "agent": "amazon-q",
@@ -75,11 +75,11 @@
       "agent": "amazon-q",
       "route": "vscode_extensions",
       "value": "amazonwebservices.amazon-q-vscode",
-      "agent_version": "2.10.0",
+      "agent_version": "2.11.0",
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "43892773260"
+      "run": "45419143651"
     },
     {
       "agent": "amazon-q",
@@ -95,11 +95,11 @@
       "agent": "amazon-q",
       "route": "vscode_extensions",
       "value": "amazonwebservices.amazon-q-vscode",
-      "agent_version": "2.10.0",
+      "agent_version": "2.11.0",
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43892773260"
+      "run": "45419143651"
     },
     {
       "agent": "blackbox",
@@ -129,7 +129,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "43892773260"
+      "run": "45419143651"
     },
     {
       "agent": "blackbox",
@@ -149,7 +149,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43892773260"
+      "run": "45419143651"
     },
     {
       "agent": "codegpt",
@@ -175,11 +175,11 @@
       "agent": "codegpt",
       "route": "vscode_extensions",
       "value": "danielsanmedium.dscodegpt",
-      "agent_version": "3.24.84",
+      "agent_version": "3.24.86",
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "43892773260"
+      "run": "45419143651"
     },
     {
       "agent": "codegpt",
@@ -195,11 +195,11 @@
       "agent": "codegpt",
       "route": "vscode_extensions",
       "value": "danielsanmedium.dscodegpt",
-      "agent_version": "3.24.84",
+      "agent_version": "3.24.86",
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43892773260"
+      "run": "45419143651"
     },
     {
       "agent": "cody",
@@ -229,7 +229,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "43892773260"
+      "run": "45419143651"
     },
     {
       "agent": "cody",
@@ -249,7 +249,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43892773260"
+      "run": "45419143651"
     },
     {
       "agent": "gemini-code-assist",
@@ -275,11 +275,11 @@
       "agent": "gemini-code-assist",
       "route": "vscode_extensions",
       "value": "google.geminicodeassist",
-      "agent_version": "2.107.0",
+      "agent_version": "2.110.0",
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "43892773260"
+      "run": "45419143651"
     },
     {
       "agent": "gemini-code-assist",
@@ -295,11 +295,11 @@
       "agent": "gemini-code-assist",
       "route": "vscode_extensions",
       "value": "google.geminicodeassist",
-      "agent_version": "2.107.0",
+      "agent_version": "2.110.0",
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43892773260"
+      "run": "45419143651"
     },
     {
       "agent": "roo-code",
@@ -329,7 +329,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "43892773260"
+      "run": "45419143651"
     },
     {
       "agent": "roo-code",
@@ -349,7 +349,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43892773260"
+      "run": "45419143651"
     }
   ]
 }

@@ -5,11 +5,11 @@
       "agent": "manus",
       "route": "bundle_ids",
       "value": "im.manus.desktop",
-      "agent_version": "2.1.1",
+      "agent_version": "2.1.5",
       "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64",
-      "run": "42950761536"
+      "run": "45419143651"
     },
     {
       "agent": "manus",
@@ -25,11 +25,11 @@
       "agent": "manus",
       "route": "bundle_ids",
       "value": "im.manus.desktop",
-      "agent_version": "2.1.1",
+      "agent_version": "2.1.5",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "42950761536"
+      "run": "45419143651"
     },
     {
       "agent": "manus",
@@ -45,11 +45,11 @@
       "agent": "manus",
       "route": "homebrew",
       "value": "manus",
-      "agent_version": "2.1.1",
+      "agent_version": "2.1.5",
       "platform": "darwin",
       "os": "15.7.7",
       "arch": "arm64",
-      "run": "42950761536"
+      "run": "45419143651"
     },
     {
       "agent": "manus",
@@ -65,11 +65,11 @@
       "agent": "manus",
       "route": "homebrew",
       "value": "manus",
-      "agent_version": "2.1.1",
+      "agent_version": "2.1.5",
       "platform": "darwin",
       "os": "26.6.2",
       "arch": "arm64",
-      "run": "42950761536"
+      "run": "45419143651"
     },
     {
       "agent": "manus",

@@ -91,6 +91,8 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 113-linux-open-webui-desktop | The AppImage, snap and flatpak are not installed; docs/blind-spots.yaml has why none of them registers a package the enumeration reads. |
 | 114-linux-codewhale-octomind | Octomind's ~/.local/share/octomind is one level below what the enumeration reads, so a run leaves nothing new for it. |
 | 114-linux-codewhale-octomind | Codewhale's Windows archive installer writes %USERPROFILE%\bin, which no Windows branch reads. |
+| 114-windows-grok-bot, 17-grok-bot, 69-linux-grok-bot | A match says the Grok Bot app is installed, not that a Bot ran or that a plan includes it. |
+| 114-windows-grok-bot | The arm64 installer is not run: the runner is x64. |
 | 116-linux-craft-agents | The AppImage writes no .desktop entry and leaves no package record, so on Linux the launcher and the directory are all there is to read. |
 | 116-linux-craft-agents | x86_64 only: the vendor ships no arm64 Linux build, so the arm64 runner skips. |
 | 12-chatgpt-pre-rename | The bundle id only. A direct download leaves no Homebrew record, so the `chatgpt` brew route is not exercised here; 10-desktop-apps covers it. |
@@ -103,6 +105,7 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 15-manus | Manus's Windows build is not installed anywhere. |
 | 16-hermes-desktop | Not launched, so running_apps is not exercised for Hermes, and what the app writes on first run is read only on the probe run the catalog cites. |
 | 16-hermes-desktop | The source-built desktop (`hermes desktop`, bundle id com.nousresearch.hermes) and the remote-only Light client are other bundle ids, and neither is installed here. |
+| 17-grok-bot | Grok Bot is never launched, so no running-app value is read on macOS. |
 | 18-craft-codewhale-octomind | Craft Agents' own installer, install-app.sh, unzips the same app into /Applications and creates ~/.craft-agent; that directory is read on Linux, in 116-linux-craft-agents. |
 | 18-craft-codewhale-octomind | Octomind's tap ships Apple silicon builds only, so an Intel Mac has no Homebrew route to it. |
 | 20-cli-agents, 71-linux-cli-agents | The shim's `ver` is checked for presence, not against the installed release: the shim's path names no release, and the release changes with every install, so expected.json cannot hold it. A join onto the wrong versions/ file would pass. |
@@ -114,6 +117,7 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 56-openclaw-retired-names | The npm names only. The macOS side of this lineage is 57-clawdbot-era, which installs the Clawdbot-era app and proves its bundle id. |
 | 57-clawdbot-era | The bundle id only. com.clawdbot. as a launchd prefix is NOT asserted: the binary contains com.clawdbot.gateway, but a LaunchAgent is registered when the app RUNS and this scenario only installs. Unverified, so not in the catalog either. |
 | 57-clawdbot-era | Clawdis, the generation before this one, ships its own macOS app and is not covered. Its bundle id has not been read off the artifact, so nothing is claimed about it. |
+| 69-linux-grok-bot | The AppImage, the feed's own download, leaves no package record and no .desktop file unless the user integrates it. |
 | 70-linux-baseline | Runs on whatever base image the job uses, so it proves nothing about a loaded desktop. 00-baseline has the same limitation on macOS. |
 | 71-linux-cli-agents | Claude Code's npm identifier is not exercised here -- the native installer is its primary route and the two would fight over the same binary name. 21-cli-agents-homebrew makes the same argument on macOS. |
 | 72-linux-python-agents | Whether ~/.hermes appears depends on the install route: the vendor's curl installer creates it, a uv install does not until the agent runs. The run records what appeared rather than asserting it. |

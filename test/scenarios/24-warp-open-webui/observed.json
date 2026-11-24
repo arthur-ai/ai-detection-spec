@@ -9,17 +9,17 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "44772519062"
+      "run": "45419143651"
     },
     {
       "agent": "open-webui",
       "route": "bundle_ids",
       "value": "com.openwebui.desktop",
-      "agent_version": "0.0.20",
+      "agent_version": "0.1.4",
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "44772519062"
+      "run": "45419143651"
     },
     {
       "agent": "open-webui",
@@ -29,75 +29,75 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "44772519062"
+      "run": "45419143651"
     },
     {
       "agent": "open-webui",
       "route": "homebrew",
       "value": "open-webui",
-      "agent_version": "0.0.20",
+      "agent_version": "0.1.4",
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "44772519062"
-    },
-    {
-      "agent": "open-webui",
-      "route": "pypi",
-      "value": "open-webui",
-      "platform": "darwin",
-      "os": "15.8.2",
-      "arch": "arm64",
-      "run": "44772519062"
+      "run": "45419143651"
     },
     {
       "agent": "open-webui",
       "route": "pypi",
       "value": "open-webui",
       "platform": "darwin",
+      "os": "15.8.2",
+      "arch": "arm64",
+      "run": "45419143651"
+    },
+    {
+      "agent": "open-webui",
+      "route": "pypi",
+      "value": "open-webui",
+      "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "44772519062"
+      "run": "45419143651"
     },
     {
       "agent": "warp",
       "route": "bundle_ids",
       "value": "dev.warp.Warp-Stable",
-      "agent_version": "0.2026.11.11.08.17.01",
+      "agent_version": "0.2026.11.18.08.17.05",
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "44772519062"
+      "run": "45419143651"
     },
     {
       "agent": "warp",
       "route": "bundle_ids",
       "value": "dev.warp.Warp-Stable",
-      "agent_version": "0.2026.10.21.08.25.02",
+      "agent_version": "0.2026.11.18.08.17.05",
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "44772519062"
+      "run": "45419143651"
     },
     {
       "agent": "warp",
       "route": "homebrew",
       "value": "warp",
-      "agent_version": "0.2026.11.11.08.17.stable_01",
+      "agent_version": "0.2026.11.18.08.17.stable_05",
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "44772519062"
+      "run": "45419143651"
     },
     {
       "agent": "warp",
       "route": "homebrew",
       "value": "warp",
-      "agent_version": "0.2026.10.21.08.25.stable_02",
+      "agent_version": "0.2026.11.18.08.17.stable_05",
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "44772519062"
+      "run": "45419143651"
     }
   ]
 }

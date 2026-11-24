@@ -9,9 +9,9 @@
 Every AI agent this repo finds, every identifier it is matched on,
 and the CI test behind each one.
 
-![agents](https://img.shields.io/badge/agents-69-1D4E89)
-![identifiers](https://img.shields.io/badge/identifiers-212-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-198%2F212-A26A16)
+![agents](https://img.shields.io/badge/agents-70-1D4E89)
+![identifiers](https://img.shields.io/badge/identifiers-219-1D4E89)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-198%2F219-A26A16)
 ![real install](https://img.shields.io/badge/by_real_install-198-2E7D57)
 
 </div>
@@ -19,7 +19,7 @@ and the CI test behind each one.
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 198 of 212. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
+**Every identifier is proved by a real install in CI** — 198 of 219. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
 
 ## 🧪 Why a real install is the bar
 
@@ -32,9 +32,9 @@ Proof is counted **per identifier**, not per agent. Installing an agent vouches
 only for the identifiers that run actually matched, so a sibling identifier on the
 same agent is not covered by association.
 
-> **This number is a floor.** `112-windows-craft-octomind-npm`, `114-linux-codewhale-octomind`, `115-linux-npm-codewhale-qa`, `116-linux-craft-agents`, `18-craft-codewhale-octomind` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
+> **This number is a floor.** `112-windows-craft-octomind-npm`, `114-linux-codewhale-octomind`, `114-windows-grok-bot`, `115-linux-npm-codewhale-qa`, `116-linux-craft-agents`, `17-grok-bot`, `18-craft-codewhale-octomind`, `69-linux-grok-bot` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
 
-# Agents (69)
+# Agents (70)
 
 Software that acts on the user's behalf. This is what the catalog is for.
 
@@ -102,6 +102,7 @@ General-purpose, and often bridged to messaging.
 | name | platforms | identifiers | scenarios |
 |---|---|---|---|
 | **Craft Agents** | macOS, Linux, Windows | com.lukilabs.craft-agent, craft-agents, ~/.craft-agent, ~/.local/bin/craft-agents, ~/AppData/Local/Craft Agents/bin/craft-agents.cmd, 61dc82ee-e3b9-557b-98c4-20b9178a0f78 | 112-windows-craft-octomind-npm, 116-linux-craft-agents, 18-craft-codewhale-octomind |
+| **Grok Bot** | macOS, Linux, Windows | com.anysphere.sand, grok-bot, ~/AppData/Local/Programs/Grok Bot/, grok-bot, grok-bot, grok-bot.desktop, 8db316bb-b3e2-5dd2-9554-ecccb62be362 | 114-windows-grok-bot, 17-grok-bot, 69-linux-grok-bot |
 | **Hermes Agent** | macOS, Linux, Windows | **`com.nousresearch.hermes-bundled`**, **`hermes-agent`**, **`hermes-agent`**, **`nousresearch/hermes-agent`**, **`~/.hermes`**, **`~/.local/bin/hermes`**, **`~/AppData/Local/hermes/bin/hermes-acp.exe`**, **`~/AppData/Local/hermes/bin/`**, **`NousResearch.HermesBundled_e60prshbsznhj`** | 107-windows-hermes-installer, 108-windows-hermes-desktop, 109-windows-hermes-idle, 16-hermes-desktop, 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
 | **Letta server** | Linux | **`lettaai/letta`** | 79-linux-image |
 | **Manus** | macOS | **`im.manus.desktop`**, **`manus`** | 15-manus |
@@ -160,6 +161,13 @@ Each one needs work, and the state column says what kind. **did not appear** mea
 | Craft Agents | binary | `~/.local/bin/craft-agents` | no test | -- |
 | Craft Agents | binary | `~/AppData/Local/Craft Agents/bin/craft-agents.cmd` | no test | -- |
 | Craft Agents | uninstall_keys | `61dc82ee-e3b9-557b-98c4-20b9178a0f78` | no test | -- |
+| Grok Bot | bundle id | `com.anysphere.sand` | no test | -- |
+| Grok Bot | homebrew | `grok-bot` | no test | -- |
+| Grok Bot | process_paths | `~/AppData/Local/Programs/Grok Bot/` | no test | -- |
+| Grok Bot | deb_packages | `grok-bot` | no test | -- |
+| Grok Bot | rpm_packages | `grok-bot` | no test | -- |
+| Grok Bot | desktop_ids | `grok-bot.desktop` | no test | -- |
+| Grok Bot | uninstall_keys | `8db316bb-b3e2-5dd2-9554-ecccb62be362` | no test | -- |
 | Momentic Mo | npm | `qa` | no test | -- |
 | Octomind | homebrew | `octomind` | no test | -- |
 | Octomind | binary | `~/.local/bin/octomind` | no test | -- |
