@@ -11,15 +11,15 @@ and the CI test behind each one.
 
 ![agents](https://img.shields.io/badge/agents-71-1D4E89)
 ![identifiers](https://img.shields.io/badge/identifiers-222-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-205%2F222-A26A16)
-![real install](https://img.shields.io/badge/by_real_install-205-2E7D57)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-208%2F222-A26A16)
+![real install](https://img.shields.io/badge/by_real_install-208-2E7D57)
 
 </div>
 
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 205 of 222. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
+**Every identifier is proved by a real install in CI** — 208 of 222. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
 
 ## 🧪 Why a real install is the bar
 
@@ -32,7 +32,7 @@ Proof is counted **per identifier**, not per agent. Installing an agent vouches
 only for the identifiers that run actually matched, so a sibling identifier on the
 same agent is not covered by association.
 
-> **This number is a floor.** `115-linux-npm-codewhale-qa`, `116-linux-craft-agents`, `117-windows-opera-neon`, `118-windows-opera-neon-idle`, `119-linux-codewhale-octomind`, `120-windows-craft-octomind-npm`, `18-opera-neon`, `19-craft-codewhale-octomind` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
+> **This number is a floor.** `115-linux-npm-codewhale-qa`, `116-linux-craft-agents`, `119-linux-codewhale-octomind`, `120-windows-craft-octomind-npm`, `19-craft-codewhale-octomind` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
 
 # Agents (71)
 
@@ -116,7 +116,7 @@ A browser whose AI features are the product.
 | name | platforms | identifiers | scenarios |
 |---|---|---|---|
 | **Dia** | macOS | **`company.thebrowser.dia`**, **`thebrowsercompany-dia`** | 13-desktop-apps-more |
-| **Opera Neon** | macOS, Windows | com.operasoftware.OperaNeon, ~/AppData/Local/Programs/Opera Neon/opera.exe, ~/AppData/Local/Programs/Opera Neon/ | 117-windows-opera-neon, 118-windows-opera-neon-idle, 18-opera-neon |
+| **Opera Neon** | macOS, Windows | **`com.operasoftware.OperaNeon`**, **`~/AppData/Local/Programs/Opera Neon/opera.exe`**, **`~/AppData/Local/Programs/Opera Neon/`** | 117-windows-opera-neon, 118-windows-opera-neon-idle, 18-opera-neon |
 | **Orion** | macOS | **`com.kagi.kagimacOS`**, **`orion`** | 10-desktop-apps |
 | **Perplexity Comet** | macOS | **`ai.perplexity.comet`**, **`comet`** | 10-desktop-apps |
 
@@ -166,9 +166,6 @@ Each one needs work, and the state column says what kind. **did not appear** mea
 | Octomind | homebrew | `octomind` | no test | -- |
 | Octomind | binary | `~/.local/bin/octomind` | no test | -- |
 | Octomind | binary | `~/AppData/Local/octomind/bin/octomind.exe` | no test | -- |
-| Opera Neon | bundle id | `com.operasoftware.OperaNeon` | no test | -- |
-| Opera Neon | binary | `~/AppData/Local/Programs/Opera Neon/opera.exe` | no test | -- |
-| Opera Neon | process_paths | `~/AppData/Local/Programs/Opera Neon/` | no test | -- |
 
 **What it cannot see is a separate page.** [`docs/limits.md`](limits.md) carries what osquery cannot see on any machine and what each scenario leaves unproved after its install succeeds -- rendered from the same inputs, gated the same way.
 

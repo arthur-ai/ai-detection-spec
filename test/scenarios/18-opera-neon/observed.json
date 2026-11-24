@@ -1,0 +1,25 @@
+{
+  "scenario": "18-opera-neon",
+  "identifiers": [
+    {
+      "agent": "opera-neon",
+      "route": "bundle_ids",
+      "value": "com.operasoftware.OperaNeon",
+      "agent_version": "139.0",
+      "platform": "darwin",
+      "os": "15.8.2",
+      "arch": "arm64",
+      "run": "45441458366"
+    },
+    {
+      "agent": "opera-neon",
+      "route": "bundle_ids",
+      "value": "com.operasoftware.OperaNeon",
+      "agent_version": "139.0",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "45441458366"
+    }
+  ]
+}

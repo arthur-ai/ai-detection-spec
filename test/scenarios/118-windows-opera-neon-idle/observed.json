@@ -1,0 +1,14 @@
+{
+  "scenario": "118-windows-opera-neon-idle",
+  "identifiers": [
+    {
+      "agent": "opera-neon",
+      "route": "binaries",
+      "value": "~/AppData/Local/Programs/Opera Neon/opera.exe",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "45441458366"
+    }
+  ]
+}
