@@ -1,0 +1,45 @@
+{
+  "scenario": "17-grok-bot",
+  "identifiers": [
+    {
+      "agent": "grok-bot",
+      "route": "bundle_ids",
+      "value": "com.anysphere.sand",
+      "agent_version": "1.2.3",
+      "platform": "darwin",
+      "os": "15.8.2",
+      "arch": "arm64",
+      "run": "45436756024"
+    },
+    {
+      "agent": "grok-bot",
+      "route": "bundle_ids",
+      "value": "com.anysphere.sand",
+      "agent_version": "1.2.3",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "45436756024"
+    },
+    {
+      "agent": "grok-bot",
+      "route": "homebrew",
+      "value": "grok-bot",
+      "agent_version": "1.2.3",
+      "platform": "darwin",
+      "os": "15.8.2",
+      "arch": "arm64",
+      "run": "45436756024"
+    },
+    {
+      "agent": "grok-bot",
+      "route": "homebrew",
+      "value": "grok-bot",
+      "agent_version": "1.2.3",
+      "platform": "darwin",
+      "os": "26.7.2",
+      "arch": "arm64",
+      "run": "45436756024"
+    }
+  ]
+}

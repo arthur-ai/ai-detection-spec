@@ -1,0 +1,24 @@
+{
+  "scenario": "114-windows-grok-bot",
+  "identifiers": [
+    {
+      "agent": "grok-bot",
+      "route": "process_paths",
+      "value": "~/AppData/Local/Programs/Grok Bot/",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "45436756024"
+    },
+    {
+      "agent": "grok-bot",
+      "route": "uninstall_keys",
+      "value": "8db316bb-b3e2-5dd2-9554-ecccb62be362",
+      "agent_version": "1.2.3",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "45436756024"
+    }
+  ]
+}

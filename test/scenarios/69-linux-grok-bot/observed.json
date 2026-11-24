@@ -1,0 +1,119 @@
+{
+  "scenario": "69-linux-grok-bot",
+  "identifiers": [
+    {
+      "agent": "grok-bot",
+      "route": "deb_packages",
+      "value": "grok-bot",
+      "agent_version": "1.2.3",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "x86_64",
+      "run": "45436756024"
+    },
+    {
+      "agent": "grok-bot",
+      "route": "deb_packages",
+      "value": "grok-bot",
+      "agent_version": "1.2.3",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "45436756024"
+    },
+    {
+      "agent": "grok-bot",
+      "route": "deb_packages",
+      "value": "grok-bot",
+      "agent_version": "1.2.3",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "45436756024"
+    },
+    {
+      "agent": "grok-bot",
+      "route": "desktop_ids",
+      "value": "grok-bot.desktop",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "45436756024"
+    },
+    {
+      "agent": "grok-bot",
+      "route": "desktop_ids",
+      "value": "grok-bot.desktop",
+      "platform": "linux",
+      "os": "debian-12",
+      "arch": "x86_64",
+      "run": "45436756024"
+    },
+    {
+      "agent": "grok-bot",
+      "route": "desktop_ids",
+      "value": "grok-bot.desktop",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "45436756024"
+    },
+    {
+      "agent": "grok-bot",
+      "route": "desktop_ids",
+      "value": "grok-bot.desktop",
+      "platform": "linux",
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "45436756024"
+    },
+    {
+      "agent": "grok-bot",
+      "route": "desktop_ids",
+      "value": "grok-bot.desktop",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "aarch64",
+      "run": "45436756024"
+    },
+    {
+      "agent": "grok-bot",
+      "route": "desktop_ids",
+      "value": "grok-bot.desktop",
+      "platform": "linux",
+      "os": "ubuntu-24.04",
+      "arch": "x86_64",
+      "run": "45436756024"
+    },
+    {
+      "agent": "grok-bot",
+      "route": "rpm_packages",
+      "value": "grok-bot",
+      "agent_version": "1.2.3",
+      "platform": "linux",
+      "os": "amzn-2023",
+      "arch": "x86_64",
+      "run": "45436756024"
+    },
+    {
+      "agent": "grok-bot",
+      "route": "rpm_packages",
+      "value": "grok-bot",
+      "agent_version": "1.2.3",
+      "platform": "linux",
+      "os": "fedora-41",
+      "arch": "x86_64",
+      "run": "45436756024"
+    },
+    {
+      "agent": "grok-bot",
+      "route": "rpm_packages",
+      "value": "grok-bot",
+      "agent_version": "1.2.3",
+      "platform": "linux",
+      "os": "rocky-9.9",
+      "arch": "x86_64",
+      "run": "45436756024"
+    }
+  ]
+}
