@@ -5,31 +5,31 @@
       "agent": "claude-code",
       "route": "vscode_extensions",
       "value": "anthropic.claude-code",
-      "agent_version": "2.1.329",
+      "agent_version": "2.1.330",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "44772519062"
+      "run": "45229382214"
     },
     {
       "agent": "cline",
       "route": "vscode_extensions",
       "value": "saoudrizwan.claude-dev",
-      "agent_version": "4.1.26",
+      "agent_version": "4.1.27",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "44772519062"
+      "run": "45229382214"
     },
     {
       "agent": "codex-cli",
       "route": "vscode_extensions",
       "value": "openai.chatgpt",
-      "agent_version": "26.1117.31558",
+      "agent_version": "26.1117.41037",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "44772519062"
+      "run": "45229382214"
     },
     {
       "agent": "continue",
@@ -39,7 +39,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "44772519062"
+      "run": "45229382214"
     },
     {
       "agent": "kilo-code",
@@ -49,7 +49,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "44772519062"
+      "run": "45229382214"
     },
     {
       "agent": "roo-code",
@@ -59,7 +59,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "44772519062"
+      "run": "45229382214"
     }
   ]
 }

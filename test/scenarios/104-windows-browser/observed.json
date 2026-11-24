@@ -9,17 +9,17 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "44772519062"
+      "run": "45229382214"
     },
     {
       "agent": "claude-desktop",
       "route": "msix_families",
       "value": "Claude_pzs8sxrjxfjjc",
-      "agent_version": "5.11492.5.0",
+      "agent_version": "6.28899.6.0",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "44772519062"
+      "run": "45229382214"
     },
     {
       "agent": "claude-desktop",
@@ -28,27 +28,27 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "44772519062"
+      "run": "45229382214"
     },
     {
       "agent": "claude-in-chrome",
       "route": "extension_ids",
       "value": "fcoeoabgfenejglbffodgkkbkcdhcgfn",
-      "agent_version": "1.0.107",
+      "agent_version": "1.0.109",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "44772519062"
+      "run": "45229382214"
     },
     {
       "agent": "harpa",
       "route": "extension_ids",
       "value": "eanggfilgoajaocelnaflolkadkeghjp",
-      "agent_version": "18.0.1",
+      "agent_version": "19.0.0",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "44772519062"
+      "run": "45229382214"
     },
     {
       "agent": "merlin",
@@ -58,7 +58,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "44772519062"
+      "run": "45229382214"
     },
     {
       "agent": "monica",
@@ -68,17 +68,17 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "44772519062"
+      "run": "45229382214"
     },
     {
       "agent": "sider",
       "route": "extension_ids",
       "value": "difoiogjjojoaoomphldepapgpbgkhkb",
-      "agent_version": "5.35.8",
+      "agent_version": "5.35.9",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "44772519062"
+      "run": "45229382214"
     }
   ]
 }
