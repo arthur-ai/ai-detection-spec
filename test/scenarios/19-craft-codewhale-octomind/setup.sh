@@ -4,7 +4,7 @@
 #
 #   Craft Agents  the cask `craft-agents`, the app
 #   Codewhale     Hmbown/deepseek-tui's `codewhale`, which homebrew_packages names without
-#                 its tap; its curl installer and npm package are 114's and 115's
+#                 its tap; its curl installer and npm package are 119's and 115's
 #   Octomind      muvon/tap's `octomind`, likewise; Apple silicon only, which both labels are
 #
 # craft-agents declares macOS >= 12, so it installs on the oldest macOS in the scenarios.yml

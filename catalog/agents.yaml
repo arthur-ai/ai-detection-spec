@@ -1545,7 +1545,8 @@ agents:
   # that date unless a value says otherwise: macOS 26 on arm64, Ubuntu 24.04 on x86_64 and
   # arm64, Debian 12, Rocky 9, Fedora 41 and Amazon Linux 2023 on x86_64, and Windows Server
   # 2025 on x86_64, osquery 5.23.1. The scenarios named below re-read each value in CI run
-  # 45240729122, which read craft-agents' bundle id and cask token for the first time.
+  # 45240729122, which read craft-agents' bundle id and cask token for the first time; 19,
+  # 119 and 120 ran there as 18, 114 and 112, numbers other scenarios have since taken.
   # ---------------------------------------------------------------------------------------
 
   # Codewhale (codewhale-hq/Codewhale), a terminal coding agent that edits the repository and
@@ -1562,17 +1563,17 @@ agents:
     classification: Coding agent
     platforms: [darwin, linux, windows]
     # npm's `codewhale`, whose postinstall fetches the release binaries: 115-linux-npm-
-    # codewhale-qa on Linux and 112-windows-craft-octomind-npm under %APPDATA%\npm.
+    # codewhale-qa on Linux and 120-windows-craft-octomind-npm under %APPDATA%\npm.
     npm: [codewhale]
     # Its curl installer, codewhale.net/install.sh, writes ~/.local/bin/codewhale; the
     # directory ~/.codewhale is written when it is first run, not on --version (`codewhale
     # exec` without a key wrote sessions/ and setup_state.json and stopped at provider
-    # setup). 114-linux-codewhale-octomind.
+    # setup). 119-linux-codewhale-octomind.
     binaries: ["~/.local/bin/codewhale"]
     state_dirs: ["~/.codewhale"]
     # Hmbown/deepseek-tui's formula, which homebrew_packages renders as `codewhale`, type
     # formula, without its tap. A value while homebrew-core and homebrew-cask have no
-    # `codewhale`, which 18-craft-codewhale-octomind asserts before tapping.
+    # `codewhale`, which 19-craft-codewhale-octomind asserts before tapping.
     homebrew: [codewhale]
 
   # Octomind (Muvon/octomind), a terminal coding agent and agent runtime: its lead agent reads
@@ -1585,12 +1586,12 @@ agents:
     name: Octomind
     classification: Coding agent
     platforms: [darwin, linux, windows]
-    # Its installers: install.sh writes ~/.local/bin/octomind (114-linux-codewhale-octomind),
-    # install.ps1 %LOCALAPPDATA%\octomind\bin\octomind.exe (112-windows-craft-octomind-npm).
+    # Its installers: install.sh writes ~/.local/bin/octomind (119-linux-codewhale-octomind),
+    # install.ps1 %LOCALAPPDATA%\octomind\bin\octomind.exe (120-windows-craft-octomind-npm).
     binaries: ["~/.local/bin/octomind", "~/AppData/Local/octomind/bin/octomind.exe"]
     # muvon/tap's formula, Apple silicon only, rendered as `octomind`, type formula, without
     # its tap; a value while nothing official shares the name, as codewhale's above.
-    # 18-craft-codewhale-octomind.
+    # 19-craft-codewhale-octomind.
     homebrew: [octomind]
 
   # Craft Agents (lukilabs/craft-agents-oss, by Craft Docs), a desktop app that runs the
@@ -1604,22 +1605,23 @@ agents:
     name: Craft Agents
     classification: Personal agent
     platforms: [darwin, linux, windows]
-    # The cask `craft-agents`, the app: 18-craft-codewhale-octomind read both values off
-    # osquery on macos-26 in run 45240729122. The bundle id is electron-builder's appId and
-    # the one the cask's zap list names, which is not where it came from.
+    # The cask `craft-agents`, the app: 19-craft-codewhale-octomind read both values off
+    # osquery on macos-26 in run 45240729122, as 18-craft-codewhale-octomind. The bundle id is
+    # electron-builder's appId and the one the cask's zap list names, which is not where it
+    # came from.
     bundle_ids: [com.lukilabs.craft-agent]
     homebrew: [craft-agents]
     # Its own installer, install-app.sh, creates ~/.craft-agent before downloading anything and
     # on Linux writes the launcher ~/.local/bin/craft-agents last (116-linux-craft-agents, x86_64
     # only). On Windows ~\.craft-agent appeared as well, which the probe did not attribute to
     # the installer or the app, and install-app.ps1 writes
-    # %LOCALAPPDATA%\Craft Agents\bin\craft-agents.cmd (112-windows-craft-octomind-npm).
+    # %LOCALAPPDATA%\Craft Agents\bin\craft-agents.cmd (120-windows-craft-octomind-npm).
     state_dirs: ["~/.craft-agent"]
     binaries: ["~/.local/bin/craft-agents", "~/AppData/Local/Craft Agents/bin/craft-agents.cmd"]
     # The electron-builder NSIS installer's per-user key under HKCU, a GUID electron-builder
     # derives from the app id, so it should hold across versions; only 0.15.11 was installed.
     # DisplayName "Craft Agents 0.15.11", publisher "Craft Docs Ltd.", which carry the version
-    # and are not values. 112-windows-craft-octomind-npm.
+    # and are not values. 120-windows-craft-octomind-npm.
     uninstall_keys: [61dc82ee-e3b9-557b-98c4-20b9178a0f78]
 
   # Mo, Momentic's QA agent: pointed at a URL, it drives a real browser through the app and
@@ -1636,5 +1638,5 @@ agents:
     classification: Coding agent
     platforms: [linux, windows]
     # npm's `qa`, 0.37.2, a launcher whose optional dependencies are @momentic/qa-<platform>
-    # binaries: 115-linux-npm-codewhale-qa and 112-windows-craft-octomind-npm.
+    # binaries: 115-linux-npm-codewhale-qa and 120-windows-craft-octomind-npm.
     npm: [qa]

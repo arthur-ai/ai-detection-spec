@@ -6,7 +6,7 @@
 #   Momentic's Mo  qa          npm -g; the CLI for Mo, Momentic's QA agent
 #
 # Neither is run, so each package is its agent's only witness here: Codewhale's curl
-# installer and its ~/.codewhale are 114-linux-codewhale-octomind's, on a host of its own
+# installer and its ~/.codewhale are 119-linux-codewhale-octomind's, on a host of its own
 # because both routes put `codewhale` on PATH.
 set -e
 source "$(cd "$(dirname "$0")/../../lib" && pwd)/guest-linux.sh"

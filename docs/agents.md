@@ -32,7 +32,7 @@ Proof is counted **per identifier**, not per agent. Installing an agent vouches
 only for the identifiers that run actually matched, so a sibling identifier on the
 same agent is not covered by association.
 
-> **This number is a floor.** `112-windows-craft-octomind-npm`, `114-linux-codewhale-octomind`, `115-linux-npm-codewhale-qa`, `116-linux-craft-agents`, `18-craft-codewhale-octomind` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
+> **This number is a floor.** `115-linux-npm-codewhale-qa`, `116-linux-craft-agents`, `119-linux-codewhale-octomind`, `120-windows-craft-octomind-npm`, `19-craft-codewhale-octomind` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
 
 # Agents (70)
 
@@ -54,7 +54,7 @@ Operates on a codebase, usually with shell access.
 | **Cline** | macOS, Linux, Windows | **`cline`**, **`saoudrizwan.claude-dev`**, **`cline`** | 103-windows-vscode-agents, 20-cli-agents, 71-linux-cli-agents, 78-linux-vscode, 80-linux-jetbrains |
 | **CodeBuddy** | Linux | **`@tencent-ai/codebuddy-code`**, **`~/.codebuddy`** | 96-linux-cli-agents-npm |
 | **CodeGPT** | macOS, Linux | **`danielsanmedium.dscodegpt`** | 30-ide-agents, 85-linux-vscode-agents |
-| **Codewhale** | macOS, Linux, Windows | codewhale, codewhale, ~/.codewhale, ~/.local/bin/codewhale | 112-windows-craft-octomind-npm, 114-linux-codewhale-octomind, 115-linux-npm-codewhale-qa, 18-craft-codewhale-octomind |
+| **Codewhale** | macOS, Linux, Windows | codewhale, codewhale, ~/.codewhale, ~/.local/bin/codewhale | 115-linux-npm-codewhale-qa, 119-linux-codewhale-octomind, 120-windows-craft-octomind-npm, 19-craft-codewhale-octomind |
 | **Codex CLI** | macOS, Linux, Windows | **`codex`**, **`@openai/codex`**, **`openai.chatgpt`**, **`~/.codex`** | 101-windows-cli-agents, 103-windows-vscode-agents, 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 85-linux-vscode-agents |
 | **Cody** | macOS, Linux | **`sourcegraph.cody-ai`**, **`Sourcegraph`** | 30-ide-agents, 85-linux-vscode-agents, 86-linux-jetbrains-agents |
 | **Command Code** | Linux | **`command-code`**, **`~/.commandcode`** | 97-linux-cli-agents-npm-more |
@@ -79,9 +79,9 @@ Operates on a codebase, usually with shell access.
 | **Maki** | macOS, Linux | **`maki`**, **`~/.local/bin/maki`** | 22-cli-agents-homebrew-more, 98-linux-installers-more |
 | **MastraCode** | Linux | **`mastracode`** | 97-linux-cli-agents-npm-more |
 | **Mistral Vibe** | macOS, Linux | **`mistral-vibe`**, **`mistral-vibe`**, **`~/.vibe`** | 21-cli-agents-homebrew, 93-linux-cli-agents-more |
-| **Momentic Mo** | Linux, Windows | qa | 112-windows-craft-octomind-npm, 115-linux-npm-codewhale-qa |
+| **Momentic Mo** | Linux, Windows | qa | 115-linux-npm-codewhale-qa, 120-windows-craft-octomind-npm |
 | **Muse Code** | macOS, Linux | **`muse-code`**, **`~/.local/bin/muse`** | 14-meta-muse, 21-cli-agents-homebrew, 84-linux-installers |
-| **Octomind** | macOS, Linux, Windows | octomind, ~/.local/bin/octomind, ~/AppData/Local/octomind/bin/octomind.exe | 112-windows-craft-octomind-npm, 114-linux-codewhale-octomind, 18-craft-codewhale-octomind |
+| **Octomind** | macOS, Linux, Windows | octomind, ~/.local/bin/octomind, ~/AppData/Local/octomind/bin/octomind.exe | 119-linux-codewhale-octomind, 120-windows-craft-octomind-npm, 19-craft-codewhale-octomind |
 | **Oh My Pi** | Linux | **`@oh-my-pi/pi-coding-agent`**, **`~/.omp`** | 97-linux-cli-agents-npm-more, 98-linux-installers-more |
 | **opencode** | macOS, Linux | **`opencode`**, **`opencode-ai`**, **`~/.opencode`** | 20-cli-agents, 21-cli-agents-homebrew, 71-linux-cli-agents, 84-linux-installers |
 | **OpenHands** | Linux | **`ghcr.io/openhands/openhands`**, **`ghcr.io/all-hands-ai/openhands`**, **`https://github.com/OpenHands/OpenHands`** | 79-linux-image |
@@ -101,7 +101,7 @@ General-purpose, and often bridged to messaging.
 
 | name | platforms | identifiers | scenarios |
 |---|---|---|---|
-| **Craft Agents** | macOS, Linux, Windows | com.lukilabs.craft-agent, craft-agents, ~/.craft-agent, ~/.local/bin/craft-agents, ~/AppData/Local/Craft Agents/bin/craft-agents.cmd, 61dc82ee-e3b9-557b-98c4-20b9178a0f78 | 112-windows-craft-octomind-npm, 116-linux-craft-agents, 18-craft-codewhale-octomind |
+| **Craft Agents** | macOS, Linux, Windows | com.lukilabs.craft-agent, craft-agents, ~/.craft-agent, ~/.local/bin/craft-agents, ~/AppData/Local/Craft Agents/bin/craft-agents.cmd, 61dc82ee-e3b9-557b-98c4-20b9178a0f78 | 116-linux-craft-agents, 120-windows-craft-octomind-npm, 19-craft-codewhale-octomind |
 | **Grok Bot** | macOS, Linux, Windows | **`com.anysphere.sand`**, **`grok-bot`**, **`~/AppData/Local/Programs/Grok Bot/`**, **`grok-bot`**, **`grok-bot`**, **`grok-bot.desktop`**, **`8db316bb-b3e2-5dd2-9554-ecccb62be362`** | 114-windows-grok-bot, 17-grok-bot, 69-linux-grok-bot |
 | **Hermes Agent** | macOS, Linux, Windows | **`com.nousresearch.hermes-bundled`**, **`hermes-agent`**, **`hermes-agent`**, **`nousresearch/hermes-agent`**, **`~/.hermes`**, **`~/.local/bin/hermes`**, **`~/AppData/Local/hermes/bin/hermes-acp.exe`**, **`~/AppData/Local/hermes/bin/`**, **`NousResearch.HermesBundled_e60prshbsznhj`** | 107-windows-hermes-installer, 108-windows-hermes-desktop, 109-windows-hermes-idle, 16-hermes-desktop, 21-cli-agents-homebrew, 25-python-agents, 72-linux-python-agents, 79-linux-image |
 | **Letta server** | Linux | **`lettaai/letta`** | 79-linux-image |
