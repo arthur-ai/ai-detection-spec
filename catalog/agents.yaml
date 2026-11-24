@@ -835,7 +835,7 @@ agents:
   # 42675163069 on 2026-11-09 read both, build 139.0.6053.39: the macOS installer's
   # Info.plist names OperaBundleID com.operasoftware.OperaNeon and it wrote
   # /Applications/Opera Neon.app. osquery's `apps` read the installed app as that id on
-  # macos-15 in 17-opera-neon, run 42676731205.
+  # macos-15 in run 42676731205, when 18-opera-neon was named 17-opera-neon.
   #
   # Opera's other browsers share the com.operasoftware. namespace (Opera, OperaGX, OperaAir),
   # the installer is com.operasoftware.Installer.OperaNeon, and the helper inside Neon's own

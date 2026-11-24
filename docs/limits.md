@@ -88,7 +88,7 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 113-linux-open-webui-desktop | The AppImage, snap and flatpak are not installed; docs/blind-spots.yaml has why none of them registers a package the enumeration reads. |
 | 114-windows-grok-bot, 17-grok-bot, 69-linux-grok-bot | A match says the Grok Bot app is installed, not that a Bot ran or that a plan includes it. |
 | 114-windows-grok-bot | The arm64 installer is not run: the runner is x64. |
-| 117-windows-opera-neon, 118-windows-opera-neon-idle, 17-opera-neon | A match says Opera Neon is installed, not that Neon Do ran or a subscription is active: no route reads either. |
+| 117-windows-opera-neon, 118-windows-opera-neon-idle, 18-opera-neon | A match says Opera Neon is installed, not that Neon Do ran or a subscription is active: no route reads either. |
 | 117-windows-opera-neon, 118-windows-opera-neon-idle | Only the per-user install is read. A machine-wide one (the installer's --allusers=1) is not installed here, and a path outside a home is one no `~/` value names. |
 | 12-chatgpt-pre-rename | The bundle id only. A direct download leaves no Homebrew record, so the `chatgpt` brew route is not exercised here; 10-desktop-apps covers it. |
 | 13-desktop-apps-more | Trae and Trae CN were read off their dmgs' Info.plist rather than a local install: the VM this was developed in had no IPv4 route to their CDNs. CI is the first real install of both. |
@@ -101,8 +101,8 @@ The install succeeded and the identifier matched. These are the ways it still fa
 | 16-hermes-desktop | Not launched, so running_apps is not exercised for Hermes, and what the app writes on first run is read only on the probe run the catalog cites. |
 | 16-hermes-desktop | The source-built desktop (`hermes desktop`, bundle id com.nousresearch.hermes) and the remote-only Light client are other bundle ids, and neither is installed here. |
 | 17-grok-bot | Grok Bot is never launched, so no running-app value is read on macOS. |
-| 17-opera-neon | Stopped before the query, so running_apps is not exercised for Opera Neon. |
-| 17-opera-neon | Opera's 2017 concept browser, also called Neon, may carry the same bundle id. No run has installed one, and a match on it would read as this agent. |
+| 18-opera-neon | Stopped before the query, so running_apps is not exercised for Opera Neon. |
+| 18-opera-neon | Opera's 2017 concept browser, also called Neon, may carry the same bundle id. No run has installed one, and a match on it would read as this agent. |
 | 20-cli-agents, 71-linux-cli-agents | The shim's `ver` is checked for presence, not against the installed release: the shim's path names no release, and the release changes with every install, so expected.json cannot hold it. A join onto the wrong versions/ file would pass. |
 | 23-kiro-cli-app-era | The bundle id only. The app is installed and never launched, so the LaunchAgent the cask's old uninstall stanza named, com.amazon.codewhisperer.launcher, is unverified and not in the catalog. |
 | 24-warp-open-webui | Sign-in gated: neither app is launched, so nothing exercises what each writes once used. |

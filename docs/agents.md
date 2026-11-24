@@ -32,7 +32,7 @@ Proof is counted **per identifier**, not per agent. Installing an agent vouches
 only for the identifiers that run actually matched, so a sibling identifier on the
 same agent is not covered by association.
 
-> **This number is a floor.** `114-windows-grok-bot`, `117-windows-opera-neon`, `118-windows-opera-neon-idle`, `17-grok-bot`, `17-opera-neon`, `69-linux-grok-bot` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
+> **This number is a floor.** `114-windows-grok-bot`, `117-windows-opera-neon`, `118-windows-opera-neon-idle`, `17-grok-bot`, `18-opera-neon`, `69-linux-grok-bot` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
 
 # Agents (67)
 
@@ -112,7 +112,7 @@ A browser whose AI features are the product.
 | name | platforms | identifiers | scenarios |
 |---|---|---|---|
 | **Dia** | macOS | **`company.thebrowser.dia`**, **`thebrowsercompany-dia`** | 13-desktop-apps-more |
-| **Opera Neon** | macOS, Windows | com.operasoftware.OperaNeon, ~/AppData/Local/Programs/Opera Neon/opera.exe, ~/AppData/Local/Programs/Opera Neon/ | 117-windows-opera-neon, 118-windows-opera-neon-idle, 17-opera-neon |
+| **Opera Neon** | macOS, Windows | com.operasoftware.OperaNeon, ~/AppData/Local/Programs/Opera Neon/opera.exe, ~/AppData/Local/Programs/Opera Neon/ | 117-windows-opera-neon, 118-windows-opera-neon-idle, 18-opera-neon |
 | **Orion** | macOS | **`com.kagi.kagimacOS`**, **`orion`** | 10-desktop-apps |
 | **Perplexity Comet** | macOS | **`ai.perplexity.comet`**, **`comet`** | 10-desktop-apps |
 

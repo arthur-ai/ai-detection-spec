@@ -275,8 +275,8 @@ jobs:
           - 14-meta-muse
           - 15-manus
           - 16-hermes-desktop
-          - 17-opera-neon
           - 17-grok-bot
+          - 18-opera-neon
           - 20-cli-agents
           - 21-cli-agents-homebrew
           - 22-cli-agents-homebrew-more
