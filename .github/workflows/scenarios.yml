@@ -618,9 +618,10 @@ jobs:
           - 107-windows-hermes-installer
           - 108-windows-hermes-desktop
           - 109-windows-hermes-idle
-          - 110-windows-opera-neon
           - 110-windows-installers-more
           - 111-windows-warp-open-webui
+          - 117-windows-opera-neon
+          - 118-windows-opera-neon-idle
         exclude: ${{ fromJSON(needs.scope.outputs.exclude_scenario_windows || '[]') }}
     steps:
       - uses: actions/checkout@v4

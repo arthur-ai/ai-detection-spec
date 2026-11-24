@@ -824,10 +824,11 @@ agents:
     bundle_ids: [company.thebrowser.dia]
     homebrew: [thebrowsercompany-dia]
 
-  # OPERA NEON, Opera's agentic browser: its Neon Do mode browses and acts on sites for the
-  # user. A MATCH SAYS NEON IS INSTALLED, never that Do ran or that a Neon subscription is
-  # active: Do, and Neon's other AI features, need the paid plan, and browsing does not.
-  # Nothing on disk that a route reads tells the two apart.
+  # OPERA NEON, Opera's agentic browser: its Neon Do mode navigates sites and fills in forms
+  # for the user (MacRumors, 2025-09-30). A MATCH SAYS NEON IS INSTALLED, never that Do ran
+  # or that a subscription is active: Opera sells Neon as a monthly subscription (TechCrunch,
+  # 2025-12-11), and no route reads an account. UNVERIFIED: what an install without one can
+  # do. No scenario signs in.
   #
   # Installed from Opera's own endpoint, net.geo.opera.com/opera_neon/stable/{mac,windows},
   # whose installers fetch the build itself; there is no Homebrew cask. Probe run
@@ -837,23 +838,28 @@ agents:
   # macos-15 in 17-opera-neon, run 42676731205.
   #
   # Opera's other browsers share the com.operasoftware. namespace (Opera, OperaGX, OperaAir),
-  # and the installer is com.operasoftware.Installer.OperaNeon; exact matching declines all
+  # the installer is com.operasoftware.Installer.OperaNeon, and the helper inside Neon's own
+  # bundle is com.operasoftware.Opera.helper (run 44776625750); exact matching declines all
   # of them, which test_matcher asserts. UNVERIFIED: Opera's 2017 concept browser, also
-  # called Neon (disabled cask `opera-neon`, last 1.0.2531.0), may have carried this same id.
-  # Nothing here has installed it, and a match on one would read as this agent.
+  # called Neon (cask `opera-neon`, last 1.0.2531.0, removed from Homebrew on 2026-07-30),
+  # may have carried this same id. Nothing here has installed it, and a match on one would
+  # read as this agent.
   - id: opera-neon
     name: Opera Neon
     classification: AI browser
     platforms: [darwin, windows]
     bundle_ids: [com.operasoftware.OperaNeon]
-    # WINDOWS, RUNNING ONLY. The user installer writes
-    # ~\AppData\Local\Programs\Opera Neon\ (launcher opera.exe, and the build under a version
-    # directory), read off probe run 42675163069. Its Uninstall key is
-    # `Opera Neon 139.0.6053.39`, the version in the key's own name, so uninstall_keys, which
-    # compares the name exactly, would lose it at the next update; it is not a value. `programs`
-    # names it the same way. So an idle install leaves nothing a route matches, and
-    # 110-windows-opera-neon launches it; its process path was read there on windows-2025,
-    # run 42676731205.
+    # WINDOWS, THE PER-USER INSTALL. The installer writes ~\AppData\Local\Programs\Opera Neon\:
+    # the launcher opera.exe, and the build under a version directory (probe run
+    # 42675163069). Its Uninstall key is `Opera Neon 139.0.6053.39`, the version in the key's
+    # own name, so uninstall_keys, which compares the name exactly, would lose it at the next
+    # update; it is not a value, and `programs` names it the same way. The launcher is the
+    # installed witness, read by filesystem-windows.sql's per-user app branch and proved with
+    # nothing launched in 118-windows-opera-neon-idle. PENDING CI: no run has read it yet.
+    binaries: ["~/AppData/Local/Programs/Opera Neon/opera.exe"]
+    # RUNNING, by the install directory, so a process started from the launcher and one from
+    # the build under the version directory both match. Read in 117-windows-opera-neon, as
+    # 110-windows-opera-neon on windows-2025, run 42676731205.
     process_paths: ["~/AppData/Local/Programs/Opera Neon/"]
 
   # TRAE, ByteDance's VS Code fork -- an agent for the reason kiro is, and the artifact says

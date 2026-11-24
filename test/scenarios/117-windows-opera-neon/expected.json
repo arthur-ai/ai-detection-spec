@@ -1,0 +1,32 @@
+{
+  "description": "Opera Neon through Opera's own installer, launched: found installed by its launcher and running by the path it runs from.",
+  "platform": "windows",
+  "counts": {
+    "ext": ">=0",
+    "file": ">=1",
+    "msix": ">=1",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "proc": ">=1",
+    "scan": ">=1",
+    "uninstall": ">=2",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "opera-neon"
+    ],
+    "forbid": [
+      "cursor"
+    ]
+  },
+  "require_rows": [
+    {"kind": "file", "id": "\\AppData\\Local\\Programs\\Opera Neon\\opera.exe"},
+    {"kind": "proc", "id": "\\AppData\\Local\\Programs\\Opera Neon\\"}
+  ],
+  "why": "Two witnesses, one per route: the file row is the installed one and the proc row the running one. require_rows holds each separately, so the scenario cannot pass on one route while the other is broken; 118 proves the installed one alone. Cursor is forbidden because its value is the other process path under ~\\AppData\\Local\\Programs.",
+  "known_gaps": [
+    "A match says Opera Neon is installed, not that Neon Do ran or a subscription is active: no route reads either.",
+    "Only the per-user install is read. A machine-wide one (the installer's --allusers=1) is not installed here, and a path outside a home is one no `~/` value names."
+  ]
+}

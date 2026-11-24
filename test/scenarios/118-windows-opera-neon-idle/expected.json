@@ -1,0 +1,32 @@
+{
+  "description": "Opera Neon through Opera's own installer, installed and never launched, found by the launcher it writes under %LOCALAPPDATA%\\Programs.",
+  "platform": "windows",
+  "counts": {
+    "ext": ">=0",
+    "file": ">=1",
+    "msix": ">=1",
+    "nmh": ">=0",
+    "npm": ">=0",
+    "proc": ">=0",
+    "scan": ">=1",
+    "uninstall": ">=2",
+    "vscodeext": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "opera-neon"
+    ]
+  },
+  "require_rows": [
+    {"kind": "file", "id": "\\AppData\\Local\\Programs\\Opera Neon\\opera.exe"},
+    {"kind": "uninstall", "id": "Opera Neon ", "extra": "Opera Neon"}
+  ],
+  "forbid_rows": [
+    {"kind": "proc", "id": "C:\\Users\\runneradmin\\AppData\\Local\\Programs\\Opera Neon\\opera.exe"}
+  ],
+  "why": "The idle twin of 117, which launches the browser. Nothing is launched here: setup.ps1 fails on a process under the install directory, and forbid_rows holds that the launcher has no `proc` row. So the file row require_rows names, read by filesystem-windows.sql's per-user app branch, is the only witness. The Uninstall row is required with a space after the name: the key's name goes on past `Opera Neon`, which is why it is not the value. Nothing is forbidden: the install writes no catalogued agent's lookalike.",
+  "known_gaps": [
+    "A match says Opera Neon is installed, not that Neon Do ran or a subscription is active: no route reads either.",
+    "Only the per-user install is read. A machine-wide one (the installer's --allusers=1) is not installed here, and a path outside a home is one no `~/` value names."
+  ]
+}
