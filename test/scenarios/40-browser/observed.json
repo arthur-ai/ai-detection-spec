@@ -25,11 +25,11 @@
       "agent": "claude-desktop",
       "route": "bundle_ids",
       "value": "com.anthropic.claudefordesktop",
-      "agent_version": "4.16336.0",
+      "agent_version": "6.6395.0",
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "43892773260"
+      "run": "45229382214"
     },
     {
       "agent": "claude-desktop",
@@ -45,11 +45,11 @@
       "agent": "claude-desktop",
       "route": "bundle_ids",
       "value": "com.anthropic.claudefordesktop",
-      "agent_version": "4.4212.0",
+      "agent_version": "5.11492.5",
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43892773260"
+      "run": "45229382214"
     },
     {
       "agent": "claude-desktop",
@@ -75,11 +75,11 @@
       "agent": "claude-desktop",
       "route": "homebrew",
       "value": "claude",
-      "agent_version": "4.16336.0,61c5bb50afdeb36ef1152e82f33cdb2f46fccdee",
+      "agent_version": "6.6395.0,d71a20056be3b25708751e98bef60759ea1f441b",
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "43892773260"
+      "run": "45229382214"
     },
     {
       "agent": "claude-desktop",
@@ -95,11 +95,11 @@
       "agent": "claude-desktop",
       "route": "homebrew",
       "value": "claude",
-      "agent_version": "4.4212.0,cbfe3c56d49c49332ad5a9588303c9dbc70a5e7f",
+      "agent_version": "5.11492.5,1403e2cf44abfb23809c8ae11238d5e9704a41c2",
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "43892773260"
+      "run": "45229382214"
     }
   ]
 }
