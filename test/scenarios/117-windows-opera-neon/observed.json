@@ -1,0 +1,23 @@
+{
+  "scenario": "117-windows-opera-neon",
+  "identifiers": [
+    {
+      "agent": "opera-neon",
+      "route": "binaries",
+      "value": "~/AppData/Local/Programs/Opera Neon/opera.exe",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "45441458366"
+    },
+    {
+      "agent": "opera-neon",
+      "route": "process_paths",
+      "value": "~/AppData/Local/Programs/Opera Neon/",
+      "platform": "windows",
+      "os": "windows-server-2025-26100",
+      "arch": "x86_64",
+      "run": "45441458366"
+    }
+  ]
+}

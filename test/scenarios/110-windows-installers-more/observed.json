@@ -8,7 +8,7 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "45229382214"
+      "run": "45441458366"
     },
     {
       "agent": "warp",
@@ -17,17 +17,17 @@
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "45229382214"
+      "run": "45441458366"
     },
     {
       "agent": "warp",
       "route": "uninstall_keys",
       "value": "warp-agent-cli-stable_is1",
-      "agent_version": "v0.2026.11.18.08.17.stable_04",
+      "agent_version": "v0.2026.11.18.08.17.stable_05",
       "platform": "windows",
       "os": "windows-server-2025-26100",
       "arch": "x86_64",
-      "run": "45229382214"
+      "run": "45441458366"
     }
   ]
 }

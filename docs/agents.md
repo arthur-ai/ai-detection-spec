@@ -11,15 +11,15 @@ and the CI test behind each one.
 
 ![agents](https://img.shields.io/badge/agents-67-1D4E89)
 ![identifiers](https://img.shields.io/badge/identifiers-208-1D4E89)
-![covered](https://img.shields.io/badge/covered_by_a_CI_test-205%2F208-A26A16)
-![real install](https://img.shields.io/badge/by_real_install-205-2E7D57)
+![covered](https://img.shields.io/badge/covered_by_a_CI_test-208%2F208-2E7D57)
+![real install](https://img.shields.io/badge/by_real_install-208-2E7D57)
 
 </div>
 
 > **Generated** from `catalog/agents.yaml`, `catalog/routes.yaml`, the fixtures and
 > what each CI scenario actually matched. Lint fails when it drifts.
 
-**Every identifier is proved by a real install in CI** — 205 of 208. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
+**Every identifier is proved by a real install in CI** — 208 of 208. Anything below complete is a red build, so there is no partial number to read here. An agent with no test that installs it cannot be added to the catalog at all, nor listed on a platform where no CI install has produced any of its identifiers; the build rejects both.
 
 ## 🧪 Why a real install is the bar
 
@@ -31,8 +31,6 @@ review.
 Proof is counted **per identifier**, not per agent. Installing an agent vouches
 only for the identifiers that run actually matched, so a sibling identifier on the
 same agent is not covered by association.
-
-> **This number is a floor.** `117-windows-opera-neon`, `118-windows-opera-neon-idle`, `18-opera-neon` are in the CI matrix and have recorded nothing yet. Absence of an observation is not absence of a test, and the count corrects itself once each has run.
 
 # Agents (67)
 
@@ -112,7 +110,7 @@ A browser whose AI features are the product.
 | name | platforms | identifiers | scenarios |
 |---|---|---|---|
 | **Dia** | macOS | **`company.thebrowser.dia`**, **`thebrowsercompany-dia`** | 13-desktop-apps-more |
-| **Opera Neon** | macOS, Windows | com.operasoftware.OperaNeon, ~/AppData/Local/Programs/Opera Neon/opera.exe, ~/AppData/Local/Programs/Opera Neon/ | 117-windows-opera-neon, 118-windows-opera-neon-idle, 18-opera-neon |
+| **Opera Neon** | macOS, Windows | **`com.operasoftware.OperaNeon`**, **`~/AppData/Local/Programs/Opera Neon/opera.exe`**, **`~/AppData/Local/Programs/Opera Neon/`** | 117-windows-opera-neon, 118-windows-opera-neon-idle, 18-opera-neon |
 | **Orion** | macOS | **`com.kagi.kagimacOS`**, **`orion`** | 10-desktop-apps |
 | **Perplexity Comet** | macOS | **`ai.perplexity.comet`**, **`comet`** | 10-desktop-apps |
 
@@ -141,16 +139,6 @@ A chat client that can run tools on the machine, for example through MCP.
 | **Perplexity** | macOS | **`ai.perplexity.macv3`**, **`perplexity`** | 11-perplexity-desktop |
 
 > **`bold`** = CI installs it for real. `code` = CI fixture only. ~~`struck`~~ = superseded: a run proved it and the current release no longer emits it. ∅ = no CI runner for its platform. ⚠ = a scenario installed this agent and the identifier did not appear. plain = nothing tests it.
-
-## ⚠️ Identifiers that did not pass
-
-Each one needs work, and the state column says what kind. **did not appear** means a scenario installed the agent and this identifier never showed up — the suite reached it and it did not reproduce, usually because the scenario installs by a different route, or because the artifact only exists once the agent has run.
-
-| agent | route | identifier | state | reached by |
-|---|---|---|---|---|
-| Opera Neon | bundle id | `com.operasoftware.OperaNeon` | no test | -- |
-| Opera Neon | binary | `~/AppData/Local/Programs/Opera Neon/opera.exe` | no test | -- |
-| Opera Neon | process_paths | `~/AppData/Local/Programs/Opera Neon/` | no test | -- |
 
 **What it cannot see is a separate page.** [`docs/limits.md`](limits.md) carries what osquery cannot see on any machine and what each scenario leaves unproved after its install succeeds -- rendered from the same inputs, gated the same way.
 
