@@ -1682,8 +1682,8 @@ check("...and Atlas, and an id one of them prefixes, claim nothing",
        "im.manus.desktop.computer-use"} <= set(_u), f"got {_c}")
 
 # GROK BOT, read off probe run 43928980619. Anysphere builds it and Cursor, and xAI's Grok name
-# is on it and Grok Build, so each must keep its own values. `sand` is the name the deb
-# Provides and nothing installed; the Windows DisplayName and the updater carry no value.
+# is on it and Grok Build, so each must keep its own values. `sand` is the name the deb and
+# the rpm Provide and nothing installed; the Windows DisplayName and the updater carry no value.
 _c, _u = _claims(_kind("app", "com.anysphere.sand", "com.anysphere.sand.helper",
                        "com.todesktop.230313mzl4w4u92")
                  + _kind("deb", "grok-bot", "sand", "grok", "cursor")
@@ -1703,6 +1703,18 @@ check("Grok Bot, Cursor and Grok Build are told apart on every route",
 check("...and its helper id, `sand`, a bare `grok`, its versioned name and its updater claim nothing",
       {"com.anysphere.sand.helper", "sand", "grok", "grok.desktop", "Grok Bot 1.1.0",
        "C:\\Users\\dana\\AppData\\Local\\sand-updater\\installer.exe"} <= set(_u), f"got {_c}")
+# The rpm's rows carry the deb's ids, and _claims keys by id, so the rpm is asked on its own.
+_c, _u = _claims(_kind("rpm", "grok-bot", "sand", "cursor"))
+check("...and its rpm is its own, while an rpm named `sand` claims nothing",
+      _c == {"grok-bot": "grok-bot", "cursor": "cursor"} and "sand" in _u, f"got {_c}")
+# THE UNINSTALL KEY IS DERIVED, NOT ONE RELEASE'S NUMBER: electron-builder's NSIS installer
+# writes UUIDv5(its fixed namespace, appId), and the appId is the bundle id macOS reports. The
+# key moves only when the bundle id does.
+import uuid as _uuid
+_gb = next(a for a in _cat["agents"] if a["id"] == "grok-bot")
+check("Grok Bot's Uninstall key is electron-builder's UUIDv5 of its bundle id",
+      [str(_uuid.uuid5(_uuid.UUID("50e065bc-3134-11e6-9bab-38c9862bdaf3"), b))
+       for b in _gb["bundle_ids"]] == _gb["uninstall_keys"], f"got {_gb['uninstall_keys']}")
 
 # META'S TWO MUSE PRODUCTS, read off real installs on 2026-10-19 and told apart by route: a
 # bundle id for the desktop agent, a ~/.local/bin launcher for the coding agent. The launcher

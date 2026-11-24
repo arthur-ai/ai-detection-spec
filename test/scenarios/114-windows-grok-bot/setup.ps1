@@ -1,4 +1,4 @@
-# 111-windows-grok-bot -- Grok Bot on Windows, installed and running.
+# 114-windows-grok-bot -- Grok Bot on Windows, installed and running.
 #
 # Through the installer the app's update feed names, an electron-builder NSIS per-user
 # setup, which writes ~\AppData\Local\Programs\Grok Bot and a GUID Uninstall key under

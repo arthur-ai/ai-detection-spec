@@ -28,7 +28,7 @@
     "com.anysphere.sand"
   ],
   "known_gaps": [
-    "A match says the Grok Bot app is installed, not that a Bot ran or that a plan includes it: Bots run on a cloud computer, and no route reads either.",
+    "A match says the Grok Bot app is installed, not that a Bot ran or that a plan includes it.",
     "Grok Bot is never launched, so no running-app value is read on macOS."
   ]
 }

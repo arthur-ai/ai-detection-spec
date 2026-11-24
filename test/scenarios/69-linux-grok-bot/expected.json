@@ -1,8 +1,9 @@
 {
-  "description": "Grok Bot's official .deb, by its package and its desktop entry.",
+  "description": "Grok Bot's official .deb or .rpm, by its package and its desktop entry.",
   "platform": "linux",
   "counts": {
-    "deb": ">=1",
+    "deb": ">=0",
+    "deb+rpm": ">=1",
     "desktop": ">=1",
     "ext": ">=0",
     "file": ">=0",
@@ -25,13 +26,14 @@
       "grok"
     ]
   },
-  "why": "One install writes both values, so must_find alone would pass with either broken; require_rows names the deb and the desktop entry each. Cursor is forbidden because Anysphere builds both and both ship a deb and a .desktop file, and Grok Build because both carry the Grok name.",
+  "why": "One install writes a package row and a desktop entry, so must_find alone would pass with either broken. must_contain names the package row: the probe closes the quote after grok-bot, so the desktop entry's id does not satisfy it. require_rows names the desktop entry. Cursor is forbidden because Anysphere builds both and both ship a deb, an rpm and a .desktop file, and Grok Build because both carry the Grok name.",
+  "must_contain": [
+    "\"id\": \"grok-bot\""
+  ],
   "require_rows": [
-    {"kind": "deb", "id": "grok-bot"},
     {"kind": "desktop", "id": "grok-bot.desktop"}
   ],
   "known_gaps": [
-    "The rpm family is not installed: the rpm cursor.com/download/bot links was not served on 2026-11-16.",
     "The AppImage, the feed's own download, leaves no package record and no .desktop file unless the user integrates it.",
     "A match says the Grok Bot app is installed, not that a Bot ran or that a plan includes it."
   ]

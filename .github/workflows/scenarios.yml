@@ -274,8 +274,8 @@ jobs:
           - 13-desktop-apps-more
           - 14-meta-muse
           - 15-manus
-          - 16-grok-bot
           - 16-hermes-desktop
+          - 17-grok-bot
           - 20-cli-agents
           - 21-cli-agents-homebrew
           - 22-cli-agents-homebrew-more
@@ -620,8 +620,8 @@ jobs:
           - 108-windows-hermes-desktop
           - 109-windows-hermes-idle
           - 110-windows-installers-more
-          - 111-windows-grok-bot
           - 111-windows-warp-open-webui
+          - 114-windows-grok-bot
         exclude: ${{ fromJSON(needs.scope.outputs.exclude_scenario_windows || '[]') }}
     steps:
       - uses: actions/checkout@v4
