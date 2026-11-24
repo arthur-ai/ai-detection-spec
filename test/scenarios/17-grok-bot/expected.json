@@ -1,0 +1,35 @@
+{
+  "description": "Grok Bot's desktop app through its cask.",
+  "platform": "darwin",
+  "counts": {
+    "app": ">=1",
+    "brew": ">=1",
+    "npm": ">=0",
+    "file": ">=0",
+    "ext": ">=0",
+    "nmh": ">=0",
+    "daemon": ">=0",
+    "port": ">=0",
+    "vscodeext": ">=0",
+    "jbplugin": ">=0",
+    "proc": ">=0"
+  },
+  "classified": {
+    "must_find": [
+      "grok-bot"
+    ],
+    "forbid": [
+      "cursor",
+      "grok"
+    ]
+  },
+  "why": "Grok Bot matches on two routes here, so must_find would pass with either value broken. must_contain names the app row and the cask row each, with the quote closed so that a longer id does not satisfy the probe. Cursor is forbidden because Anysphere builds both apps, and Grok Build because both carry xAI's Grok name: Grok Bot's rows may be read as neither. test_matcher holds the converse.",
+  "must_contain": [
+    "\"id\": \"com.anysphere.sand\"",
+    "\"id\": \"grok-bot\""
+  ],
+  "known_gaps": [
+    "A match says the Grok Bot app is installed, not that a Bot ran or that a plan includes it.",
+    "Grok Bot is never launched, so no running-app value is read on macOS."
+  ]
+}

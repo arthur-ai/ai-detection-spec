@@ -9,7 +9,7 @@
       "platform": "darwin",
       "os": "15.8.2",
       "arch": "arm64",
-      "run": "44693430337"
+      "run": "45419143651"
     },
     {
       "agent": "hermes",
@@ -19,7 +19,7 @@
       "platform": "darwin",
       "os": "26.7.2",
       "arch": "arm64",
-      "run": "45229382214"
+      "run": "45419143651"
     }
   ]
 }
